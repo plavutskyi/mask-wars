@@ -77,6 +77,8 @@ jobs:
       bounty: ${{ needs.open.outputs.bounty }}
       attempts: "5"
       live: true
-    # The race job's one secret. The masks' keys reach only the drain job, through its `live-race` environment.
-    secrets:
-      NEAR_AI_API_KEY: ${{ secrets.NEAR_AI_API_KEY }}
+    # `inherit`, not a list: GitHub gives a called job its environment's secrets only when the caller inherits. With a
+    # list the drain job read the masks' keys as empty in the season's first two rounds. What a job can read is still set by
+    # its own `environment:`: the masks' keys live only in `live-race`, so the race job, in `outlayer`, never sees
+    # them, and `guard` stops the run if one of them ever becomes a repository secret.
+    secrets: inherit

@@ -120,14 +120,17 @@ describe("the masks' keys and the minds' payment key live in environments only",
     expect(text("keeper.yml")).toMatch(/for name in MASK_KEYS KEEPER_SEED; do/);
   });
 
-  it("no caller hands a key in: the season passes the race only NEAR AI's key", () => {
-    for (const f of files) expect(text(f), `${f} hands every secret on`).not.toMatch(/secrets:\s*inherit/);
+  // The season inherits: only then does GitHub give the called drain job the secrets of its own environment (with a
+  // list of secrets it read an empty MASK_KEYS in the season's first two rounds). Inheriting hands on the repository's
+  // secrets, so none of the keys may ever be one: guard checks that at every run, and no other workflow inherits.
+  it("only the season inherits, and it names no key itself", () => {
+    for (const f of files.filter((f) => f !== "season.yml")) expect(text(f), `${f} hands every secret on`).not.toMatch(/secrets:\s*inherit/);
+    expect(text("season.yml").match(/secrets:\s*inherit/g)).toHaveLength(1);
     expect(text("season.yml")).not.toMatch(/OUTLAYER_PAYMENT_KEY|MASK_KEYS|KEEPER_SEED/);
   });
 
-  // GitHub gives a called workflow only the secrets its `workflow_call` names, an environment's included: without the
-  // name the drain job read an empty MASK_KEYS in the season's first round. Named and not required, the key comes
-  // from the job's environment, which wins over anything a caller passes.
+  // A called workflow reads a secret only if its `workflow_call` names it. Named and not required, the key comes from
+  // the job's environment, which wins over anything a caller passes.
   it("the called race names each key so its jobs read it from their environments, and requires none from a caller", () => {
     const t = text("live-race.yml");
     const call = t.slice(t.indexOf("  workflow_call:"), t.indexOf("\nenv:"));
