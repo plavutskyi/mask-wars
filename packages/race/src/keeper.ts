@@ -219,8 +219,9 @@ export async function armHumans(o: KeeperOptions): Promise<Armed[]> {
   return out;
 }
 
-/** What a person's mask's mind spent in a race, as the race job counts it: NEAR AI's price for every token, and
- * what OutLayer charged to run the mind in its TEE. */
+/** What a person's mask's mind spent in a race, as the race job counts it (src/brain.ts): NEAR AI's price for every
+ * token the model used, as the mind's module counted them inside its TEE, in whole steps rounded down. What OutLayer
+ * charged to run the mind is not in it: the arena pays that. `calls` is the answers the tokens were counted for. */
 export interface MindCost {
   readonly usd: number;
   readonly calls: number;

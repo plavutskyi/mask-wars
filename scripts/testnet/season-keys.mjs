@@ -11,6 +11,9 @@
 // {"NOVA":"ed25519:…",…}; the race job seals the winning finding only for that key. The public halves of all keys go
 // to stdout for season-keys.ps1 to put on chain.
 //   node season-keys.mjs [--rotate] <file> <season account> <bounty contract> <first safe> <last safe> nova onyx oracle
+// A round opened by hand races on a safe made by hand, under any name: `--safe <account>` gives the keys for that one
+// safe in place of the season's, from the same seeds.
+//   node season-keys.mjs --safe safe-0001.maskwars.near <file> <season account> <bounty contract> 1 1 nova onyx oracle
 import { createHmac, createPrivateKey, createPublicKey, randomBytes } from 'node:crypto';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 
@@ -45,15 +48,19 @@ export const safeAccount = (season, n) => `s${String(n).padStart(4, '0')}.${seas
 
 const main = process.argv[1] && import.meta.url.endsWith(process.argv[1].replace(/\\/g, '/').split('/').pop());
 if (main) {
-  const rotate = process.argv[2] === '--rotate';
-  const [file, season, bounty, first, last, ...masks] = process.argv.slice(rotate ? 3 : 2);
+  const argv = process.argv.slice(2);
+  const rotate = argv[0] === '--rotate';
+  if (rotate) argv.shift();
+  const hand = argv[0] === '--safe' ? argv.splice(0, 2)[1] : null;
+  const [file, season, bounty, first, last, ...masks] = argv;
   const from = Number(first);
   const to = Number(last);
   const ok =
     file && season && bounty && Number.isInteger(from) && Number.isInteger(to) && from >= 1 && to >= from && to - from < 90 &&
-    masks.length > 0 && masks.every((m) => /^[a-z0-9-]+$/.test(m));
+    masks.length > 0 && masks.every((m) => /^[a-z0-9-]+$/.test(m)) &&
+    (hand === null || (/^[a-z0-9._-]{2,64}$/.test(hand ?? '') && !rotate));
   if (!ok) {
-    console.error('usage: node season-keys.mjs <file> <season> <bounty contract> <first safe> <last safe> nova onyx oracle');
+    console.error('usage: node season-keys.mjs [--rotate | --safe <account>] <file> <season> <bounty contract> <first safe> <last safe> nova onyx oracle');
     process.exit(2);
   }
   const secrets = existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : {};
@@ -63,7 +70,8 @@ if (main) {
     const seed = (!rotate && secrets[name]?.seed) || randomBytes(32).toString('hex');
     secrets[name] = { seed };
     const safes = [];
-    for (let n = from; n <= to; n++) safes.push({ safe: safeAccount(season, n), key: racePublicKey(seed, safeAccount(season, n)) });
+    if (hand) safes.push({ safe: hand, key: racePublicKey(seed, hand) });
+    else for (let n = from; n <= to; n++) safes.push({ safe: safeAccount(season, n), key: racePublicKey(seed, safeAccount(season, n)) });
     publics[m] = { bounty: racePublicKey(seed, bounty), safes };
   }
   writeFileSync(file, JSON.stringify(secrets));

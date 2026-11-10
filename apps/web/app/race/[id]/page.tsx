@@ -1,6 +1,7 @@
-import { duration, near, raceNo } from '@maskwars/arena/format';
+import { duration, near } from '@maskwars/arena/format';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { raceTitle } from '@/components/arena/names';
 import { RacePage } from '@/components/arena/RacePage';
 import { Unreachable } from '@/components/arena/Unreachable';
 import { readArena } from '@/lib/arena';
@@ -16,7 +17,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const race = await readArena()
     .then((v) => v.races.find((r) => r.id === id) ?? null)
     .catch(() => null);
-  const title = `Race ${raceNo(id)} · MASK WARS`;
+  const title = `${raceTitle(id)} · MASK WARS`;
   if (!race) return { title, robots: { index: false } };
   const description =
     race.phase === 'broken' && race.winner

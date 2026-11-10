@@ -49,6 +49,11 @@ export interface ArenaProps {
   masks: readonly [ArenaMask, ArenaMask, ArenaMask];
   /** Attempts per mask. Each increase is one strike on the lock. */
   attempts?: readonly [number, number, number] | undefined;
+  /**
+   * The line under each mask's name, in the page's words: “Sealed #1”, “3 tries”, “Plan shown”. Without it a live
+   * race counts the tries; `null` leaves a mask with its name alone.
+   */
+  notes?: readonly [string | null, string | null, string | null] | undefined;
   /** The mask that broke the vault; required for `paid`, optional for `breach`. */
   winner?: MaskSlot | null | undefined;
   /** What the contract paid the winner. Defaults to the vault sum. */
@@ -59,6 +64,10 @@ export interface ArenaProps {
   elapsed?: number | undefined;
   /** The line under the sum, in place of the state's own: the page's words and numbers, as written elsewhere. */
   line?: string | undefined;
+  /** That line is an account, not a name: set as an account reads, never in the word face. */
+  lineIsAccount?: boolean | undefined;
+  /** With no sum to show, what the door says in its place, at the size of a name: “Vault held”, “No race yet”. */
+  headline?: string | undefined;
   /** Something quiet beside that line: the page's «i» with the race's details. */
   aside?: ReactNode;
   /** Freeze the clock at this epoch ms (previews, stills). Without it the countdown ticks on its own. */

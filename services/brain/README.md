@@ -30,7 +30,7 @@ one attempt of a person's mask in a race ([src/mind.rs](src/mind.rs)). The race 
 5. writes the plan itself. A person's mask plays only `set_owner` and `sweep` on the safe, so the plan that leaves is 1
    to 4 of those calls in the order the model chose, with the mask's own account in every argument and the module's
    amount in a sweep. Numbers, lists, deposits, gas and every other field of the answer stay in the TEE. With the plan
-   go the tokens the model used, in steps of 256 rounded down, for the keeper to charge the mask.
+   go the tokens the model used, in steps of 2048 rounded down, for the keeper to charge the mask.
 
 The words the mind is told, [`mind.json`](mind.json), are the arena's own masks' rules and the forge's styles; tests on
 both sides keep them the same.
@@ -46,12 +46,64 @@ anything else (`view`, `reveal`, `open`) is not one the module reads, and OutLay
 A view key in the plan is a key to a mask's **race history** (the mind's notes on each race, its moves and the result),
 never to the strategy; it comes once the mind writes those notes.
 
-**What can leave, counted.** Whatever the model writes, one attempt's answer is one of 30 plans or one error, and a
-count of answer tokens in one of 12 steps: at most log2(31) + log2(12), under 9 bits, and no character of the line. The
+**What can leave, counted.** Whatever the model writes, one attempt's answer is one of 30 plans or one of two errors
+(the answer holds no plan; the model spent its tokens before it answered), and a count of answer tokens in one of 12
+steps: at most log2(32) + log2(12), under 9 bits, and no character of the line. A model still at work when its time
+runs out earns a third error, with no count at all: one more outcome, and still under 9 bits. The
 prompt's count, in the same steps, tells at most whether the line's length crosses a step. Nobody can tell the model to
 spend those bits on the line: what the caller sends is verdicts and method names, not text. What the module does not
 hide: the plan is the strategy's effect, and the mask plays it on chain for all to see; and the run's duration follows
 the answer's length.
+
+## Tokens, time and what a race costs
+
+The TEE models think before they answer, and the thinking counts against the allowance: on the live safe's source
+(51 KB, some 16 thousand tokens of prompt) they spend 8 to 14 thousand tokens on it and up to three and a half minutes.
+One attempt's allowance is written once, in [`mind.json`](mind.json) (`limits`), for the module and for the race job:
+
+| Limit | Value | Whose it is |
+| --- | --- | --- |
+| Tokens in one answer, thinking included | 24 000 | ours: the allowance the arena's own masks play with |
+| One run of the module | 180 s | OutLayer's most (`max_execution_seconds`; 60 when a call names none) |
+| One request to the model | 165 s | ours, inside the run: [`manifest.json`](manifest.json) |
+| Attempts in one race | 5 | ours: the race job asks a mind no more (`RACE_CALLS`) |
+
+**The manifest.** OutLayer gives a request out of a module 30 seconds unless the module's own manifest names the host
+and a longer time, 180 seconds at most and never past the run's end. The manifest is a section of the wasm
+(`outlayer.manifest`, written in `src/main.rs`), under the same sha256 as the code; `build.sh` fails when the wasm does
+not carry it. It also makes cloud-api.near.ai the only host the module reaches. The chain is read through the worker's
+own RPC, which is no request of the module's.
+
+**A model that does not make it.** Three ways an attempt ends without a plan, each named apart:
+
+| What happened | What the race job is told | What the mask pays |
+| --- | --- | --- |
+| The model spent all 24 000 tokens before it answered (`finish_reason: length`, no content) | `the model spent all 24000 tokens before it answered` | the tokens: they were spent |
+| The model was still thinking after 165 s | `the model did not answer in 165 seconds`, with the seconds it really had; the run ends in order, under OutLayer's limit | nothing: no count comes back for an answer that never came, and the arena covers it |
+| The answer holds no `set_owner` or `sweep` call | `the answer holds no plan the mask plays` | the tokens |
+
+An OutLayer run cannot last five minutes, as a call of the arena's own masks can: an answer that takes longer than 165
+seconds does not fit one run, and that attempt goes by. The mask plays its next attempt.
+
+**What the owner pays.** Only the tokens the model used, at NEAR AI Cloud's price for the mask's model
+(`packages/mind/src/models.ts`), counted in steps of 2048 rounded down, turned into NEAR at the price 1Click shows when
+the keeper settles, and never more than the race held (`race_limit`, 0.05 NEAR unless the person chose otherwise).
+OutLayer's own charge for the run is the arena's. In dollars, and in NEAR at $3.70 (1Click, 8.11.2026):
+
+| Model | One attempt as it goes on the live safe | One race of 5 such attempts | The dearest race there can be |
+| --- | --- | --- | --- |
+| GLM 5.3 Flash | $0.004 to $0.007 | $0.022 to $0.037: 0.006 to 0.010 NEAR | $0.068: 0.018 NEAR |
+| DeepSeek V4.1 Flash | $0.012 to $0.020 | $0.061 to $0.098: 0.017 to 0.027 NEAR | $0.174: 0.047 NEAR |
+| Qwen 3.8 27B | $0.009 to $0.017 | $0.045 to $0.086: 0.012 to 0.023 NEAR | $0.166: 0.045 NEAR |
+
+"As it goes" is 16 thousand tokens of prompt, none cached, and 8 to 14 thousand of answer, as the mask is charged for
+them: in whole steps of 2048, rounded down. "The dearest" is the ceiling the code
+holds (`raceCeilingUsd` in `packages/race/src/brain.ts`, pinned by its test): 5 attempts, each with 20 000 tokens of
+prompt, none cached, and all 24 000 tokens of answer. A race ends at the first break, so most cost less. The 0.05 NEAR
+a race holds covers the dearest race for as long as a NEAR is worth $3.48 or more; under that the mask still pays the
+0.05 at most and the arena pays the difference. With the allowance of 3 000 tokens the dearest race, counted the same
+way, was $0.016, $0.048 and $0.024 for the three models, and no answer on the live safe ever fit it. The five attempts
+are counted for one run of the race job.
 
 ```bash
 cargo test
@@ -66,4 +118,9 @@ one run with `{"action":"key"}`, and the key goes to the factory (`scripts/testn
 `PROTECTED_*` secret, while `set` would write the row anew, give the mind a new key and leave every sealed strategy
 unopenable. The race needs a payment key for HTTPS calls, made on the keeper's account `tinygif8324.testnet`
 (`outlayer keys create`), since the module answers only that account; it goes into the secret `OUTLAYER_PAYMENT_KEY`
-of the `live-race` environment. A new module version keeps the project's secrets, so the mind's key stays the same.
+of the `live-race` environment. A new module version keeps the project's secrets, so the mind's key stays the same:
+after adding one, run `{"action":"key"}` on it before it becomes the active version and compare the key with the one
+the factory publishes (`config()`, `strategy_key`). That run also shows OutLayer did not refuse the module's manifest.
+That OutLayer gives the request its 165 seconds shows only in a `plan` run where the model thinks for more than 30: a
+run cut short says `the model did not answer in 30 seconds` (the manifest's time was not applied) or
+`… in 5x seconds` (the run got 60 seconds, not the 180 the call asked for).

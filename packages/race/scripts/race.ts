@@ -78,6 +78,8 @@ if (humans.length > 0) {
       project: process.env.BRAIN_PROJECT || `${NET.admin}/brain`,
       paymentKey,
       api: process.env.OUTLAYER_API || NET.outlayer.api,
+      // Why an attempt of a mind gave no plan: out of time, out of tokens, no plan, refused, unreachable.
+      log: (line) => console.log(line),
     });
     minds.push(mind);
     attackers.push(mind);
@@ -107,7 +109,12 @@ if (costs) {
   const spent = Object.fromEntries(minds.map((m) => [m.mask, { usd: m.spent.usd, calls: m.spent.calls }]));
   const file: CostsFile = { bounty: process.env.BOUNTY ?? "", costs: spent };
   await writeFile(costs, JSON.stringify(file, null, 2));
-  for (const m of minds) console.log(`${m.id.padEnd(7)} mind: ${m.spent.calls} calls, $${m.spent.usd.toFixed(5)}`);
+  for (const m of minds) {
+    const stops = Object.entries(m.stops)
+      .filter(([, n]) => n > 0)
+      .map(([stop, n]) => `${stop} ${n}`);
+    console.log(`${m.id.padEnd(7)} mind: asked ${m.asked}, ${m.spent.calls} answers counted, $${m.spent.usd.toFixed(5)}${stops.length ? `; ${stops.join(", ")}` : ""}`);
+  }
 }
 const resultFile = flag("--result");
 if (resultFile) await writeFile(resultFile, JSON.stringify({ winner: result.winner?.attacker ?? null }));

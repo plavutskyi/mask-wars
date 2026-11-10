@@ -63,7 +63,7 @@
   --avail: calc(100cqh - var(--top) - var(--bottom));
   --hz: calc(var(--top) + var(--avail) * 0.62);
   --D: min(calc(var(--avail) * 0.56), 50cqw, 560px);
-  --hm: min(calc(var(--avail) * 0.24), 15cqw, 250px, calc(var(--avail) * 0.38 - var(--gap) - 40px));
+  --hm: min(calc(var(--avail) * 0.24), 15cqw, 250px, calc(var(--avail) * 0.38 - var(--gap) - 48px));
   --gap: calc(var(--avail) * 0.05);
   --sx: min(26cqw, calc(var(--hm) * 2.9));
   --side: calc(var(--avail) * 0.02);
@@ -76,10 +76,11 @@
   --m0b: calc(var(--my) - var(--side) + var(--hm) * 0.465);
   --m1b: calc(var(--my) + var(--hm) / 2);
   --m2b: calc(var(--my) - var(--side) + var(--hm) * 0.465);
-  /* Three sizes on screen (BRANDBOOK §4): the number, the clock, the word. */
+  /* Three sizes on screen (BRANDBOOK §4): the number, the names and the clock, the word. */
   --t-word: 15px;
   --t-mid: clamp(22px, calc(var(--D) * 0.068), 30px);
-  --t-pay: clamp(34px, calc(var(--D) * 0.13), 64px);
+  --t-name: clamp(20px, calc(var(--D) * 0.062), 26px);
+  --t-pay: clamp(34px, calc(var(--D) * 0.12), 60px);
   position: absolute;
   inset: 0;
   z-index: 1;
@@ -89,10 +90,11 @@
 @container arena (max-aspect-ratio: 9 / 10) {
   .hud {
     --D: min(86cqw, calc(var(--avail) * 0.5), 440px);
-    --hm: min(38cqw, calc(var(--avail) * 0.24), calc(var(--avail) * 0.38 - var(--gap) - 40px));
+    --hm: min(38cqw, calc(var(--avail) * 0.24), calc(var(--avail) * 0.38 - var(--gap) - 48px));
     --gap: calc(var(--avail) * 0.05);
     --sx: 31cqw;
     --t-word: 13px;
+    --t-name: 17px;
     --t-pay: 34px;
   }
 
@@ -101,6 +103,18 @@
   .under {
     flex-direction: column;
     gap: 12px;
+  }
+
+  /* A line as short as a round's name keeps its «i» beside it. */
+  .under[data-short] {
+    flex-direction: row;
+    gap: 14px;
+  }
+
+  /* The plain words under the door's message need a door wide enough to hold them: on a short phone, where the
+     door is under 270 px, they step aside and the message stands with its «i» alone. */
+  .stack[data-headline] .under .line {
+    font-size: clamp(0px, calc((var(--D) - 270px) * 999), 12px);
   }
 
   .stack::before {
@@ -115,6 +129,8 @@
   position: absolute;
   left: 0;
   top: 0;
+  /* Over the names: the sheet of the page's «i» opens down across them. */
+  z-index: 1;
   transform: translate(var(--vx), var(--vy));
 }
 
@@ -157,7 +173,6 @@
   font-size: min(calc(var(--D) * 0.15), calc(var(--D) * 1.02 / var(--chars)), 76px);
   line-height: 1;
   letter-spacing: -0.01em;
-  font-variant-numeric: tabular-nums;
   transition: color 500ms cubic-bezier(0.2, 0, 0, 1) var(--lift-delay);
 }
 
@@ -181,7 +196,7 @@
   transform: translateX(-50%);
   white-space: nowrap;
   font-size: var(--t-word);
-  color: var(--ice-60);
+  color: var(--ice);
 }
 
 /* No sum to show: the line takes the middle of the door. */
@@ -191,10 +206,47 @@
   transform: translate(-50%, -50%);
 }
 
-/* The page's quiet «i» beside the line: the only thing in the arena a finger can press. */
+/* No sum to show: the door says what happened, at the size of a name, with the line under it as under a sum.
+   Sized by its longest line, so it never reaches the ring. */
+.stack[data-headline] .under {
+  top: 100%;
+  margin-top: calc(var(--D) * 0.035);
+  transform: translateX(-50%);
+}
+
+.headline {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.12em;
+  white-space: nowrap;
+  font-size: min(var(--t-mid), calc(var(--D) * 0.68 / var(--chars, 12)));
+  line-height: 1.1;
+  letter-spacing: 0.03em;
+}
+
+/* Another team's safe has no name of ours: its account, set as an account reads. */
+.account {
+  font-family: var(--font-num);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ice-60);
+}
+
+/* The page's quiet «i» beside the line: the only thing in the arena a finger can press. It stands on its own disc of
+   ink, so the seam of a shut door passes behind it, never through it. */
 .aside {
+  position: relative;
   display: inline-flex;
   pointer-events: auto;
+}
+
+.aside::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  background: var(--ink);
 }
 
 .count {
@@ -241,7 +293,6 @@
   font-weight: 800;
   font-stretch: 125%;
   font-size: 1.12em;
-  font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
 }
 
@@ -292,14 +343,17 @@
 
 /* Masks' names --------------------------------------------------------------------- */
 
+/* A plate under each mask: its name, bright and at a size of its own, and one quiet line of what it is doing. A plate
+   is never wider than the step between two masks, so no two meet. */
 .cap {
+  --cw: 0.95;
   position: absolute;
   left: 0;
   top: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   width: max-content;
   max-width: calc(var(--sx) - 12px);
   text-align: center;
@@ -308,53 +362,55 @@
 }
 
 .cap[data-slot='0'] {
-  transform: translate(var(--m0x), calc(var(--m0b) + 12px)) translateX(-50%);
+  transform: translate(var(--m0x), calc(var(--m0b) + 10px)) translateX(-50%);
 }
 
 .cap[data-slot='1'] {
-  transform: translate(var(--m1x), calc(var(--m1b) + 12px)) translateX(-50%);
+  transform: translate(var(--m1x), calc(var(--m1b) + 10px)) translateX(-50%);
 }
 
 .cap[data-slot='2'] {
-  transform: translate(var(--m2x), calc(var(--m2b) + 12px)) translateX(-50%);
+  transform: translate(var(--m2x), calc(var(--m2b) + 10px)) translateX(-50%);
 }
 
 .name {
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: var(--t-word);
-  letter-spacing: 0.08em;
-  color: var(--ice-60);
+  /* A name too wide for its step gives up size, down to 12 px, before it is cut: about .95em a letter. */
+  font-size: max(12px, min(var(--t-name), calc((var(--sx) - 12px) / (var(--chars, 6) * var(--cw)))));
+  line-height: 1.15;
+  letter-spacing: 0.04em;
+  color: var(--ice);
   transition: color 500ms;
 }
 
-/* Long names narrow along the width axis, never by size (BRANDBOOK §4). */
-.cap[data-long] .name {
-  font-stretch: 85%;
-  letter-spacing: 0.04em;
+/* Long names narrow along the width axis first (BRANDBOOK §4): about .6em a letter there. */
+.cap[data-long] {
+  --cw: 0.6;
 }
 
-.tries {
+.cap[data-long] .name {
+  font-stretch: 85%;
+  letter-spacing: 0.02em;
+}
+
+.note {
   font-size: var(--t-word);
-  font-weight: 500;
+  font-weight: 600;
+  line-height: 1.2;
   color: var(--ice-60);
 }
 
-.tries b {
+.note b {
   font-weight: 800;
   font-stretch: 125%;
   color: var(--ice);
-  font-variant-numeric: tabular-nums;
 }
 
-.root[data-state='idle'] .name,
-.root[data-state='held'] .name {
-  color: var(--ice-38);
-}
-
+/* The vault is open: the name that took it is the result's colour, the others step back. */
 .root[data-state='breach'] .cap .name {
-  color: var(--ice-38);
+  color: var(--ice-60);
 }
 
 .root[data-state='breach'] .cap[data-win] .name {
@@ -364,10 +420,6 @@
 /* One number on screen: the losers' names go with their light. */
 .root[data-state='paid'] .cap {
   opacity: 0;
-}
-
-.root[data-state='paid'] .name {
-  color: var(--ice-38);
 }
 
 /* The payout: one number where the pulse lands ------------------------------------------------ */
@@ -383,7 +435,11 @@
   gap: 8px;
   width: max-content;
   white-space: nowrap;
-  --py: calc(var(--wb) + 8px);
+  /* Under the winner's chin, and never onto the page's button: the block (its number, its name) may use the first
+     20 px of the room the page keeps above the button, no more. The middle mask stands lowest, so it is the one
+     this holds up. */
+  --ph: calc(var(--t-pay) + 8px + var(--t-word) * 1.25);
+  --py: min(calc(var(--wb) + 8px), calc(100cqh - max(var(--bottom) - 20px, 8px) - var(--ph)));
   transform: translate(clamp(calc(var(--pw) / 2 + 16px), var(--wx), calc(100cqw - var(--pw) / 2 - 16px)), var(--py)) translateX(-50%);
 }
 
@@ -424,7 +480,6 @@
   line-height: 1;
   letter-spacing: -0.01em;
   color: var(--money);
-  font-variant-numeric: tabular-nums;
 }
 
 .paid::before {
@@ -444,11 +499,11 @@
 
 /* A phone's row is tight: a side winner's number is wider than its mask and would touch the chin of the middle
    one, which stands lower. The number lands under that chin instead, a little smaller and closer to its name,
-   and never lower than 10px above the button under the stage (51px is this block's height on a phone). */
+   and never lower than 15px above the button under the stage (51px is this block's height on a phone). */
 @container arena (max-aspect-ratio: 9 / 10) {
   .payout {
     --t-pay: 30px;
-    --py: min(calc(var(--wb) + 8px), calc(100cqh - var(--bottom) - 41px));
+    --py: min(calc(var(--wb) + 8px), calc(100cqh - var(--bottom) - 46px));
     gap: 2px;
   }
 

@@ -3,7 +3,7 @@ import { Arena, Indexer, RPCS, type Race, type RaceEvent } from '@maskwars/arena
 import { type Recording, replayFetch } from '@maskwars/arena/replay';
 import { ChainReader } from '@maskwars/check';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { money, sceneOf } from './scene';
+import { money, sceneOf, stageCast } from './scene';
 
 // The race the home page shows today, as testnet answered on 7.11.2026: NOVA broke safe-0001 in 8:13 and took 1.086 NEAR.
 const recording = JSON.parse(readFileSync(new URL('../../../../packages/arena/test/fixtures/testnet.json', import.meta.url), 'utf8')) as Recording;
@@ -58,18 +58,49 @@ describe('the arena plays the race the chain shows', () => {
     expect(scene.lines.live).toBe('SAFE-0001');
   });
 
-  it('slams the bolts of a held vault and shows the bounty going back', () => {
+  it('slams the bolts of a held vault and says so in its door, with no sum and no notes under the masks', () => {
     const scene = sceneOf({ ...race3, phase: 'held', winner: null, payout: null, refund: { amount: '100000000000000000000000', at: 1, tx: 'R' } })!;
     expect(scene.rest).toBe('held');
     expect(scene.intro).toEqual(['idle', 'held']);
-    expect(scene.vault?.text).toBe('0.1');
+    expect(scene.vault).toBeNull();
+    expect(scene.headlines.held).toBe('Vault held');
     expect(scene.lines.held).toBe('Nobody got through');
+    expect(scene.notes).toBeNull();
+  });
+
+  it('names a season round by its number, never by its id or the safe account', () => {
+    const season = 'season.tinygif8324.testnet';
+    const round = { ...race3, id: 's1-0002-7c41e9', season, team: season, target: `s0002.${season}`, phase: 'sealing' as const, winner: null, payout: null, events: [] };
+    const scene = sceneOf(round)!;
+    expect(scene.lines.idle).toBe('Round 2');
+    expect(scene.account).toBe(false);
+    // Another team's safe has no name of ours: its account, marked as one and cut to fit the door.
+    const guest = sceneOf({ ...round, id: 'race-0007', target: 'safe-0001.someone-with-a-long-name.testnet' })!;
+    expect(guest.account).toBe(true);
+    expect(guest.lines.idle!.length).toBeLessThanOrEqual(26);
+  });
+
+  it('says under each mask what it has done while the round runs', () => {
+    const [nova, onyx, oracle] = race3.masks;
+    const seal = (who: Race['masks'][number], seq: number): RaceEvent => ({ kind: 'seal', at: seq + 1, tx: `S${seq}`, who, amount: null, ok: true, seq });
+    const reveal = (who: Race['masks'][number], at: number): RaceEvent => ({ kind: 'reveal', at, tx: `V${at}`, who, amount: null, ok: true });
+    const sealing = sceneOf({ ...race3, phase: 'sealing', winner: null, payout: null, events: [seal(onyx!, 0), seal(nova!, 1)] })!;
+    // Stage order: ONYX, ORACLE, NOVA.
+    expect(sealing.notes).toEqual(['Sealed #1', 'In the race', 'Sealed #2']);
+    const racing = sceneOf({ ...race3, phase: 'racing', winner: null, payout: null, events: [seal(onyx!, 0), seal(nova!, 1), seal(oracle!, 2), move(onyx!, 5), move(onyx!, 6), reveal(onyx!, 7), move(nova!, 8)] })!;
+    expect(racing.notes).toEqual(['Plan shown', 'Sealed #3', '1 try']);
   });
 
   it('shows a closed vault with no sum when there is no race, and says why', () => {
-    expect(sceneOf(null)).toMatchObject({ rest: 'idle', vault: null, lines: { idle: 'No race yet' } });
-    expect(sceneOf(null, true)?.lines.idle).toBe('The chain is not answering');
+    expect(sceneOf(null)).toMatchObject({ rest: 'idle', vault: null, headlines: { idle: 'No race yet' } });
+    expect(sceneOf(null, true)?.headlines.idle).toBe('The chain is not answering');
     expect(sceneOf(null)?.masks.map((m) => m.name)).toEqual(['ONYX', 'ORACLE', 'NOVA']);
+  });
+
+  it('stands the same masks in the same order on the flat stage and in 3D', () => {
+    expect(stageCast(race3).map((m) => m.name)).toEqual(sceneOf(race3)!.masks.map((m) => m.name));
+    expect(stageCast(null).map((m) => m.name)).toEqual(['ONYX', 'ORACLE', 'NOVA']);
+    expect(stageCast({ ...race3, masks: race3.masks.slice(0, 2) }).map((m) => m.name)).toEqual(['ONYX', 'NOVA']);
   });
 
   it('keeps the winner and the hardest workers of a bigger field, and leaves a field of two to the flat stage', () => {

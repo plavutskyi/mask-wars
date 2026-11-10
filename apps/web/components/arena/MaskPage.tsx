@@ -1,6 +1,6 @@
 import type { MaskStats } from '@maskwars/arena';
 import { accountUrl } from '@maskwars/arena/config';
-import { duration, near, raceNo } from '@maskwars/arena/format';
+import { duration, near } from '@maskwars/arena/format';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { CSSProperties } from 'react';
@@ -8,6 +8,7 @@ import { artOf, day, toneOf } from '@/lib/show';
 import { Mark } from '../Mark';
 import { Header } from './Header';
 import { Info, type InfoRow } from './Info';
+import { raceName } from './names';
 import { Nums } from './Nums';
 import { World } from './World';
 import s from './page.module.css';
@@ -77,7 +78,7 @@ export function MaskPage({ mask: m, rank, network }: { mask: MaskStats; rank: nu
               <li key={h.id}>
                 <Link href={`/race/${h.id}`} className={s.rowLink} data-won={h.won ? '' : undefined}>
                   <span className={`${s.word} ${s.rowName}`}>
-                    <Nums text={`Race ${raceNo(h.id)}`} />
+                    <Nums text={raceName(h.id)} />
                   </span>
                   <span className={s.rowWhen}>{day(h.at)}</span>
                   <span className={s.rowResult}>

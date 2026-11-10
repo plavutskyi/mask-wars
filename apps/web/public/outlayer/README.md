@@ -9,8 +9,10 @@ on any machine, so anyone can rebuild them and compare the SHA-256.
 | Module | SHA-256 | Source | What it does |
 | --- | --- | --- | --- |
 | Judge v6 | `1f8e1aca…86f7` | `services/judge` | The current judge, one for testnet and mainnet. Reads a drain from the chain and checks the revealed plan of a sealed round; on mainnet it reads through three RPC operators |
-| Brain, mainnet build | `65540964…a4fd` | `services/brain`, `build.sh --mainnet` | The mind of a forged mask on mainnet |
-| Brain | `f3d6787d…1282` | `services/brain` | The mind of a forged mask on testnet, an earlier build |
+| Brain, mainnet build | `a1922652…bae0` | `services/brain`, `build.sh --mainnet` | The mind of a forged mask, the build for mainnet: an answer of up to 24 000 tokens, the longest run OutLayer gives, and its own manifest inside the wasm |
+| Brain | `c32820e0…f264` | `services/brain`, `build.sh` | The same mind, the build for testnet |
+| Brain, mainnet build | `65540964…a4fd` | `services/brain`, `build.sh --mainnet` | Earlier build for mainnet: an answer of up to 3 000 tokens, too few for a live safe |
+| Brain | `f3d6787d…1282` | `services/brain` | Earlier build for testnet |
 | Judge v5 | `b3818697…ab83` | `services/judge` | Earlier judge: the bounty contract that holds no key |
 | Judge v4 | `5048c290…08b0` | `services/judge` | Earlier judge: sealed rounds |
 | Judge v3 | `f6cf7728…434d` | `services/judge` | Earlier judge: reads a drain from the chain. Paid `race-0003` on testnet |

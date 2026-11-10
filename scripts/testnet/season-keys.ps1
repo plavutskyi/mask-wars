@@ -20,13 +20,22 @@
 #   .\season-keys.ps1 -From 15 -To 28          # two more weeks; the bounty key is already there
 #   .\season-keys.ps1 -Masks onyx -From 1 -To 14
 #   .\season-keys.ps1 -Rotate -From 9 -To 22   # new seeds from s0009 on, the old keys deleted
+#
+# -Safe, for a round opened by hand: the same seeds give each mask its key on one safe made by hand (safe-deploy.ps1)
+# and on the bounty contract, so the race plays that round with the same MASK_KEYS as the season. "send" once per mask.
+# -SafeOnly leaves the bounty key out: the mask already holds it.
+#   .\season-keys.ps1 -Safe safe-0001.maskwars.near -Network mainnet
+#   .\season-keys.ps1 -Safe safe-0002.maskwars.near -SafeOnly -Network mainnet
 #   .\season-keys.ps1 -Network mainnet -DryRun
-param([string[]]$Masks = @('nova', 'onyx', 'oracle'), [int]$From = 1, [int]$To = 14, [switch]$Rotate, [string]$Network, [switch]$DryRun)
+param([string[]]$Masks = @('nova', 'onyx', 'oracle'), [int]$From = 1, [int]$To = 14, [switch]$Rotate, [string]$Safe, [switch]$SafeOnly, [string]$Network, [switch]$DryRun)
 . (Join-Path $PSScriptRoot 'config.ps1')
 $file = Get-ScratchFile 'mask-seeds.json'
 $methods = (Read-Input 'season-args.json').safe_methods
+if ($Safe -and $Rotate) { Write-Error '-Safe gives keys from the seeds the masks hold; rotate the season keys on their own'; exit 1 }
+if ($SafeOnly -and -not $Safe) { Write-Error '-SafeOnly goes with -Safe'; exit 1 }
 $rotateArg = @(if ($Rotate) { '--rotate' })
-$public = Invoke-Node (Join-Path $PSScriptRoot 'season-keys.mjs') @rotateArg $file $Season $Bounty $From $To @Masks | ConvertFrom-Json
+$handArg = @(if ($Safe) { '--safe', $Safe })
+$public = Invoke-Node (Join-Path $PSScriptRoot 'season-keys.mjs') @rotateArg @handArg $file $Season $Bounty $From $To @Masks | ConvertFrom-Json
 if ($LASTEXITCODE -ne 0) { exit 1 }
 foreach ($m in $Masks) {
   $account = "$m.$Admin"
@@ -39,7 +48,7 @@ foreach ($m in $Masks) {
     if ($LASTEXITCODE -ne 0) { exit 1 }
   }
   $keys = @()
-  if ($From -eq 1 -or $Rotate) {
+  if (($Safe -and -not $SafeOnly) -or (-not $Safe -and ($From -eq 1 -or $Rotate))) {
     $keys += [pscustomobject]@{ to = $Bounty; allowance = '10 NEAR'; methods = 'commit, reveal, claim_drain, settle'; key = $public.$m.bounty }
   }
   foreach ($s in $public.$m.safes) {

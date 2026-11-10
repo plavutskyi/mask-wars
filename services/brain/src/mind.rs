@@ -11,11 +11,19 @@
 //!
 //! What leaves the TEE is fixed by the module, not by the model. A person's mask plays only `set_owner` and `sweep` on
 //! the safe, so the plan that leaves is 1 to `PERSON_STEPS` of those two calls in the order the model chose, with the
-//! mask's own account in every argument and the module's own amount in a sweep: 30 plans in all, or one error when the
-//! answer holds none. The model's text, its numbers, lists, deposits and gas never leave. The token counts go out in
+//! mask's own account in every argument and the module's own amount in a sweep: 30 plans in all, or one of two errors:
+//! the answer holds no such plan (`NO_PLAN`), or the model spent its whole allowance of tokens before it answered
+//! (`OUT_OF_TOKENS`). The model's text, its numbers, lists, deposits and gas never leave. The token counts go out in
 //! steps of `TOKEN_STEP`, rounded down, so the keeper can charge the mask without the counts telling the answer's
-//! length or the line's. Whatever the model writes, one attempt's answer tells at most log2(31) + log2(12) bits, under
+//! length or the line's. Whatever the model writes, one attempt's answer tells at most log2(32) + log2(12) bits, under
 //! 9, and no character of the line.
+//!
+//! The model thinks before it answers, and its thinking counts against the allowance: on the live safe's source the
+//! TEE models spend 8 to 14 thousand tokens on it. So one attempt may use `MAX_TOKENS`, the allowance the arena's own
+//! masks play with. Time is OutLayer's to give: one run lasts at most `RUN_SECONDS`, and one request out of it only as
+//! long as the module's own manifest says (`manifest.json`, a section of the wasm), so the model has `MODEL_SECONDS`
+//! to answer. A model that takes longer earns `OUT_OF_TIME` and the seconds it was given: the run ends in order, no
+//! count leaves, and the mask pays nothing for that attempt.
 //!
 //! What goes in is fixed too: the caller's past attempts reach the model only as their verdict and, step by step, the
 //! method and whether it went through. No text of the caller's is read, so nobody can write the model an instruction
@@ -37,17 +45,36 @@ const LIVE_SAFE_MANIFEST: &str =
 const LIVE_SAFE_SOURCE: &str = include_str!("../../../contracts/challenges/live-safe/src/lib.rs");
 /// Past attempts the model sees, as the arena's own masks see them.
 const MEMORY: usize = 3;
-const MAX_TOKENS: u32 = 3000;
+/// The most tokens one answer may take, thinking included: what the arena's own masks play with
+/// (packages/race/src/agent.ts). The mask pays for the tokens the model really used, never for this allowance.
+pub const MAX_TOKENS: u32 = 24_000;
+/// The longest run OutLayer gives a module, in seconds: what the race job asks for (`max_execution_seconds`).
+pub const RUN_SECONDS: u64 = 180;
+/// How long the model may take to answer, in seconds: the time the module's manifest gives one request to NEAR AI
+/// Cloud. Under `RUN_SECONDS`, so that a late model ends the attempt in order, with the run's limit still ahead: a
+/// run that hits its limit is charged in full and answers nothing.
+pub const MODEL_SECONDS: u64 = 165;
+/// How long the module waits for NEAR AI Cloud to take the connection, in seconds.
+pub const CONNECT_SECONDS: u64 = 10;
+/// A request that ends in a timeout after this many seconds was waiting for the model, not for a connection: two
+/// addresses that take no connection end sooner, and the shortest time OutLayer gives a request is 30 seconds.
+pub const PATIENCE_SECONDS: u64 = 25;
 const TEMPERATURE: f32 = 0.4;
 /// The calls a person's mask plays on a live safe, and the arguments each takes: what its race key reaches.
 pub const PERSON_CALLS: [(&str, &[&str]); 2] =
     [("set_owner", &["new_owner"]), ("sweep", &["to", "amount"])];
 /// The most calls in a person's mask's plan. A drain is two: the safe to the mask, then the sweep.
 pub const PERSON_STEPS: usize = 4;
-/// Token counts leave in steps of this many, rounded down: the arena pays the rest.
-pub const TOKEN_STEP: u64 = 256;
-/// The only error a model's answer can earn: which way it failed is not told.
+/// Token counts leave in steps of this many, rounded down: the arena pays the rest. Twelve steps up to `MAX_TOKENS`.
+pub const TOKEN_STEP: u64 = 2048;
+/// The error an answer without a plan earns: which way it held none is not told.
 pub const NO_PLAN: &str = "the answer holds no plan the mask plays";
+/// The model thought until its allowance ran out and wrote no answer (`finish_reason: length`, no content). The
+/// tokens were spent all the same, and they are counted.
+pub const OUT_OF_TOKENS: &str = "the model spent all 24000 tokens before it answered";
+/// The model was still at work when its time ran out: these words, the seconds it was given, and ` seconds`
+/// (`out_of_time_words`). No count comes back for an answer that never came.
+pub const OUT_OF_TIME: &str = "the model did not answer in";
 /// The verdicts a past attempt may have, as the runner gives them.
 const VERDICTS: [&str; 5] = ["breach", "held", "invalid", "timeout", "error"];
 const ONE_NEAR: u128 = 1_000_000_000_000_000_000_000_000;
@@ -65,6 +92,17 @@ pub struct Words {
     pub targets: Vec<String>,
     /// The accounts that may ask for a plan: the keeper's, whose payment key pays for the run.
     pub callers: Vec<String>,
+    /// One attempt's allowance, as the race job reads it too (packages/race/src/brain.ts): the constants above.
+    pub limits: Limits,
+}
+
+/// One attempt's allowance in tokens and in time (`mind.json`, `limits`).
+#[derive(Deserialize, Debug, PartialEq)]
+pub struct Limits {
+    pub max_tokens: u32,
+    pub token_step: u64,
+    pub run_seconds: u64,
+    pub model_seconds: u64,
 }
 
 pub fn words() -> &'static Words {
@@ -213,7 +251,10 @@ pub struct Usage {
 
 /// The model's answer: its text stays in the TEE.
 pub struct Reply {
-    pub text: String,
+    /// What the model wrote; `None` when the answer carries no content at all.
+    pub text: Option<String>,
+    /// The answer was cut at the allowance (`finish_reason: length`).
+    pub cut: bool,
     /// The model that answered, as the provider says.
     pub model: String,
     pub usage: Usage,
@@ -265,7 +306,7 @@ pub struct PlanInput {
 pub struct Played {
     /// The plan, rebuilt by the module; `null` when the answer held none.
     pub plan: Value,
-    /// `NO_PLAN` when there is no plan.
+    /// Why there is no plan: `NO_PLAN` or `OUT_OF_TOKENS`.
     pub error: Option<String>,
     pub model: String,
     /// In steps of `TOKEN_STEP`, rounded down.
@@ -347,9 +388,19 @@ pub fn play(
     if !reply.model.is_empty() && reply.model != model {
         return Err("another model answered".into());
     }
-    let (plan, error) = match clean_plan(&reply.text, &target) {
-        Some(plan) => (plan, None),
-        None => (Value::Null, Some(NO_PLAN.to_string())),
+    let (plan, error) = match reply.text.as_deref() {
+        // A model that thinks until its allowance runs out answers with no content at all, or with an empty one.
+        // That is not an answer without a plan: the mask is told what happened, and the tokens, spent all the same,
+        // are counted below.
+        None if reply.cut => (Value::Null, Some(OUT_OF_TOKENS.to_string())),
+        Some(text) if reply.cut && text.trim().is_empty() => {
+            (Value::Null, Some(OUT_OF_TOKENS.to_string()))
+        }
+        None => return Err("NEAR AI's answer has no message".into()),
+        Some(text) => match clean_plan(text, &target) {
+            Some(plan) => (plan, None),
+            None => (Value::Null, Some(NO_PLAN.to_string())),
+        },
     };
     Ok(Played {
         plan,
@@ -360,15 +411,33 @@ pub fn play(
     })
 }
 
-/// Token counts in steps of `TOKEN_STEP`, rounded down: a count tells the answer's length only to within a step.
-/// The answer is cut at `MAX_TOKENS`, and the cached part is never more than the prompt.
+/// Whether a request to the model that failed with `error` after `waited` seconds failed because the model was still
+/// at work when the request's time ran out (`OUT_OF_TIME`), and not because NEAR AI Cloud could not be reached.
+/// OutLayer ends a request that outlives its time with a timeout error; a connection nobody takes ends with one too,
+/// but `CONNECT_SECONDS` after it was tried.
+pub fn out_of_time(error: &str, waited: u64) -> bool {
+    error.contains("Timeout") && waited >= PATIENCE_SECONDS
+}
+
+/// `OUT_OF_TIME` with the seconds the model was given: `MODEL_SECONDS` when the run is as long as the race job asks
+/// for, fewer when OutLayer gave the run or the request less. The number is OutLayer's clock, not the model's.
+pub fn out_of_time_words(waited: u64) -> String {
+    format!("{OUT_OF_TIME} {waited} seconds")
+}
+
+/// Token counts in steps of `TOKEN_STEP`, rounded down: a count tells the answer's length only to within a step, and
+/// the mask is charged for no token the model did not use. No answer is longer than `MAX_TOKENS`, so no count is.
+/// The prompt is two counts at two prices, the part the provider read from its cache and the part it read anew, and
+/// each is rounded down on its own: rounding the whole prompt and the cached part apart could move tokens from the
+/// cheap count to the dear one.
 pub fn stepped(u: Usage) -> Usage {
     let step = |n: u64| n / TOKEN_STEP * TOKEN_STEP;
-    let prompt_tokens = step(u.prompt_tokens);
+    let cached = u.cached_tokens.min(u.prompt_tokens);
+    let cached_tokens = step(cached);
     Usage {
-        prompt_tokens,
+        prompt_tokens: step(u.prompt_tokens - cached) + cached_tokens,
         completion_tokens: step(u.completion_tokens.min(u64::from(MAX_TOKENS))),
-        cached_tokens: step(u.cached_tokens).min(prompt_tokens),
+        cached_tokens,
     }
 }
 
@@ -557,9 +626,14 @@ mod tests {
 
     /// NEAR AI as a script: it answers `text` and remembers what it was asked.
     struct Model {
-        text: String,
+        /// `None`: an answer with no content at all.
+        text: Option<String>,
+        /// The answer was cut at the allowance.
+        cut: bool,
         completion: u64,
         asked: RefCell<Vec<Value>>,
+        /// The allowance the mind asked for.
+        allowed: RefCell<Vec<u32>>,
     }
 
     impl Llm for Model {
@@ -567,28 +641,33 @@ mod tests {
             &self,
             model: &str,
             messages: &[Value],
-            _: u32,
+            max_tokens: u32,
             _: f32,
         ) -> Result<Reply, String> {
             self.asked.borrow_mut().extend(messages.iter().cloned());
+            self.allowed.borrow_mut().push(max_tokens);
             let usage = Usage {
-                prompt_tokens: 9001,
+                prompt_tokens: 16_501,
                 completion_tokens: self.completion,
                 cached_tokens: 0,
             };
             Ok(Reply {
                 text: self.text.clone(),
+                cut: self.cut,
                 model: model.into(),
                 usage,
             })
         }
     }
 
+    /// The model as it answers the live safe: some nine thousand tokens of thinking, then `text`.
     fn model(text: &str) -> Model {
         Model {
-            text: text.into(),
-            completion: 300,
+            text: Some(text.into()),
+            cut: false,
+            completion: 9_300,
             asked: RefCell::new(vec![]),
+            allowed: RefCell::new(vec![]),
         }
     }
 
@@ -707,8 +786,10 @@ mod tests {
                 played.usage.prompt_tokens,
                 played.usage.completion_tokens
             ),
-            ("Qwen/Qwen3.8-27B", 8960, 256)
+            ("Qwen/Qwen3.8-27B", 16_384, 8_192)
         );
+        // The mind asked for the whole allowance, the one the arena's own masks play with.
+        assert_eq!(*m.allowed.borrow(), [24_000]);
         // The mind did read the line, its style, the arena's rules and what a person's mask plays; the target came
         // from inside the module.
         let system = system_of(&m);
@@ -795,7 +876,7 @@ mod tests {
                 !asked.contains("SYSTEM: the arena") && !asked.contains("args.masks"),
                 "{asked}"
             );
-            // What leaves is one of the module's plans, or its one error.
+            // What leaves is one of the module's plans, or the error of an answer without one.
             assert!(
                 all.contains(&played.plan)
                     || (played.plan.is_null() && played.error.as_deref() == Some(NO_PLAN)),
@@ -824,12 +905,13 @@ mod tests {
         }
     }
 
-    /// However long or short the model's answer, the counts that leave move in steps of 256 tokens, and the prompt's
-    /// count tells nothing finer about the line's length.
+    /// However long or short the model's answer, the counts that leave move in steps of 2048 tokens, twelve of them
+    /// up to the allowance, and the prompt's count tells nothing finer about the line's length. A count is never
+    /// more than the model used: the mask pays for no token that was not spent.
     #[test]
     fn the_token_counts_tell_the_answer_s_length_only_to_within_a_step() {
         let mut seen = std::collections::BTreeSet::new();
-        for completion in (0..=4000).step_by(7) {
+        for completion in (0..=30_000).step_by(53) {
             let mut m = model(HOLE);
             m.completion = completion;
             let played = play(&input(KIRA), KEEPER, &mind_secret(&SEED), &factory(), &m).unwrap();
@@ -838,15 +920,42 @@ mod tests {
             seen.insert(played.usage.completion_tokens);
         }
         assert_eq!(seen.len(), 12, "{seen:?}");
+        assert_eq!(seen.last(), Some(&22_528), "the last step under the allowance");
         let u = stepped(Usage {
-            prompt_tokens: 9001,
-            completion_tokens: 255,
-            cached_tokens: 9001,
+            prompt_tokens: 16_501,
+            completion_tokens: 2_047,
+            cached_tokens: 16_501,
         });
         assert_eq!(
             (u.prompt_tokens, u.completion_tokens, u.cached_tokens),
-            (8960, 0, 8960)
+            (16_384, 0, 16_384)
         );
+        // The prompt is two counts at two prices, and neither grows: with most of the prompt read from the cache,
+        // the part read anew, the dear one, is 201 tokens and counts as none, not as the 2048 that rounding the
+        // whole prompt and the cached part apart would make of it.
+        let u = stepped(Usage {
+            prompt_tokens: 16_501,
+            completion_tokens: 10_300,
+            cached_tokens: 16_300,
+        });
+        assert_eq!(
+            (u.prompt_tokens, u.completion_tokens, u.cached_tokens),
+            (14_336, 10_240, 14_336)
+        );
+        // Whatever the counts, each part that leaves is a whole number of steps and no more than was used.
+        for prompt in (0..40_000u64).step_by(977) {
+            for cached in (0..=prompt + 3_000).step_by(1_531) {
+                let u = stepped(Usage {
+                    prompt_tokens: prompt,
+                    completion_tokens: 0,
+                    cached_tokens: cached,
+                });
+                let fresh = u.prompt_tokens - u.cached_tokens;
+                assert_eq!((fresh % TOKEN_STEP, u.cached_tokens % TOKEN_STEP), (0, 0));
+                assert!(u.cached_tokens <= cached.min(prompt));
+                assert!(fresh <= prompt - cached.min(prompt), "{prompt} {cached}");
+            }
+        }
         // Two lines of different lengths cost the same steps.
         let count = |line: &str| {
             let m = model(HOLE);
@@ -980,6 +1089,122 @@ mod tests {
                 .strategy
         );
         assert!(!system_of(&m).contains(LINE));
+    }
+
+    /// The first round of the season, 10.11: the TEE models think before they answer, the thinking counts against the
+    /// allowance, and with too small a one the answer came back with no content at all (`finish_reason: length`).
+    /// The mind says so in plain words, apart from an answer without a plan, and the tokens, spent all the same, are
+    /// counted: the whole allowance and nothing above it.
+    #[test]
+    fn a_model_that_spends_its_allowance_before_it_answers_is_named_so() {
+        let mut m = model("");
+        m.text = None;
+        m.cut = true;
+        m.completion = 24_000;
+        let played = play(&input(KIRA), KEEPER, &mind_secret(&SEED), &factory(), &m).unwrap();
+        assert_eq!(played.plan, Value::Null);
+        assert_eq!(played.error.as_deref(), Some(OUT_OF_TOKENS));
+        assert_ne!(OUT_OF_TOKENS, NO_PLAN);
+        assert_eq!(
+            (played.usage.prompt_tokens, played.usage.completion_tokens),
+            (16_384, 22_528)
+        );
+        // A provider that counts more than it was allowed is not believed.
+        m.completion = 90_000;
+        let played = play(&input(KIRA), KEEPER, &mind_secret(&SEED), &factory(), &m).unwrap();
+        assert_eq!(played.usage.completion_tokens, 22_528);
+        // The same with an empty text in place of none.
+        let mut m = model("  \n");
+        m.cut = true;
+        m.completion = 24_000;
+        let played = play(&input(KIRA), KEEPER, &mind_secret(&SEED), &factory(), &m).unwrap();
+        assert_eq!(played.error.as_deref(), Some(OUT_OF_TOKENS));
+        // An empty answer that was not cut is an answer without a plan.
+        let played = play(&input(KIRA), KEEPER, &mind_secret(&SEED), &factory(), &model("")).unwrap();
+        assert_eq!(played.error.as_deref(), Some(NO_PLAN));
+        // An answer cut in the middle of its text is an answer: here it holds no plan.
+        let mut m = model(r#"{"steps":[{"kind":"call","method":"set_ow"#);
+        m.cut = true;
+        let played = play(&input(KIRA), KEEPER, &mind_secret(&SEED), &factory(), &m).unwrap();
+        assert_eq!(played.error.as_deref(), Some(NO_PLAN));
+        // And one cut after the plan was whole plays it.
+        let mut m = model(&format!("{HOLE}\nThe first call makes me the owner, the sec"));
+        m.cut = true;
+        let played = play(&input(KIRA), KEEPER, &mind_secret(&SEED), &factory(), &m).unwrap();
+        assert_eq!((played.plan, played.error), (drain(), None));
+        // No content and no cut: the provider's fault, not the model's allowance. Nothing is counted.
+        let mut m = model("");
+        m.text = None;
+        let err = play(&input(KIRA), KEEPER, &mind_secret(&SEED), &factory(), &m).unwrap_err();
+        assert_eq!(err, "NEAR AI's answer has no message");
+    }
+
+    /// One attempt's allowance is written once, in `mind.json`, for the module and for the race job that waits for
+    /// it; the module's manifest, a section of the wasm that OutLayer reads, gives one request to NEAR AI Cloud that
+    /// long and lets the module reach no other host. All of it fits what OutLayer gives one run.
+    #[test]
+    fn one_attempt_fits_what_outlayer_gives_one_run() {
+        assert_eq!(
+            words().limits,
+            Limits {
+                max_tokens: MAX_TOKENS,
+                token_step: TOKEN_STEP,
+                run_seconds: RUN_SECONDS,
+                model_seconds: MODEL_SECONDS
+            }
+        );
+        // OutLayer's own bounds (its contract's MAX_EXECUTION_SECONDS and its worker's manifest rules): a run lasts
+        // at most 180 seconds, and a request at most what its host's entry names, 1 to 180, never past the run's end.
+        assert!(RUN_SECONDS <= 180 && MODEL_SECONDS + 10 <= RUN_SECONDS);
+        let manifest: Value = serde_json::from_str(include_str!("../manifest.json")).unwrap();
+        assert_eq!(
+            manifest,
+            json!({ "capabilities": { "network": [{ "host": "cloud-api.near.ai", "timeout_secs": MODEL_SECONDS }] } })
+        );
+        // The errors name the same numbers.
+        assert!(OUT_OF_TOKENS.contains(&format!(" {MAX_TOKENS} tokens")));
+        assert_eq!(
+            out_of_time_words(MODEL_SECONDS),
+            "the model did not answer in 165 seconds"
+        );
+        // Twelve steps and no more: what a count can tell.
+        assert_eq!(u64::from(MAX_TOKENS) / TOKEN_STEP + 1, 12);
+    }
+
+    /// What one attempt can cost is bounded by its answer, `MAX_TOKENS`, and by its prompt. The race job prices the
+    /// prompt at no more than 20 000 tokens (packages/race/src/brain.ts, `PROMPT_TOKENS_CEILING`); the largest prompt
+    /// the module can write, with the longest strategy and a full memory of the longest attempts, stays under 60 000
+    /// bytes, and a token is never under three bytes of this text on average.
+    #[test]
+    fn the_largest_prompt_stays_under_the_size_the_race_job_prices() {
+        let t = target("live-safe").unwrap();
+        let longest = "я".repeat(crate::MAX_CHARS);
+        let step = json!({ "method": "set_owner", "ok": false });
+        let attempt = json!({ "verdict": "invalid", "steps": vec![step; 50] });
+        let style = words().styles.values().max_by_key(|s| s.len()).unwrap();
+        let messages = prompt(&t, style, Some(&longest), &vec![attempt; 10]);
+        let bytes: usize = messages
+            .iter()
+            .map(|m| m["content"].as_str().unwrap().len())
+            .sum();
+        assert!(bytes > 50_000 && bytes < 60_000, "{bytes} bytes");
+    }
+
+    /// OutLayer ends a request that outlives its time with `ConnectionTimeout`. After minutes of waiting that is the
+    /// model still at work; within the connect timeout it is NEAR AI Cloud not taking the connection.
+    #[test]
+    fn a_late_model_is_told_from_an_unreachable_one() {
+        assert!(out_of_time("ErrorCode::ConnectionTimeout", MODEL_SECONDS));
+        assert!(out_of_time("ErrorCode::ConnectionReadTimeout", 90));
+        // A run OutLayer gave only its default time, or a worker that did not read the manifest: the request ends
+        // at 30 or 60 seconds, and the words say so instead of blaming the network.
+        assert!(out_of_time("ErrorCode::ConnectionTimeout", 30));
+        assert_eq!(out_of_time_words(30), "the model did not answer in 30 seconds");
+        // One address or two that take no connection are not a late model.
+        assert!(!out_of_time("ErrorCode::ConnectionTimeout", CONNECT_SECONDS));
+        assert!(!out_of_time("ErrorCode::ConnectionTimeout", 2 * CONNECT_SECONDS));
+        assert!(!out_of_time("ErrorCode::ConnectionRefused", MODEL_SECONDS));
+        assert!(!out_of_time("ErrorCode::InternalError(Some(\"destination blocked\"))", 0));
     }
 
     #[test]

@@ -70,7 +70,7 @@
   display: grid;
   gap: 10px;
   width: max-content;
-  max-width: min(420px, calc(100vw - 32px));
+  max-width: min(468px, calc(100vw - 32px));
   padding: 16px 18px;
   border-radius: var(--radius);
   background: var(--ink-2);
@@ -78,6 +78,8 @@
     inset 0 0 0 1px var(--line),
     0 24px 48px color-mix(in srgb, var(--ink) 80%, transparent);
   text-align: left;
+  /* The «i» often stands on a line that never wraps: its sheet does, so a long account stays inside it. */
+  white-space: normal;
   animation: rise 180ms cubic-bezier(0.2, 0, 0, 1);
 }
 

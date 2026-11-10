@@ -71,8 +71,8 @@ export function compose(frame: Frame): Composition {
 
   // The masks: a shallow arc in front, below the horizon, never over the vault.
   const gap = 0.05 * avail;
-  // Under the horizon the mask and its name must fit: a short landscape screen gets a smaller mask.
-  const below = (1 - HORIZON) * avail - gap - 40;
+  // Under the horizon the mask and its name plate must fit: a short screen gets a smaller mask.
+  const below = (1 - HORIZON) * avail - gap - 48;
   const hm = Math.min(portrait ? Math.min(0.38 * w, 0.24 * avail) : Math.min(0.24 * avail, 0.15 * w, 250), below);
   const my = horizon + gap + hm / 2;
   const sx = portrait ? 0.31 * w : Math.min(0.26 * w, 2.9 * hm);

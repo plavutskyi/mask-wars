@@ -16,4 +16,10 @@ cargo_home="$(cd "${CARGO_HOME:-$HOME/.cargo}" && pwd -P)"
 export RUSTFLAGS="--remap-path-prefix=$here=/maskwars/services/brain --remap-path-prefix=$repo=/maskwars --remap-path-prefix=$cargo_home=/cargo"
 export CARGO_TARGET_DIR="$here/target"
 cargo build --release --locked --target wasm32-wasip2 ${features[@]+"${features[@]}"}
+# The module's manifest (manifest.json) travels inside the wasm, in the section OutLayer reads (src/main.rs). Without
+# it OutLayer gives a request 30 seconds, and a model that thinks for minutes would never be heard.
+if ! grep -qaF "outlayer.manifest$(cat manifest.json)" target/wasm32-wasip2/release/maskwars-brain.wasm; then
+  echo "the wasm does not carry manifest.json in its outlayer.manifest section" >&2
+  exit 1
+fi
 sha256sum target/wasm32-wasip2/release/maskwars-brain.wasm

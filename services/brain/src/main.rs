@@ -3,12 +3,26 @@
 // the module first checks the run's signer (`NEAR_SENDER_ID`, over HTTPS the payment key's owner) against the keeper,
 // then reads the factory through the worker's own RPC and asks NEAR AI Cloud over HTTPS with the project's secret
 // `NEAR_AI_API_KEY`, both from inside the TEE.
+//
+// The module carries its own manifest (`manifest.json`) in the wasm section OutLayer reads, `outlayer.manifest`, under
+// the same sha256 as the code. It says two things: the module reaches cloud-api.near.ai over HTTPS and no other host,
+// and one request there may take `MODEL_SECONDS`, in place of the 30 seconds OutLayer gives a request otherwise. The
+// models think for minutes on the live safe, so without it no answer would ever come back.
+
+/// `#[used]` keeps the linker from dropping a static nothing reads.
+#[cfg(target_os = "wasi")]
+#[used]
+#[link_section = "outlayer.manifest"]
+static OUTLAYER_MANIFEST: [u8; include_bytes!("../manifest.json").len()] =
+    *include_bytes!("../manifest.json");
 
 #[cfg(target_os = "wasi")]
 mod world {
-    use maskwars_brain::mind::{Chain, Llm, Reply, Usage};
+    use maskwars_brain::mind::{
+        out_of_time, out_of_time_words, Chain, Llm, Reply, Usage, CONNECT_SECONDS,
+    };
     use serde_json::{json, Value};
-    use std::time::Duration;
+    use std::time::{Duration, Instant};
     use wasi_http_client::Client;
 
     /// The NEAR RPC that the OutLayer worker itself gives the module (`near:rpc`), for the network it serves.
@@ -39,6 +53,11 @@ mod world {
         ) -> Result<Reply, String> {
             let body = json!({ "model": model, "messages": messages, "stream": false, "max_tokens": max_tokens,
                                "temperature": temperature });
+            // The answer is not streamed, so nothing comes back until the model is done. OutLayer ends the request
+            // after the time the manifest names for this host (`MODEL_SECONDS`), or sooner when the run has less
+            // left; the run itself goes on, and the module says what happened, with the seconds the model was given,
+            // instead of running into the run's own limit.
+            let asked = Instant::now();
             let res = Client::new()
                 .post("https://cloud-api.near.ai/v1/chat/completions")
                 .header("content-type", "application/json")
@@ -47,9 +66,16 @@ mod world {
                 .header("x-no-aliasing", "true")
                 .header("user-agent", "maskwars-brain")
                 .body(body.to_string().as_bytes())
-                .connect_timeout(Duration::from_secs(10))
+                .connect_timeout(Duration::from_secs(CONNECT_SECONDS))
                 .send()
-                .map_err(|_| "NEAR AI is unreachable".to_string())?;
+                .map_err(|e| {
+                    let waited = asked.elapsed().as_secs();
+                    if out_of_time(&format!("{e:?}"), waited) {
+                        out_of_time_words(waited)
+                    } else {
+                        "NEAR AI is unreachable".to_string()
+                    }
+                })?;
             let status = res.status();
             if status != 200 {
                 return Err(format!("NEAR AI answered {status}"));
@@ -59,9 +85,11 @@ mod world {
                 .map_err(|_| "NEAR AI's answer was cut".to_string())?;
             let v: Value = serde_json::from_slice(&body)
                 .map_err(|_| "NEAR AI's answer is not JSON".to_string())?;
+            // A model that thinks until its allowance runs out answers with no content and `finish_reason: length`.
             let text = v["choices"][0]["message"]["content"]
                 .as_str()
-                .ok_or("NEAR AI's answer has no message")?;
+                .map(str::to_string);
+            let cut = v["choices"][0]["finish_reason"] == "length";
             let usage = Usage {
                 prompt_tokens: v["usage"]["prompt_tokens"].as_u64().unwrap_or(0),
                 completion_tokens: v["usage"]["completion_tokens"].as_u64().unwrap_or(0),
@@ -70,7 +98,8 @@ mod world {
                     .unwrap_or(0),
             };
             Ok(Reply {
-                text: text.to_string(),
+                text,
+                cut,
                 model: v["model"].as_str().unwrap_or_default().to_string(),
                 usage,
             })

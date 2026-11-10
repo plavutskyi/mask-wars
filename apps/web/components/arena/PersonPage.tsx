@@ -1,5 +1,5 @@
 import { accountUrl } from '@maskwars/arena/config';
-import { duration, near, raceNo } from '@maskwars/arena/format';
+import { duration, near } from '@maskwars/arena/format';
 import { look as lookOf, mind as mindOf, nearText, STYLES, times, timesText } from '@maskwars/forge';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -9,6 +9,7 @@ import { day } from '@/lib/show';
 import { CopyPanel } from './CopyPanel';
 import { Header } from './Header';
 import { Info, type InfoRow } from './Info';
+import { raceName } from './names';
 import { Nums } from './Nums';
 import { TakeOut } from './TakeOut';
 import { World } from './World';
@@ -127,7 +128,7 @@ export function PersonPage({ person }: { person: Person }) {
               <li key={h.id}>
                 <Link href={`/race/${h.id}`} className={s.rowLink} data-won={h.won ? '' : undefined}>
                   <span className={`${s.word} ${s.rowName}`}>
-                    <Nums text={`Race ${raceNo(h.id)}`} />
+                    <Nums text={raceName(h.id)} />
                   </span>
                   <span className={s.rowWhen}>{day(h.at)}</span>
                   <span className={s.rowResult}>

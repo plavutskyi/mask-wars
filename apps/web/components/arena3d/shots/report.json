@@ -1,6 +1,6 @@
 {
-  "base": "http://localhost:3123",
-  "at": "2026-11-08T11:31:54.152Z",
+  "base": "http://localhost:3190",
+  "at": "2026-11-10T14:05:00.457Z",
   "shots": [
     {
       "file": "idle-desk.jpg",
@@ -63,5 +63,50 @@
       "tier": "high"
     }
   ],
-  "problems": []
+  "problems": [
+    "idle-desk: warning: THREE.WebGLRenderer: KHR_parallel_shader_compile extension not supported.",
+    "idle-desk: warning: The resource http://localhost:3190/_next/static/chunks/1g-vd0-w6abh5.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+    "live-desk: warning: THREE.WebGLRenderer: KHR_parallel_shader_compile extension not supported.",
+    "live-desk: warning: The resource http://localhost:3190/_next/static/chunks/1g-vd0-w6abh5.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+    "live-desk: warning: The resource http://localhost:3190/_next/static/chunks/1g-vd0-w6abh5.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+    "breach-desk: warning: THREE.WebGLRenderer: KHR_parallel_shader_compile extension not supported.",
+    "breach-desk: warning: The resource http://localhost:3190/_next/static/chunks/1g-vd0-w6abh5.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+    "breach-desk: warning: The resource http://localhost:3190/_next/static/chunks/1g-vd0-w6abh5.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+    "paid-desk: warning: THREE.WebGLRenderer: KHR_parallel_shader_compile extension not supported.",
+    "paid-desk: warning: The resource http://localhost:3190/_next/static/chunks/1g-vd0-w6abh5.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+    "paid-desk: warning: The resource http://localhost:3190/_next/static/chunks/1g-vd0-w6abh5.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+    "held-desk: warning: THREE.WebGLRenderer: KHR_parallel_shader_compile extension not supported.",
+    "held-desk: warning: The resource http://localhost:3190/_next/static/chunks/1g-vd0-w6abh5.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+    "held-desk: warning: The resource http://localhost:3190/_next/static/chunks/1g-vd0-w6abh5.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+    "idle-phone: warning: THREE.WebGLRenderer: KHR_parallel_shader_compile extension not supported.",
+    "idle-phone: warning: The resource http://localhost:3190/_next/static/chunks/1g-vd0-w6abh5.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+    "idle-phone: warning: The resource http://localhost:3190/_next/static/chunks/1g-vd0-w6abh5.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+    "live-phone: warning: THREE.WebGLRenderer: KHR_parallel_shader_compile extension not supported.",
+    "live-phone: warning: The resource http://localhost:3190/_next/static/chunks/1g-vd0-w6abh5.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+    "live-phone: warning: The resource http://localhost:3190/_next/static/chunks/1g-vd0-w6abh5.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+    "breach-phone: warning: THREE.WebGLRenderer: KHR_parallel_shader_compile extension not supported.",
+    "breach-phone: warning: The resource http://localhost:3190/_next/static/chunks/1g-vd0-w6abh5.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+    "breach-phone: warning: The resource http://localhost:3190/_next/static/chunks/1g-vd0-w6abh5.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+    "paid-phone: warning: THREE.WebGLRenderer: KHR_parallel_shader_compile extension not supported.",
+    "paid-phone: warning: The resource http://localhost:3190/_next/static/chunks/1g-vd0-w6abh5.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+    "paid-phone: warning: The resource http://localhost:3190/_next/static/chunks/1g-vd0-w6abh5.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+    "held-phone: warning: THREE.WebGLRenderer: KHR_parallel_shader_compile extension not supported.",
+    "held-phone: warning: The resource http://localhost:3190/_next/static/chunks/1g-vd0-w6abh5.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+    "held-phone: warning: The resource http://localhost:3190/_next/static/chunks/1g-vd0-w6abh5.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+    "live-phone-low: warning: THREE.WebGLRenderer: KHR_parallel_shader_compile extension not supported.",
+    "live-phone-low: warning: The resource http://localhost:3190/_next/static/chunks/1g-vd0-w6abh5.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+    "live-phone-low: warning: The resource http://localhost:3190/_next/static/chunks/1g-vd0-w6abh5.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+    "paid-phone-low: warning: THREE.WebGLRenderer: KHR_parallel_shader_compile extension not supported.",
+    "paid-phone-low: warning: The resource http://localhost:3190/_next/static/chunks/1g-vd0-w6abh5.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+    "paid-phone-low: warning: The resource http://localhost:3190/_next/static/chunks/1g-vd0-w6abh5.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+    "breach-desk-reduced: warning: THREE.WebGLRenderer: KHR_parallel_shader_compile extension not supported.",
+    "breach-desk-reduced: warning: The resource http://localhost:3190/_next/static/chunks/1g-vd0-w6abh5.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+    "breach-desk-reduced: warning: The resource http://localhost:3190/_next/static/chunks/1g-vd0-w6abh5.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+    "live-desk-page: warning: THREE.WebGLRenderer: KHR_parallel_shader_compile extension not supported.",
+    "live-desk-page: warning: The resource http://localhost:3190/_next/static/chunks/1g-vd0-w6abh5.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+    "live-desk-page: warning: The resource http://localhost:3190/_next/static/chunks/1g-vd0-w6abh5.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+    "live-phone-page: warning: THREE.WebGLRenderer: KHR_parallel_shader_compile extension not supported.",
+    "live-phone-page: warning: The resource http://localhost:3190/_next/static/chunks/1g-vd0-w6abh5.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally.",
+    "live-phone-page: warning: The resource http://localhost:3190/_next/static/chunks/1g-vd0-w6abh5.css was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally."
+  ]
 }

@@ -28,7 +28,7 @@ during NEAR HACKATHON, which opened on 2026-10-19 (see the README for the baseli
 | 2026-11-07 | Agent Market client: races as competitions, MASK CHECK as a service |
 | 2026-11-08 → 2026-11-10 | A person's vault: passkey, deposit from any chain and payout through NEAR Intents |
 | 2026-11-08 → 2026-11-10 | Season treasury: a round a day on a fresh safe from one published code, opened by a scheduler key that can do nothing else |
-| 2026-11-08 | People's masks in sealed rounds: the keeper arms a mask for a round and charges what its mind really spent |
+| 2026-11-08 → 2026-11-10 | People's masks in sealed rounds: the keeper arms a mask for a round and charges what its mind really spent |
 | 2026-11-08 → 2026-11-10 | Jobs market and crews: a client locks NEAR on a job, masks take it alone or as a crew, the contract splits the reward by contribution |
 | 2026-11-08 → 2026-11-10 | Hire the swarm: an embeddable button and checkout that orders a job from any chain |
 | 2026-11-09 → 2026-11-10 | Job judges in a TEE: a client's private tests, and an AI review by a published rubric |

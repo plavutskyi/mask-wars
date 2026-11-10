@@ -1,6 +1,6 @@
 import type { Race, RaceEvent, Who } from '@maskwars/arena';
 import { accountUrl, txUrl } from '@maskwars/arena/config';
-import { duration, near, raceNo } from '@maskwars/arena/format';
+import { duration, near } from '@maskwars/arena/format';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { CSSProperties } from 'react';
@@ -9,6 +9,7 @@ import { Mark } from '../Mark';
 import { Clock } from './Clock';
 import { Header } from './Header';
 import { Info, type InfoRow } from './Info';
+import { raceName, raceTitle } from './names';
 import { Nums } from './Nums';
 import { Refresh } from './Refresh';
 import { World } from './World';
@@ -21,7 +22,7 @@ function title(r: Race): string {
   }
   if (r.phase === 'sealing') return 'Masks are sealing';
   if (r.phase === 'racing') return 'The safe is open';
-  return r.kind === 'safe' ? 'The safe held' : 'Nobody got through';
+  return r.kind === 'safe' ? 'The vault held' : 'Nobody got through';
 }
 
 /** +8:13 from the opening; −0:26 before it. */
@@ -107,6 +108,7 @@ export function RacePage({ race: r, prev, next }: { race: Race; prev: Race | nul
   const numberTone = r.phase === 'broken' ? 'money' : 'plain';
 
   const facts: InfoRow[] = [
+    { label: 'Id', value: r.id },
     { label: 'Contract', value: r.contract, href: accountUrl(r.contract) },
     { label: r.kind === 'safe' ? 'Safe' : 'Target', value: r.target, href: r.kind === 'safe' ? accountUrl(r.target) : undefined },
     ...(r.targetCode ? [{ label: 'Target fingerprint', value: r.targetCode }] : []),
@@ -139,7 +141,7 @@ export function RacePage({ race: r, prev, next }: { race: Race; prev: Race | nul
       <section className={s.hero} data-art={art ? '' : undefined}>
         <div className={s.heroText}>
           <p className={`${s.word} ${s.kicker}`}>
-            <Nums text={`Race ${raceNo(r.id)} · ${day(r.openedAt)}`} />
+            <Nums text={`${raceTitle(r.id)} · ${day(r.openedAt)}`} />
           </p>
           <Title text={title(r)} />
           <div className={s.big}>
@@ -208,7 +210,7 @@ export function RacePage({ race: r, prev, next }: { race: Race; prev: Race | nul
       <nav className={s.pager} aria-label="Races">
         {prev ? (
           <Link href={`/race/${prev.id}`} className={s.pagerLink}>
-            <span aria-hidden>←</span> Race {raceNo(prev.id)}
+            <span aria-hidden>←</span> {raceName(prev.id)}
           </Link>
         ) : (
           <span />
@@ -218,7 +220,7 @@ export function RacePage({ race: r, prev, next }: { race: Race; prev: Race | nul
         </Link>
         {next ? (
           <Link href={`/race/${next.id}`} className={s.pagerLink}>
-            Race {raceNo(next.id)} <span aria-hidden>→</span>
+            {raceName(next.id)} <span aria-hidden>→</span>
           </Link>
         ) : (
           <span />

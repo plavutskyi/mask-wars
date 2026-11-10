@@ -6,6 +6,11 @@
   --V: min(46svh, 52vw, 560px);
   --heat: 0;
   --c: var(--ice);
+  /* What the header and the deck keep of the screen: the flat arena composes between them, as the 3D one does
+     between their measured heights. The deck is its padding, the button, the quiet link (see .deck). */
+  --top: calc(64px + env(safe-area-inset-top));
+  --bottom: calc(170px + env(safe-area-inset-bottom));
+  container: screen / size;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -17,17 +22,17 @@
 }
 
 .screen[data-tone='ember'],
-.mask[data-tone='ember'] {
+.fMask[data-tone='ember'] {
   --c: var(--ember);
 }
 
 .screen[data-tone='violet'],
-.mask[data-tone='violet'] {
+.fMask[data-tone='violet'] {
   --c: var(--violet);
 }
 
 .screen[data-tone='ice'],
-.mask[data-tone='ice'] {
+.fMask[data-tone='ice'] {
   --c: var(--ice);
 }
 
@@ -67,6 +72,15 @@
 .worldImg {
   object-fit: cover;
   object-position: center 60%;
+}
+
+/* The header stands on ink: the rig of lights at the top of the arena frame never runs through its words. */
+.flatBack::after {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: calc(var(--top) + 96px);
+  background: linear-gradient(to bottom, var(--ink) 0 calc(var(--top) + 36px), transparent);
 }
 
 /* Light = data: the leader's colour behind the vault, brighter as it closes in; amber when the vault is taken. */
@@ -116,6 +130,7 @@
 }
 
 [data-three] .flatBack,
+[data-three] .flat,
 [data-three] .stage,
 [data-three] .board {
   visibility: hidden;
@@ -159,7 +174,351 @@
   transform: translateY(-0.04em);
 }
 
-/* The vault ------------------------------------------------------------------------------------------------------ */
+/* The flat arena ---------------------------------------------------------------------------------------------- */
+
+/* Composed by the numbers of the 3D arena (arena3d/layout.ts and arena3d.module.css): the horizon at 62 %, the vault
+   over it, three masks in a shallow arc under it. So the first paint is the finished frame, and when the 3D arena
+   dissolves in over it nothing moves. */
+.flat {
+  --avail: calc(100cqh - var(--top) - var(--bottom));
+  --hz: calc(var(--top) + var(--avail) * 0.62);
+  --gap: calc(var(--avail) * 0.05);
+  --D: min(calc(var(--avail) * 0.56), 50cqw, 560px);
+  --hm: min(calc(var(--avail) * 0.24), 15cqw, 250px, calc(var(--avail) * 0.38 - var(--gap) - 48px));
+  --sx: min(26cqw, calc(var(--hm) * 2.9));
+  --side: calc(var(--avail) * 0.02);
+  --vy: calc(var(--hz) - var(--D) / 2 - var(--avail) * 0.02);
+  --my: calc(var(--hz) + var(--gap) + var(--hm) / 2);
+  /* Three sizes on screen (BRANDBOOK §4): the number, the names, the word. */
+  --t-word: 15px;
+  --t-mid: clamp(22px, calc(var(--D) * 0.068), 30px);
+  --t-name: clamp(20px, calc(var(--D) * 0.062), 26px);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* The page keeps the room between the header and the deck that the flat arena is drawn in. */
+.fill {
+  flex: 1;
+  min-height: 0;
+}
+
+/* The vault's ring, D across, around the same centre as the 3D door. The frame is a little larger than its ring and
+   the ring sits a little left and high in it: the frame is placed so the ring lands on the box. */
+.fVault {
+  position: absolute;
+  left: calc(50cqw - var(--D) / 2);
+  top: calc(var(--vy) - var(--D) / 2);
+  width: var(--D);
+  height: var(--D);
+}
+
+.fVault .half {
+  inset: -4.4% auto auto -5.1% !important;
+  width: 114.5% !important;
+  height: 114.5% !important;
+}
+
+.half {
+  object-fit: contain;
+  mix-blend-mode: lighten;
+  transition: transform 700ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* The seam of The Split: the closer the leader, the wider the vault opens. */
+.hl {
+  clip-path: inset(0 51.9% 0 0);
+  transform: translateX(calc(var(--heat) * var(--heat) * -10px));
+}
+
+.hr {
+  clip-path: inset(0 0 0 48.1%);
+  transform: translateX(calc(var(--heat) * var(--heat) * 10px));
+}
+
+.seam {
+  position: absolute;
+  left: 50%;
+  top: 3%;
+  bottom: 3%;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--c);
+  opacity: calc(0.3 + 0.7 * var(--heat));
+  transition:
+    opacity 700ms cubic-bezier(0.2, 0, 0, 1),
+    background-color 600ms;
+}
+
+[data-phase='sealing'] .seam,
+[data-phase='empty'] .seam {
+  opacity: 0.3;
+}
+
+[data-phase='held'] .seam {
+  opacity: 0.85;
+}
+
+/* The door: the sum in its middle and the round's name under it; or, with no sum to show, what happened. */
+.fDoor {
+  position: absolute;
+  left: 50cqw;
+  top: var(--vy);
+  /* Over the masks: the sheet of «i» opens down across them. */
+  z-index: 1;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+/* A pool of ink under the number, so the seam never cuts through it. */
+.fDoor::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(var(--D) * 0.66);
+  height: calc(var(--D) * 0.42);
+  /* A little low: it holds the line under the number too. */
+  transform: translate(-50%, -40%);
+  border-radius: 50%;
+  background: var(--ink);
+  filter: blur(calc(var(--D) * 0.05));
+  opacity: 0.9;
+  z-index: -1;
+}
+
+.fSum {
+  --chars: 7;
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: center;
+  white-space: nowrap;
+  font-family: var(--font-num);
+  font-weight: 800;
+  font-stretch: 125%;
+  /* A long sum gives up size before it reaches the ring. */
+  font-size: min(calc(var(--D) * 0.15), calc(var(--D) * 1.02 / var(--chars)), 76px);
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+.fUnit {
+  margin-left: 0.3em;
+  font-size: 0.34em;
+  letter-spacing: 0.08em;
+  color: var(--ice-60);
+}
+
+/* The line under the number. Absolute, so the number stands in the very middle of the door. */
+.fUnder {
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: calc(var(--D) * 0.04);
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: var(--t-word);
+}
+
+.fLine {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.42em;
+}
+
+.fLine .word {
+  letter-spacing: 0.06em;
+}
+
+.fNum {
+  font-family: var(--font-num);
+  font-weight: 800;
+  font-stretch: 125%;
+  font-size: 1.12em;
+  letter-spacing: 0.02em;
+}
+
+/* Another team's safe has no name of ours: its account, set as an account reads. */
+.fAccount {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ice-60);
+}
+
+/* The quiet «i» on its own disc of ink, so the seam passes behind it. */
+.fAside {
+  position: relative;
+  display: inline-flex;
+  pointer-events: auto;
+}
+
+.fAside::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  background: var(--ink);
+}
+
+.fHeadline {
+  --chars: 12;
+  white-space: nowrap;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.12em;
+  /* Sized by its longest line, so it never reaches the ring. */
+  font-size: min(var(--t-mid), calc(var(--D) * 0.68 / var(--chars)));
+  line-height: 1.1;
+  letter-spacing: 0.03em;
+}
+
+/* The masks: one step apart, the middle one a little lower and larger, as the 3D arena stands them. */
+.fMasks {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(var(--my) - var(--hm) / 2);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fMask {
+  --s: var(--hm);
+  --cw: 0.95;
+  flex: none;
+  width: var(--sx);
+  min-width: 0;
+}
+
+.flat[data-masks='3'] .fMask:first-child,
+.flat[data-masks='3'] .fMask:last-child {
+  --s: calc(var(--hm) * 0.93);
+  margin-top: calc(var(--hm) * 0.035 - var(--side));
+}
+
+.fLink {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  pointer-events: auto;
+}
+
+/* A mask's frame is black around the mask (1280 px, the mask 1056 px tall from 56 px): the frame is placed so the
+   mask itself is `--s` tall from the row's top, and its name starts 10 px under its chin. Each mask stands in its own
+   light; the one closest to the safe burns brightest. */
+.fFace {
+  position: relative;
+  flex: none;
+  width: calc(var(--s) * 1.212);
+  height: calc(var(--s) * 1.212);
+  margin-top: calc(var(--s) * -0.053);
+  margin-bottom: calc(var(--s) * -0.159 + 10px);
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--c) calc(10% + 16% * var(--h)), transparent), transparent 62%);
+}
+
+/* The art is never dimmed into the floor: waiting masks keep their faces and their eyes. Dimmed with a filter on the
+   image itself: opacity on a wrapper would isolate the blend and show the art's black. */
+.fFace img {
+  object-fit: contain;
+  mix-blend-mode: lighten;
+  filter: brightness(calc(0.84 + 0.16 * var(--h))) saturate(calc(0.85 + 0.15 * var(--h)));
+  transition: filter 600ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.fMask[data-lead] .fFace img {
+  filter: none;
+}
+
+/* A mask the arena has no art for wears the mark in its own light. */
+.fMark {
+  position: absolute;
+  inset: 12% 27% 20%;
+  color: var(--c);
+  opacity: calc(0.45 + 0.5 * var(--h));
+}
+
+.fMaskName {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  /* A name too wide for its step gives up size, down to 12 px, before it is cut: about .95em a letter. */
+  font-size: max(12px, min(var(--t-name), calc((var(--sx) - 12px) / (var(--chars, 6) * var(--cw)))));
+  line-height: 1.15;
+  letter-spacing: 0.04em;
+  color: var(--ice);
+}
+
+/* Long names narrow along the width axis first (BRANDBOOK §4): about .6em a letter there. */
+.fMask[data-long] {
+  --cw: 0.6;
+}
+
+.fMask[data-long] .fMaskName {
+  font-stretch: 85%;
+  letter-spacing: 0.02em;
+}
+
+.fNote {
+  margin-top: 4px;
+  font-size: var(--t-word);
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--ice-60);
+  white-space: nowrap;
+}
+
+.fNote b {
+  font-weight: 800;
+  font-stretch: 125%;
+  color: var(--ice);
+}
+
+/* A narrow screen: the vault takes the width, the masks stand closer. */
+@container screen (max-aspect-ratio: 9 / 10) {
+  .flat {
+    --D: min(86cqw, calc(var(--avail) * 0.5), 440px);
+    --hm: min(38cqw, calc(var(--avail) * 0.24), calc(var(--avail) * 0.38 - var(--gap) - 48px));
+    --sx: 31cqw;
+    --t-word: 13px;
+    --t-name: 17px;
+  }
+
+  /* A phone's door is narrow: the «i» goes under the line, never onto the ring. */
+  .fUnder {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  /* A line as short as a round's name keeps its «i» beside it. */
+  .fUnder[data-short] {
+    flex-direction: row;
+    gap: 14px;
+  }
+
+  /* The plain words under the door's message need a door wide enough to hold them: on a short phone, where the
+     door is under 270 px, they step aside and the message stands with its «i» alone. */
+  .fUnder[data-sub] .fLine {
+    font-size: clamp(0px, calc((var(--D) - 270px) * 999), 12px);
+  }
+
+  .fDoor::before {
+    height: calc(var(--D) * 0.58);
+    transform: translate(-50%, -32%);
+  }
+}
+
+/* The broken vault ------------------------------------------------------------------------------------------------ */
 
 .stage {
   flex: 1;
@@ -175,146 +534,17 @@
   max-height: 40px;
 }
 
+.stage::after {
+  content: '';
+  flex: 1 1 0;
+  min-height: 16px;
+}
+
 .vault {
   position: relative;
   flex: none;
   width: var(--V);
   height: var(--V);
-}
-
-.halves {
-  position: absolute;
-  inset: 0;
-}
-
-.half {
-  object-fit: contain;
-  mix-blend-mode: lighten;
-  transition:
-    transform 700ms cubic-bezier(0.2, 0, 0, 1),
-    opacity 700ms cubic-bezier(0.2, 0, 0, 1);
-}
-
-/* The seam of The Split: the closer the leader, the wider the vault opens. */
-.hl {
-  clip-path: inset(0 50% 0 0);
-  transform: translateX(calc(var(--heat) * var(--heat) * -12px));
-}
-
-.hr {
-  clip-path: inset(0 0 0 50%);
-  transform: translateX(calc(var(--heat) * var(--heat) * 12px));
-}
-
-[data-phase='sealing'] .hl,
-[data-phase='sealing'] .hr,
-[data-phase='held'] .hl,
-[data-phase='held'] .hr,
-[data-phase='empty'] .hl,
-[data-phase='empty'] .hr {
-  transform: none;
-}
-
-[data-phase='broken'] .hl {
-  transform: translateX(-34%) rotate(-4deg);
-  opacity: 0;
-}
-
-[data-phase='broken'] .hr {
-  transform: translateX(34%) rotate(4deg);
-  opacity: 0;
-}
-
-.seam {
-  position: absolute;
-  left: 50%;
-  top: 4%;
-  bottom: 0;
-  width: 2px;
-  margin-left: -1px;
-  background: var(--c);
-  -webkit-mask-image: linear-gradient(to bottom, black 0 33%, transparent 39% 63%, black 69%);
-  mask-image: linear-gradient(to bottom, black 0 33%, transparent 39% 63%, black 69%);
-  opacity: calc(0.3 + 0.7 * var(--heat));
-  transition:
-    opacity 700ms cubic-bezier(0.2, 0, 0, 1),
-    background-color 600ms;
-}
-
-[data-phase='sealing'] .seam,
-[data-phase='empty'] .seam {
-  opacity: 0.25;
-}
-
-[data-phase='held'] .seam {
-  opacity: 0.9;
-}
-
-[data-phase='broken'] .seam {
-  opacity: 0;
-}
-
-.inside {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  text-align: center;
-  z-index: 1;
-  pointer-events: none;
-}
-
-/* The number sits on dark glass: a soft pool of ink keeps the seam from cutting it. */
-.inside::before {
-  content: '';
-  position: absolute;
-  left: 14%;
-  right: 14%;
-  top: 34%;
-  bottom: 34%;
-  border-radius: 50%;
-  background: var(--ink);
-  filter: blur(22px);
-  z-index: -1;
-}
-
-.target {
-  font-size: 15px;
-  letter-spacing: 0.08em;
-  color: var(--ice-60);
-}
-
-/* Another team's safe: its whole account, as an account reads, kept inside the glass. */
-.targetAccount {
-  max-width: 72%;
-  font-size: 15px;
-  font-weight: 600;
-  line-height: 1.3;
-  color: var(--ice-60);
-  overflow-wrap: anywhere;
-}
-
-.bounty {
-  --chars: 5;
-  display: inline-flex;
-  align-items: baseline;
-  gap: 0.18em;
-  font-family: var(--font-num);
-  /* A big sum gives up size before it leaves the glass: about .62em a digit, 1.4em for the unit. */
-  font-size: min(calc(var(--V) * 0.15), calc(var(--V) * 0.74 / (var(--chars) * 0.62 + 1.4)));
-  line-height: 1;
-  font-weight: 800;
-  font-stretch: 125%;
-  letter-spacing: -0.01em;
-}
-
-.unit {
-  font-size: 0.32em;
-  letter-spacing: 0.06em;
-  color: var(--ice-60);
 }
 
 /* The mask that broke it takes the whole face. */
@@ -354,142 +584,12 @@
   }
 }
 
-/* The seam runs on into the board: together they make the T. */
-.stem {
-  flex: 1 1 0;
-  min-height: 16px;
-  width: 2px;
-  background: var(--c);
-  opacity: calc(0.18 + 0.4 * var(--heat));
-  transition:
-    opacity 700ms,
-    background-color 600ms;
-}
-
-[data-phase='broken'] .stem {
-  opacity: 0;
-}
-
-[data-phase='sealing'] .stem,
-[data-phase='held'] .stem,
-[data-phase='empty'] .stem {
-  opacity: 0.18;
-}
-
-/* The masks in the race ---------------------------------------------------------------------------------------- */
-
 .board {
   position: relative;
   flex: none;
   display: grid;
   width: min(1120px, calc(100% - 2 * var(--gut)));
   margin: 0 auto;
-}
-
-.masks {
-  list-style: none;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 16px 56px;
-}
-
-.mask {
-  width: 200px;
-  min-width: 0;
-}
-
-.maskLink {
-  display: grid;
-  justify-items: center;
-  gap: 8px;
-  width: 100%;
-  text-align: center;
-  container-type: inline-size;
-}
-
-/* Each mask stands in its own light; the one closest to the safe burns brightest. */
-.face {
-  position: relative;
-  width: 132px;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  background: radial-gradient(closest-side, color-mix(in srgb, var(--c) calc(8% + 18% * var(--h)), transparent), transparent 72%);
-}
-
-/* Dimmed with a filter on the image itself: opacity on a wrapper would isolate the blend and show the art's black. */
-.face img {
-  object-fit: contain;
-  mix-blend-mode: lighten;
-  filter: brightness(calc(0.5 + 0.5 * var(--h))) saturate(calc(0.6 + 0.4 * var(--h)));
-  transition: filter 600ms cubic-bezier(0.2, 0, 0, 1);
-}
-
-.mask[data-lead] .face img {
-  filter: none;
-}
-
-.maskName {
-  --chars: 6;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  /* A long name narrows on the width axis first (§4), then gives up size, and only then is cut. */
-  font-size: clamp(17px, calc(100cqi / (var(--chars) * 0.86)), 28px);
-  /* One line box for every name, whatever its size, so the states below stay on one line. */
-  line-height: 32px;
-  color: var(--ice);
-}
-
-.maskName[data-long] {
-  font-stretch: 85%;
-}
-
-/* A mask the arena has no art for wears the mark in its own light. */
-.faceMark {
-  position: absolute;
-  inset: 22% 27%;
-  color: var(--c);
-  opacity: calc(0.35 + 0.5 * var(--h));
-}
-
-/* The rest of the field: one tap to the race. */
-.mask[data-more] .face {
-  background: none;
-}
-
-.moreNum {
-  position: absolute;
-  inset: 16%;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  box-shadow: inset 0 0 0 1px var(--line);
-  font-family: var(--font-num);
-  font-weight: 800;
-  font-stretch: 125%;
-  font-size: 30px;
-  color: var(--ice-60);
-}
-
-.narrow {
-  display: none;
-}
-
-.mask[data-more] .maskName {
-  color: var(--ice-60);
-}
-
-.maskState {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--ice-60);
-}
-
-.mask[data-lead] .maskState {
-  color: var(--c);
 }
 
 /* Result ------------------------------------------------------------------------------------------------------- */
@@ -517,10 +617,6 @@
   color: var(--amber);
 }
 
-.held {
-  color: var(--ice-60);
-}
-
 .sum {
   --chars: 5;
   display: flex;
@@ -542,8 +638,7 @@
   color: var(--money);
 }
 
-.money,
-.sum > span:first-child {
+.money {
   display: inline-flex;
   align-items: baseline;
   gap: 0.2em;
@@ -601,6 +696,8 @@
   align-items: center;
   gap: 6px;
   padding: 32px var(--gut) calc(20px + env(safe-area-inset-bottom));
+  /* The floor sinks into ink under the deck: no reflection runs through the quiet link. */
+  background: linear-gradient(to bottom, transparent, color-mix(in srgb, var(--ink) 82%, transparent) 62%, var(--ink));
 }
 
 .btn {
@@ -682,6 +779,7 @@
 @media (max-width: 760px) {
   .screen {
     --V: min(42svh, 86vw, 400px);
+    --bottom: calc(146px + env(safe-area-inset-bottom));
     min-height: 600px;
   }
 
@@ -698,52 +796,7 @@
     max-height: 28px;
   }
 
-  .target {
-    font-size: 13px;
-  }
-
-  .masks {
-    flex-wrap: nowrap;
-    gap: 8px;
-  }
-
-  .mask {
-    flex: 1 1 0;
-    min-width: 0;
-    width: auto;
-  }
-
-  .face {
-    width: min(92px, 26vw);
-  }
-
-  .maskName {
-    font-size: clamp(12px, calc(100cqi / (var(--chars) * 0.86)), 17px);
-    line-height: 20px;
-  }
-
-  .moreNum {
-    font-size: 22px;
-  }
-
-  /* Two masks and the count on a phone: four would not leave their names room. */
-  .mask[data-yield] {
-    display: none;
-  }
-
-  .mask[data-more] .wide {
-    display: none;
-  }
-
-  .mask[data-more] .narrow {
-    display: inline;
-  }
-
-  .targetAccount {
-    font-size: 13px;
-  }
-
-  .maskState {
+  .fAccount {
     font-size: 13px;
   }
 
@@ -797,17 +850,14 @@
 @media (prefers-reduced-motion: reduce) {
   .half,
   .seam,
-  .stem,
   .glow,
-  .face img {
+  .fFace img {
     transition-duration: 200ms !important;
     transition-delay: 0s !important;
   }
 
   .hl,
-  .hr,
-  [data-phase='broken'] .hl,
-  [data-phase='broken'] .hr {
+  .hr {
     transform: none !important;
   }
 

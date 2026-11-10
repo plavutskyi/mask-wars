@@ -1,51 +1,29 @@
 'use client';
 
-import type { Race, RaceEvent, Who } from '@maskwars/arena';
+import type { NextRace, Race, Who } from '@maskwars/arena';
 import { accountUrl, NETWORK, txUrl } from '@maskwars/arena/config';
-import { duration, near, raceNo } from '@maskwars/arena/format';
+import { duration, near } from '@maskwars/arena/format';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
-import { artOf, day, isAccount, shortAccount, targetName, toneOf } from '@/lib/show';
+import { artOf, day, shortAccount, toneOf } from '@/lib/show';
+import { twoLines } from '../arena3d/headline';
 import { ArenaAudio } from '../arena3d/sound';
 import type { ArenaState } from '../arena3d/types';
 import { Arrow } from '../Arrow';
 import { Mark } from '../Mark';
 import { Header } from './Header';
 import { Info, type InfoRow } from './Info';
+import { raceName, raceTitle, stageName, standing } from './names';
 import { Nums } from './Nums';
-import { type Scene, sceneOf } from './scene';
+import { type Scene, sceneOf, stageCast } from './scene';
 import s from './stage.module.css';
 
 // The 3D arena is its own chunk with three.js inside: it is fetched only once the page has loaded and gone quiet,
 // and only on a device that wants motion. Until then, and wherever it cannot run, the flat stage below is the arena.
 const Arena3D = dynamic(() => import('../arena3d/Arena3D').then((m) => m.Arena3D), { ssr: false, loading: () => null });
-
-/** What one mask has done in the race so far, from its moves on chain. */
-function standing(who: Who, events: readonly RaceEvent[]): { heat: number; text: string } {
-  const mine = events.filter((e) => e.who?.account === who.account);
-  if (mine.some((e) => e.kind === 'drain')) return { heat: 1, text: 'Drained it' };
-  if (mine.some((e) => e.kind === 'claim' && e.verdict === 'waiting')) return { heat: 0.9, text: 'Claiming' };
-  if (mine.some((e) => e.kind === 'reveal' && e.ok)) return { heat: 0.8, text: 'Plan shown' };
-  if (mine.some((e) => e.kind === 'move' && e.ok)) return { heat: 0.6, text: 'On the safe' };
-  const seal = mine.find((e) => e.kind === 'seal');
-  if (seal) return { heat: 0.35, text: `Sealed #${(seal.seq ?? 0) + 1}` };
-  return { heat: 0.1, text: 'In the race' };
-}
-
-/** The stage holds three masks: the ones closest to the safe, in their race order. The rest are one tap away. */
-const ON_STAGE = 3;
-
-function onStage(heats: readonly { heat: number }[]): number[] {
-  return heats
-    .map((h, i) => ({ h: h.heat, i }))
-    .sort((a, b) => b.h - a.h || a.i - b.i)
-    .slice(0, ON_STAGE)
-    .map((x) => x.i)
-    .sort((a, b) => a - b);
-}
 
 function Digits({ text }: { text: string }) {
   return (
@@ -176,10 +154,12 @@ function useShown(scene: Scene | null, on: boolean, key: string): ArenaState {
   return done ? rest : (intro[Math.min(p.step, last)] ?? rest);
 }
 
-export function Stage({ race, serverNow, error }: { race: Race | null; serverNow: number; error?: boolean }) {
+export function Stage({ race, next = null, serverNow, error }: { race: Race | null; next?: NextRace | null; serverNow: number; error?: boolean }) {
   const router = useRouter();
   const [now, setNow] = useState(serverNow);
   const running = race !== null && (race.phase === 'sealing' || race.phase === 'racing');
+  const live = race?.live ?? false;
+  const ended = race !== null && !running;
   const scene = useMemo(() => sceneOf(race, error === true), [race, error]);
   const three = useThree(scene !== null);
   const shown = useShown(scene, three.mode === 'on', race?.id ?? (error ? 'error' : 'empty'));
@@ -189,16 +169,23 @@ export function Stage({ race, serverNow, error }: { race: Race | null; serverNow
   const [audio] = useState(() => new ArenaAudio());
   const [sound, setSound] = useState(false);
 
+  // The next round, while nothing runs: only one the treasury can open, and only until its minute comes. Past it the
+  // scheduler is on its way, or late: the page promises no time it cannot keep.
+  const upNext = !running && !live && next !== null && next.funded && next.at > now ? next : null;
+  // In its last minutes the page asks the chain as often as during a race, so the new round is on screen as it opens.
+  const nearly = !running && next !== null && next.funded && next.at - now < 3 * 60_000 && now - next.at < 15 * 60_000;
+  const ticking = running || live || upNext !== null;
+
   // The clock ticks on the device; the race itself is read again from the chain every few seconds while it runs.
   useEffect(() => {
     setNow(Date.now());
-    const tick = running ? window.setInterval(() => setNow(Date.now()), 1000) : undefined;
-    const poll = window.setInterval(() => router.refresh(), race?.live || running ? 5_000 : 60_000);
+    const tick = ticking ? window.setInterval(() => setNow(Date.now()), 1000) : undefined;
+    const poll = window.setInterval(() => router.refresh(), live || running || nearly ? 5_000 : 60_000);
     return () => {
       window.clearInterval(tick);
       window.clearInterval(poll);
     };
-  }, [router, running, race?.live]);
+  }, [router, ticking, running, live, nearly]);
 
   // The arena composes between the header and the deck: their real heights, measured, as the page lays them out.
   useEffect(() => {
@@ -240,53 +227,68 @@ export function Stage({ race, serverNow, error }: { race: Race | null; serverNow
     }
   };
 
+  // Everything technical about the race, one tap away: its id, the safe's account, where each sum came from.
   const facts: InfoRow[] = race
     ? [
-        { label: 'Race', value: `${race.id} · ${day(race.openedAt)}` },
+        { label: 'Race', value: `${raceTitle(race.id)} · ${day(race.openedAt)}` },
+        { label: 'Id', value: race.id },
+        ...(race.kind === 'safe' ? [{ label: 'Safe', value: race.target, href: accountUrl(race.target) }] : [{ label: 'Target', value: race.target }]),
+        ...(running && race.inSafe ? [{ label: 'In the safe', value: `${near(race.inSafe)} NEAR` }] : []),
+        ...(running ? [{ label: 'Bounty', value: `${near(race.bounty)} NEAR`, href: race.txs.open ? txUrl(race.txs.open) : undefined }] : []),
         ...(race.loot ? [{ label: 'From the safe', value: `${near(race.loot)} NEAR`, href: race.txs.drain ? txUrl(race.txs.drain) : undefined }] : []),
         ...(race.payout ? [{ label: 'Bounty paid', value: `${near(race.payout.amount)} NEAR`, href: race.payout.tx ? txUrl(race.payout.tx) : undefined }] : []),
         ...(race.winner ? [{ label: 'Winner', value: race.winner.account, href: accountUrl(race.winner.account) }] : []),
+        ...(race.phase === 'held' ? [{ label: 'Back to the team', value: `${near(race.refund?.amount ?? race.bounty)} NEAR`, href: race.refund?.tx ? txUrl(race.refund.tx) : undefined }] : []),
         { label: 'Network', value: `NEAR ${race.network}` },
       ]
     : [];
-  const ended = race !== null && (race.phase === 'broken' || race.phase === 'held');
-  const aside =
-    ended && (shown === 'breach' || shown === 'paid' || shown === 'held') ? (
-      <Info rows={facts} label={race?.phase === 'broken' ? 'Where the money came from' : 'The race'} side="top" />
-    ) : null;
+  const factsLabel = race?.phase === 'broken' ? 'Where the money came from' : 'The race on chain';
+  // In the door the sheet opens down, over the floor: above it is the header.
+  const aside = race ? <Info rows={facts} label={factsLabel} side="bottom" /> : null;
 
+  // The clock, top centre: to the start, since the start, to the close; then to the next round.
   let center: ReactNode = null;
-  if (race) {
-    if (race.phase === 'sealing' && race.startsAt) {
-      center = (
-        <>
-          <span className={s.clockLabel}>Starts in</span>
-          <Digits text={clock(race.startsAt - now)} />
-        </>
-      );
-    } else if (race.live && race.startsAt) {
-      center = <Digits text={clock(now - race.startsAt)} />;
-    } else if (race.phase === 'racing') {
-      center = (
-        <>
-          <span className={s.clockLabel}>Closes in</span>
-          <Digits text={clock(race.deadline - now)} />
-        </>
-      );
-    } else {
-      center = (
-        <>
-          <span className={s.clockLabel}>Last race</span>
-          <span className={s.clockDay}>{day(race.brokeAt ?? race.openedAt)}</span>
-        </>
-      );
-    }
+  if (race && race.phase === 'sealing' && race.startsAt) {
+    center = (
+      <>
+        <span className={s.clockLabel}>Starts in</span>
+        <Digits text={clock(race.startsAt - now)} />
+      </>
+    );
+  } else if (race && race.phase === 'racing' && live && race.startsAt) {
+    center = <Digits text={clock(now - race.startsAt)} />;
+  } else if (race && race.phase === 'racing') {
+    center = (
+      <>
+        <span className={s.clockLabel}>Closes in</span>
+        <Digits text={clock(race.deadline - now)} />
+      </>
+    );
+  } else if (race && live) {
+    // Broken, the judge on the claim: the door already says in how long, and LIVE says it is not over.
+    center = null;
+  } else if (upNext) {
+    center = (
+      <>
+        <span className={s.clockLabel}>Next round</span>
+        <Digits text={clock(upNext.at - now)} />
+      </>
+    );
+  } else if (race) {
+    center = (
+      <>
+        <span className={s.clockLabel}>{raceName(race.id).startsWith('Round') ? 'Last round' : 'Last race'}</span>
+        <span className={s.clockDay}>{day(race.brokeAt ?? race.openedAt)}</span>
+      </>
+    );
   }
 
-  const heats = race ? race.masks.map((m) => standing(m, race.events)) : [];
-  const heat = !race ? 0 : race.phase === 'broken' ? 1 : race.phase === 'sealing' ? 0.15 : Math.max(0, ...heats.map((h) => h.heat));
+  const cast = useMemo(() => stageCast(race), [race]);
+  const heats = race ? cast.map((m) => standing(m, race.events)) : cast.map(() => ({ heat: 0.1, text: '' }));
+  const heat = !race ? 0 : race.phase === 'broken' ? 1 : race.phase === 'sealing' ? 0.15 : race.phase === 'held' ? 0 : Math.max(0, ...heats.map((h) => h.heat));
   const lead = race?.phase === 'racing' && heats.length ? heats.indexOf(heats.reduce((a, b) => (b.heat > a.heat ? b : a))) : -1;
-  const tone = !race ? 'ice' : race.phase === 'broken' ? toneOf(race.winner) : lead >= 0 ? toneOf(race.masks[lead]) : 'ice';
+  const tone = !race ? 'ice' : race.phase === 'broken' ? toneOf(race.winner) : lead >= 0 ? toneOf(cast[lead]) : 'ice';
+  const action = !race ? 'See the league' : running ? (live ? 'Watch live' : 'See the race') : race.phase === 'broken' ? 'See the break' : 'See the race';
 
   return (
     <main
@@ -305,9 +307,16 @@ export function Stage({ race, serverNow, error }: { race: Race | null; serverNow
         <i className={s.glow} />
       </div>
 
-      <Header center={center} live={race?.live ?? false} network={race?.network ?? NETWORK} here="race" />
+      <Header center={center} live={live} network={race?.network ?? NETWORK} here="race" />
 
-      {race ? <Flat race={race} heats={heats} lead={lead} facts={facts} /> : <FlatEmpty error={error === true} />}
+      {race?.phase === 'broken' ? (
+        <FlatBroken race={race} facts={facts} />
+      ) : (
+        <>
+          <FlatStage race={race} error={error === true} cast={cast} heats={heats} lead={lead} aside={aside} />
+          <div className={s.fill} />
+        </>
+      )}
 
       {three.mode !== 'flat' && scene && insets ? (
         <div className={s.three}>
@@ -316,9 +325,12 @@ export function Stage({ race, serverNow, error }: { race: Race | null; serverNow
             vault={scene.vault}
             masks={scene.masks}
             attempts={scene.attempts}
+            notes={scene.notes ?? undefined}
             winner={scene.winner}
             payout={scene.payout ?? undefined}
             line={scene.lines[shown]}
+            lineIsAccount={scene.account && (shown === 'idle' || shown === 'live')}
+            headline={scene.headlines[shown]}
             aside={aside}
             insets={insets}
             audio={audio}
@@ -336,7 +348,7 @@ export function Stage({ race, serverNow, error }: { race: Race | null; serverNow
           </a>
         ) : (
           <Link href={race ? `/race/${race.id}` : '/league'} className={s.btn}>
-            <span className={s.word}>{!race ? 'See the league' : running ? 'Watch live' : race.phase === 'broken' ? 'See the break' : 'See the race'}</span>
+            <span className={s.word}>{action}</span>
           </Link>
         )}
         <Link href="/break" className={s.quiet} prefetch={false}>
@@ -347,177 +359,175 @@ export function Stage({ race, serverNow, error }: { race: Race | null; serverNow
         </button>
       </footer>
       <span className={s.sr} aria-live="polite">
-        {race?.live ? `Race ${raceNo(race.id)} is live` : ''}
+        {race && live ? `${raceName(race.id)} is live` : ''}
       </span>
     </main>
   );
 }
 
-/** The flat arena: the first paint, and the whole arena wherever the 3D one does not run. */
-function Flat({ race, heats, lead, facts }: { race: Race; heats: { heat: number; text: string }[]; lead: number; facts: InfoRow[] }) {
+/**
+ * The flat arena: the first paint, and the whole arena wherever the 3D one does not run. It is composed by the same
+ * numbers as the 3D arena (arena3d/layout.ts), in the brand's own frames: the vault, its sum and its line, the same
+ * three masks in the same places under the same names. The 3D arena dissolves in over the frame it was composed from.
+ */
+function FlatStage({
+  race,
+  error,
+  cast,
+  heats,
+  lead,
+  aside,
+}: {
+  race: Race | null;
+  error: boolean;
+  cast: readonly Who[];
+  heats: readonly { heat: number; text: string }[];
+  lead: number;
+  aside: ReactNode;
+}) {
+  const running = race !== null && (race.phase === 'sealing' || race.phase === 'racing');
+  const sum = running && race ? near(race.prize) : null;
+  const name = race ? stageName(race) : null;
+  // A vault with no sum to show says what happened in its door.
+  const headline = running ? null : twoLines(!race ? (error ? 'The chain is not answering' : 'No race yet') : 'Vault held');
+  return (
+    <section className={s.flat} aria-label={race ? `${name!.text}: the vault` : 'The vault'} data-masks={cast.length}>
+      <div className={s.fVault} aria-hidden>
+        <Image src="/art/vault.webp" alt="" fill priority fetchPriority="high" sizes="(max-width: 760px) 96vw, 640px" quality={85} className={`${s.half} ${s.hl}`} />
+        <Image src="/art/vault.webp" alt="" fill priority fetchPriority="high" sizes="(max-width: 760px) 96vw, 640px" quality={85} className={`${s.half} ${s.hr}`} />
+        <i className={s.seam} />
+      </div>
+
+      <div className={s.fDoor} role={running ? undefined : 'status'}>
+        {sum !== null ? (
+          <>
+            <span className={s.fSum} style={{ '--chars': sum.length + 2.4 } as CSSProperties}>
+              {sum}
+              <span className={`${s.word} ${s.fUnit}`}>NEAR</span>
+            </span>
+            <span className={s.fUnder} data-short={name!.text.length <= 10 ? '' : undefined}>
+              {name!.account ? (
+                <span className={s.fAccount} title={race!.target}>
+                  {name!.text}
+                </span>
+              ) : (
+                <Line text={name!.text} />
+              )}
+              {aside ? <span className={s.fAside}>{aside}</span> : null}
+            </span>
+          </>
+        ) : (
+          <>
+            <span className={`${s.word} ${s.fHeadline}`} style={{ '--chars': Math.max(8, ...headline!.map((l) => l.length)) } as CSSProperties}>
+              {headline!.map((l, i) => (
+                <span key={i}>{l}</span>
+              ))}
+            </span>
+            {race ? (
+              <span className={s.fUnder} data-sub="">
+                <Line text="Nobody got through" />
+                {aside ? <span className={s.fAside}>{aside}</span> : null}
+              </span>
+            ) : null}
+          </>
+        )}
+      </div>
+
+      <ol className={s.fMasks} aria-label={race ? 'Masks in the race' : 'Masks of the arena'}>
+        {cast.map((m, i) => {
+          const art = artOf(m);
+          const st = heats[i]!;
+          const note = running ? st.text : '';
+          return (
+            <li
+              key={m.account}
+              className={s.fMask}
+              data-tone={toneOf(m)}
+              data-lead={i === lead ? '' : undefined}
+              data-long={m.name.length > 8 ? '' : undefined}
+              style={{ '--h': (running ? st.heat : 0.1).toFixed(2), '--chars': Math.max(4, m.name.length) } as CSSProperties}
+            >
+              <Link href={m.slug ? `/mask/${m.slug}` : race ? `/race/${race.id}` : '/league'} className={s.fLink} aria-label={note ? `${m.name}: ${note}` : m.name}>
+                <span className={s.fFace}>{art ? <Image src={art} alt="" fill loading="eager" sizes="(max-width: 760px) 46vw, 300px" quality={85} /> : <Mark className={s.fMark} />}</span>
+                <span className={`${s.word} ${s.fMaskName}`}>{m.name}</span>
+                {note ? (
+                  <span className={s.fNote}>
+                    {note.split(/(\d[\d,.:]*)/).map((part, k) => (/\d/.test(part) ? <b key={k}>{part}</b> : part))}
+                  </span>
+                ) : null}
+              </Link>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
+  );
+}
+
+/** A line of words and numbers, set as the 3D arena sets it: words in Hubot, numbers in Mona (BRANDBOOK §4). */
+function Line({ text }: { text: string }) {
+  return (
+    <span className={s.fLine}>
+      {text.split(' ').map((t, i) => (
+        <span key={i} className={/\d/.test(t) ? s.fNum : s.word}>
+          {t}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+/** The flat arena of a broken vault: the mask that broke it takes the whole face, the money and its name under it. */
+function FlatBroken({ race, facts }: { race: Race; facts: InfoRow[] }) {
   const winner = race.winner;
-  const broken = race.phase === 'broken';
-  const taker = broken ? artOf(winner) : null;
-  const ended = race.phase === 'broken' || race.phase === 'held';
-  const target = targetName(race);
-  const vault = near(race.phase === 'held' ? (race.refund?.amount ?? race.bounty) : race.prize);
-  const shown = onStage(heats);
-  const more = race.masks.length - shown.length;
-  const sum = near(race.phase === 'held' ? (race.refund?.amount ?? race.bounty) : race.takes);
+  const taker = artOf(winner);
+  const sum = near(race.takes);
   return (
     <>
-      <section className={s.stage} aria-label={`${targetName(race)} vault`}>
+      <section className={s.stage} aria-label={`${raceName(race.id)}: the vault, broken`}>
         <div className={s.vault}>
-          <div className={s.halves} aria-hidden>
-            {/* A broken vault has opened out of sight: the winner's face is what the first paint waits for. */}
-            <Image src="/art/vault.webp" alt="" fill priority={!broken} fetchPriority={broken ? 'low' : 'high'} sizes="(max-width: 760px) 86vw, 560px" quality={85} className={`${s.half} ${s.hl}`} />
-            <Image src="/art/vault.webp" alt="" fill priority={!broken} fetchPriority={broken ? 'low' : 'high'} sizes="(max-width: 760px) 86vw, 560px" quality={85} className={`${s.half} ${s.hr}`} />
-          </div>
-          <i className={s.seam} aria-hidden />
           {taker ? (
             <div className={s.taker}>
               <Image src={taker} alt={winner?.name ?? ''} fill priority fetchPriority="high" sizes="(max-width: 760px) 86vw, 560px" quality={85} />
             </div>
-          ) : broken ? (
+          ) : (
             // A winner the arena has no art for still takes the face: every mask shares the mark's silhouette (§5).
             <div className={s.taker} data-mark="">
               <Mark className={s.takerMark} />
             </div>
-          ) : (
-            <div className={s.inside}>
-              {isAccount(target) ? (
-                <span className={s.targetAccount} title={target}>
-                  {shortAccount(target, 28)}
-                </span>
-              ) : (
-                <span className={`${s.word} ${s.target}`}>
-                  <Nums text={target} />
-                </span>
-              )}
-              {/* A held vault is shut: its number is the result below, said once. */}
-              {race.phase === 'held' ? null : (
-                <span className={s.bounty} style={{ '--chars': vault.length } as CSSProperties}>
-                  {vault}
-                  <span className={`${s.word} ${s.unit}`}>NEAR</span>
-                </span>
-              )}
-            </div>
           )}
         </div>
-        <i className={s.stem} aria-hidden />
       </section>
 
-      <section className={s.board}>
-        {!ended ? (
-          <ol className={s.masks} aria-label="Masks in the race">
-            {shown.map((i, k) => {
-              const m = race.masks[i]!;
-              const art = artOf(m);
-              const st = heats[i]!;
-              return (
-                <li
-                  key={m.account}
-                  className={s.mask}
-                  data-tone={toneOf(m)}
-                  data-lead={i === lead ? '' : undefined}
-                  data-yield={more > 0 && k === shown.length - 1 ? '' : undefined}
-                  style={{ '--h': st.heat.toFixed(2) } as CSSProperties}
-                >
-                  <Link href={m.slug ? `/mask/${m.slug}` : `/race/${race.id}`} className={s.maskLink} aria-label={`${m.name}: ${st.text}`}>
-                    <span className={s.face}>{art ? <Image src={art} alt="" fill sizes="(max-width: 760px) 30vw, 160px" quality={80} /> : <Mark className={s.faceMark} />}</span>
-                    <span className={`${s.word} ${s.maskName}`} data-long={m.name.length > 8 ? '' : undefined} style={{ '--chars': m.name.length } as CSSProperties}>
-                      {m.name}
-                    </span>
-                    <span className={s.maskState}>{st.text}</span>
-                  </Link>
-                </li>
-              );
-            })}
-            {more > 0 ? (
-              <li className={s.mask} data-more="">
-                <Link href={`/race/${race.id}`} className={s.maskLink} aria-label={`${race.masks.length} masks in the race`}>
-                  <span className={s.face}>
-                    <span className={s.moreNum}>
-                      <span className={s.wide}>+{more}</span>
-                      <span className={s.narrow}>+{more + 1}</span>
-                    </span>
-                  </span>
-                  <span className={`${s.word} ${s.maskName}`}>{more === 1 ? 'Mask' : 'Masks'}</span>
-                  <span className={s.maskState}>In the race</span>
-                </Link>
-              </li>
-            ) : null}
-          </ol>
-        ) : (
-          <div className={s.result} role="status">
-            {race.phase === 'broken' ? (
-              <>
-                <div className={`${s.word} ${s.kicker}`}>
-                  <Nums text={race.breakMs !== null ? `Broken in ${duration(race.breakMs)}` : 'Broken'} />
-                </div>
-                <div className={s.sum} style={{ '--chars': sum.length } as CSSProperties}>
-                  <span className={s.money}>
-                    {sum}
-                    <span className={`${s.word} ${s.moneyUnit}`}>NEAR</span>
-                  </span>
-                  <span className={s.to}>
-                    <Arrow className={s.arr} />
-                    {winner?.slug ? (
-                      <Link href={`/mask/${winner.slug}`} className={`${s.word} ${s.who}`} data-long={winner.name.length > 8 ? '' : undefined}>
-                        {winner.name}
-                      </Link>
-                    ) : winner?.mask ? (
-                      <span className={`${s.word} ${s.who}`} data-long={winner.name.length > 8 ? '' : undefined}>
-                        {winner.name}
-                      </span>
-                    ) : (
-                      <span className={s.whoAccount} title={winner?.account}>
-                        {shortAccount(winner?.account ?? '', 24)}
-                      </span>
-                    )}
-                  </span>
-                  <Info rows={facts} label="Where the money came from" side="top" />
-                </div>
-              </>
-            ) : (
-              <>
-                <div className={`${s.word} ${s.kicker} ${s.held}`}>Nobody got through</div>
-                <div className={s.sum} style={{ '--chars': sum.length } as CSSProperties}>
-                  <span>
-                    {sum}
-                    <span className={`${s.word} ${s.moneyUnit}`}>NEAR</span>
-                  </span>
-                  <span className={s.to}>
-                    <Arrow className={s.arr} />
-                    <span className={`${s.word} ${s.who}`}>Back to the team</span>
-                  </span>
-                  <Info rows={facts} label="The race" side="top" />
-                </div>
-              </>
-            )}
-          </div>
-        )}
-      </section>
-    </>
-  );
-}
-
-function FlatEmpty({ error }: { error: boolean }) {
-  return (
-    <>
-      <section className={s.stage}>
-        <div className={s.vault}>
-          <div className={s.halves} aria-hidden>
-            <Image src="/art/vault.webp" alt="" fill priority fetchPriority="high" sizes="(max-width: 760px) 86vw, 560px" quality={85} className={`${s.half} ${s.hl}`} />
-            <Image src="/art/vault.webp" alt="" fill priority fetchPriority="high" sizes="(max-width: 760px) 86vw, 560px" quality={85} className={`${s.half} ${s.hr}`} />
-          </div>
-          <i className={s.seam} aria-hidden />
-        </div>
-        <i className={s.stem} aria-hidden />
-      </section>
       <section className={s.board}>
         <div className={s.result} role="status">
-          <div className={`${s.word} ${s.kicker} ${s.held}`}>{error ? 'The chain is not answering' : 'No race yet'}</div>
+          <div className={`${s.word} ${s.kicker}`}>
+            <Nums text={race.breakMs !== null ? `Broken in ${duration(race.breakMs)}` : 'Broken'} />
+          </div>
+          <div className={s.sum} style={{ '--chars': sum.length } as CSSProperties}>
+            <span className={s.money}>
+              {sum}
+              <span className={`${s.word} ${s.moneyUnit}`}>NEAR</span>
+            </span>
+            <span className={s.to}>
+              <Arrow className={s.arr} />
+              {winner?.slug ? (
+                <Link href={`/mask/${winner.slug}`} className={`${s.word} ${s.who}`} data-long={winner.name.length > 8 ? '' : undefined}>
+                  {winner.name}
+                </Link>
+              ) : winner?.mask ? (
+                <span className={`${s.word} ${s.who}`} data-long={winner.name.length > 8 ? '' : undefined}>
+                  {winner.name}
+                </span>
+              ) : (
+                <span className={s.whoAccount} title={winner?.account}>
+                  {shortAccount(winner?.account ?? '', 24)}
+                </span>
+              )}
+              {/* Beside the name it belongs to: on a narrow screen it never drops to a line of its own. */}
+              <Info rows={facts} label="Where the money came from" side="top" />
+            </span>
+          </div>
         </div>
       </section>
     </>

@@ -39,7 +39,7 @@ result.finding;                // the winning plan and both sandbox runs: for th
 | `src/season.ts` | The scheduler's one move: `open_next` on the season treasury ([contracts/season](../../contracts/season)), and the round it opened or the one already open for this slot |
 | `src/round.ts` | Simulation mode, no models: one sealed round with scripted masks in a local sandbox, the real contracts and the real judge (`race-runner round`) |
 | `src/keeper.ts` | The keeper of the people's masks (contracts/masks): arms each person's mask on a round's list with two race keys new for that round, settles what its mind spent, never takes the keys of a mask whose sealed plan is still in play. Every key comes from `KEEPER_SEED` |
-| `src/brain.ts` | A person's mask in the race: its mind runs on OutLayer in its own TEE (services/brain), where its owner's strategy opens; the race job sends the mask, the round, the target and its past attempts over OutLayer's HTTPS API and gets back a plan and the tokens it cost |
+| `src/brain.ts` | A person's mask in the race: its mind runs on OutLayer in its own TEE (services/brain), where its owner's strategy opens; the race job sends the mask, the round, the target and its past attempts over OutLayer's HTTPS API (an `async` call for the longest run OutLayer gives, 180 s, read until it is over) and gets back a plan and the tokens it cost. It tells a mind that ran out of time from one that refused, asks a mind at most 5 times a race and holds the ceiling of what a race can cost its owner ([services/brain](../../services/brain/README.md#tokens-time-and-what-a-race-costs)) |
 | `src/near-tx.ts` | Signs and sends one function call on NEAR with `node:crypto` only; checked byte for byte against near-api-js |
 
 ## Run

@@ -333,8 +333,8 @@ export class ArenaEngine {
         this.world.add(rig.group);
         return {
           rig,
-          presence: new Spring(0.1, 0.6, 1),
-          eyes: new Spring(0.42, 0.5, 0.8),
+          presence: new Spring(0.46, 0.6, 1),
+          eyes: new Spring(0.72, 0.5, 0.8),
           z: new Spring(-0.6, 0.75, 0.78),
           scale: new Spring(1, 0.4, 0.6),
           lastStrike: -1,
@@ -418,8 +418,9 @@ export class ArenaEngine {
     const out = OUT.has(state);
     this.masks.forEach((m, i) => {
       const isWin = win === i;
-      let presence = out ? 1 : state === 'held' ? 0.24 : 0.1;
-      let eyes = out ? 1 : 0.42;
+      // Waiting masks stand back, not out of sight: their faces and eyes still read on the first frame.
+      let presence = out ? 1 : state === 'held' ? 0.38 : 0.46;
+      let eyes = out ? 1 : state === 'held' ? 0.5 : 0.72;
       let z = out ? 0 : state === 'held' ? -0.35 : -0.6;
       if (state === 'breach') {
         presence = isWin ? 1.1 : 0.85;

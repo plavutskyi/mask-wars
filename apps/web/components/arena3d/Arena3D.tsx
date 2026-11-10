@@ -9,6 +9,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 import { clock, count, countdown, span } from '@/lib/format';
 import type { ArenaEngine, EngineInput } from './engine/engine';
 import { digits, spoken, unitWord } from './format';
+import { twoLines } from './headline';
 import { lookKey } from './looks';
 import { ArenaAudio } from './sound';
 import { T } from './timing';
@@ -39,7 +40,7 @@ function useArrival(state: ArenaState) {
 const OPEN = (x: ArenaState | null) => x === 'breach' || x === 'paid';
 
 export function Arena3D(props: ArenaProps) {
-  const { state, vault, target, masks, attempts = [0, 0, 0], winner = null, payout, startsAt, elapsed, line, aside, now, insets, quality = 'auto', className } = props;
+  const { state, vault, target, masks, attempts = [0, 0, 0], notes, winner = null, payout, startsAt, elapsed, line, lineIsAccount, headline, aside, now, insets, quality = 'auto', className } = props;
   const root = useRef<HTMLElement>(null);
   const hud = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -217,7 +218,9 @@ export function Arena3D(props: ArenaProps) {
 
   // The line under the sum: the page's own words when it brings them, else the state's.
   let under: ReactNode = null;
-  if (line !== undefined) under = <Words text={line} className={state === 'breach' || state === 'paid' ? s.won : undefined} />;
+  const head = headline !== undefined && !vault ? twoLines(headline) : null;
+  if (line !== undefined && lineIsAccount) under = <span className={s.account}>{line}</span>;
+  else if (line !== undefined) under = <Words text={line} className={state === 'breach' || state === 'paid' ? s.won : undefined} />;
   else if (state === 'idle' && startsAt !== undefined) under = <Countdown to={startsAt} now={now} />;
   else if (state === 'live' && target) under = <Words text={target} />;
   else if (state === 'breach') under = <Words text={elapsed !== undefined ? `Broken in ${span(elapsed)}` : 'Broken'} className={s.won} />;
@@ -245,25 +248,37 @@ export function Arena3D(props: ArenaProps) {
         {failed && !props.onFail ? <Frames masks={masks} /> : null}
 
         <div className={s.vault}>
-          <div className={s.stack} data-empty={vault ? undefined : ''}>
-            {vault ? <Money m={vault} className={s.sum} /> : null}
-            <div className={s.under}>
+          <div
+            className={s.stack}
+            data-empty={vault ? undefined : ''}
+            data-headline={head ? '' : undefined}
+            style={head ? ({ '--chars': Math.max(8, ...head.map((l) => l.length)) } as CSSProperties) : undefined}
+          >
+            {vault ? <Money m={vault} className={s.sum} /> : head ? <Headline lines={head} /> : null}
+            <div className={s.under} data-short={typeof line === 'string' && line.length <= 10 ? '' : undefined}>
               {under}
-              {aside && under ? <span className={s.aside}>{aside}</span> : null}
+              {aside && (under || head) ? <span className={s.aside}>{aside}</span> : null}
             </div>
           </div>
         </div>
 
-        {masks.map((m, i) => (
-          <div key={i} className={s.cap} data-slot={i} data-win={win === i ? '' : undefined} data-long={m.name.length > 8 ? '' : undefined}>
-            <span className={`${s.word} ${s.name}`}>{m.name}</span>
-            {state === 'live' ? (
-              <span className={s.tries}>
-                <b>{count(attempts[i] ?? 0)}</b> {attempts[i] === 1 ? 'try' : 'tries'}
-              </span>
-            ) : null}
-          </div>
-        ))}
+        {masks.map((m, i) => {
+          // What the mask is doing, in the page's words; a live race without them counts the tries.
+          const note = notes ? notes[i] : state === 'live' ? `${count(attempts[i] ?? 0)} ${attempts[i] === 1 ? 'try' : 'tries'}` : null;
+          return (
+            <div
+              key={i}
+              className={s.cap}
+              data-slot={i}
+              data-win={win === i ? '' : undefined}
+              data-long={m.name.length > 8 ? '' : undefined}
+              style={{ '--chars': Math.max(4, m.name.length) } as CSSProperties}
+            >
+              <span className={`${s.word} ${s.name}`}>{m.name}</span>
+              {note ? <Note text={note} /> : null}
+            </div>
+          );
+        })}
 
         {state === 'paid' && win !== null && paid ? <Payout money={paid} slot={win} name={masks[win].name} /> : null}
       </div>
@@ -312,6 +327,26 @@ function Words({ text, className }: { text: string; className?: string | undefin
           {t}
         </span>
       ))}
+    </span>
+  );
+}
+
+/** The door's own message when there is no sum to show: “Vault held”, “No race yet”. */
+function Headline({ lines }: { lines: string[] }) {
+  return (
+    <span className={`${s.word} ${s.headline}`}>
+      {lines.map((l, i) => (
+        <span key={i}>{l}</span>
+      ))}
+    </span>
+  );
+}
+
+/** What a mask is doing, under its name: the words quiet, the numbers in the number face and bright. */
+function Note({ text }: { text: string }) {
+  return (
+    <span className={s.note}>
+      {text.split(/(\d[\d,.:]*)/).map((part, i) => (/\d/.test(part) ? <b key={i}>{part}</b> : part))}
     </span>
   );
 }
