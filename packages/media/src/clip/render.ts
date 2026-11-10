@@ -95,7 +95,9 @@ export function keyFrames(plan: RaceClipPlan): { name: string; frame: number }[]
     { name: "5-drain", frame: plan.beats.crack + 24 },
     { name: "6-paid", frame: mid(sc.paid, 0.75) },
     { name: "7-end", frame: mid(sc.end, 0.6) },
-  ];
+    // A season round's sealing window, in its place between the seal and the drain.
+    ...(sc.lock.to > sc.lock.from ? [{ name: "4b-lock", frame: mid(sc.lock, 0.5) }] : []),
+  ].sort((a, b) => a.frame - b.frame);
 }
 
 /** Record → MP4 and key frames, with one bundle. */

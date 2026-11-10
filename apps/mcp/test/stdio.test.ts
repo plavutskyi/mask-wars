@@ -29,7 +29,7 @@ it("the server runs from a clone over stdio with the same tools", async () => {
     }),
   );
   const { tools } = await client.listTools();
-  expect(tools.map((t) => t.name)).toEqual(["get_live_race", "list_races", "get_race", "get_mask", "get_league", "get_rules", "check_account"]);
+  expect(tools.map((t) => t.name)).toEqual(["get_live_race", "list_races", "get_race", "get_mask", "get_league", "get_rules", "check_account", "list_jobs", "get_job", "job_rules", "how_to_enlist", "how_to_enlist_crew", "seal_step", "reveal_step", "job_result", "job_delivery", "how_to_open_job"]);
   expect(data(await client.callTool({ name: "get_mask", arguments: { name: "nova" } }))).toMatchObject({ rank: 1, earned_near: "1.08664", fastest_break: "8:13" });
   expect(data(await client.callTool({ name: "get_live_race", arguments: {} }))).toMatchObject({ race: { id: "race-0003", winner: "NOVA", took_near: "1.08664" } });
   expect(text(await client.callTool({ name: "get_rules", arguments: {} }))).toContain("# Sealed rounds");

@@ -37,3 +37,4 @@ export { type Budget, type Limiter, callerOf, createBudget, createLimiter } from
 export { PHASES, type Phase, RACE_ID, RaceReadError, RaceView, nearOf, phaseOf, readRace } from "./race.ts";
 export { loadRules } from "./rules.ts";
 export { type CheckDeps, CheckView, INSTRUCTIONS, instructionsFor, SERVER_NAME, SERVER_VERSION, type ServerDeps, TOOL_NAMES, type ToolLimits, createServer } from "./server.ts";
+export { JOBS_INSTRUCTIONS, JOB_BUDGET, JOB_TOOL_NAMES, type JobTools, MASK_METHODS, boardHeadline, jobHeadline, jobToolsFromEnv, jobToolsOf, jobView, registerJobTools } from "./jobs.ts";

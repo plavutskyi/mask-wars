@@ -1,4 +1,5 @@
-// Draws every card of a moment (win, loss, unmask, new mask, broken seal) from examples/ into shots/, 1600×900.
+// Draws every card of a moment (win, loss, unmask, new mask, broken seal) from examples/ into out/moments/, 1600×900.
+// The examples are made up, so every card carries the SIMULATED band and none of them is kept in the repository.
 // Every card page must render without a console error. Run: pnpm --filter @maskwars/media shots
 // A whole race (clip, cards, thread) comes from `pnpm --filter @maskwars/media race <race-id>`.
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
@@ -8,7 +9,7 @@ import { fromFightEvent } from "../src/detector.ts";
 import { cardRenderer } from "../src/cards/render.ts";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const out = join(root, "shots");
+const out = join(root, "out", "moments");
 mkdirSync(out, { recursive: true });
 
 const r = await cardRenderer();

@@ -19,7 +19,7 @@ async function connected(era: "legacy" | "modern" = "legacy") {
 }
 
 describe.each(["legacy", "modern"] as const)("an agent on the %s protocol", (era) => {
-  it("finds the arena: seven read-only tools, the server's name and how to use it", async () => {
+  it("finds the arena: every tool read-only, the server's name and how to use it", async () => {
     const { client } = await connected(era);
     expect(client.getServerVersion()).toMatchObject({ name: "maskwars", title: "MASK WARS", websiteUrl: "https://maskwars.xyz" });
     const instructions = client.getInstructions() ?? "";

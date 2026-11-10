@@ -1,6 +1,7 @@
 // One race → everything for X: the 16:9 clip, a card per post, the thread draft. Nothing is published.
 //
 //   pnpm --filter @maskwars/media race race-0003                 races/race-0003.json → out/race-0003/
+//   pnpm --filter @maskwars/media race s1-0001-d74851            a sealed round: its record comes from `round`
 //   pnpm --filter @maskwars/media race <record.json> [--out <dir>] [--music <file> | --silent] [--no-clip]
 //
 // Music: --music, else the file in apps/web/public/audio/, else a silent clip. Needs ffmpeg for the clip.
@@ -21,12 +22,14 @@ const flag = (name) => {
 };
 const arg = argv.find((a, i) => !a.startsWith("--") && !["--out", "--music"].includes(argv[i - 1] ?? ""));
 if (!arg) {
-  console.error("usage: race <race-id | record.json> [--out dir] [--music file | --silent] [--no-clip]");
+  console.error("usage: race <race-0003 | s1-0001-d74851 | record.json> [--out dir] [--music file | --silent] [--no-clip]");
   process.exit(2);
 }
-const file = /^race-\d{4}$/.test(arg) ? join(root, "races", `${arg}.json`) : isAbsolute(arg) ? arg : resolve(here, arg);
+// An id of a race (race-0003) or of a season round (s1-0001-d74851) names its record in races/: real rounds only.
+const byId = /^(?:race-\d{4}|s\d{1,3}-\d{4}-[0-9a-f]{6})$/.test(arg);
+const file = byId ? join(root, "races", `${arg}.json`) : isAbsolute(arg) ? arg : resolve(here, arg);
 if (!existsSync(file)) {
-  console.error(`no race record at ${file}`);
+  console.error(`no race record at ${file}${byId ? `\na sealed round's record is read from the chain first: pnpm --filter @maskwars/media round ${arg} --network testnet` : ""}`);
   process.exit(2);
 }
 const record = JSON.parse(readFileSync(file, "utf8"));

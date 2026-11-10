@@ -359,9 +359,15 @@ importers:
       '@fontsource-variable/mona-sans':
         specifier: 5.3.0
         version: 5.3.0
+      '@maskwars/arena':
+        specifier: workspace:*
+        version: link:../arena
       '@maskwars/brand':
         specifier: workspace:*
         version: link:../brand
+      '@maskwars/check':
+        specifier: workspace:*
+        version: link:../check
       '@maskwars/core':
         specifier: workspace:*
         version: link:../core

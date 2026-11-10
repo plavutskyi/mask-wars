@@ -168,6 +168,25 @@
   }
 }
 
+/* Only with all of it at once, the race clock, LIVE and the Forge link, do the links reach the clock on a laptop:
+   they stand closer under 1536, and under 1366 they go behind the one button. Every other header keeps its links. */
+@media (max-width: 1535px) {
+  .head[data-center]:has(.live):has(.link[data-place='forge']) .links,
+  .head[data-center]:has(.live):has(.link[data-place='forge']) .right {
+    gap: 16px;
+  }
+}
+
+@media (max-width: 1365px) {
+  .head[data-center]:has(.live):has(.link[data-place='forge']) .links {
+    display: none;
+  }
+
+  .head[data-center]:has(.live):has(.link[data-place='forge']) .toggle {
+    display: grid;
+  }
+}
+
 @media (max-width: 899px) {
   .links {
     display: none;

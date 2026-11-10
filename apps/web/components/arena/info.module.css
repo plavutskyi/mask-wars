@@ -160,12 +160,18 @@ a.v {
 
 /* On a phone the details rise as a sheet from the bottom: never off the screen, always under the thumb. */
 @media (max-width: 760px) {
+  /* The page dims, and goes to solid ink behind the sheet's foot: no line of the page shows through under its edge. */
   .scrim {
     display: block;
     position: fixed;
     inset: 0;
     z-index: 39;
-    background: color-mix(in srgb, var(--ink) 64%, transparent);
+    background: linear-gradient(
+      to top,
+      var(--ink) 0,
+      var(--ink) calc(48px + env(safe-area-inset-bottom)),
+      color-mix(in srgb, var(--ink) 64%, transparent) calc(240px + env(safe-area-inset-bottom))
+    );
   }
 
   .panel,

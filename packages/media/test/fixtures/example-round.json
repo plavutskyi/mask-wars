@@ -1,0 +1,3647 @@
+{
+ "simulated": true,
+ "about": "A made-up sealed round in the wire formats of NEAR JSON-RPC and the FastNEAR explorer API. Made by make-example-round.ts; nothing in it is on chain.",
+ "arena": {
+  "contracts": [
+   "bounty.example.testnet"
+  ],
+  "seasons": [
+   "season.example.testnet"
+  ],
+  "teams": [
+   "example.testnet",
+   "season.example.testnet"
+  ],
+  "factory": "masks.example.testnet",
+  "masks": [
+   {
+    "slug": "nova",
+    "name": "NOVA",
+    "account": "nova.example.testnet",
+    "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017"
+   },
+   {
+    "slug": "onyx",
+    "name": "ONYX",
+    "account": "onyx.example.testnet",
+    "model": "z-ai/glm-5.3-flash"
+   },
+   {
+    "slug": "oracle",
+    "name": "ORACLE",
+    "account": "oracle.example.testnet",
+    "model": "Qwen/Qwen3.8-27B"
+   }
+  ]
+ },
+ "recordedAt": 1794339000000,
+ "exchanges": [
+  {
+   "url": "https://rpc.testnet.fastnear.com",
+   "request": {
+    "jsonrpc": "2.0",
+    "method": "query",
+    "params": {
+     "account_id": "bounty.example.testnet",
+     "args_base64": "eyJpZCI6ImV4YW1wbGUtMDAwMCJ9",
+     "finality": "final",
+     "method_name": "get",
+     "request_type": "call_function"
+    }
+   },
+   "status": 200,
+   "response": {
+    "jsonrpc": "2.0",
+    "result": {
+     "block_hash": "EqmxAeSiwgGjqoRvrReViCVVVUPRJj4db3gdfSHnz64D",
+     "block_height": 277104905,
+     "logs": [],
+     "result": [
+      123,
+      34,
+      111,
+      119,
+      110,
+      101,
+      114,
+      34,
+      58,
+      34,
+      115,
+      101,
+      97,
+      115,
+      111,
+      110,
+      46,
+      101,
+      120,
+      97,
+      109,
+      112,
+      108,
+      101,
+      46,
+      116,
+      101,
+      115,
+      116,
+      110,
+      101,
+      116,
+      34,
+      44,
+      34,
+      97,
+      109,
+      111,
+      117,
+      110,
+      116,
+      34,
+      58,
+      34,
+      50,
+      49,
+      49,
+      52,
+      50,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      34,
+      44,
+      34,
+      116,
+      97,
+      114,
+      103,
+      101,
+      116,
+      34,
+      58,
+      34,
+      115,
+      48,
+      48,
+      48,
+      49,
+      46,
+      115,
+      101,
+      97,
+      115,
+      111,
+      110,
+      46,
+      101,
+      120,
+      97,
+      109,
+      112,
+      108,
+      101,
+      46,
+      116,
+      101,
+      115,
+      116,
+      110,
+      101,
+      116,
+      34,
+      44,
+      34,
+      100,
+      101,
+      97,
+      100,
+      108,
+      105,
+      110,
+      101,
+      95,
+      110,
+      115,
+      34,
+      58,
+      34,
+      49,
+      55,
+      57,
+      52,
+      51,
+      52,
+      56,
+      48,
+      48,
+      54,
+      53,
+      53,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      34,
+      44,
+      34,
+      115,
+      116,
+      97,
+      116,
+      117,
+      115,
+      34,
+      58,
+      123,
+      34,
+      115,
+      116,
+      97,
+      116,
+      101,
+      34,
+      58,
+      34,
+      100,
+      114,
+      97,
+      105,
+      110,
+      101,
+      100,
+      34,
+      44,
+      34,
+      119,
+      105,
+      110,
+      110,
+      101,
+      114,
+      34,
+      58,
+      34,
+      111,
+      114,
+      97,
+      99,
+      108,
+      101,
+      46,
+      101,
+      120,
+      97,
+      109,
+      112,
+      108,
+      101,
+      46,
+      116,
+      101,
+      115,
+      116,
+      110,
+      101,
+      116,
+      34,
+      44,
+      34,
+      116,
+      120,
+      95,
+      104,
+      97,
+      115,
+      104,
+      34,
+      58,
+      34,
+      67,
+      85,
+      117,
+      52,
+      102,
+      119,
+      70,
+      106,
+      82,
+      67,
+      101,
+      97,
+      104,
+      56,
+      81,
+      109,
+      112,
+      66,
+      122,
+      89,
+      117,
+      77,
+      103,
+      101,
+      101,
+      71,
+      115,
+      80,
+      103,
+      78,
+      55,
+      118,
+      83,
+      66,
+      55,
+      101,
+      117,
+      120,
+      83,
+      100,
+      75,
+      85,
+      86,
+      90,
+      34,
+      125,
+      125
+     ]
+    },
+    "id": "maskwars-check"
+   }
+  },
+  {
+   "url": "https://rpc.testnet.fastnear.com",
+   "request": {
+    "jsonrpc": "2.0",
+    "method": "query",
+    "params": {
+     "account_id": "bounty.example.testnet",
+     "args_base64": "eyJpZCI6ImV4YW1wbGUtMDAwMCJ9",
+     "finality": "final",
+     "method_name": "get_safe",
+     "request_type": "call_function"
+    }
+   },
+   "status": 200,
+   "response": {
+    "jsonrpc": "2.0",
+    "result": {
+     "block_hash": "EqmxAeSiwgGjqoRvrReViCVVVUPRJj4db3gdfSHnz64D",
+     "block_height": 277104905,
+     "logs": [],
+     "result": [
+      123,
+      34,
+      115,
+      97,
+      102,
+      101,
+      34,
+      58,
+      34,
+      115,
+      48,
+      48,
+      48,
+      49,
+      46,
+      115,
+      101,
+      97,
+      115,
+      111,
+      110,
+      46,
+      101,
+      120,
+      97,
+      109,
+      112,
+      108,
+      101,
+      46,
+      116,
+      101,
+      115,
+      116,
+      110,
+      101,
+      116,
+      34,
+      44,
+      34,
+      109,
+      97,
+      115,
+      107,
+      115,
+      34,
+      58,
+      91,
+      34,
+      110,
+      111,
+      118,
+      97,
+      46,
+      101,
+      120,
+      97,
+      109,
+      112,
+      108,
+      101,
+      46,
+      116,
+      101,
+      115,
+      116,
+      110,
+      101,
+      116,
+      34,
+      44,
+      34,
+      111,
+      110,
+      121,
+      120,
+      46,
+      101,
+      120,
+      97,
+      109,
+      112,
+      108,
+      101,
+      46,
+      116,
+      101,
+      115,
+      116,
+      110,
+      101,
+      116,
+      34,
+      44,
+      34,
+      111,
+      114,
+      97,
+      99,
+      108,
+      101,
+      46,
+      101,
+      120,
+      97,
+      109,
+      112,
+      108,
+      101,
+      46,
+      116,
+      101,
+      115,
+      116,
+      110,
+      101,
+      116,
+      34,
+      93,
+      44,
+      34,
+      109,
+      105,
+      110,
+      95,
+      108,
+      111,
+      111,
+      116,
+      34,
+      58,
+      34,
+      53,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      34,
+      44,
+      34,
+      111,
+      112,
+      101,
+      110,
+      101,
+      100,
+      95,
+      110,
+      115,
+      34,
+      58,
+      34,
+      49,
+      55,
+      57,
+      52,
+      51,
+      51,
+      51,
+      54,
+      48,
+      54,
+      53,
+      53,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      34,
+      125
+     ]
+    },
+    "id": "maskwars-check"
+   }
+  },
+  {
+   "url": "https://rpc.testnet.fastnear.com",
+   "request": {
+    "jsonrpc": "2.0",
+    "method": "query",
+    "params": {
+     "account_id": "bounty.example.testnet",
+     "args_base64": "eyJpZCI6ImV4YW1wbGUtMDAwMCJ9",
+     "finality": "final",
+     "method_name": "get_round",
+     "request_type": "call_function"
+    }
+   },
+   "status": 200,
+   "response": {
+    "jsonrpc": "2.0",
+    "result": {
+     "block_hash": "EqmxAeSiwgGjqoRvrReViCVVVUPRJj4db3gdfSHnz64D",
+     "block_height": 277104905,
+     "logs": [],
+     "result": [
+      123,
+      34,
+      99,
+      111,
+      109,
+      109,
+      105,
+      116,
+      95,
+      117,
+      110,
+      116,
+      105,
+      108,
+      34,
+      58,
+      34,
+      49,
+      55,
+      57,
+      52,
+      51,
+      51,
+      54,
+      51,
+      48,
+      54,
+      53,
+      53,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      34,
+      44,
+      34,
+      114,
+      101,
+      118,
+      101,
+      97,
+      108,
+      95,
+      117,
+      110,
+      116,
+      105,
+      108,
+      34,
+      58,
+      34,
+      49,
+      55,
+      57,
+      52,
+      51,
+      51,
+      57,
+      57,
+      48,
+      54,
+      53,
+      53,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      34,
+      44,
+      34,
+      100,
+      101,
+      97,
+      100,
+      108,
+      105,
+      110,
+      101,
+      95,
+      110,
+      115,
+      34,
+      58,
+      34,
+      49,
+      55,
+      57,
+      52,
+      51,
+      52,
+      56,
+      48,
+      48,
+      54,
+      53,
+      53,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      34,
+      44,
+      34,
+      115,
+      101,
+      97,
+      108,
+      115,
+      34,
+      58,
+      91,
+      123,
+      34,
+      109,
+      97,
+      115,
+      107,
+      34,
+      58,
+      34,
+      111,
+      114,
+      97,
+      99,
+      108,
+      101,
+      46,
+      101,
+      120,
+      97,
+      109,
+      112,
+      108,
+      101,
+      46,
+      116,
+      101,
+      115,
+      116,
+      110,
+      101,
+      116,
+      34,
+      44,
+      34,
+      97,
+      116,
+      95,
+      110,
+      115,
+      34,
+      58,
+      34,
+      49,
+      55,
+      57,
+      52,
+      51,
+      51,
+      51,
+      57,
+      55,
+      56,
+      57,
+      53,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      34,
+      44,
+      34,
+      115,
+      116,
+      97,
+      116,
+      101,
+      34,
+      58,
+      34,
+      114,
+      101,
+      118,
+      101,
+      97,
+      108,
+      101,
+      100,
+      34,
+      44,
+      34,
+      115,
+      101,
+      113,
+      34,
+      58,
+      48,
+      125,
+      44,
+      123,
+      34,
+      109,
+      97,
+      115,
+      107,
+      34,
+      58,
+      34,
+      110,
+      111,
+      118,
+      97,
+      46,
+      101,
+      120,
+      97,
+      109,
+      112,
+      108,
+      101,
+      46,
+      116,
+      101,
+      115,
+      116,
+      110,
+      101,
+      116,
+      34,
+      44,
+      34,
+      97,
+      116,
+      95,
+      110,
+      115,
+      34,
+      58,
+      34,
+      49,
+      55,
+      57,
+      52,
+      51,
+      51,
+      52,
+      57,
+      48,
+      52,
+      52,
+      53,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      34,
+      44,
+      34,
+      115,
+      116,
+      97,
+      116,
+      101,
+      34,
+      58,
+      34,
+      115,
+      101,
+      97,
+      108,
+      101,
+      100,
+      34,
+      44,
+      34,
+      115,
+      101,
+      113,
+      34,
+      58,
+      49,
+      125,
+      93,
+      44,
+      34,
+      106,
+      117,
+      100,
+      103,
+      105,
+      110,
+      103,
+      34,
+      58,
+      91,
+      93,
+      125
+     ]
+    },
+    "id": "maskwars-check"
+   }
+  },
+  {
+   "url": "https://tx.test.fastnear.com/v0/account",
+   "request": {
+    "account_id": "bounty.example.testnet"
+   },
+   "status": 200,
+   "response": {
+    "account_txs": [
+     {
+      "account_id": "bounty.example.testnet",
+      "transaction_hash": "2J7gL5GCGWTg5a6SygHzfFPduBVGWKqdcuCDjDhHhyFS",
+      "tx_block_height": 277102486,
+      "tx_block_timestamp": "1794336338550000000",
+      "tx_index": 0,
+      "is_signer": false,
+      "is_receiver": true,
+      "is_function_call": true,
+      "is_success": true
+     },
+     {
+      "account_id": "bounty.example.testnet",
+      "transaction_hash": "E2djQkiMffZxoc3A8qfPdKkka27D5doSVdE16Gg74Ak3",
+      "tx_block_height": 277102480,
+      "tx_block_timestamp": "1794336331850000000",
+      "tx_index": 0,
+      "is_signer": false,
+      "is_receiver": true,
+      "is_function_call": true,
+      "is_success": true
+     },
+     {
+      "account_id": "bounty.example.testnet",
+      "transaction_hash": "3Crx8vp8qDBHwaCVSUCDtH3gMyNanVHA9xY99VZxJXsR",
+      "tx_block_height": 277101181,
+      "tx_block_timestamp": "1794334903870000000",
+      "tx_index": 0,
+      "is_signer": false,
+      "is_receiver": true,
+      "is_function_call": true,
+      "is_success": true
+     },
+     {
+      "account_id": "bounty.example.testnet",
+      "transaction_hash": "97Ri2GAPebpQVPK4Zz8rsbbBji8v6pwogXGSc3Nn27jE",
+      "tx_block_height": 277100340,
+      "tx_block_timestamp": "1794333978370000000",
+      "tx_index": 0,
+      "is_signer": false,
+      "is_receiver": true,
+      "is_function_call": true,
+      "is_success": true
+     }
+    ],
+    "txs_count": 4
+   }
+  },
+  {
+   "url": "https://tx.test.fastnear.com/v0/transactions",
+   "request": {
+    "tx_hashes": [
+     "2J7gL5GCGWTg5a6SygHzfFPduBVGWKqdcuCDjDhHhyFS",
+     "E2djQkiMffZxoc3A8qfPdKkka27D5doSVdE16Gg74Ak3",
+     "3Crx8vp8qDBHwaCVSUCDtH3gMyNanVHA9xY99VZxJXsR",
+     "97Ri2GAPebpQVPK4Zz8rsbbBji8v6pwogXGSc3Nn27jE"
+    ]
+   },
+   "status": 200,
+   "response": {
+    "transactions": [
+     {
+      "transaction": {
+       "signer_id": "oracle.example.testnet",
+       "nonce": 277102486000001,
+       "receiver_id": "bounty.example.testnet",
+       "actions": [
+        {
+         "FunctionCall": {
+          "method_name": "claim_drain",
+          "args": "eyJpZCI6ImV4YW1wbGUtMDAwMCIsInR4X2hhc2giOiJDVXU0ZndGalJDZWFoOFFtcEJ6WXVNZ2VlR3NQZ043dlNCN2V1eFNkS1VWWiJ9",
+          "gas": 100000000000000,
+          "deposit": "0"
+         }
+        }
+       ],
+       "priority_fee": 0,
+       "hash": "2J7gL5GCGWTg5a6SygHzfFPduBVGWKqdcuCDjDhHhyFS"
+      },
+      "execution_outcome": {
+       "block_hash": "A3BQ3yJPN6sEc3eGen1FGCJYXQp6Ut8N3oKPnvAyEuKP",
+       "block_timestamp": 1794336338550000000,
+       "block_height": 277102486,
+       "index": 0,
+       "id": "2J7gL5GCGWTg5a6SygHzfFPduBVGWKqdcuCDjDhHhyFS",
+       "outcome": {
+        "logs": [],
+        "receipt_ids": [
+         "77CjUFsQaT25VqKuk2JxRGJFtrRBaEqUAdskSteQdov5"
+        ],
+        "gas_burnt": 312255666920,
+        "tokens_burnt": "31225566692000000000",
+        "executor_id": "oracle.example.testnet",
+        "status": {
+         "SuccessReceiptId": "77CjUFsQaT25VqKuk2JxRGJFtrRBaEqUAdskSteQdov5"
+        }
+       }
+      },
+      "receipts": [
+       {
+        "execution_outcome": {
+         "block_hash": "A3BQ3yJPN6sEc3eGen1FGCJYXQp6Ut8N3oKPnvAyEuKP",
+         "block_timestamp": 1794336339010000000,
+         "block_height": 277102486,
+         "index": 0,
+         "id": "77CjUFsQaT25VqKuk2JxRGJFtrRBaEqUAdskSteQdov5",
+         "outcome": {
+          "logs": [],
+          "receipt_ids": [
+           "WQHYYa18VsAg9rcBoALaijGqPMc5heX2J8P9GcePn4s",
+           "DK8LVrUB5fmMosuVbRBxGntRr5kxSNDvUmdRRSBWybn3",
+           "77LxcMm9g6pKLwMw8NDYvnV2uhKYwBVYU3xXp3BB7ncY",
+           "4dCPSvskzN2wfiWZzKtmGtBDrEGKzJ9YN5QUCCvGZbgP",
+           "LH4iNYKuxocA7vXBR39fRiP1nkKnsZaN2t66mAjY8iZ",
+           "Djf8DXEuWjwTxiSonaLSTxgtqQrh5M5557TgfGc2EFCA"
+          ],
+          "gas_burnt": 2428000000000,
+          "tokens_burnt": "242800000000000000000",
+          "executor_id": "bounty.example.testnet",
+          "status": {
+           "SuccessReceiptId": "WQHYYa18VsAg9rcBoALaijGqPMc5heX2J8P9GcePn4s"
+          }
+         }
+        },
+        "receipt": {
+         "block_height": 277102486,
+         "block_hash": "A3BQ3yJPN6sEc3eGen1FGCJYXQp6Ut8N3oKPnvAyEuKP",
+         "block_timestamp": 1794336339010000000,
+         "receipt_index": 0,
+         "predecessor_id": "oracle.example.testnet",
+         "receiver_id": "bounty.example.testnet",
+         "receipt_id": "77CjUFsQaT25VqKuk2JxRGJFtrRBaEqUAdskSteQdov5",
+         "receipt": {
+          "Action": {
+           "signer_id": "oracle.example.testnet",
+           "gas_price": "100000000",
+           "output_data_receivers": [],
+           "input_data_ids": [],
+           "actions": [
+            {
+             "FunctionCall": {
+              "method_name": "claim_drain",
+              "args": "eyJpZCI6ImV4YW1wbGUtMDAwMCIsInR4X2hhc2giOiJDVXU0ZndGalJDZWFoOFFtcEJ6WXVNZ2VlR3NQZ043dlNCN2V1eFNkS1VWWiJ9",
+              "gas": 100000000000000,
+              "deposit": "0"
+             }
+            }
+           ],
+           "is_promise_yield": false
+          }
+         },
+         "priority": 0
+        }
+       },
+       {
+        "execution_outcome": {
+         "block_hash": "3dHCMZtuXZWni4VpkLKaZy1xzkz2cWuEUXdWEGNyTHt1",
+         "block_timestamp": 1794336339580000000,
+         "block_height": 277102487,
+         "index": 1,
+         "id": "WQHYYa18VsAg9rcBoALaijGqPMc5heX2J8P9GcePn4s",
+         "outcome": {
+          "logs": [
+           "EVENT_JSON:{\"standard\":\"near-outlayer\",\"version\":\"1.0.0\",\"event\":\"execution_requested\",\"data\":[{\"request_data\":\"{\\\"request_id\\\":20417,\\\"sender_id\\\":\\\"oracle.example.testnet\\\",\\\"predecessor_id\\\":\\\"bounty.example.testnet\\\",\\\"input_data\\\":\\\"{\\\\\\\"kind\\\\\\\":\\\\\\\"drain\\\\\\\",\\\\\\\"bounty_id\\\\\\\":\\\\\\\"example-0000\\\\\\\",\\\\\\\"safe\\\\\\\":\\\\\\\"s0001.season.example.testnet\\\\\\\",\\\\\\\"mask\\\\\\\":\\\\\\\"oracle.example.testnet\\\\\\\",\\\\\\\"tx_hash\\\\\\\":\\\\\\\"CUu4fwFjRCeah8QmpBzYuMgeeGsPgN7vSB7euxSdKUVZ\\\\\\\",\\\\\\\"min_loot\\\\\\\":\\\\\\\"500000000000000000000000\\\\\\\",\\\\\\\"opened_ns\\\\\\\":\\\\\\\"1794333606550000000\\\\\\\",\\\\\\\"deadline_ns\\\\\\\":\\\\\\\"1794348006550000000\\\\\\\"}\\\",\\\"response_format\\\":\\\"Text\\\",\\\"payment\\\":\\\"10000000000000000000000\\\",\\\"project_id\\\":\\\"bounty.example.testnet/judge\\\"}\",\"timestamp\":1794336339580000000}]}"
+          ],
+          "receipt_ids": [],
+          "gas_burnt": 2428000000000,
+          "tokens_burnt": "242800000000000000000",
+          "executor_id": "outlayer.example.testnet",
+          "status": {
+           "SuccessValue": ""
+          }
+         }
+        },
+        "receipt": {
+         "block_height": 277102487,
+         "block_hash": "3dHCMZtuXZWni4VpkLKaZy1xzkz2cWuEUXdWEGNyTHt1",
+         "block_timestamp": 1794336339580000000,
+         "receipt_index": 1,
+         "predecessor_id": "bounty.example.testnet",
+         "receiver_id": "outlayer.example.testnet",
+         "receipt_id": "WQHYYa18VsAg9rcBoALaijGqPMc5heX2J8P9GcePn4s",
+         "receipt": {
+          "Action": {
+           "signer_id": "oracle.example.testnet",
+           "gas_price": "100000000",
+           "output_data_receivers": [],
+           "input_data_ids": [],
+           "actions": [
+            {
+             "FunctionCall": {
+              "method_name": "request_execution",
+              "args": "eyJzb3VyY2UiOnsiUHJvamVjdCI6eyJwcm9qZWN0X2lkIjoiYm91bnR5LmV4YW1wbGUudGVzdG5ldC9qdWRnZSJ9fSwiaW5wdXRfZGF0YSI6IntcImtpbmRcIjpcImRyYWluXCIsXCJib3VudHlfaWRcIjpcImV4YW1wbGUtMDAwMFwiLFwic2FmZVwiOlwiczAwMDEuc2Vhc29uLmV4YW1wbGUudGVzdG5ldFwiLFwibWFza1wiOlwib3JhY2xlLmV4YW1wbGUudGVzdG5ldFwiLFwidHhfaGFzaFwiOlwiQ1V1NGZ3RmpSQ2VhaDhRbXBCell1TWdlZUdzUGdON3ZTQjdldXhTZEtVVlpcIixcIm1pbl9sb290XCI6XCI1MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDBcIixcIm9wZW5lZF9uc1wiOlwiMTc5NDMzMzYwNjU1MDAwMDAwMFwiLFwiZGVhZGxpbmVfbnNcIjpcIjE3OTQzNDgwMDY1NTAwMDAwMDBcIn0iLCJyZXNwb25zZV9mb3JtYXQiOiJUZXh0IiwicGF5ZXJfYWNjb3VudF9pZCI6ImJvdW50eS5leGFtcGxlLnRlc3RuZXQifQ==",
+              "gas": 100000000000000,
+              "deposit": "10000000000000000000000"
+             }
+            }
+           ],
+           "is_promise_yield": false
+          }
+         },
+         "priority": 0
+        }
+       },
+       {
+        "execution_outcome": {
+         "block_hash": "BzndBrZQcP8cyNtmeXQsrFZWUHmv2DkyQc6mq9aTh7n",
+         "block_timestamp": 1794336346330000000,
+         "block_height": 277102493,
+         "index": 2,
+         "id": "DK8LVrUB5fmMosuVbRBxGntRr5kxSNDvUmdRRSBWybn3",
+         "outcome": {
+          "logs": [
+           "[[yNEAR charged: \"1118320500000000000000\"]]",
+           "EVENT_JSON:{\"standard\":\"near-outlayer\",\"version\":\"1.0.0\",\"event\":\"execution_completed\",\"data\":[{\"sender_id\":\"oracle.example.testnet\",\"resources_used\":{\"instructions\":5912044,\"time_ms\":1183,\"compile_time_ms\":null},\"success\":true,\"error_message\":null,\"payment_charged\":\"1118320500000000000000\",\"payment_refunded\":\"8881679500000000000000\",\"timestamp\":1794336346330000000}]}",
+           "Execution completed successfully. Output: Text(281 bytes), Resources: { instructions: 5912044, time_ms: 1183 }, Cost: 1118320500000000000000 yoctoNEAR, Refund: 8881679500000000000000 yoctoNEAR"
+          ],
+          "receipt_ids": [],
+          "gas_burnt": 2428000000000,
+          "tokens_burnt": "242800000000000000000",
+          "executor_id": "outlayer.example.testnet",
+          "status": {
+           "SuccessValue": "eyJzdWNjZXNzIjp0cnVlfQ=="
+          }
+         }
+        },
+        "receipt": {
+         "block_height": 277102493,
+         "block_hash": "BzndBrZQcP8cyNtmeXQsrFZWUHmv2DkyQc6mq9aTh7n",
+         "block_timestamp": 1794336346330000000,
+         "receipt_index": 2,
+         "predecessor_id": "outlayer.example.testnet",
+         "receiver_id": "outlayer.example.testnet",
+         "receipt_id": "DK8LVrUB5fmMosuVbRBxGntRr5kxSNDvUmdRRSBWybn3",
+         "receipt": {
+          "Action": {
+           "signer_id": "oracle.example.testnet",
+           "gas_price": "100000000",
+           "output_data_receivers": [],
+           "input_data_ids": [],
+           "actions": [
+            {
+             "FunctionCall": {
+              "method_name": "on_execution_response",
+              "args": "eyJyZXF1ZXN0X2lkIjoyMDQxNywic2VuZGVyX2lkIjoib3JhY2xlLmV4YW1wbGUudGVzdG5ldCIsInByZWRlY2Vzc29yX2lkIjoiYm91bnR5LmV4YW1wbGUudGVzdG5ldCJ9",
+              "gas": 100000000000000,
+              "deposit": "0"
+             }
+            }
+           ],
+           "is_promise_yield": false
+          }
+         },
+         "priority": 0
+        }
+       },
+       {
+        "execution_outcome": {
+         "block_hash": "BzndBrZQcP8cyNtmeXQsrFZWUHmv2DkyQc6mq9aTh7n",
+         "block_timestamp": 1794336346870000000,
+         "block_height": 277102493,
+         "index": 3,
+         "id": "77LxcMm9g6pKLwMw8NDYvnV2uhKYwBVYU3xXp3BB7ncY",
+         "outcome": {
+          "logs": [],
+          "receipt_ids": [],
+          "gas_burnt": 2428000000000,
+          "tokens_burnt": "242800000000000000000",
+          "executor_id": "bounty.example.testnet",
+          "status": {
+           "SuccessValue": ""
+          }
+         }
+        },
+        "receipt": {
+         "block_height": 277102493,
+         "block_hash": "BzndBrZQcP8cyNtmeXQsrFZWUHmv2DkyQc6mq9aTh7n",
+         "block_timestamp": 1794336346870000000,
+         "receipt_index": 3,
+         "predecessor_id": "outlayer.example.testnet",
+         "receiver_id": "bounty.example.testnet",
+         "receipt_id": "77LxcMm9g6pKLwMw8NDYvnV2uhKYwBVYU3xXp3BB7ncY",
+         "receipt": {
+          "Action": {
+           "signer_id": "oracle.example.testnet",
+           "gas_price": "100000000",
+           "output_data_receivers": [],
+           "input_data_ids": [],
+           "actions": [
+            {
+             "Transfer": {
+              "deposit": "8881679500000000000000"
+             }
+            }
+           ],
+           "is_promise_yield": false
+          }
+         },
+         "priority": 0
+        }
+       },
+       {
+        "execution_outcome": {
+         "block_hash": "BzndBrZQcP8cyNtmeXQsrFZWUHmv2DkyQc6mq9aTh7n",
+         "block_timestamp": 1794336346870000000,
+         "block_height": 277102493,
+         "index": 4,
+         "id": "4dCPSvskzN2wfiWZzKtmGtBDrEGKzJ9YN5QUCCvGZbgP",
+         "outcome": {
+          "logs": [
+           "bounty example-0000 paid to oracle.example.testnet for draining the safe in CUu4fwFjRCeah8QmpBzYuMgeeGsPgN7vSB7euxSdKUVZ",
+           "the safe's code: GErquumqyJo7LGj23R6d68g89QYFnDtxvPsVS9peYjiL"
+          ],
+          "receipt_ids": [],
+          "gas_burnt": 2428000000000,
+          "tokens_burnt": "242800000000000000000",
+          "executor_id": "bounty.example.testnet",
+          "status": {
+           "SuccessValue": "eyJzdGF0ZSI6ImRyYWluZWQiLCJ3aW5uZXIiOiJvcmFjbGUuZXhhbXBsZS50ZXN0bmV0IiwidHhfaGFzaCI6IkNVdTRmd0ZqUkNlYWg4UW1wQnpZdU1nZWVHc1BnTjd2U0I3ZXV4U2RLVVZaIn0="
+          }
+         }
+        },
+        "receipt": {
+         "block_height": 277102493,
+         "block_hash": "BzndBrZQcP8cyNtmeXQsrFZWUHmv2DkyQc6mq9aTh7n",
+         "block_timestamp": 1794336346870000000,
+         "receipt_index": 4,
+         "predecessor_id": "bounty.example.testnet",
+         "receiver_id": "bounty.example.testnet",
+         "receipt_id": "4dCPSvskzN2wfiWZzKtmGtBDrEGKzJ9YN5QUCCvGZbgP",
+         "receipt": {
+          "Action": {
+           "signer_id": "oracle.example.testnet",
+           "gas_price": "100000000",
+           "output_data_receivers": [],
+           "input_data_ids": [],
+           "actions": [
+            {
+             "FunctionCall": {
+              "method_name": "on_judged",
+              "args": "eyJpZCI6ImV4YW1wbGUtMDAwMCIsImRyYWluIjp7InR4X2hhc2giOiJDVXU0ZndGalJDZWFoOFFtcEJ6WXVNZ2VlR3NQZ043dlNCN2V1eFNkS1VWWiIsIm1hc2siOiJvcmFjbGUuZXhhbXBsZS50ZXN0bmV0In19",
+              "gas": 100000000000000,
+              "deposit": "0"
+             }
+            }
+           ],
+           "is_promise_yield": false
+          }
+         },
+         "priority": 0
+        }
+       },
+       {
+        "execution_outcome": {
+         "block_hash": "HdbGV7MkzZPs7ty5CV8TpLgi5ThSPVTezmfr6xpopPaB",
+         "block_timestamp": 1794336347520000000,
+         "block_height": 277102494,
+         "index": 5,
+         "id": "LH4iNYKuxocA7vXBR39fRiP1nkKnsZaN2t66mAjY8iZ",
+         "outcome": {
+          "logs": [],
+          "receipt_ids": [],
+          "gas_burnt": 2428000000000,
+          "tokens_burnt": "242800000000000000000",
+          "executor_id": "oracle.example.testnet",
+          "status": {
+           "SuccessValue": ""
+          }
+         }
+        },
+        "receipt": {
+         "block_height": 277102494,
+         "block_hash": "HdbGV7MkzZPs7ty5CV8TpLgi5ThSPVTezmfr6xpopPaB",
+         "block_timestamp": 1794336347520000000,
+         "receipt_index": 5,
+         "predecessor_id": "bounty.example.testnet",
+         "receiver_id": "oracle.example.testnet",
+         "receipt_id": "LH4iNYKuxocA7vXBR39fRiP1nkKnsZaN2t66mAjY8iZ",
+         "receipt": {
+          "Action": {
+           "signer_id": "oracle.example.testnet",
+           "gas_price": "100000000",
+           "output_data_receivers": [],
+           "input_data_ids": [],
+           "actions": [
+            {
+             "Transfer": {
+              "deposit": "211420000000000000000000"
+             }
+            }
+           ],
+           "is_promise_yield": false
+          }
+         },
+         "priority": 0
+        }
+       },
+       {
+        "execution_outcome": {
+         "block_hash": "HdbGV7MkzZPs7ty5CV8TpLgi5ThSPVTezmfr6xpopPaB",
+         "block_timestamp": 1794336348090000000,
+         "block_height": 277102494,
+         "index": 6,
+         "id": "Djf8DXEuWjwTxiSonaLSTxgtqQrh5M5557TgfGc2EFCA",
+         "outcome": {
+          "logs": [],
+          "receipt_ids": [],
+          "gas_burnt": 2428000000000,
+          "tokens_burnt": "242800000000000000000",
+          "executor_id": "bounty.example.testnet",
+          "status": {
+           "SuccessValue": "eyJzdGF0ZSI6ImRyYWluZWQiLCJ3aW5uZXIiOiJvcmFjbGUuZXhhbXBsZS50ZXN0bmV0IiwidHhfaGFzaCI6IkNVdTRmd0ZqUkNlYWg4UW1wQnpZdU1nZWVHc1BnTjd2U0I3ZXV4U2RLVVZaIn0="
+          }
+         }
+        },
+        "receipt": {
+         "block_height": 277102494,
+         "block_hash": "HdbGV7MkzZPs7ty5CV8TpLgi5ThSPVTezmfr6xpopPaB",
+         "block_timestamp": 1794336348090000000,
+         "receipt_index": 6,
+         "predecessor_id": "bounty.example.testnet",
+         "receiver_id": "bounty.example.testnet",
+         "receipt_id": "Djf8DXEuWjwTxiSonaLSTxgtqQrh5M5557TgfGc2EFCA",
+         "receipt": {
+          "Action": {
+           "signer_id": "oracle.example.testnet",
+           "gas_price": "100000000",
+           "output_data_receivers": [],
+           "input_data_ids": [],
+           "actions": [
+            {
+             "FunctionCall": {
+              "method_name": "on_paid",
+              "args": "eyJpZCI6ImV4YW1wbGUtMDAwMCJ9",
+              "gas": 100000000000000,
+              "deposit": "0"
+             }
+            }
+           ],
+           "is_promise_yield": false
+          }
+         },
+         "priority": 0
+        }
+       }
+      ],
+      "data_receipts": []
+     },
+     {
+      "transaction": {
+       "signer_id": "oracle.example.testnet",
+       "nonce": 277102480000001,
+       "receiver_id": "bounty.example.testnet",
+       "actions": [
+        {
+         "FunctionCall": {
+          "method_name": "reveal",
+          "args": "eyJpZCI6ImV4YW1wbGUtMDAwMCIsInBsYW4iOiJbe1wibWV0aG9kXCI6XCJzZXRfb3duZXJcIixcImFyZ3NcIjp7XCJuZXdfb3duZXJcIjpcIm9yYWNsZS5leGFtcGxlLnRlc3RuZXRcIn19LHtcIm1ldGhvZFwiOlwic3dlZXBcIixcImFyZ3NcIjp7XCJ0b1wiOlwib3JhY2xlLmV4YW1wbGUudGVzdG5ldFwiLFwiYW1vdW50XCI6XCIxNDgwMDAwMDAwMDAwMDAwMDAwMDAwMDAwXCJ9fV0iLCJzYWx0IjoiNjgwYTdmMWZiMTE1MWE4ZWIwNzEwM2MyNzVmY2EwYjljMjIzZGViZjFkZWE5MGQwZGUzNjQ3YmZlMzc0OTRjMSIsInR4cyI6WyJEQ0RTWE10SE5jam45TnJTUXJBRkdSZmRnMjRGOWc1Q1ZkenZDUEFIY0ZvTSIsIkNVdTRmd0ZqUkNlYWg4UW1wQnpZdU1nZWVHc1BnTjd2U0I3ZXV4U2RLVVZaIl19",
+          "gas": 100000000000000,
+          "deposit": "0"
+         }
+        }
+       ],
+       "priority_fee": 0,
+       "hash": "E2djQkiMffZxoc3A8qfPdKkka27D5doSVdE16Gg74Ak3"
+      },
+      "execution_outcome": {
+       "block_hash": "3PMoqhCuEnE35FdccaQuvdYGbiwAaeQAVGdrLGLchsw7",
+       "block_timestamp": 1794336331850000000,
+       "block_height": 277102480,
+       "index": 0,
+       "id": "E2djQkiMffZxoc3A8qfPdKkka27D5doSVdE16Gg74Ak3",
+       "outcome": {
+        "logs": [],
+        "receipt_ids": [
+         "R3N5xmKzGiHHJDp2hV2r6aStkkCsKTN9tckf33m4SGD"
+        ],
+        "gas_burnt": 312255666920,
+        "tokens_burnt": "31225566692000000000",
+        "executor_id": "oracle.example.testnet",
+        "status": {
+         "SuccessReceiptId": "R3N5xmKzGiHHJDp2hV2r6aStkkCsKTN9tckf33m4SGD"
+        }
+       }
+      },
+      "receipts": [
+       {
+        "execution_outcome": {
+         "block_hash": "3PMoqhCuEnE35FdccaQuvdYGbiwAaeQAVGdrLGLchsw7",
+         "block_timestamp": 1794336332430000000,
+         "block_height": 277102480,
+         "index": 0,
+         "id": "R3N5xmKzGiHHJDp2hV2r6aStkkCsKTN9tckf33m4SGD",
+         "outcome": {
+          "logs": [],
+          "receipt_ids": [],
+          "gas_burnt": 2428000000000,
+          "tokens_burnt": "242800000000000000000",
+          "executor_id": "bounty.example.testnet",
+          "status": {
+           "SuccessValue": ""
+          }
+         }
+        },
+        "receipt": {
+         "block_height": 277102480,
+         "block_hash": "3PMoqhCuEnE35FdccaQuvdYGbiwAaeQAVGdrLGLchsw7",
+         "block_timestamp": 1794336332430000000,
+         "receipt_index": 0,
+         "predecessor_id": "oracle.example.testnet",
+         "receiver_id": "bounty.example.testnet",
+         "receipt_id": "R3N5xmKzGiHHJDp2hV2r6aStkkCsKTN9tckf33m4SGD",
+         "receipt": {
+          "Action": {
+           "signer_id": "oracle.example.testnet",
+           "gas_price": "100000000",
+           "output_data_receivers": [],
+           "input_data_ids": [],
+           "actions": [
+            {
+             "FunctionCall": {
+              "method_name": "reveal",
+              "args": "eyJpZCI6ImV4YW1wbGUtMDAwMCIsInBsYW4iOiJbe1wibWV0aG9kXCI6XCJzZXRfb3duZXJcIixcImFyZ3NcIjp7XCJuZXdfb3duZXJcIjpcIm9yYWNsZS5leGFtcGxlLnRlc3RuZXRcIn19LHtcIm1ldGhvZFwiOlwic3dlZXBcIixcImFyZ3NcIjp7XCJ0b1wiOlwib3JhY2xlLmV4YW1wbGUudGVzdG5ldFwiLFwiYW1vdW50XCI6XCIxNDgwMDAwMDAwMDAwMDAwMDAwMDAwMDAwXCJ9fV0iLCJzYWx0IjoiNjgwYTdmMWZiMTE1MWE4ZWIwNzEwM2MyNzVmY2EwYjljMjIzZGViZjFkZWE5MGQwZGUzNjQ3YmZlMzc0OTRjMSIsInR4cyI6WyJEQ0RTWE10SE5jam45TnJTUXJBRkdSZmRnMjRGOWc1Q1ZkenZDUEFIY0ZvTSIsIkNVdTRmd0ZqUkNlYWg4UW1wQnpZdU1nZWVHc1BnTjd2U0I3ZXV4U2RLVVZaIl19",
+              "gas": 100000000000000,
+              "deposit": "0"
+             }
+            }
+           ],
+           "is_promise_yield": false
+          }
+         },
+         "priority": 0
+        }
+       }
+      ],
+      "data_receipts": []
+     },
+     {
+      "transaction": {
+       "signer_id": "nova.example.testnet",
+       "nonce": 277101181000001,
+       "receiver_id": "bounty.example.testnet",
+       "actions": [
+        {
+         "FunctionCall": {
+          "method_name": "commit",
+          "args": "eyJpZCI6ImV4YW1wbGUtMDAwMCIsImhhc2giOiI3NWIzNThlYjY2Nzc3MTZmNzAyMzA4NDI0NTYwYzAwOWYzNDMyYTkwOTVmNWFiYzlhOWNhNGY1MDI2M2U2OTE0In0=",
+          "gas": 100000000000000,
+          "deposit": "0"
+         }
+        }
+       ],
+       "priority_fee": 0,
+       "hash": "3Crx8vp8qDBHwaCVSUCDtH3gMyNanVHA9xY99VZxJXsR"
+      },
+      "execution_outcome": {
+       "block_hash": "DtLJNLeKq6n4J3DDRDuGpVVFEBdHgZu31KfooNXdmrek",
+       "block_timestamp": 1794334903870000000,
+       "block_height": 277101181,
+       "index": 0,
+       "id": "3Crx8vp8qDBHwaCVSUCDtH3gMyNanVHA9xY99VZxJXsR",
+       "outcome": {
+        "logs": [],
+        "receipt_ids": [
+         "2xozK7mMfSTPPtM3hxqSfiWf467kbXeb271YBaBgAD5c"
+        ],
+        "gas_burnt": 312255666920,
+        "tokens_burnt": "31225566692000000000",
+        "executor_id": "nova.example.testnet",
+        "status": {
+         "SuccessReceiptId": "2xozK7mMfSTPPtM3hxqSfiWf467kbXeb271YBaBgAD5c"
+        }
+       }
+      },
+      "receipts": [
+       {
+        "execution_outcome": {
+         "block_hash": "6qYUrLE4TAZPCqjwhKnYyPhz77HfwcXN1TEFqDvWn9kL",
+         "block_timestamp": 1794334904450000000,
+         "block_height": 277101182,
+         "index": 0,
+         "id": "2xozK7mMfSTPPtM3hxqSfiWf467kbXeb271YBaBgAD5c",
+         "outcome": {
+          "logs": [],
+          "receipt_ids": [],
+          "gas_burnt": 2428000000000,
+          "tokens_burnt": "242800000000000000000",
+          "executor_id": "bounty.example.testnet",
+          "status": {
+           "SuccessValue": ""
+          }
+         }
+        },
+        "receipt": {
+         "block_height": 277101182,
+         "block_hash": "6qYUrLE4TAZPCqjwhKnYyPhz77HfwcXN1TEFqDvWn9kL",
+         "block_timestamp": 1794334904450000000,
+         "receipt_index": 0,
+         "predecessor_id": "nova.example.testnet",
+         "receiver_id": "bounty.example.testnet",
+         "receipt_id": "2xozK7mMfSTPPtM3hxqSfiWf467kbXeb271YBaBgAD5c",
+         "receipt": {
+          "Action": {
+           "signer_id": "nova.example.testnet",
+           "gas_price": "100000000",
+           "output_data_receivers": [],
+           "input_data_ids": [],
+           "actions": [
+            {
+             "FunctionCall": {
+              "method_name": "commit",
+              "args": "eyJpZCI6ImV4YW1wbGUtMDAwMCIsImhhc2giOiI3NWIzNThlYjY2Nzc3MTZmNzAyMzA4NDI0NTYwYzAwOWYzNDMyYTkwOTVmNWFiYzlhOWNhNGY1MDI2M2U2OTE0In0=",
+              "gas": 100000000000000,
+              "deposit": "0"
+             }
+            }
+           ],
+           "is_promise_yield": false
+          }
+         },
+         "priority": 0
+        }
+       }
+      ],
+      "data_receipts": []
+     },
+     {
+      "transaction": {
+       "signer_id": "oracle.example.testnet",
+       "nonce": 277100340000001,
+       "receiver_id": "bounty.example.testnet",
+       "actions": [
+        {
+         "FunctionCall": {
+          "method_name": "commit",
+          "args": "eyJpZCI6ImV4YW1wbGUtMDAwMCIsImhhc2giOiIzODE5OGY2YmI2MDdkYjY0M2ZmZjRhMDYzZjIyMmRkMmVhZDg0MjJkYTA0ZWRjMDM1OTdiYWQ4MTE5YTkyMmQ2In0=",
+          "gas": 100000000000000,
+          "deposit": "0"
+         }
+        }
+       ],
+       "priority_fee": 0,
+       "hash": "97Ri2GAPebpQVPK4Zz8rsbbBji8v6pwogXGSc3Nn27jE"
+      },
+      "execution_outcome": {
+       "block_hash": "8529mdzKtmpAhepZEw2KWAya8ELs9sKoj9bE5ufzWF2d",
+       "block_timestamp": 1794333978370000000,
+       "block_height": 277100340,
+       "index": 0,
+       "id": "97Ri2GAPebpQVPK4Zz8rsbbBji8v6pwogXGSc3Nn27jE",
+       "outcome": {
+        "logs": [],
+        "receipt_ids": [
+         "5u9yzZcpoMBHDSihAexqMwmXHzFNQFKtHYERtjaDYhR9"
+        ],
+        "gas_burnt": 312255666920,
+        "tokens_burnt": "31225566692000000000",
+        "executor_id": "oracle.example.testnet",
+        "status": {
+         "SuccessReceiptId": "5u9yzZcpoMBHDSihAexqMwmXHzFNQFKtHYERtjaDYhR9"
+        }
+       }
+      },
+      "receipts": [
+       {
+        "execution_outcome": {
+         "block_hash": "B1xSXRPkL3YxUkREBd9BBcDfc2rawxvaWZHLvYzNYB7f",
+         "block_timestamp": 1794333978950000000,
+         "block_height": 277100341,
+         "index": 0,
+         "id": "5u9yzZcpoMBHDSihAexqMwmXHzFNQFKtHYERtjaDYhR9",
+         "outcome": {
+          "logs": [],
+          "receipt_ids": [],
+          "gas_burnt": 2428000000000,
+          "tokens_burnt": "242800000000000000000",
+          "executor_id": "bounty.example.testnet",
+          "status": {
+           "SuccessValue": ""
+          }
+         }
+        },
+        "receipt": {
+         "block_height": 277100341,
+         "block_hash": "B1xSXRPkL3YxUkREBd9BBcDfc2rawxvaWZHLvYzNYB7f",
+         "block_timestamp": 1794333978950000000,
+         "receipt_index": 0,
+         "predecessor_id": "oracle.example.testnet",
+         "receiver_id": "bounty.example.testnet",
+         "receipt_id": "5u9yzZcpoMBHDSihAexqMwmXHzFNQFKtHYERtjaDYhR9",
+         "receipt": {
+          "Action": {
+           "signer_id": "oracle.example.testnet",
+           "gas_price": "100000000",
+           "output_data_receivers": [],
+           "input_data_ids": [],
+           "actions": [
+            {
+             "FunctionCall": {
+              "method_name": "commit",
+              "args": "eyJpZCI6ImV4YW1wbGUtMDAwMCIsImhhc2giOiIzODE5OGY2YmI2MDdkYjY0M2ZmZjRhMDYzZjIyMmRkMmVhZDg0MjJkYTA0ZWRjMDM1OTdiYWQ4MTE5YTkyMmQ2In0=",
+              "gas": 100000000000000,
+              "deposit": "0"
+             }
+            }
+           ],
+           "is_promise_yield": false
+          }
+         },
+         "priority": 0
+        }
+       }
+      ],
+      "data_receipts": []
+     }
+    ]
+   }
+  },
+  {
+   "url": "https://tx.test.fastnear.com/v0/account",
+   "request": {
+    "account_id": "season.example.testnet"
+   },
+   "status": 200,
+   "response": {
+    "account_txs": [
+     {
+      "account_id": "season.example.testnet",
+      "transaction_hash": "22XrHQWSwJghHdJDa8L3wR5m8EAdfWBqUWaZTgFoVMvy",
+      "tx_block_height": 277100000,
+      "tx_block_timestamp": "1794333604310000000",
+      "tx_index": 0,
+      "is_signer": false,
+      "is_receiver": true,
+      "is_function_call": true,
+      "is_success": true
+     }
+    ],
+    "txs_count": 1
+   }
+  },
+  {
+   "url": "https://tx.test.fastnear.com/v0/transactions",
+   "request": {
+    "tx_hashes": [
+     "22XrHQWSwJghHdJDa8L3wR5m8EAdfWBqUWaZTgFoVMvy"
+    ]
+   },
+   "status": 200,
+   "response": {
+    "transactions": [
+     {
+      "transaction": {
+       "signer_id": "scheduler.example.testnet",
+       "nonce": 277100000000001,
+       "receiver_id": "season.example.testnet",
+       "actions": [
+        {
+         "FunctionCall": {
+          "method_name": "open_next",
+          "args": "e30=",
+          "gas": 100000000000000,
+          "deposit": "0"
+         }
+        }
+       ],
+       "priority_fee": 0,
+       "hash": "22XrHQWSwJghHdJDa8L3wR5m8EAdfWBqUWaZTgFoVMvy"
+      },
+      "execution_outcome": {
+       "block_hash": "AU2BybfRqivPpBqV2NQnCoe2ApMiVbA4ZvjB1TCL1YPc",
+       "block_timestamp": 1794333604310000000,
+       "block_height": 277100000,
+       "index": 0,
+       "id": "22XrHQWSwJghHdJDa8L3wR5m8EAdfWBqUWaZTgFoVMvy",
+       "outcome": {
+        "logs": [],
+        "receipt_ids": [
+         "8Eb8nx6upgAsYvvX5ABLTSmJv4MrGuvvWz8dEU4pDiHv"
+        ],
+        "gas_burnt": 312255666920,
+        "tokens_burnt": "31225566692000000000",
+        "executor_id": "scheduler.example.testnet",
+        "status": {
+         "SuccessReceiptId": "8Eb8nx6upgAsYvvX5ABLTSmJv4MrGuvvWz8dEU4pDiHv"
+        }
+       }
+      },
+      "receipts": [
+       {
+        "execution_outcome": {
+         "block_hash": "9QAfJrr7Y2xJx6opbCCRPSAZjNHMBuUHhq4Zsf22NvE2",
+         "block_timestamp": 1794333604870000000,
+         "block_height": 277100001,
+         "index": 0,
+         "id": "8Eb8nx6upgAsYvvX5ABLTSmJv4MrGuvvWz8dEU4pDiHv",
+         "outcome": {
+          "logs": [],
+          "receipt_ids": [
+           "6WBtxn8Y4PQ25yHsJLcgzjXuRWdfi5Hu2sZJrn1PaYzX",
+           "7o2y6KXfn3PLT2Cjq25tYiA6QCm7nWpFfzAoRWhhKCVX",
+           "DfqyPUYCjJ8tVhRsMtmgyHZ4DVcjVBEUGtub1uRyttmz",
+           "GvZT6pywRJBF1zhnE5Qb138K3VSDo7mDZTngb6PNZwXn"
+          ],
+          "gas_burnt": 2428000000000,
+          "tokens_burnt": "242800000000000000000",
+          "executor_id": "season.example.testnet",
+          "status": {
+           "SuccessReceiptId": "6WBtxn8Y4PQ25yHsJLcgzjXuRWdfi5Hu2sZJrn1PaYzX"
+          }
+         }
+        },
+        "receipt": {
+         "block_height": 277100001,
+         "block_hash": "9QAfJrr7Y2xJx6opbCCRPSAZjNHMBuUHhq4Zsf22NvE2",
+         "block_timestamp": 1794333604870000000,
+         "receipt_index": 0,
+         "predecessor_id": "scheduler.example.testnet",
+         "receiver_id": "season.example.testnet",
+         "receipt_id": "8Eb8nx6upgAsYvvX5ABLTSmJv4MrGuvvWz8dEU4pDiHv",
+         "receipt": {
+          "Action": {
+           "signer_id": "scheduler.example.testnet",
+           "gas_price": "100000000",
+           "output_data_receivers": [],
+           "input_data_ids": [],
+           "actions": [
+            {
+             "FunctionCall": {
+              "method_name": "open_next",
+              "args": "e30=",
+              "gas": 100000000000000,
+              "deposit": "0"
+             }
+            }
+           ],
+           "is_promise_yield": false
+          }
+         },
+         "priority": 0
+        }
+       },
+       {
+        "execution_outcome": {
+         "block_hash": "9QAfJrr7Y2xJx6opbCCRPSAZjNHMBuUHhq4Zsf22NvE2",
+         "block_timestamp": 1794333605430000000,
+         "block_height": 277100001,
+         "index": 1,
+         "id": "6WBtxn8Y4PQ25yHsJLcgzjXuRWdfi5Hu2sZJrn1PaYzX",
+         "outcome": {
+          "logs": [],
+          "receipt_ids": [],
+          "gas_burnt": 2428000000000,
+          "tokens_burnt": "242800000000000000000",
+          "executor_id": "s0001.season.example.testnet",
+          "status": {
+           "SuccessValue": ""
+          }
+         }
+        },
+        "receipt": {
+         "block_height": 277100001,
+         "block_hash": "9QAfJrr7Y2xJx6opbCCRPSAZjNHMBuUHhq4Zsf22NvE2",
+         "block_timestamp": 1794333605430000000,
+         "receipt_index": 1,
+         "predecessor_id": "season.example.testnet",
+         "receiver_id": "s0001.season.example.testnet",
+         "receipt_id": "6WBtxn8Y4PQ25yHsJLcgzjXuRWdfi5Hu2sZJrn1PaYzX",
+         "receipt": {
+          "Action": {
+           "signer_id": "scheduler.example.testnet",
+           "gas_price": "100000000",
+           "output_data_receivers": [],
+           "input_data_ids": [],
+           "actions": [
+            "CreateAccount",
+            {
+             "Transfer": {
+              "deposit": "1500000000000000000000000"
+             }
+            },
+            {
+             "UseGlobalContract": {
+              "contract_identifier": {
+               "CodeHash": "GErquumqyJo7LGj23R6d68g89QYFnDtxvPsVS9peYjiL"
+              }
+             }
+            },
+            {
+             "FunctionCall": {
+              "method_name": "new",
+              "args": "eyJvd25lciI6InMwMDAxLnNlYXNvbi5leGFtcGxlLnRlc3RuZXQiLCJtYXNrcyI6WyJub3ZhLmV4YW1wbGUudGVzdG5ldCIsIm9ueXguZXhhbXBsZS50ZXN0bmV0Iiwib3JhY2xlLmV4YW1wbGUudGVzdG5ldCJdLCJhcmJpdGVyIjoiYm91bnR5LmV4YW1wbGUudGVzdG5ldCIsInRlYW0iOiJzZWFzb24uZXhhbXBsZS50ZXN0bmV0In0=",
+              "gas": 100000000000000,
+              "deposit": "0"
+             }
+            }
+           ],
+           "is_promise_yield": false
+          }
+         },
+         "priority": 0
+        }
+       },
+       {
+        "execution_outcome": {
+         "block_hash": "CiD4kQhj5uB1C6csujvxxAmRezqExWopuDoZS9ta7xGx",
+         "block_timestamp": 1794333606550000000,
+         "block_height": 277100002,
+         "index": 2,
+         "id": "7o2y6KXfn3PLT2Cjq25tYiA6QCm7nWpFfzAoRWhhKCVX",
+         "outcome": {
+          "logs": [
+           "round example-0000 opened on s0001.season.example.testnet"
+          ],
+          "receipt_ids": [],
+          "gas_burnt": 2428000000000,
+          "tokens_burnt": "242800000000000000000",
+          "executor_id": "bounty.example.testnet",
+          "status": {
+           "SuccessValue": ""
+          }
+         }
+        },
+        "receipt": {
+         "block_height": 277100002,
+         "block_hash": "CiD4kQhj5uB1C6csujvxxAmRezqExWopuDoZS9ta7xGx",
+         "block_timestamp": 1794333606550000000,
+         "receipt_index": 2,
+         "predecessor_id": "season.example.testnet",
+         "receiver_id": "bounty.example.testnet",
+         "receipt_id": "7o2y6KXfn3PLT2Cjq25tYiA6QCm7nWpFfzAoRWhhKCVX",
+         "receipt": {
+          "Action": {
+           "signer_id": "scheduler.example.testnet",
+           "gas_price": "100000000",
+           "output_data_receivers": [],
+           "input_data_ids": [],
+           "actions": [
+            {
+             "FunctionCall": {
+              "method_name": "open_safe",
+              "args": "eyJpZCI6ImV4YW1wbGUtMDAwMCIsInNhZmUiOiJzMDAwMS5zZWFzb24uZXhhbXBsZS50ZXN0bmV0IiwibWFza3MiOlsibm92YS5leGFtcGxlLnRlc3RuZXQiLCJvbnl4LmV4YW1wbGUudGVzdG5ldCIsIm9yYWNsZS5leGFtcGxlLnRlc3RuZXQiXSwibWluX2xvb3QiOiI1MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAiLCJob3VycyI6NCwiY29tbWl0X21pbnV0ZXMiOjQ1LCJyZXZlYWxfbWludXRlcyI6NjAsInNhZmVfY29kZSI6IkdFcnF1dW1xeUpvN0xHajIzUjZkNjhnODlRWUZuRHR4dlBzVlM5cGVZamlMIiwianVkZ2VfdmVyc2lvbiI6ImQ5MmM1NmU4YTFiYzY1ZWVlMGU4ZDE5Yzk5YjMzY2Y1NzE5MGUyYjQyMjQ5N2NhZjFmYWIwYjc3MzUxNzBjNWEifQ==",
+              "gas": 100000000000000,
+              "deposit": "350000000000000000000000"
+             }
+            }
+           ],
+           "is_promise_yield": false
+          }
+         },
+         "priority": 0
+        }
+       },
+       {
+        "execution_outcome": {
+         "block_hash": "CjfPbNSH32bmux7LaTyKQGJ4AjxZusuGYv7NiPYU94Ds",
+         "block_timestamp": 1794333607670000000,
+         "block_height": 277100003,
+         "index": 3,
+         "id": "DfqyPUYCjJ8tVhRsMtmgyHZ4DVcjVBEUGtub1uRyttmz",
+         "outcome": {
+          "logs": [],
+          "receipt_ids": [],
+          "gas_burnt": 2428000000000,
+          "tokens_burnt": "242800000000000000000",
+          "executor_id": "s0001.season.example.testnet",
+          "status": {
+           "SuccessValue": "dHJ1ZQ=="
+          }
+         }
+        },
+        "receipt": {
+         "block_height": 277100003,
+         "block_hash": "CjfPbNSH32bmux7LaTyKQGJ4AjxZusuGYv7NiPYU94Ds",
+         "block_timestamp": 1794333607670000000,
+         "receipt_index": 3,
+         "predecessor_id": "bounty.example.testnet",
+         "receiver_id": "s0001.season.example.testnet",
+         "receipt_id": "DfqyPUYCjJ8tVhRsMtmgyHZ4DVcjVBEUGtub1uRyttmz",
+         "receipt": {
+          "Action": {
+           "signer_id": "scheduler.example.testnet",
+           "gas_price": "100000000",
+           "output_data_receivers": [],
+           "input_data_ids": [],
+           "actions": [
+            {
+             "FunctionCall": {
+              "method_name": "arm",
+              "args": "eyJpZCI6ImV4YW1wbGUtMDAwMCIsImNvbW1pdF91bnRpbCI6IjE3OTQzMzYzMDY1NTAwMDAwMDAiLCJtYXNrcyI6WyJub3ZhLmV4YW1wbGUudGVzdG5ldCIsIm9ueXguZXhhbXBsZS50ZXN0bmV0Iiwib3JhY2xlLmV4YW1wbGUudGVzdG5ldCJdLCJ0ZWFtIjoic2Vhc29uLmV4YW1wbGUudGVzdG5ldCJ9",
+              "gas": 100000000000000,
+              "deposit": "0"
+             }
+            }
+           ],
+           "is_promise_yield": false
+          }
+         },
+         "priority": 0
+        }
+       },
+       {
+        "execution_outcome": {
+         "block_hash": "7cdWt7DzAsgmYiru2ELF2wYPf2cKTCjuG5UWnDPnMdbs",
+         "block_timestamp": 1794333608790000000,
+         "block_height": 277100004,
+         "index": 4,
+         "id": "GvZT6pywRJBF1zhnE5Qb138K3VSDo7mDZTngb6PNZwXn",
+         "outcome": {
+          "logs": [],
+          "receipt_ids": [],
+          "gas_burnt": 2428000000000,
+          "tokens_burnt": "242800000000000000000",
+          "executor_id": "season.example.testnet",
+          "status": {
+           "SuccessValue": "eyJpZCI6ImV4YW1wbGUtMDAwMCIsInNhZmUiOiJzMDAwMS5zZWFzb24uZXhhbXBsZS50ZXN0bmV0IiwiY2hhbGxlbmdlIjoibGl2ZS1zYWZlIn0="
+          }
+         }
+        },
+        "receipt": {
+         "block_height": 277100004,
+         "block_hash": "7cdWt7DzAsgmYiru2ELF2wYPf2cKTCjuG5UWnDPnMdbs",
+         "block_timestamp": 1794333608790000000,
+         "receipt_index": 4,
+         "predecessor_id": "season.example.testnet",
+         "receiver_id": "season.example.testnet",
+         "receipt_id": "GvZT6pywRJBF1zhnE5Qb138K3VSDo7mDZTngb6PNZwXn",
+         "receipt": {
+          "Action": {
+           "signer_id": "scheduler.example.testnet",
+           "gas_price": "100000000",
+           "output_data_receivers": [],
+           "input_data_ids": [],
+           "actions": [
+            {
+             "FunctionCall": {
+              "method_name": "on_opened",
+              "args": "eyJpZCI6ImV4YW1wbGUtMDAwMCIsInNhZmUiOiJzMDAwMS5zZWFzb24uZXhhbXBsZS50ZXN0bmV0In0=",
+              "gas": 100000000000000,
+              "deposit": "0"
+             }
+            }
+           ],
+           "is_promise_yield": false
+          }
+         },
+         "priority": 0
+        }
+       }
+      ],
+      "data_receipts": []
+     }
+    ]
+   }
+  },
+  {
+   "url": "https://rpc.testnet.fastnear.com",
+   "request": {
+    "jsonrpc": "2.0",
+    "method": "query",
+    "params": {
+     "account_id": "s0001.season.example.testnet",
+     "finality": "final",
+     "request_type": "view_account"
+    }
+   },
+   "status": 200,
+   "response": {
+    "jsonrpc": "2.0",
+    "result": {
+     "block_hash": "EqmxAeSiwgGjqoRvrReViCVVVUPRJj4db3gdfSHnz64D",
+     "block_height": 277104905,
+     "amount": "13200000000000000000000",
+     "code_hash": "11111111111111111111111111111111",
+     "global_contract_hash": "GErquumqyJo7LGj23R6d68g89QYFnDtxvPsVS9peYjiL",
+     "locked": "0",
+     "storage_paid_at": 0,
+     "storage_usage": 1184
+    },
+    "id": "maskwars-check"
+   }
+  },
+  {
+   "url": "https://tx.test.fastnear.com/v0/account",
+   "request": {
+    "account_id": "s0001.season.example.testnet"
+   },
+   "status": 200,
+   "response": {
+    "account_txs": [
+     {
+      "account_id": "s0001.season.example.testnet",
+      "transaction_hash": "GgJWaLMcs7RDGg6gxGN4LuaGNysVVksjo1pHUWC1AV1q",
+      "tx_block_height": 277102629,
+      "tx_block_timestamp": "1794336496250000000",
+      "tx_index": 0,
+      "is_signer": false,
+      "is_receiver": true,
+      "is_function_call": true,
+      "is_success": true
+     },
+     {
+      "account_id": "s0001.season.example.testnet",
+      "transaction_hash": "97cQnnhT2hG3hjR9H3bGEw99TrStbHYQ5wZYwTUMay56",
+      "tx_block_height": 277102625,
+      "tx_block_timestamp": "1794336491750000000",
+      "tx_index": 0,
+      "is_signer": false,
+      "is_receiver": true,
+      "is_function_call": true,
+      "is_success": true
+     },
+     {
+      "account_id": "s0001.season.example.testnet",
+      "transaction_hash": "CUu4fwFjRCeah8QmpBzYuMgeeGsPgN7vSB7euxSdKUVZ",
+      "tx_block_height": 277102472,
+      "tx_block_timestamp": "1794336323650000000",
+      "tx_index": 0,
+      "is_signer": false,
+      "is_receiver": true,
+      "is_function_call": true,
+      "is_success": true
+     },
+     {
+      "account_id": "s0001.season.example.testnet",
+      "transaction_hash": "DCDSXMtHNcjn9NrSQrAFGRfdg24F9g5CVdzvCPAHcFoM",
+      "tx_block_height": 277102468,
+      "tx_block_timestamp": "1794336319150000000",
+      "tx_index": 0,
+      "is_signer": false,
+      "is_receiver": true,
+      "is_function_call": true,
+      "is_success": true
+     },
+     {
+      "account_id": "s0001.season.example.testnet",
+      "transaction_hash": "22XrHQWSwJghHdJDa8L3wR5m8EAdfWBqUWaZTgFoVMvy",
+      "tx_block_height": 277100000,
+      "tx_block_timestamp": "1794333604310000000",
+      "tx_index": 0,
+      "is_signer": false,
+      "is_receiver": true,
+      "is_function_call": false,
+      "is_success": true
+     }
+    ],
+    "txs_count": 5
+   }
+  },
+  {
+   "url": "https://tx.test.fastnear.com/v0/transactions",
+   "request": {
+    "tx_hashes": [
+     "GgJWaLMcs7RDGg6gxGN4LuaGNysVVksjo1pHUWC1AV1q",
+     "97cQnnhT2hG3hjR9H3bGEw99TrStbHYQ5wZYwTUMay56",
+     "CUu4fwFjRCeah8QmpBzYuMgeeGsPgN7vSB7euxSdKUVZ",
+     "DCDSXMtHNcjn9NrSQrAFGRfdg24F9g5CVdzvCPAHcFoM"
+    ]
+   },
+   "status": 200,
+   "response": {
+    "transactions": [
+     {
+      "transaction": {
+       "signer_id": "nova.example.testnet",
+       "nonce": 277102629000001,
+       "receiver_id": "s0001.season.example.testnet",
+       "actions": [
+        {
+         "FunctionCall": {
+          "method_name": "sweep",
+          "args": "eyJ0byI6Im5vdmEuZXhhbXBsZS50ZXN0bmV0IiwiYW1vdW50IjoiMTQ4MDAwMDAwMDAwMDAwMDAwMDAwMDAwMCJ9",
+          "gas": 100000000000000,
+          "deposit": "0"
+         }
+        }
+       ],
+       "priority_fee": 0,
+       "hash": "GgJWaLMcs7RDGg6gxGN4LuaGNysVVksjo1pHUWC1AV1q"
+      },
+      "execution_outcome": {
+       "block_hash": "E8n79ZptweFMkDwuMdBFpJoVAV2pk7jYomgQLwuDXNnx",
+       "block_timestamp": 1794336496250000000,
+       "block_height": 277102629,
+       "index": 0,
+       "id": "GgJWaLMcs7RDGg6gxGN4LuaGNysVVksjo1pHUWC1AV1q",
+       "outcome": {
+        "logs": [],
+        "receipt_ids": [
+         "FyCiq43pX2MBTyHqVymxUYrNxLYzZBpVYnP91GUTAQbC"
+        ],
+        "gas_burnt": 312255666920,
+        "tokens_burnt": "31225566692000000000",
+        "executor_id": "nova.example.testnet",
+        "status": {
+         "SuccessReceiptId": "FyCiq43pX2MBTyHqVymxUYrNxLYzZBpVYnP91GUTAQbC"
+        }
+       }
+      },
+      "receipts": [
+       {
+        "execution_outcome": {
+         "block_hash": "FZSh1YHNoL5FsCkLNNe6JspafiKwhjdQ6ztg8R3UsSA5",
+         "block_timestamp": 1794336496830000000,
+         "block_height": 277102630,
+         "index": 0,
+         "id": "FyCiq43pX2MBTyHqVymxUYrNxLYzZBpVYnP91GUTAQbC",
+         "outcome": {
+          "logs": [],
+          "receipt_ids": [],
+          "gas_burnt": 2428000000000,
+          "tokens_burnt": "242800000000000000000",
+          "executor_id": "s0001.season.example.testnet",
+          "status": {
+           "Failure": {
+            "ActionError": {
+             "index": 0,
+             "kind": {
+              "FunctionCallError": {
+               "ExecutionError": "Smart contract panicked: the vault holds nothing to sweep"
+              }
+             }
+            }
+           }
+          }
+         }
+        },
+        "receipt": {
+         "block_height": 277102630,
+         "block_hash": "FZSh1YHNoL5FsCkLNNe6JspafiKwhjdQ6ztg8R3UsSA5",
+         "block_timestamp": 1794336496830000000,
+         "receipt_index": 0,
+         "predecessor_id": "nova.example.testnet",
+         "receiver_id": "s0001.season.example.testnet",
+         "receipt_id": "FyCiq43pX2MBTyHqVymxUYrNxLYzZBpVYnP91GUTAQbC",
+         "receipt": {
+          "Action": {
+           "signer_id": "nova.example.testnet",
+           "gas_price": "100000000",
+           "output_data_receivers": [],
+           "input_data_ids": [],
+           "actions": [
+            {
+             "FunctionCall": {
+              "method_name": "sweep",
+              "args": "eyJ0byI6Im5vdmEuZXhhbXBsZS50ZXN0bmV0IiwiYW1vdW50IjoiMTQ4MDAwMDAwMDAwMDAwMDAwMDAwMDAwMCJ9",
+              "gas": 100000000000000,
+              "deposit": "0"
+             }
+            }
+           ],
+           "is_promise_yield": false
+          }
+         },
+         "priority": 0
+        }
+       }
+      ],
+      "data_receipts": []
+     },
+     {
+      "transaction": {
+       "signer_id": "nova.example.testnet",
+       "nonce": 277102625000001,
+       "receiver_id": "s0001.season.example.testnet",
+       "actions": [
+        {
+         "FunctionCall": {
+          "method_name": "set_owner",
+          "args": "eyJuZXdfb3duZXIiOiJub3ZhLmV4YW1wbGUudGVzdG5ldCJ9",
+          "gas": 100000000000000,
+          "deposit": "0"
+         }
+        }
+       ],
+       "priority_fee": 0,
+       "hash": "97cQnnhT2hG3hjR9H3bGEw99TrStbHYQ5wZYwTUMay56"
+      },
+      "execution_outcome": {
+       "block_hash": "GZPm9RJf4FbWB5SW4spqdQmvefFs7LMkkUKfAApXo27H",
+       "block_timestamp": 1794336491750000000,
+       "block_height": 277102625,
+       "index": 0,
+       "id": "97cQnnhT2hG3hjR9H3bGEw99TrStbHYQ5wZYwTUMay56",
+       "outcome": {
+        "logs": [],
+        "receipt_ids": [
+         "9Dn6wVyFZ8RkTH4U5qajB2y5dTGsa92jXUZeEJjKuC1t"
+        ],
+        "gas_burnt": 312255666920,
+        "tokens_burnt": "31225566692000000000",
+        "executor_id": "nova.example.testnet",
+        "status": {
+         "SuccessReceiptId": "9Dn6wVyFZ8RkTH4U5qajB2y5dTGsa92jXUZeEJjKuC1t"
+        }
+       }
+      },
+      "receipts": [
+       {
+        "execution_outcome": {
+         "block_hash": "GZPm9RJf4FbWB5SW4spqdQmvefFs7LMkkUKfAApXo27H",
+         "block_timestamp": 1794336492330000000,
+         "block_height": 277102625,
+         "index": 0,
+         "id": "9Dn6wVyFZ8RkTH4U5qajB2y5dTGsa92jXUZeEJjKuC1t",
+         "outcome": {
+          "logs": [],
+          "receipt_ids": [],
+          "gas_burnt": 2428000000000,
+          "tokens_burnt": "242800000000000000000",
+          "executor_id": "s0001.season.example.testnet",
+          "status": {
+           "SuccessValue": ""
+          }
+         }
+        },
+        "receipt": {
+         "block_height": 277102625,
+         "block_hash": "GZPm9RJf4FbWB5SW4spqdQmvefFs7LMkkUKfAApXo27H",
+         "block_timestamp": 1794336492330000000,
+         "receipt_index": 0,
+         "predecessor_id": "nova.example.testnet",
+         "receiver_id": "s0001.season.example.testnet",
+         "receipt_id": "9Dn6wVyFZ8RkTH4U5qajB2y5dTGsa92jXUZeEJjKuC1t",
+         "receipt": {
+          "Action": {
+           "signer_id": "nova.example.testnet",
+           "gas_price": "100000000",
+           "output_data_receivers": [],
+           "input_data_ids": [],
+           "actions": [
+            {
+             "FunctionCall": {
+              "method_name": "set_owner",
+              "args": "eyJuZXdfb3duZXIiOiJub3ZhLmV4YW1wbGUudGVzdG5ldCJ9",
+              "gas": 100000000000000,
+              "deposit": "0"
+             }
+            }
+           ],
+           "is_promise_yield": false
+          }
+         },
+         "priority": 0
+        }
+       }
+      ],
+      "data_receipts": []
+     },
+     {
+      "transaction": {
+       "signer_id": "oracle.example.testnet",
+       "nonce": 277102472000001,
+       "receiver_id": "s0001.season.example.testnet",
+       "actions": [
+        {
+         "FunctionCall": {
+          "method_name": "sweep",
+          "args": "eyJ0byI6Im9yYWNsZS5leGFtcGxlLnRlc3RuZXQiLCJhbW91bnQiOiIxNDgwMDAwMDAwMDAwMDAwMDAwMDAwMDAwIn0=",
+          "gas": 100000000000000,
+          "deposit": "0"
+         }
+        }
+       ],
+       "priority_fee": 0,
+       "hash": "CUu4fwFjRCeah8QmpBzYuMgeeGsPgN7vSB7euxSdKUVZ"
+      },
+      "execution_outcome": {
+       "block_hash": "D92LcnLuHbj8UXKBY5nKmmGdQRURUSmkSqtUH3ew15hK",
+       "block_timestamp": 1794336323650000000,
+       "block_height": 277102472,
+       "index": 0,
+       "id": "CUu4fwFjRCeah8QmpBzYuMgeeGsPgN7vSB7euxSdKUVZ",
+       "outcome": {
+        "logs": [],
+        "receipt_ids": [
+         "Biy4o3rrX1mTnPF58dE3SDCRPER3yXn1fyh27PdMcVt1"
+        ],
+        "gas_burnt": 312255666920,
+        "tokens_burnt": "31225566692000000000",
+        "executor_id": "oracle.example.testnet",
+        "status": {
+         "SuccessReceiptId": "Biy4o3rrX1mTnPF58dE3SDCRPER3yXn1fyh27PdMcVt1"
+        }
+       }
+      },
+      "receipts": [
+       {
+        "execution_outcome": {
+         "block_hash": "DCpY5vvgedvGfjrHC3ghta5WcPhvHZaJstutk15pHZWZ",
+         "block_timestamp": 1794336324230000000,
+         "block_height": 277102473,
+         "index": 0,
+         "id": "Biy4o3rrX1mTnPF58dE3SDCRPER3yXn1fyh27PdMcVt1",
+         "outcome": {
+          "logs": [],
+          "receipt_ids": [
+           "CKJK5pHVAzhSGq6gCYn9jKYEMh1GWPYSy2hHv2U4kNB7",
+           "5538QB5zL4LCSFHCALjkN4mCrL9mzAm1GMVXmtwz5q4r"
+          ],
+          "gas_burnt": 2428000000000,
+          "tokens_burnt": "242800000000000000000",
+          "executor_id": "s0001.season.example.testnet",
+          "status": {
+           "SuccessReceiptId": "CKJK5pHVAzhSGq6gCYn9jKYEMh1GWPYSy2hHv2U4kNB7"
+          }
+         }
+        },
+        "receipt": {
+         "block_height": 277102473,
+         "block_hash": "DCpY5vvgedvGfjrHC3ghta5WcPhvHZaJstutk15pHZWZ",
+         "block_timestamp": 1794336324230000000,
+         "receipt_index": 0,
+         "predecessor_id": "oracle.example.testnet",
+         "receiver_id": "s0001.season.example.testnet",
+         "receipt_id": "Biy4o3rrX1mTnPF58dE3SDCRPER3yXn1fyh27PdMcVt1",
+         "receipt": {
+          "Action": {
+           "signer_id": "oracle.example.testnet",
+           "gas_price": "100000000",
+           "output_data_receivers": [],
+           "input_data_ids": [],
+           "actions": [
+            {
+             "FunctionCall": {
+              "method_name": "sweep",
+              "args": "eyJ0byI6Im9yYWNsZS5leGFtcGxlLnRlc3RuZXQiLCJhbW91bnQiOiIxNDgwMDAwMDAwMDAwMDAwMDAwMDAwMDAwIn0=",
+              "gas": 100000000000000,
+              "deposit": "0"
+             }
+            }
+           ],
+           "is_promise_yield": false
+          }
+         },
+         "priority": 0
+        }
+       },
+       {
+        "execution_outcome": {
+         "block_hash": "DCpY5vvgedvGfjrHC3ghta5WcPhvHZaJstutk15pHZWZ",
+         "block_timestamp": 1794336324790000000,
+         "block_height": 277102473,
+         "index": 1,
+         "id": "CKJK5pHVAzhSGq6gCYn9jKYEMh1GWPYSy2hHv2U4kNB7",
+         "outcome": {
+          "logs": [],
+          "receipt_ids": [],
+          "gas_burnt": 2428000000000,
+          "tokens_burnt": "242800000000000000000",
+          "executor_id": "oracle.example.testnet",
+          "status": {
+           "SuccessValue": ""
+          }
+         }
+        },
+        "receipt": {
+         "block_height": 277102473,
+         "block_hash": "DCpY5vvgedvGfjrHC3ghta5WcPhvHZaJstutk15pHZWZ",
+         "block_timestamp": 1794336324790000000,
+         "receipt_index": 1,
+         "predecessor_id": "s0001.season.example.testnet",
+         "receiver_id": "oracle.example.testnet",
+         "receipt_id": "CKJK5pHVAzhSGq6gCYn9jKYEMh1GWPYSy2hHv2U4kNB7",
+         "receipt": {
+          "Action": {
+           "signer_id": "oracle.example.testnet",
+           "gas_price": "100000000",
+           "output_data_receivers": [],
+           "input_data_ids": [],
+           "actions": [
+            {
+             "Transfer": {
+              "deposit": "1480000000000000000000000"
+             }
+            }
+           ],
+           "is_promise_yield": false
+          }
+         },
+         "priority": 0
+        }
+       },
+       {
+        "execution_outcome": {
+         "block_hash": "DCpY5vvgedvGfjrHC3ghta5WcPhvHZaJstutk15pHZWZ",
+         "block_timestamp": 1794336324790000000,
+         "block_height": 277102473,
+         "index": 2,
+         "id": "5538QB5zL4LCSFHCALjkN4mCrL9mzAm1GMVXmtwz5q4r",
+         "outcome": {
+          "logs": [],
+          "receipt_ids": [],
+          "gas_burnt": 2428000000000,
+          "tokens_burnt": "242800000000000000000",
+          "executor_id": "oracle.example.testnet",
+          "status": {
+           "SuccessValue": ""
+          }
+         }
+        },
+        "receipt": {
+         "block_height": 277102473,
+         "block_hash": "DCpY5vvgedvGfjrHC3ghta5WcPhvHZaJstutk15pHZWZ",
+         "block_timestamp": 1794336324790000000,
+         "receipt_index": 2,
+         "predecessor_id": "system",
+         "receiver_id": "oracle.example.testnet",
+         "receipt_id": "5538QB5zL4LCSFHCALjkN4mCrL9mzAm1GMVXmtwz5q4r",
+         "receipt": {
+          "Action": {
+           "signer_id": "oracle.example.testnet",
+           "gas_price": "100000000",
+           "output_data_receivers": [],
+           "input_data_ids": [],
+           "actions": [
+            {
+             "Transfer": {
+              "deposit": "100513088041893800000000"
+             }
+            }
+           ],
+           "is_promise_yield": false
+          }
+         },
+         "priority": 0
+        }
+       }
+      ],
+      "data_receipts": []
+     },
+     {
+      "transaction": {
+       "signer_id": "oracle.example.testnet",
+       "nonce": 277102468000001,
+       "receiver_id": "s0001.season.example.testnet",
+       "actions": [
+        {
+         "FunctionCall": {
+          "method_name": "set_owner",
+          "args": "eyJuZXdfb3duZXIiOiJvcmFjbGUuZXhhbXBsZS50ZXN0bmV0In0=",
+          "gas": 100000000000000,
+          "deposit": "0"
+         }
+        }
+       ],
+       "priority_fee": 0,
+       "hash": "DCDSXMtHNcjn9NrSQrAFGRfdg24F9g5CVdzvCPAHcFoM"
+      },
+      "execution_outcome": {
+       "block_hash": "643f35NVCEZNoysBg3PhNZDXuPLssBHuPWZrsfpdQ7U",
+       "block_timestamp": 1794336319150000000,
+       "block_height": 277102468,
+       "index": 0,
+       "id": "DCDSXMtHNcjn9NrSQrAFGRfdg24F9g5CVdzvCPAHcFoM",
+       "outcome": {
+        "logs": [],
+        "receipt_ids": [
+         "5HAfWrcYbwVKTeFNX21vDNjXDDdMft7TXhQfJcbMPhsE"
+        ],
+        "gas_burnt": 312255666920,
+        "tokens_burnt": "31225566692000000000",
+        "executor_id": "oracle.example.testnet",
+        "status": {
+         "SuccessReceiptId": "5HAfWrcYbwVKTeFNX21vDNjXDDdMft7TXhQfJcbMPhsE"
+        }
+       }
+      },
+      "receipts": [
+       {
+        "execution_outcome": {
+         "block_hash": "GXsQR47K2pXo8zFd3jMfe6kmmraZrAEmbMErKeJmDceC",
+         "block_timestamp": 1794336319730000000,
+         "block_height": 277102469,
+         "index": 0,
+         "id": "5HAfWrcYbwVKTeFNX21vDNjXDDdMft7TXhQfJcbMPhsE",
+         "outcome": {
+          "logs": [],
+          "receipt_ids": [],
+          "gas_burnt": 2428000000000,
+          "tokens_burnt": "242800000000000000000",
+          "executor_id": "s0001.season.example.testnet",
+          "status": {
+           "SuccessValue": ""
+          }
+         }
+        },
+        "receipt": {
+         "block_height": 277102469,
+         "block_hash": "GXsQR47K2pXo8zFd3jMfe6kmmraZrAEmbMErKeJmDceC",
+         "block_timestamp": 1794336319730000000,
+         "receipt_index": 0,
+         "predecessor_id": "oracle.example.testnet",
+         "receiver_id": "s0001.season.example.testnet",
+         "receipt_id": "5HAfWrcYbwVKTeFNX21vDNjXDDdMft7TXhQfJcbMPhsE",
+         "receipt": {
+          "Action": {
+           "signer_id": "oracle.example.testnet",
+           "gas_price": "100000000",
+           "output_data_receivers": [],
+           "input_data_ids": [],
+           "actions": [
+            {
+             "FunctionCall": {
+              "method_name": "set_owner",
+              "args": "eyJuZXdfb3duZXIiOiJvcmFjbGUuZXhhbXBsZS50ZXN0bmV0In0=",
+              "gas": 100000000000000,
+              "deposit": "0"
+             }
+            }
+           ],
+           "is_promise_yield": false
+          }
+         },
+         "priority": 0
+        }
+       }
+      ],
+      "data_receipts": []
+     }
+    ]
+   }
+  },
+  {
+   "url": "https://rpc.testnet.fastnear.com",
+   "request": {
+    "jsonrpc": "2.0",
+    "method": "query",
+    "params": {
+     "account_id": "bounty.example.testnet",
+     "args_base64": "e30=",
+     "finality": "final",
+     "method_name": "judge",
+     "request_type": "call_function"
+    }
+   },
+   "status": 200,
+   "response": {
+    "jsonrpc": "2.0",
+    "result": {
+     "block_hash": "EqmxAeSiwgGjqoRvrReViCVVVUPRJj4db3gdfSHnz64D",
+     "block_height": 277104905,
+     "logs": [],
+     "result": [
+      123,
+      34,
+      118,
+      101,
+      114,
+      115,
+      105,
+      111,
+      110,
+      34,
+      58,
+      34,
+      100,
+      57,
+      50,
+      99,
+      53,
+      54,
+      101,
+      56,
+      97,
+      49,
+      98,
+      99,
+      54,
+      53,
+      101,
+      101,
+      101,
+      48,
+      101,
+      56,
+      100,
+      49,
+      57,
+      99,
+      57,
+      57,
+      98,
+      51,
+      51,
+      99,
+      102,
+      53,
+      55,
+      49,
+      57,
+      48,
+      101,
+      50,
+      98,
+      52,
+      50,
+      50,
+      52,
+      57,
+      55,
+      99,
+      97,
+      102,
+      49,
+      102,
+      97,
+      98,
+      48,
+      98,
+      55,
+      55,
+      51,
+      53,
+      49,
+      55,
+      48,
+      99,
+      53,
+      97,
+      34,
+      125
+     ]
+    },
+    "id": "maskwars-check"
+   }
+  },
+  {
+   "url": "https://tx.test.fastnear.com/v0/transactions",
+   "request": {
+    "tx_hashes": [
+     "2J7gL5GCGWTg5a6SygHzfFPduBVGWKqdcuCDjDhHhyFS"
+    ]
+   },
+   "status": 200,
+   "response": {
+    "transactions": [
+     {
+      "transaction": {
+       "signer_id": "oracle.example.testnet",
+       "nonce": 277102486000001,
+       "receiver_id": "bounty.example.testnet",
+       "actions": [
+        {
+         "FunctionCall": {
+          "method_name": "claim_drain",
+          "args": "eyJpZCI6ImV4YW1wbGUtMDAwMCIsInR4X2hhc2giOiJDVXU0ZndGalJDZWFoOFFtcEJ6WXVNZ2VlR3NQZ043dlNCN2V1eFNkS1VWWiJ9",
+          "gas": 100000000000000,
+          "deposit": "0"
+         }
+        }
+       ],
+       "priority_fee": 0,
+       "hash": "2J7gL5GCGWTg5a6SygHzfFPduBVGWKqdcuCDjDhHhyFS"
+      },
+      "execution_outcome": {
+       "block_hash": "A3BQ3yJPN6sEc3eGen1FGCJYXQp6Ut8N3oKPnvAyEuKP",
+       "block_timestamp": 1794336338550000000,
+       "block_height": 277102486,
+       "index": 0,
+       "id": "2J7gL5GCGWTg5a6SygHzfFPduBVGWKqdcuCDjDhHhyFS",
+       "outcome": {
+        "logs": [],
+        "receipt_ids": [
+         "77CjUFsQaT25VqKuk2JxRGJFtrRBaEqUAdskSteQdov5"
+        ],
+        "gas_burnt": 312255666920,
+        "tokens_burnt": "31225566692000000000",
+        "executor_id": "oracle.example.testnet",
+        "status": {
+         "SuccessReceiptId": "77CjUFsQaT25VqKuk2JxRGJFtrRBaEqUAdskSteQdov5"
+        }
+       }
+      },
+      "receipts": [
+       {
+        "execution_outcome": {
+         "block_hash": "A3BQ3yJPN6sEc3eGen1FGCJYXQp6Ut8N3oKPnvAyEuKP",
+         "block_timestamp": 1794336339010000000,
+         "block_height": 277102486,
+         "index": 0,
+         "id": "77CjUFsQaT25VqKuk2JxRGJFtrRBaEqUAdskSteQdov5",
+         "outcome": {
+          "logs": [],
+          "receipt_ids": [
+           "WQHYYa18VsAg9rcBoALaijGqPMc5heX2J8P9GcePn4s",
+           "DK8LVrUB5fmMosuVbRBxGntRr5kxSNDvUmdRRSBWybn3",
+           "77LxcMm9g6pKLwMw8NDYvnV2uhKYwBVYU3xXp3BB7ncY",
+           "4dCPSvskzN2wfiWZzKtmGtBDrEGKzJ9YN5QUCCvGZbgP",
+           "LH4iNYKuxocA7vXBR39fRiP1nkKnsZaN2t66mAjY8iZ",
+           "Djf8DXEuWjwTxiSonaLSTxgtqQrh5M5557TgfGc2EFCA"
+          ],
+          "gas_burnt": 2428000000000,
+          "tokens_burnt": "242800000000000000000",
+          "executor_id": "bounty.example.testnet",
+          "status": {
+           "SuccessReceiptId": "WQHYYa18VsAg9rcBoALaijGqPMc5heX2J8P9GcePn4s"
+          }
+         }
+        },
+        "receipt": {
+         "block_height": 277102486,
+         "block_hash": "A3BQ3yJPN6sEc3eGen1FGCJYXQp6Ut8N3oKPnvAyEuKP",
+         "block_timestamp": 1794336339010000000,
+         "receipt_index": 0,
+         "predecessor_id": "oracle.example.testnet",
+         "receiver_id": "bounty.example.testnet",
+         "receipt_id": "77CjUFsQaT25VqKuk2JxRGJFtrRBaEqUAdskSteQdov5",
+         "receipt": {
+          "Action": {
+           "signer_id": "oracle.example.testnet",
+           "gas_price": "100000000",
+           "output_data_receivers": [],
+           "input_data_ids": [],
+           "actions": [
+            {
+             "FunctionCall": {
+              "method_name": "claim_drain",
+              "args": "eyJpZCI6ImV4YW1wbGUtMDAwMCIsInR4X2hhc2giOiJDVXU0ZndGalJDZWFoOFFtcEJ6WXVNZ2VlR3NQZ043dlNCN2V1eFNkS1VWWiJ9",
+              "gas": 100000000000000,
+              "deposit": "0"
+             }
+            }
+           ],
+           "is_promise_yield": false
+          }
+         },
+         "priority": 0
+        }
+       },
+       {
+        "execution_outcome": {
+         "block_hash": "3dHCMZtuXZWni4VpkLKaZy1xzkz2cWuEUXdWEGNyTHt1",
+         "block_timestamp": 1794336339580000000,
+         "block_height": 277102487,
+         "index": 1,
+         "id": "WQHYYa18VsAg9rcBoALaijGqPMc5heX2J8P9GcePn4s",
+         "outcome": {
+          "logs": [
+           "EVENT_JSON:{\"standard\":\"near-outlayer\",\"version\":\"1.0.0\",\"event\":\"execution_requested\",\"data\":[{\"request_data\":\"{\\\"request_id\\\":20417,\\\"sender_id\\\":\\\"oracle.example.testnet\\\",\\\"predecessor_id\\\":\\\"bounty.example.testnet\\\",\\\"input_data\\\":\\\"{\\\\\\\"kind\\\\\\\":\\\\\\\"drain\\\\\\\",\\\\\\\"bounty_id\\\\\\\":\\\\\\\"example-0000\\\\\\\",\\\\\\\"safe\\\\\\\":\\\\\\\"s0001.season.example.testnet\\\\\\\",\\\\\\\"mask\\\\\\\":\\\\\\\"oracle.example.testnet\\\\\\\",\\\\\\\"tx_hash\\\\\\\":\\\\\\\"CUu4fwFjRCeah8QmpBzYuMgeeGsPgN7vSB7euxSdKUVZ\\\\\\\",\\\\\\\"min_loot\\\\\\\":\\\\\\\"500000000000000000000000\\\\\\\",\\\\\\\"opened_ns\\\\\\\":\\\\\\\"1794333606550000000\\\\\\\",\\\\\\\"deadline_ns\\\\\\\":\\\\\\\"1794348006550000000\\\\\\\"}\\\",\\\"response_format\\\":\\\"Text\\\",\\\"payment\\\":\\\"10000000000000000000000\\\",\\\"project_id\\\":\\\"bounty.example.testnet/judge\\\"}\",\"timestamp\":1794336339580000000}]}"
+          ],
+          "receipt_ids": [],
+          "gas_burnt": 2428000000000,
+          "tokens_burnt": "242800000000000000000",
+          "executor_id": "outlayer.example.testnet",
+          "status": {
+           "SuccessValue": ""
+          }
+         }
+        },
+        "receipt": {
+         "block_height": 277102487,
+         "block_hash": "3dHCMZtuXZWni4VpkLKaZy1xzkz2cWuEUXdWEGNyTHt1",
+         "block_timestamp": 1794336339580000000,
+         "receipt_index": 1,
+         "predecessor_id": "bounty.example.testnet",
+         "receiver_id": "outlayer.example.testnet",
+         "receipt_id": "WQHYYa18VsAg9rcBoALaijGqPMc5heX2J8P9GcePn4s",
+         "receipt": {
+          "Action": {
+           "signer_id": "oracle.example.testnet",
+           "gas_price": "100000000",
+           "output_data_receivers": [],
+           "input_data_ids": [],
+           "actions": [
+            {
+             "FunctionCall": {
+              "method_name": "request_execution",
+              "args": "eyJzb3VyY2UiOnsiUHJvamVjdCI6eyJwcm9qZWN0X2lkIjoiYm91bnR5LmV4YW1wbGUudGVzdG5ldC9qdWRnZSJ9fSwiaW5wdXRfZGF0YSI6IntcImtpbmRcIjpcImRyYWluXCIsXCJib3VudHlfaWRcIjpcImV4YW1wbGUtMDAwMFwiLFwic2FmZVwiOlwiczAwMDEuc2Vhc29uLmV4YW1wbGUudGVzdG5ldFwiLFwibWFza1wiOlwib3JhY2xlLmV4YW1wbGUudGVzdG5ldFwiLFwidHhfaGFzaFwiOlwiQ1V1NGZ3RmpSQ2VhaDhRbXBCell1TWdlZUdzUGdON3ZTQjdldXhTZEtVVlpcIixcIm1pbl9sb290XCI6XCI1MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDBcIixcIm9wZW5lZF9uc1wiOlwiMTc5NDMzMzYwNjU1MDAwMDAwMFwiLFwiZGVhZGxpbmVfbnNcIjpcIjE3OTQzNDgwMDY1NTAwMDAwMDBcIn0iLCJyZXNwb25zZV9mb3JtYXQiOiJUZXh0IiwicGF5ZXJfYWNjb3VudF9pZCI6ImJvdW50eS5leGFtcGxlLnRlc3RuZXQifQ==",
+              "gas": 100000000000000,
+              "deposit": "10000000000000000000000"
+             }
+            }
+           ],
+           "is_promise_yield": false
+          }
+         },
+         "priority": 0
+        }
+       },
+       {
+        "execution_outcome": {
+         "block_hash": "BzndBrZQcP8cyNtmeXQsrFZWUHmv2DkyQc6mq9aTh7n",
+         "block_timestamp": 1794336346330000000,
+         "block_height": 277102493,
+         "index": 2,
+         "id": "DK8LVrUB5fmMosuVbRBxGntRr5kxSNDvUmdRRSBWybn3",
+         "outcome": {
+          "logs": [
+           "[[yNEAR charged: \"1118320500000000000000\"]]",
+           "EVENT_JSON:{\"standard\":\"near-outlayer\",\"version\":\"1.0.0\",\"event\":\"execution_completed\",\"data\":[{\"sender_id\":\"oracle.example.testnet\",\"resources_used\":{\"instructions\":5912044,\"time_ms\":1183,\"compile_time_ms\":null},\"success\":true,\"error_message\":null,\"payment_charged\":\"1118320500000000000000\",\"payment_refunded\":\"8881679500000000000000\",\"timestamp\":1794336346330000000}]}",
+           "Execution completed successfully. Output: Text(281 bytes), Resources: { instructions: 5912044, time_ms: 1183 }, Cost: 1118320500000000000000 yoctoNEAR, Refund: 8881679500000000000000 yoctoNEAR"
+          ],
+          "receipt_ids": [],
+          "gas_burnt": 2428000000000,
+          "tokens_burnt": "242800000000000000000",
+          "executor_id": "outlayer.example.testnet",
+          "status": {
+           "SuccessValue": "eyJzdWNjZXNzIjp0cnVlfQ=="
+          }
+         }
+        },
+        "receipt": {
+         "block_height": 277102493,
+         "block_hash": "BzndBrZQcP8cyNtmeXQsrFZWUHmv2DkyQc6mq9aTh7n",
+         "block_timestamp": 1794336346330000000,
+         "receipt_index": 2,
+         "predecessor_id": "outlayer.example.testnet",
+         "receiver_id": "outlayer.example.testnet",
+         "receipt_id": "DK8LVrUB5fmMosuVbRBxGntRr5kxSNDvUmdRRSBWybn3",
+         "receipt": {
+          "Action": {
+           "signer_id": "oracle.example.testnet",
+           "gas_price": "100000000",
+           "output_data_receivers": [],
+           "input_data_ids": [],
+           "actions": [
+            {
+             "FunctionCall": {
+              "method_name": "on_execution_response",
+              "args": "eyJyZXF1ZXN0X2lkIjoyMDQxNywic2VuZGVyX2lkIjoib3JhY2xlLmV4YW1wbGUudGVzdG5ldCIsInByZWRlY2Vzc29yX2lkIjoiYm91bnR5LmV4YW1wbGUudGVzdG5ldCJ9",
+              "gas": 100000000000000,
+              "deposit": "0"
+             }
+            }
+           ],
+           "is_promise_yield": false
+          }
+         },
+         "priority": 0
+        }
+       },
+       {
+        "execution_outcome": {
+         "block_hash": "BzndBrZQcP8cyNtmeXQsrFZWUHmv2DkyQc6mq9aTh7n",
+         "block_timestamp": 1794336346870000000,
+         "block_height": 277102493,
+         "index": 3,
+         "id": "77LxcMm9g6pKLwMw8NDYvnV2uhKYwBVYU3xXp3BB7ncY",
+         "outcome": {
+          "logs": [],
+          "receipt_ids": [],
+          "gas_burnt": 2428000000000,
+          "tokens_burnt": "242800000000000000000",
+          "executor_id": "bounty.example.testnet",
+          "status": {
+           "SuccessValue": ""
+          }
+         }
+        },
+        "receipt": {
+         "block_height": 277102493,
+         "block_hash": "BzndBrZQcP8cyNtmeXQsrFZWUHmv2DkyQc6mq9aTh7n",
+         "block_timestamp": 1794336346870000000,
+         "receipt_index": 3,
+         "predecessor_id": "outlayer.example.testnet",
+         "receiver_id": "bounty.example.testnet",
+         "receipt_id": "77LxcMm9g6pKLwMw8NDYvnV2uhKYwBVYU3xXp3BB7ncY",
+         "receipt": {
+          "Action": {
+           "signer_id": "oracle.example.testnet",
+           "gas_price": "100000000",
+           "output_data_receivers": [],
+           "input_data_ids": [],
+           "actions": [
+            {
+             "Transfer": {
+              "deposit": "8881679500000000000000"
+             }
+            }
+           ],
+           "is_promise_yield": false
+          }
+         },
+         "priority": 0
+        }
+       },
+       {
+        "execution_outcome": {
+         "block_hash": "BzndBrZQcP8cyNtmeXQsrFZWUHmv2DkyQc6mq9aTh7n",
+         "block_timestamp": 1794336346870000000,
+         "block_height": 277102493,
+         "index": 4,
+         "id": "4dCPSvskzN2wfiWZzKtmGtBDrEGKzJ9YN5QUCCvGZbgP",
+         "outcome": {
+          "logs": [
+           "bounty example-0000 paid to oracle.example.testnet for draining the safe in CUu4fwFjRCeah8QmpBzYuMgeeGsPgN7vSB7euxSdKUVZ",
+           "the safe's code: GErquumqyJo7LGj23R6d68g89QYFnDtxvPsVS9peYjiL"
+          ],
+          "receipt_ids": [],
+          "gas_burnt": 2428000000000,
+          "tokens_burnt": "242800000000000000000",
+          "executor_id": "bounty.example.testnet",
+          "status": {
+           "SuccessValue": "eyJzdGF0ZSI6ImRyYWluZWQiLCJ3aW5uZXIiOiJvcmFjbGUuZXhhbXBsZS50ZXN0bmV0IiwidHhfaGFzaCI6IkNVdTRmd0ZqUkNlYWg4UW1wQnpZdU1nZWVHc1BnTjd2U0I3ZXV4U2RLVVZaIn0="
+          }
+         }
+        },
+        "receipt": {
+         "block_height": 277102493,
+         "block_hash": "BzndBrZQcP8cyNtmeXQsrFZWUHmv2DkyQc6mq9aTh7n",
+         "block_timestamp": 1794336346870000000,
+         "receipt_index": 4,
+         "predecessor_id": "bounty.example.testnet",
+         "receiver_id": "bounty.example.testnet",
+         "receipt_id": "4dCPSvskzN2wfiWZzKtmGtBDrEGKzJ9YN5QUCCvGZbgP",
+         "receipt": {
+          "Action": {
+           "signer_id": "oracle.example.testnet",
+           "gas_price": "100000000",
+           "output_data_receivers": [],
+           "input_data_ids": [],
+           "actions": [
+            {
+             "FunctionCall": {
+              "method_name": "on_judged",
+              "args": "eyJpZCI6ImV4YW1wbGUtMDAwMCIsImRyYWluIjp7InR4X2hhc2giOiJDVXU0ZndGalJDZWFoOFFtcEJ6WXVNZ2VlR3NQZ043dlNCN2V1eFNkS1VWWiIsIm1hc2siOiJvcmFjbGUuZXhhbXBsZS50ZXN0bmV0In19",
+              "gas": 100000000000000,
+              "deposit": "0"
+             }
+            }
+           ],
+           "is_promise_yield": false
+          }
+         },
+         "priority": 0
+        }
+       },
+       {
+        "execution_outcome": {
+         "block_hash": "HdbGV7MkzZPs7ty5CV8TpLgi5ThSPVTezmfr6xpopPaB",
+         "block_timestamp": 1794336347520000000,
+         "block_height": 277102494,
+         "index": 5,
+         "id": "LH4iNYKuxocA7vXBR39fRiP1nkKnsZaN2t66mAjY8iZ",
+         "outcome": {
+          "logs": [],
+          "receipt_ids": [],
+          "gas_burnt": 2428000000000,
+          "tokens_burnt": "242800000000000000000",
+          "executor_id": "oracle.example.testnet",
+          "status": {
+           "SuccessValue": ""
+          }
+         }
+        },
+        "receipt": {
+         "block_height": 277102494,
+         "block_hash": "HdbGV7MkzZPs7ty5CV8TpLgi5ThSPVTezmfr6xpopPaB",
+         "block_timestamp": 1794336347520000000,
+         "receipt_index": 5,
+         "predecessor_id": "bounty.example.testnet",
+         "receiver_id": "oracle.example.testnet",
+         "receipt_id": "LH4iNYKuxocA7vXBR39fRiP1nkKnsZaN2t66mAjY8iZ",
+         "receipt": {
+          "Action": {
+           "signer_id": "oracle.example.testnet",
+           "gas_price": "100000000",
+           "output_data_receivers": [],
+           "input_data_ids": [],
+           "actions": [
+            {
+             "Transfer": {
+              "deposit": "211420000000000000000000"
+             }
+            }
+           ],
+           "is_promise_yield": false
+          }
+         },
+         "priority": 0
+        }
+       },
+       {
+        "execution_outcome": {
+         "block_hash": "HdbGV7MkzZPs7ty5CV8TpLgi5ThSPVTezmfr6xpopPaB",
+         "block_timestamp": 1794336348090000000,
+         "block_height": 277102494,
+         "index": 6,
+         "id": "Djf8DXEuWjwTxiSonaLSTxgtqQrh5M5557TgfGc2EFCA",
+         "outcome": {
+          "logs": [],
+          "receipt_ids": [],
+          "gas_burnt": 2428000000000,
+          "tokens_burnt": "242800000000000000000",
+          "executor_id": "bounty.example.testnet",
+          "status": {
+           "SuccessValue": "eyJzdGF0ZSI6ImRyYWluZWQiLCJ3aW5uZXIiOiJvcmFjbGUuZXhhbXBsZS50ZXN0bmV0IiwidHhfaGFzaCI6IkNVdTRmd0ZqUkNlYWg4UW1wQnpZdU1nZWVHc1BnTjd2U0I3ZXV4U2RLVVZaIn0="
+          }
+         }
+        },
+        "receipt": {
+         "block_height": 277102494,
+         "block_hash": "HdbGV7MkzZPs7ty5CV8TpLgi5ThSPVTezmfr6xpopPaB",
+         "block_timestamp": 1794336348090000000,
+         "receipt_index": 6,
+         "predecessor_id": "bounty.example.testnet",
+         "receiver_id": "bounty.example.testnet",
+         "receipt_id": "Djf8DXEuWjwTxiSonaLSTxgtqQrh5M5557TgfGc2EFCA",
+         "receipt": {
+          "Action": {
+           "signer_id": "oracle.example.testnet",
+           "gas_price": "100000000",
+           "output_data_receivers": [],
+           "input_data_ids": [],
+           "actions": [
+            {
+             "FunctionCall": {
+              "method_name": "on_paid",
+              "args": "eyJpZCI6ImV4YW1wbGUtMDAwMCJ9",
+              "gas": 100000000000000,
+              "deposit": "0"
+             }
+            }
+           ],
+           "is_promise_yield": false
+          }
+         },
+         "priority": 0
+        }
+       }
+      ],
+      "data_receipts": []
+     }
+    ]
+   }
+  },
+  {
+   "url": "https://rpc.testnet.fastnear.com",
+   "request": {
+    "jsonrpc": "2.0",
+    "method": "query",
+    "params": {
+     "account_id": "season.example.testnet",
+     "args_base64": "e30=",
+     "finality": "final",
+     "method_name": "season",
+     "request_type": "call_function"
+    }
+   },
+   "status": 200,
+   "response": {
+    "jsonrpc": "2.0",
+    "result": {
+     "block_hash": "EqmxAeSiwgGjqoRvrReViCVVVUPRJj4db3gdfSHnz64D",
+     "block_height": 277104905,
+     "logs": [],
+     "result": [
+      123,
+      34,
+      110,
+      97,
+      109,
+      101,
+      34,
+      58,
+      34,
+      101,
+      120,
+      97,
+      109,
+      112,
+      108,
+      101,
+      34,
+      44,
+      34,
+      98,
+      111,
+      117,
+      110,
+      116,
+      121,
+      34,
+      58,
+      34,
+      98,
+      111,
+      117,
+      110,
+      116,
+      121,
+      46,
+      101,
+      120,
+      97,
+      109,
+      112,
+      108,
+      101,
+      46,
+      116,
+      101,
+      115,
+      116,
+      110,
+      101,
+      116,
+      34,
+      44,
+      34,
+      115,
+      99,
+      104,
+      101,
+      100,
+      117,
+      108,
+      101,
+      114,
+      34,
+      58,
+      34,
+      115,
+      99,
+      104,
+      101,
+      100,
+      117,
+      108,
+      101,
+      114,
+      46,
+      101,
+      120,
+      97,
+      109,
+      112,
+      108,
+      101,
+      46,
+      116,
+      101,
+      115,
+      116,
+      110,
+      101,
+      116,
+      34,
+      44,
+      34,
+      111,
+      112,
+      101,
+      110,
+      101,
+      100,
+      34,
+      58,
+      49,
+      125
+     ]
+    },
+    "id": "maskwars-check"
+   }
+  },
+  {
+   "url": "https://rpc.testnet.fastnear.com",
+   "request": {
+    "jsonrpc": "2.0",
+    "method": "query",
+    "params": {
+     "account_id": "season.example.testnet",
+     "args_base64": "eyJsaW1pdCI6NTB9",
+     "finality": "final",
+     "method_name": "latest",
+     "request_type": "call_function"
+    }
+   },
+   "status": 200,
+   "response": {
+    "jsonrpc": "2.0",
+    "result": {
+     "block_hash": "EqmxAeSiwgGjqoRvrReViCVVVUPRJj4db3gdfSHnz64D",
+     "block_height": 277104905,
+     "logs": [],
+     "result": [
+      91,
+      123,
+      34,
+      105,
+      100,
+      34,
+      58,
+      34,
+      101,
+      120,
+      97,
+      109,
+      112,
+      108,
+      101,
+      45,
+      48,
+      48,
+      48,
+      48,
+      34,
+      44,
+      34,
+      115,
+      97,
+      102,
+      101,
+      34,
+      58,
+      34,
+      115,
+      48,
+      48,
+      48,
+      49,
+      46,
+      115,
+      101,
+      97,
+      115,
+      111,
+      110,
+      46,
+      101,
+      120,
+      97,
+      109,
+      112,
+      108,
+      101,
+      46,
+      116,
+      101,
+      115,
+      116,
+      110,
+      101,
+      116,
+      34,
+      44,
+      34,
+      99,
+      104,
+      97,
+      108,
+      108,
+      101,
+      110,
+      103,
+      101,
+      34,
+      58,
+      34,
+      108,
+      105,
+      118,
+      101,
+      45,
+      115,
+      97,
+      102,
+      101,
+      34,
+      125,
+      93
+     ]
+    },
+    "id": "maskwars-check"
+   }
+  },
+  {
+   "url": "https://rpc.testnet.fastnear.com",
+   "request": {
+    "jsonrpc": "2.0",
+    "method": "query",
+    "params": {
+     "account_id": "season.example.testnet",
+     "args_base64": "e30=",
+     "finality": "final",
+     "method_name": "next",
+     "request_type": "call_function"
+    }
+   },
+   "status": 200,
+   "response": {
+    "jsonrpc": "2.0",
+    "result": {
+     "block_hash": "EqmxAeSiwgGjqoRvrReViCVVVUPRJj4db3gdfSHnz64D",
+     "block_height": 277104905,
+     "logs": [],
+     "result": [
+      123,
+      34,
+      97,
+      116,
+      95,
+      110,
+      115,
+      34,
+      58,
+      34,
+      49,
+      55,
+      57,
+      52,
+      52,
+      50,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      34,
+      44,
+      34,
+      110,
+      34,
+      58,
+      50,
+      44,
+      34,
+      99,
+      104,
+      97,
+      108,
+      108,
+      101,
+      110,
+      103,
+      101,
+      34,
+      58,
+      34,
+      108,
+      105,
+      118,
+      101,
+      45,
+      115,
+      97,
+      102,
+      101,
+      34,
+      44,
+      34,
+      99,
+      111,
+      100,
+      101,
+      95,
+      104,
+      97,
+      115,
+      104,
+      34,
+      58,
+      34,
+      71,
+      69,
+      114,
+      113,
+      117,
+      117,
+      109,
+      113,
+      121,
+      74,
+      111,
+      55,
+      76,
+      71,
+      106,
+      50,
+      51,
+      82,
+      54,
+      100,
+      54,
+      56,
+      103,
+      56,
+      57,
+      81,
+      89,
+      70,
+      110,
+      68,
+      116,
+      120,
+      118,
+      80,
+      115,
+      86,
+      83,
+      57,
+      112,
+      101,
+      89,
+      106,
+      105,
+      76,
+      34,
+      44,
+      34,
+      112,
+      114,
+      105,
+      122,
+      101,
+      34,
+      58,
+      34,
+      51,
+      53,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      34,
+      44,
+      34,
+      115,
+      97,
+      102,
+      101,
+      95,
+      102,
+      117,
+      110,
+      100,
+      34,
+      58,
+      34,
+      49,
+      53,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      34,
+      44,
+      34,
+      109,
+      105,
+      110,
+      95,
+      108,
+      111,
+      111,
+      116,
+      34,
+      58,
+      34,
+      53,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      48,
+      34,
+      44,
+      34,
+      109,
+      97,
+      115,
+      107,
+      115,
+      34,
+      58,
+      91,
+      34,
+      110,
+      111,
+      118,
+      97,
+      46,
+      101,
+      120,
+      97,
+      109,
+      112,
+      108,
+      101,
+      46,
+      116,
+      101,
+      115,
+      116,
+      110,
+      101,
+      116,
+      34,
+      44,
+      34,
+      111,
+      110,
+      121,
+      120,
+      46,
+      101,
+      120,
+      97,
+      109,
+      112,
+      108,
+      101,
+      46,
+      116,
+      101,
+      115,
+      116,
+      110,
+      101,
+      116,
+      34,
+      44,
+      34,
+      111,
+      114,
+      97,
+      99,
+      108,
+      101,
+      46,
+      101,
+      120,
+      97,
+      109,
+      112,
+      108,
+      101,
+      46,
+      116,
+      101,
+      115,
+      116,
+      110,
+      101,
+      116,
+      34,
+      93,
+      44,
+      34,
+      104,
+      111,
+      117,
+      114,
+      115,
+      34,
+      58,
+      52,
+      44,
+      34,
+      99,
+      111,
+      109,
+      109,
+      105,
+      116,
+      95,
+      109,
+      105,
+      110,
+      117,
+      116,
+      101,
+      115,
+      34,
+      58,
+      52,
+      53,
+      44,
+      34,
+      102,
+      117,
+      110,
+      100,
+      101,
+      100,
+      34,
+      58,
+      116,
+      114,
+      117,
+      101,
+      125
+     ]
+    },
+    "id": "maskwars-check"
+   }
+  }
+ ]
+}

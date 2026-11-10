@@ -58,6 +58,25 @@ export { MARK };
 
 export const esc = (s: string): string => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
+/** What the band across a made-up picture says. */
+export const SIMULATED_BAND = "SIMULATED · NOT A REAL RESULT";
+
+/**
+ * The mark of a picture drawn from made-up numbers, for a page laid out `w` px wide: a solid band across the whole
+ * picture through its centre, and the word tiled over everything else. It is not a stamp in a corner: no crop of the
+ * picture is left without it, so a made-up result cannot pass for a real one.
+ */
+export function simulatedMark(w: number): string {
+  const px = (n: number): string => `${Math.round((n * w) / 1600)}px`;
+  const word = "font-family:var(--font-word);font-weight:800;font-stretch:125%;line-height:1;white-space:nowrap";
+  const row = Array.from({ length: 7 }, () => "SIMULATED").join(" &nbsp;&nbsp; ");
+  const rows = Array.from({ length: 9 }, (_, i) => `<div style="margin-left:${i % 2 ? px(-240) : "0"}">${row}</div>`).join("");
+  return `<div class="sim" style="position:absolute;inset:0;overflow:hidden;z-index:99">
+<div class="sim-tile" style="position:absolute;left:-25%;top:-45%;width:150%;height:190%;transform:rotate(-14deg);display:flex;flex-direction:column;justify-content:space-between;${word};font-size:${px(64)};letter-spacing:.06em;color:rgba(255,178,63,.16)">${rows}</div>
+<div class="sim-band" style="position:absolute;left:-10%;top:50%;width:120%;height:${px(140)};margin-top:${px(-70)};transform:rotate(-14deg);background:var(--amber);color:var(--ink);box-shadow:0 0 0 ${px(8)} var(--ink);display:flex;align-items:center;justify-content:center;${word};font-size:${px(64)};letter-spacing:.04em">${SIMULATED_BAND}</div>
+</div>`;
+}
+
 const BASE_CSS = `
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:${CARD_W}px;height:${CARD_H}px;overflow:hidden;background:var(--ink);color:var(--ice)}
@@ -73,7 +92,6 @@ body{position:relative;-webkit-font-smoothing:antialiased;text-rendering:geometr
 .foot{position:absolute;left:72px;bottom:52px;display:flex;align-items:center;gap:14px}
 .foot svg{height:36px;width:auto;display:block}
 .foot span{font-family:var(--font-word);font-weight:800;font-stretch:125%;font-size:30px;letter-spacing:.02em;line-height:1}
-.sim{position:absolute;right:28px;top:22px;font-family:var(--font-num);font-weight:700;font-size:14px;letter-spacing:.18em;color:var(--ice-38)}
 .muted{color:var(--ice-60)}
 .money{color:var(--money)}
 .amber{color:var(--amber)}
@@ -95,9 +113,9 @@ document.fonts.ready.then(() => {
 
 function page(body: string, e: MediaEvent, extraCss = ""): string {
   return `<!doctype html><html><head><meta charset="utf-8"><style>${fontFaces()}\n${tokens()}\n${BASE_CSS}${extraCss}</style></head>
-<body>${body}${e.source === "SIMULATED" ? '<div class="sim">SIMULATED</div>' : ""}
+<body>${body}
 <div class="foot"><svg viewBox="0 0 240 280" aria-hidden="true"><path fill="var(--ice)" d="${MARK}"/></svg><span>MASK WARS</span></div>
-<script>${FIT_JS}</script></body></html>`;
+${e.source === "SIMULATED" ? simulatedMark(CARD_W) : ""}<script>${FIT_JS}</script></body></html>`;
 }
 
 /** 16:9 frames fill the card with the object on the right; square mask portraits sit in the right slot. */

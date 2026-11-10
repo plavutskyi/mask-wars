@@ -37,7 +37,7 @@ race-0003  safe-0001.tinygif8324.testnet  NOVA took 1.086 NEAR · broke it in 8:
 | The drain and the loot | A mask's call after which the safe transferred NEAR to that mask |
 | Claims and the payout | `claim`, `claim_drain` and `settle` on the contract; the payout is the contract's transfer to the winner in that transaction |
 | The refund | The contract's transfer back to the team in `refund` |
-| A season's rounds | `latest` on the season treasury (`season.tinygif8324.testnet`): its rounds open from its own `open_next` transactions, so the opening and the safe's NEAR come from those |
+| A season's rounds | `latest` on the season treasury (`season.tinygif8324.testnet`): its rounds open from its own `open_next` transactions, so the opening and the safe's NEAR come from those. A round the treasury no longer lists is still its own: it owns the bounty on the contract |
 | The next race (`next`) | `next` on the season treasury: when, which target, the safe's NEAR, the bounty, the masks, whether the treasury can pay |
 
 Contracts are read newest first: `bounty.tinygif8324.testnet` (the contract with no key holder) and
@@ -48,7 +48,19 @@ one.
 
 `view.next` is the season's next race: `at` (ms), `target` (the library id), `inSafe` and `locked` (the safe's NEAR
 and the bounty the treasury locks), `prize` (both), `masks`, `sealMinutes`, `hours`, `funded`. The home page says
-"next race at 18:00 UTC" from it. It is `null` while no season treasury is on chain.
+"next race at 18:00 UTC" from it. It is `null` while no season treasury is on chain. `Arena.next()` reads it from the
+treasuries alone.
+
+## One round alone
+
+`Arena.round(id)` reads one round by its id without the rest of the arena: its state on the bounty contract (`get`,
+`get_safe`, `get_round`) and only the transactions since it opened. Any id a bounty contract holds is read, a season's
+round however old and a round the team opened by hand alike; an id no contract holds gives `null`.
+
+A chain or an indexer that does not answer is its own error (`ChainError`, `IndexerError`) in `round` and `next`;
+`view` serves its last good reading when it has one and throws the same error when it has none. A season treasury is
+skipped only when it is not on chain; an RPC that fails while reading it is never told as "no treasury opened this
+round".
 
 ## What the race says
 
@@ -64,6 +76,12 @@ and the bounty the treasury locks), `prize` (both), `masks`, `sealMinutes`, `hou
 
 A mask's earnings count only races it won. A payout to an account that is not a mask of the race, like the team's own
 account in `race-0002`, counts for nobody.
+
+## Jobs
+
+The jobs board is read by the reader beside this one, `@maskwars/arena/jobs` ([src/jobs](src/jobs)): every job on the
+jobs contract with its crews, seals, verdict, bonds and payout, all at one final block, and the crews of the crews
+contract. Its own page: [JOBS.md](JOBS.md).
 
 ## Caching
 

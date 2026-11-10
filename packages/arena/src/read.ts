@@ -1,6 +1,7 @@
 // The arena read from the chain with no keys: the bounty contracts' races (`get`, `get_safe`, `get_round`), the
 // safes, every move a mask made, the drain, the winner and the payout. The list of races comes from the contracts'
-// transactions in the public indexer; the state of each race comes from the contract itself over RPC.
+// transactions in the public indexer; the state of each race comes from the contract itself over RPC. One round can
+// be read alone by its id (`round`), without the rest of the arena.
 
 import { ChainError, ChainReader } from "@maskwars/check";
 import { ACTIVE_MS, CONTRACTS, FACTORY, MASKS, type MaskProfile, NETWORK, type Network, personOf, RPCS, SEASONS, TEAMS } from "./config.ts";
@@ -74,6 +75,15 @@ const FINAL: ReadonlySet<State> = new Set(["paid", "drained", "refunded"]);
 const GRACE_MS = 12 * 60 * 60 * 1000;
 /** How long one reading of a season treasury serves. */
 const SEASON_TTL_MS = 60_000;
+/** A round read alone takes the transactions from this long before it opened: its funding and its opening. */
+const BEFORE_OPEN_MS = 60 * 60 * 1000;
+
+/** What the bounty contract says about one race. */
+interface RaceState {
+  bounty: BountyView | null;
+  safe: SafeView | null;
+  round: RoundView | null;
+}
 
 const nsToMs = (ns: string | null | undefined): number | null => (ns && /^\d+$/.test(ns) ? Number(BigInt(ns) / 1_000_000n) : null);
 const sum = (xs: readonly bigint[]) => xs.reduce((a, b) => a + b, 0n);
@@ -122,6 +132,8 @@ export class Arena {
   readonly #lists = new Map<string, Cached<AccountTx[]>>();
   readonly #final = new Map<string, Race>();
   readonly #seasonState = new Map<string, Cached<SeasonState | null>>();
+  /** When a reading of the whole arena last went on without a treasury that did not answer. */
+  readonly #seasonSkipped = new Map<string, number>();
   #view: Cached<ArenaView> | null = null;
   #lastGood: ArenaView | null = null;
 
@@ -164,6 +176,41 @@ export class Arena {
     return (await this.view()).races.find((r) => r.id === id) ?? null;
   }
 
+  /**
+   * One round by its id, read alone: its state on the bounty contract, and only the transactions since it opened. Any
+   * id the contract holds is read, a season's round however old and a round opened by hand alike. Null when no bounty
+   * contract of the arena holds the id. A chain or an indexer that does not answer throws its own error (`ChainError`,
+   * `IndexerError`): nothing is skipped and nothing is served from an earlier reading.
+   */
+  async round(id: string): Promise<Race | null> {
+    const now = this.#now();
+    for (const contract of this.#contracts) {
+      const state = await this.#state(contract, id);
+      if (!state.bounty) continue;
+      const opened = nsToMs(state.safe?.opened_ns);
+      const since = opened === null ? 0 : opened - BEFORE_OPEN_MS;
+      const about = (c: ContractCall) => c.call.args?.["id"] === id;
+      const calls: ContractCall[] = (await this.#accountTxs(contract, true, since))
+        .filter((tx) => tx.receiver === contract)
+        .flatMap((tx) => tx.calls.map((call) => ({ tx, call })))
+        .filter(about);
+      // The treasury that opened it is the bounty's owner on the contract: no list of the treasury's is asked.
+      const season = this.#seasons.includes(state.bounty.owner) ? state.bounty.owner : null;
+      if (season) calls.push(...(await this.#seasonOpens({ season, bounty: contract, rounds: new Set([id]), next: null }, since, true)).filter(about));
+      return this.#race(contract, id, calls, () => this.#judge(contract), now, season, state);
+    }
+    return null;
+  }
+
+  /**
+   * The next race a season opens on schedule, as its treasury says now; null when no treasury is on chain or none plans
+   * one. A treasury that cannot be read throws.
+   */
+  async next(): Promise<NextRace | null> {
+    const seasons = (await Promise.all(this.#seasons.map((season) => this.#season(season)))).filter((x): x is SeasonState => x !== null);
+    return this.#soonest(seasons);
+  }
+
   /** A mask by its page name (`nova`) or its account. */
   async mask(slugOrAccount: string): Promise<MaskStats | null> {
     const key = slugOrAccount.toLowerCase();
@@ -176,7 +223,10 @@ export class Arena {
     const now = this.#now();
     const seen = new Set<string>();
     const jobs: Promise<Race | null>[] = [];
-    const seasons = (await Promise.all(this.#seasons.map((season) => this.#season(season)))).filter((x): x is SeasonState => x !== null);
+    // The whole arena reads on without a treasury that does not answer this time, as it does without one that is not
+    // on chain: the races on the bounty contracts are still told, and the treasury is asked again at the next reading.
+    // `next` and `round` pass the failure on as it is.
+    const seasons = (await Promise.all(this.#seasons.map((season) => this.#seasonOrSkip(season)))).filter((x): x is SeasonState => x !== null);
     for (const contract of this.#contracts) {
       // Only the transactions that called the contract: its account may also be a person's, with other business.
       const txs = await this.#accountTxs(contract, true);
@@ -207,22 +257,46 @@ export class Arena {
       .filter((r): r is Race => r !== null)
       .sort((a, b) => (b.openedAt ?? 0) - (a.openedAt ?? 0) || b.id.localeCompare(a.id));
     for (const r of races) if (FINAL.has(r.state)) this.#final.set(`${r.contract}/${r.id}`, r);
-    const next = this.#next(seasons);
+    const next = this.#soonest(seasons);
     return { network: this.#network, races, now: pickNow(races), next, league: this.#league(races), readAt: now };
   }
 
   /**
-   * A season treasury: its bounty contract, its latest rounds and its next one. One that cannot be read is skipped. The
-   * treasury changes once a slot, so one reading of it serves for `SEASON_TTL_MS`: the arena's own readings every few
-   * seconds read the race lists again, not the treasury.
+   * A season treasury: its bounty contract, its latest rounds and its next one. One that is not on chain is skipped;
+   * an RPC that fails is an error, never "no treasury": `next` passes it on, the whole arena reads on without the
+   * treasury (`#build`). The treasury changes once a slot, so one reading of it serves
+   * for `SEASON_TTL_MS`: the arena's own readings every few seconds read the race lists again, not the treasury.
    */
   #season(season: string): Promise<SeasonState | null> {
     const now = this.#now();
     const cached = this.#seasonState.get(season);
     if (cached && now - cached.at < SEASON_TTL_MS) return cached.value;
     const value = this.#readSeason(season);
-    this.#seasonState.set(season, { at: now, value });
+    const entry = { at: now, value };
+    this.#seasonState.set(season, entry);
+    // A reading that failed is not kept: the next one asks the chain again.
+    value.catch(() => {
+      if (this.#seasonState.get(season) === entry) this.#seasonState.delete(season);
+    });
     return value;
+  }
+
+  /**
+   * The treasury for a reading of the whole arena: one that does not answer is skipped, and not asked again for
+   * `SEASON_TTL_MS`, so a node that is down is not asked at every reading of the race lists.
+   */
+  async #seasonOrSkip(season: string): Promise<SeasonState | null> {
+    const now = this.#now();
+    const skipped = this.#seasonSkipped.get(season);
+    if (skipped !== undefined && now - skipped < SEASON_TTL_MS) return null;
+    try {
+      const state = await this.#season(season);
+      this.#seasonSkipped.delete(season);
+      return state;
+    } catch {
+      this.#seasonSkipped.set(season, now);
+      return null;
+    }
   }
 
   async #readSeason(season: string): Promise<SeasonState | null> {
@@ -234,15 +308,19 @@ export class Arena {
       ]);
       if (!state || typeof state.bounty !== "string") return null;
       return { season, bounty: state.bounty, rounds: new Set((latest ?? []).map((r) => r.id)), next: next ?? null };
-    } catch {
-      // Not on chain yet, or the RPC failed this time: the arena reads on without it.
-      return null;
+    } catch (error) {
+      // Not on chain yet (no account, or no treasury code on it): the arena reads on without it. Anything else is the
+      // RPC failing, and it is said as that: a round is never told as "no treasury opened it" because a node was down.
+      if (error instanceof ChainError && (error.kind === "unknown_account" || error.kind === "contract")) return null;
+      throw error;
     }
   }
 
   /** The `open_safe` calls the treasury made, each with the transaction that made it (the scheduler's `open_next`). */
-  async #seasonOpens(x: SeasonState): Promise<ContractCall[]> {
-    const txs = await this.#accountTxs(x.season, true).catch(() => [] as Tx[]);
+  async #seasonOpens(x: SeasonState, since = 0, strict = false): Promise<ContractCall[]> {
+    const read = this.#accountTxs(x.season, true, since);
+    // The whole arena reads on when the treasury's history is late; one round read alone says the indexer failed.
+    const txs = await (strict ? read : read.catch(() => [] as Tx[]));
     return txs.flatMap((tx) =>
       tx.receipts
         .filter((r) => r.from === x.season && r.to === x.bounty && r.ok)
@@ -252,7 +330,7 @@ export class Arena {
   }
 
   /** The soonest next race of any season. */
-  #next(seasons: readonly SeasonState[]): NextRace | null {
+  #soonest(seasons: readonly SeasonState[]): NextRace | null {
     const all = seasons.flatMap((x): NextRace[] => {
       const n = x.next;
       const at = nsToMs(n?.at_ns);
@@ -279,7 +357,8 @@ export class Arena {
     return all.sort((a, b) => a.at - b.at)[0] ?? null;
   }
 
-  async #accountTxs(account: string, callsOnly = false): Promise<Tx[]> {
+  /** An account's transactions with their receipts; the ones from before `since` are left out, unread. */
+  async #accountTxs(account: string, callsOnly = false, since = 0): Promise<Tx[]> {
     const now = this.#now();
     let list = this.#lists.get(account);
     if (!list || now - list.at >= this.#ttl * 2) {
@@ -288,7 +367,7 @@ export class Arena {
       list = { at: now, value: value.catch((e: unknown) => (prev ? prev.value : Promise.reject(e))) };
       this.#lists.set(account, list);
     }
-    const hashes = (await list.value).filter((t) => !callsOnly || t.call).map((t) => t.hash);
+    const hashes = (await list.value).filter((t) => (!callsOnly || t.call) && (t.at === 0 || t.at >= since)).map((t) => t.hash);
     const missing = hashes.filter((h) => !this.#txs.has(h));
     if (missing.length) for (const tx of await this.#indexer.transactions(missing)) this.#txs.set(tx.hash, tx);
     return hashes.flatMap((h) => {
@@ -312,6 +391,16 @@ export class Arena {
     }
   }
 
+  /** A race's own state on its contract: the bounty, and the safe and the sealed round when it has them. */
+  async #state(contract: string, id: string): Promise<RaceState> {
+    const [bounty, safe, round] = await Promise.all([
+      this.#rpc.view<BountyView | null>(contract, "get", { id }),
+      this.#viewOrNull<SafeView>(contract, "get_safe", { id }),
+      this.#viewOrNull<RoundView>(contract, "get_round", { id }),
+    ]);
+    return { bounty, safe, round };
+  }
+
   #who(account: string, inRace: ReadonlySet<string>): Who {
     const p = this.#masks.find((m) => m.account === account);
     if (p) return { account, slug: p.slug, name: p.name, mask: true, model: p.model };
@@ -329,13 +418,12 @@ export class Arena {
     judge: () => Promise<string | null>,
     now: number,
     season: string | null = null,
+    read?: RaceState,
   ): Promise<Race | null> {
-    const [bounty, safe, round] = await Promise.all([
-      this.#rpc.view<BountyView | null>(contract, "get", { id }),
-      this.#viewOrNull<SafeView>(contract, "get_safe", { id }),
-      this.#viewOrNull<RoundView>(contract, "get_round", { id }),
-    ]);
+    const { bounty, safe, round } = read ?? (await this.#state(contract, id));
     if (!bounty) return null;
+    // A round the treasury no longer lists (`latest` gives its newest only) is still its own: it owns the bounty.
+    season ??= this.#seasons.includes(bounty.owner) ? bounty.owner : null;
     const state = bounty.status.state;
     const final = FINAL.has(state);
     const maskSet = new Set(safe?.masks ?? []);

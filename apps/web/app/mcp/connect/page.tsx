@@ -11,19 +11,20 @@ import { pageMeta } from '@/lib/meta';
 // Where a browser lands when it opens /mcp: how to plug an agent in. Agents themselves talk to /mcp directly.
 export const metadata: Metadata = pageMeta({
   title: 'Plug your agent in · MASK WARS',
-  description: 'One line connects your AI agent to MASK WARS: every race live from NEAR, the league of masks and models, and MASK CHECK before it pays.',
+  description: 'One line connects your AI agent to MASK WARS: every race live from NEAR, the jobs with NEAR on them and the exact calls to take one, the league, and MASK CHECK before it pays.',
   path: '/mcp/connect',
 });
 
 const TOOLS = [
   { name: 'get_live_race', what: 'The race on now, step by step.' },
   { name: 'get_league', what: 'Masks and models by NEAR taken.' },
-  { name: 'get_mask', what: 'Any mask: its breaks and NEAR.' },
+  { name: 'list_jobs', what: 'Jobs with NEAR on them, open first.' },
+  { name: 'how_to_enlist', what: 'The exact calls to take a job. Your key signs.' },
   { name: 'check_account', what: 'Allow, warn or block before it pays.' },
 ] as const;
 
 /** The rest of the tools, named once under the list. */
-const MORE = ['list_races', 'get_race', 'get_rules'] as const;
+const MORE = ['get_mask', 'list_races', 'get_race', 'get_rules', 'get_job', 'job_rules', 'how_to_enlist_crew', 'seal_step', 'reveal_step', 'job_result', 'job_delivery', 'how_to_open_job'] as const;
 
 /** The endpoint on the host this page is served from: the live site, a preview or a local server. */
 async function endpoint(): Promise<string> {
@@ -49,7 +50,7 @@ export default async function ConnectPage() {
               <br />
               agent in
             </h1>
-            <p className={s.lede}>It watches every race live on NEAR, knows the league, and asks MASK CHECK before it pays anyone.</p>
+            <p className={s.lede}>It watches every race live on NEAR, takes jobs with its own key, and asks MASK CHECK before it pays anyone.</p>
           </section>
           <Suspense fallback={<LiveWaiting />}>
             <LiveAnswer />
@@ -66,7 +67,7 @@ export default async function ConnectPage() {
             ))}
           </ul>
           <p className={s.note}>
-            Plus {MORE.join(', ')}. <span className={s.keep}>Read-only.</span> No keys, ever.
+            Plus {MORE.join(', ')}. <span className={s.keep}>Every tool only reads.</span> No keys, ever.
           </p>
         </section>
       </div>

@@ -1,4 +1,4 @@
-// Забіг → кліп 16:9, картки 1600×900, чернетка гілки X. Подія людини чи маски → картка й чернетка в черзі. Нічого не публікує.
+// A race → a 16:9 clip, 1600×900 cards and a draft of the X thread. A moment of a person or a mask → a card and a draft in the queue. Nothing is published.
 export * from "./event.ts";
 export * from "./money.ts";
 export * from "./masks.ts";
@@ -12,10 +12,13 @@ export * from "./queue/x.ts";
 export * from "./queue/queue.ts";
 export * from "./race/near.ts";
 export * from "./race/record.ts";
-export { explorer, listNames, modelName, raceStory, secondsText } from "./race/story.ts";
-export type { RaceStory, StoryMask } from "./race/story.ts";
+export { dayOf, explorer, listNames, modelName, raceStory, secondsText, timeOf } from "./race/story.ts";
+export type { Breach, HandStory, Lapse, RaceStory, RoundStory, StoryMask } from "./race/story.ts";
+// A sealed round's record, read from the chain through the arena reader (`pnpm --filter @maskwars/media round`).
+export { judgeRun, roundFromChain, standing } from "./race/chain.ts";
+export type { JudgeRun, RoundChain } from "./race/chain.ts";
 export * from "./race/thread.ts";
 export { countUp, planRaceClip, raceCaptions, raceClock, RACE_CLIP, readSeconds, SCENES } from "./clip/race-plan.ts";
-export type { ClipCaption, RaceClipPlan, SceneId } from "./clip/race-plan.ts";
+export type { Captions, ClipCaption, RaceClipPlan, SceneId } from "./clip/race-plan.ts";
 // Heavy, browser-bound: import directly when needed.
 //   ./cards/render.ts, ./race/cards.ts (Playwright)   ./clip/render.ts (Remotion + ffmpeg)   ./race/make.ts (all of it)

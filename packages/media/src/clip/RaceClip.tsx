@@ -1,18 +1,21 @@
 /**
  * The race clip, 16:9. Frame 0 is the result, ready to be the thumbnail. Then the vault and its bounty, the masks
  * racing a private copy until one breaks through, the real vault cracking open, the contract paying, the call to come
- * next. Captions are burned in for a feed that plays muted. Built from `brand/art/web` and the brand tokens; fonts,
- * frames and music come from the render's public dir.
+ * next. A sealed round is told by its own steps on chain: the vault, the seal that stops the clock, the sealing
+ * window running out over the locked vault, then the drain and the payout. Captions are burned in for a feed that
+ * plays muted. A clip drawn from a made-up record carries the SIMULATED band across every frame. Built from
+ * `brand/art/web` and the brand tokens; fonts, frames and music come from the render's public dir.
  */
 
 import { color } from "@maskwars/brand";
 import type { CSSProperties, ReactNode } from "react";
 import { AbsoluteFill, continueRender, delayRender, Easing, Html5Audio, Img, interpolate, Sequence, spring, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import { MARK } from "../cards/mark.ts";
-import { near } from "../race/near.ts";
+import { SimulatedBand } from "./SimulatedBand.tsx";
+import { near, nearShort } from "../race/near.ts";
 import type { RaceRecord } from "../race/record.ts";
-import type { RaceStory, StoryMask } from "../race/story.ts";
-import { raceStory, SITE } from "../race/story.ts";
+import type { RaceStory, RoundStory, StoryMask } from "../race/story.ts";
+import { dayOf, raceStory, SITE, timeOf } from "../race/story.ts";
 import type { RaceClipPlan, Span } from "./race-plan.ts";
 import { countUp, planRaceClip, RACE_CLIP, raceClock } from "./race-plan.ts";
 
@@ -69,6 +72,19 @@ const label = (size = 43): CSSProperties => word(size, { color: color.ice60, let
  * at their widest (Mona 800 numbers ≈ .66, Hubot 800 capitals ≈ .84), with a margin.
  */
 const fit = (text: string, base: number, maxW: number, em: number): number => Math.min(base, Math.floor(maxW / (text.length * em)));
+
+/** One character of a line over a scene (Hubot 800 capitals, digits, dots and spaces, tracked .06em), in ems. */
+const KICKER_EM = 0.82;
+
+/**
+ * Words with figures in them. The word face draws a barred zero, which reads as a letter in `ROUND 10` or `18:00`, so
+ * figures are set in the number face. A sealed round always sets them so; a race told by its sandbox board keeps its
+ * line as it was drawn unless a zero is in it.
+ */
+function Figures({ s, text }: { s: RaceStory; text: string }) {
+  if (s.kind !== "round" && !text.includes("0")) return <>{text}</>;
+  return <>{text.split(/(\d[\d.:]*\d|\d)/).map((part, i) => (i % 2 ? <span key={i} style={{ fontFamily: FONT.num }}>{part}</span> : part))}</>;
+}
 
 /** A square mask portrait, `h` px, placed by its centre. */
 function Face({ m, cx, top, h, style }: { m: StoryMask; cx: number; top: number; h: number; style?: CSSProperties }) {
@@ -157,7 +173,9 @@ function Result({ s }: { s: RaceStory }) {
       <Floor />
       <Face m={s.winner} cx={1404} top={65} h={950} style={{ scale: interpolate(frame, [0, durationInFrames], [1, 1.035]) }} />
       <div style={{ position: "absolute", left: FIELD, top: 0, bottom: 40, width: 1030, display: "flex", flexDirection: "column", justifyContent: "center", gap: 36 }}>
-        <div style={label()}>{`RACE ${s.no} · ${s.chain.toUpperCase()}`}</div>
+        <div style={label(fit(s.kicker, 43, 1030, KICKER_EM))}>
+          <Figures s={s} text={s.kicker} />
+        </div>
         <div style={num(fit(drained, 252, 960, 0.7), { color: color.money })}>{drained}</div>
         <div style={word(fit(`DRAINED BY ${s.winner.name}`, 77, 1030, 0.86), { color: color.ice })}>DRAINED BY {s.winner.name}</div>
         <div style={word(43, { letterSpacing: "0.04em" })}>
@@ -175,24 +193,48 @@ const VAULT = { h: 860, cy: 470 } as const;
 function Vault({ s }: { s: RaceStory }) {
   const frame = useCurrentFrame();
   const { durationInFrames } = useVideoConfig();
-  const bounty = `${s.bounty} NEAR`;
+  // A season round's vault is the treasury's: what is inside is the number, the bounty rides on top. Any other
+  // race is told by its bounty.
+  const round = s.kind === "round" && s.opener === "season";
+  const bounty = `${round ? s.safe : s.bounty} NEAR`;
   return (
     <AbsoluteFill>
       <AbsoluteFill style={{ scale: interpolate(frame, [0, durationInFrames], [0.94, 1], { easing: Easing.out(Easing.quad) }) }}>
         <Floor at="50% 44%" />
         <Ring h={VAULT.h} cy={VAULT.cy} style={{ opacity: interpolate(frame, [0, 12], [0, 1], clamp), rotate: `${interpolate(frame, [0, durationInFrames], [-2.5, 1.5])}deg` }} />
-        <div style={{ position: "absolute", left: W / 2 - 300, top: VAULT.cy - 180, width: 600, height: 360, borderRadius: "50%", background: `radial-gradient(closest-side, ${color.ink} 55%, rgba(6,5,12,0) 100%)` }} />
+        {/* The dark the lines sit on: a round has one line more, so its patch is larger. */}
+        <div
+          style={{
+            position: "absolute",
+            left: W / 2 - (round ? 350 : 300),
+            top: VAULT.cy - (round ? 230 : 180),
+            width: round ? 700 : 600,
+            height: round ? 460 : 360,
+            borderRadius: "50%",
+            background: `radial-gradient(closest-side, ${color.ink} ${round ? 62 : 55}%, rgba(6,5,12,0) 100%)`,
+          }}
+        />
       </AbsoluteFill>
-      <div style={{ position: "absolute", left: 0, right: 0, top: VAULT.cy - 150, display: "flex", flexDirection: "column", alignItems: "center", gap: 26 }}>
+      <div style={{ position: "absolute", left: 0, right: 0, top: VAULT.cy - (round ? 176 : 150), display: "flex", flexDirection: "column", alignItems: "center", gap: 26 }}>
         <Arrive frame={frame} at={4}>
-          <div style={label(34)}>{`RACE ${s.no} · ${s.chain.toUpperCase()}`}</div>
+          {/* Inside the ring a round's line is its season and round alone: the caption under it names the network. */}
+          <div style={label(fit(round ? s.title : s.kicker, 34, 620, KICKER_EM))}>
+            <Figures s={s} text={round ? s.title : s.kicker} />
+          </div>
         </Arrive>
         <Arrive frame={frame} at={14}>
           <div style={num(fit(bounty, 160, 560, 0.7), { color: color.money })}>{bounty}</div>
         </Arrive>
         <Arrive frame={frame} at={22}>
-          <div style={word(46, { color: color.ice, letterSpacing: "0.06em" })}>BOUNTY</div>
+          <div style={word(46, { color: color.ice, letterSpacing: "0.06em" })}>{round ? "IN THE VAULT" : "BOUNTY"}</div>
         </Arrive>
+        {round ? (
+          <Arrive frame={frame} at={32}>
+            <div style={word(40, { letterSpacing: "0.04em" })}>
+              <span style={num(40, { color: color.money })}>+{s.bounty} NEAR</span> <span style={{ color: color.ice60 }}>BOUNTY</span>
+            </div>
+          </Arrive>
+        ) : null}
       </div>
     </AbsoluteFill>
   );
@@ -204,13 +246,21 @@ function Race({ s, plan }: { s: RaceStory; plan: RaceClipPlan }) {
   const from = plan.scenes.race.from;
   const hit = plan.beats.breach - from;
   const clockFrom = plan.clock.from - from;
-  const t = interpolate(frame, [clockFrom, hit], [0, s.breach.ms], clamp);
+  const round = s.kind === "round";
   const broke = frame >= hit;
   const n = s.masks.length;
   const slot = Math.min(560, (W - 2 * FIELD) / n);
   const size = Math.min(540, slot * 1.02);
-  const board = s.record.sandbox.board;
+  const t = interpolate(frame, [clockFrom, hit], [0, round ? s.sealed.ms : s.breach.ms], clamp);
+  const board = s.record.sandbox?.board ?? [];
+  const opened = round ? Date.parse(s.record.opened.at) : 0;
   const status = (m: StoryMask): { text: string; tint: string } => {
+    if (round) {
+      // A round's clock is the chain's: a mask has no seal until its `commit` lands, and the winner's seal is the hit.
+      const seal = s.record.sealed.seals.find((x) => x.mask === m.name);
+      const sealed = seal !== undefined && Date.parse(seal.at) - opened <= t && (m.name !== s.winner.name || broke);
+      return sealed ? { text: "PLAN SEALED", tint: m.name === s.winner.name ? color.amber : color.ice60 } : { text: "NO SEAL YET", tint: color.ice60 };
+    }
     const mine = board.filter((b) => b.mask === m.name && b.atMs <= t);
     const last = mine[mine.length - 1];
     if (last?.verdict === "breach" && broke) return { text: "BREACH", tint: color.amber };
@@ -241,7 +291,9 @@ function Race({ s, plan }: { s: RaceStory; plan: RaceClipPlan }) {
               <Face m={m} cx={cx} top={top} h={size} style={{ scale: grow, filter: `brightness(${dim})` }} />
               <div style={{ position: "absolute", left: cx - slot / 2, width: slot, top: top + size * 0.93, display: "flex", flexDirection: "column", alignItems: "center", gap: 14, opacity: 0.35 + 0.65 * ((dim - 0.3) / 0.7) }}>
                 <div style={word(52, { color: color.ice })}>{m.name}</div>
-                <div style={word(34, { color: st.tint, letterSpacing: "0.08em", opacity: broke && !win ? interpolate(frame, [hit, hit + 8], [1, 0], clamp) : 1 })}>{st.text}</div>
+                <div style={word(34, { color: st.tint, letterSpacing: "0.08em", opacity: broke && !win ? interpolate(frame, [hit, hit + 8], [1, 0], clamp) : 1 })}>
+                  <Figures s={s} text={st.text} />
+                </div>
               </div>
             </div>
           );
@@ -253,8 +305,41 @@ function Race({ s, plan }: { s: RaceStory; plan: RaceClipPlan }) {
         )}
       </AbsoluteFill>
       <div style={{ position: "absolute", left: 0, right: 0, top: 46, display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
-        <div style={label(32)}>THE SANDBOX · A PRIVATE COPY</div>
+        <div style={label(32)}>{round ? "THE ROUND CLOCK · THE SEALING WINDOW IS OPEN" : "THE SANDBOX · A PRIVATE COPY"}</div>
         <Clock text={raceClock(t)} size={84} tint={broke ? color.amber : color.ice} />
+      </div>
+    </AbsoluteFill>
+  );
+}
+
+/** A sealed round's sealing window: the real vault, shut, while the window counts down to zero over it. */
+function Lock({ s, plan }: { s: RoundStory; plan: RaceClipPlan }) {
+  const frame = useCurrentFrame();
+  const from = plan.scenes.lock.from;
+  const run = plan.countdown ?? plan.scenes.lock;
+  const left = interpolate(frame, [run.from - from, run.to - from], [s.sealMinutes * 60_000, 0], { ...clamp, easing: Easing.inOut(Easing.cubic) });
+  const closed = frame >= run.to - from;
+  const plans = s.seals === 1 ? "1 PLAN SEALED" : `${s.seals} PLANS SEALED`;
+  return (
+    <AbsoluteFill>
+      <Floor at="50% 44%" />
+      <Ring h={VAULT.h} cy={VAULT.cy} style={{ opacity: interpolate(frame, [0, 10], [0, 1], clamp) }} />
+      <div style={{ position: "absolute", left: W / 2 - 340, top: VAULT.cy - 220, width: 680, height: 440, borderRadius: "50%", background: `radial-gradient(closest-side, ${color.ink} 62%, rgba(6,5,12,0) 100%)` }} />
+      <div style={{ position: "absolute", left: FIELD, top: 86 }}>
+        <div style={label(34)}>THE REAL VAULT</div>
+      </div>
+      <div style={{ position: "absolute", left: 0, right: 0, top: VAULT.cy - 150, display: "flex", flexDirection: "column", alignItems: "center", gap: 26 }}>
+        <Arrive frame={frame} at={2}>
+          <div style={label(34)}>{closed ? "WINDOW CLOSED" : "SEALING WINDOW"}</div>
+        </Arrive>
+        <Arrive frame={frame} at={6}>
+          <Clock text={raceClock(left)} size={150} tint={closed ? color.amber : color.ice} />
+        </Arrive>
+        <Arrive frame={frame} at={14}>
+          <div style={word(46, { color: color.ice, letterSpacing: "0.06em" })}>
+            <Figures s={s} text={plans} />
+          </div>
+        </Arrive>
       </div>
     </AbsoluteFill>
   );
@@ -328,7 +413,13 @@ function Paid({ s }: { s: RaceStory }) {
 
 function End({ s }: { s: RaceStory }) {
   const frame = useCurrentFrame();
-  const n = s.record.next;
+  // The next race only when the record holds it: a sealed round's is the season treasury's own `next`, read with it.
+  const n =
+    s.kind === "round" && s.record.next
+      ? { name: `${s.opener === "season" ? "ROUND" : "SEASON ROUND"} ${s.record.next.round}`, amount: `${nearShort(s.record.next.safe)} NEAR`, under: `IN THE VAULT · ${dayOf(s.record.next.at).toUpperCase()}, ${timeOf(s.record.next.at)} UTC` }
+      : s.kind === "race" && s.record.next
+        ? { name: `RACE ${Number(s.record.next.id.slice(5))}`, amount: `${near(s.record.next.bounty)} NEAR`, under: null }
+        : null;
   return (
     <AbsoluteFill>
       <Floor at="72% 50%" />
@@ -340,11 +431,20 @@ function End({ s }: { s: RaceStory }) {
               <div style={label()}>NEXT</div>
             </Arrive>
             <Arrive frame={frame} at={8}>
-              <div style={word(115, { color: color.ice })}>RACE {Number(n.id.slice(5))}</div>
+              <div style={word(fit(n.name, 115, 900, 0.86), { color: color.ice })}>
+                <Figures s={s} text={n.name} />
+              </div>
             </Arrive>
             <Arrive frame={frame} at={12}>
-              <div style={num(fit(`${near(n.bounty)} NEAR`, 144, 900, 0.7), { color: color.money })}>{near(n.bounty)} NEAR</div>
+              <div style={num(fit(n.amount, 144, 900, 0.7), { color: color.money })}>{n.amount}</div>
             </Arrive>
+            {n.under ? (
+              <Arrive frame={frame} at={14}>
+                <div style={word(fit(n.under, 43, 900, KICKER_EM), { color: color.ice, letterSpacing: "0.06em" })}>
+                  <Figures s={s} text={n.under} />
+                </div>
+              </Arrive>
+            ) : null}
           </>
         ) : (
           <Arrive frame={frame} at={4}>
@@ -443,6 +543,11 @@ export function RaceClip({ record, music }: RaceClipProps) {
       <Scene span={sc.race}>
         <Race s={s} plan={plan} />
       </Scene>
+      {s.kind === "round" ? (
+        <Scene span={sc.lock}>
+          <Lock s={s} plan={plan} />
+        </Scene>
+      ) : null}
       <Scene span={sc.drain}>
         <Drain s={s} plan={plan} />
       </Scene>
@@ -454,9 +559,7 @@ export function RaceClip({ record, music }: RaceClipProps) {
       </Scene>
       <Captions plan={plan} />
       {music ? <Music src={music} length={plan.durationInFrames} /> : null}
-      {s.simulated ? (
-        <div style={{ position: "absolute", right: 48, top: 40, fontFamily: FONT.num, fontWeight: 700, fontSize: 24, letterSpacing: "0.18em", color: color.ice38 }}>SIMULATED</div>
-      ) : null}
+      {s.simulated ? <SimulatedBand width={W} /> : null}
     </AbsoluteFill>
   );
 }

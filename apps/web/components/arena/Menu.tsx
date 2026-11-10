@@ -7,7 +7,7 @@ import { createPortal } from 'react-dom';
 import { Mark } from '../Mark';
 import s from './header.module.css';
 
-export type Place = 'race' | 'league' | 'forge' | 'agents' | 'vault' | 'break';
+export type Place = 'race' | 'league' | 'jobs' | 'forge' | 'agents' | 'vault' | 'break';
 
 interface Item {
   place: Place;
@@ -19,6 +19,7 @@ const RACE: Item = { place: 'race', href: '/', label: 'The race' };
 const FORGE: Item = { place: 'forge', href: '/forge', label: 'Forge' };
 const ITEMS: readonly Item[] = [
   { place: 'league', href: '/league', label: 'League' },
+  { place: 'jobs', href: '/jobs', label: 'Jobs' },
   { place: 'agents', href: '/mcp/connect', label: 'Agents' },
   { place: 'vault', href: '/wallet', label: 'Vault' },
 ];

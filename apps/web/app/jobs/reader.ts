@@ -1,0 +1,32 @@
+// The one jobs reader of this server: the board, every job page, the jobs API and the agents' job tools at /mcp read
+// the chain through it, so one reading serves them all for a few seconds. The jobs and crews contracts are the ones
+// packages/network names for MASKWARS_NETWORK. JOBS_FIXTURE answers instead of the network, for local screenshots and
+// checks with no RPC: a recorded answer file (`packages/arena/scripts/jobs-record.ts`), or `undeployed` / `deployed`
+// for a board with no job (`emptyJobs`). A production deployment never reads it.
+import { resolve } from 'node:path';
+import { Jobs, jobsConfigFromEnv } from '@maskwars/arena/jobs';
+import { emptyJobs, readRecording, replayJobs } from '@maskwars/arena/jobs/fixture';
+
+let jobs: Jobs | null = null;
+
+export function getJobs(): Jobs {
+  if (jobs) return jobs;
+  const fixture = process.env.VERCEL_ENV === 'production' ? undefined : process.env.JOBS_FIXTURE;
+  if (fixture === 'undeployed' || fixture === 'deployed') {
+    jobs = emptyJobs(fixture, jobsConfigFromEnv(process.env));
+  } else if (fixture) {
+    // Development only: the path is the developer's, so the build must not trace it.
+    jobs = replayJobs(readRecording(resolve(/* turbopackIgnore: true */ process.cwd(), fixture)));
+  } else {
+    jobs = new Jobs({ config: jobsConfigFromEnv(process.env) });
+  }
+  return jobs;
+}
+
+/**
+ * The newest jobs, read from the chain. When the chain does not answer, the last good reading comes back marked
+ * `stale`: the pages show it with the time it was read at, and without LIVE.
+ */
+export async function readJobs() {
+  return getJobs().board();
+}

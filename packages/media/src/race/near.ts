@@ -30,3 +30,17 @@ export const addNear = (...amounts: string[]): string => fromYocto(amounts.reduc
 
 /** `0.08664 NEAR`. */
 export const nearText = (amount: string): string => `${near(amount)} NEAR`;
+
+/**
+ * An amount as a card, a clip and a post show it: at most five decimals, cut and never rounded up, so nothing on
+ * screen is more than the chain moved. `0.08664` stays `0.08664`; `0.0011183205` reads `0.00111`. An amount too small
+ * for five decimals keeps its first two digits.
+ */
+export function nearShort(amount: string): string {
+  const exact = near(amount);
+  const [whole, frac = ""] = exact.split(".");
+  if (frac.length <= 5) return exact;
+  const lead = frac.search(/[1-9]/);
+  const cut = frac.slice(0, whole === "0" && lead >= 4 ? lead + 2 : 5).replace(/0+$/, "");
+  return cut ? `${whole}.${cut}` : whole!;
+}

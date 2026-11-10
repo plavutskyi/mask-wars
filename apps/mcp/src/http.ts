@@ -5,6 +5,7 @@ import { ChainReader, type SharedList, mainnetList, readerFor, sharedList } from
 import { createMcpHandler } from "@modelcontextprotocol/server";
 import { type ArenaConfig, configFromEnv } from "./config.ts";
 import { ArenaFeed, arenaFeed } from "./feed.ts";
+import type { JobTools } from "./jobs.ts";
 import { type Budget, callerOf, createBudget } from "./limit.ts";
 import { type CheckDeps, SERVER_NAME, SERVER_VERSION, TOOL_NAMES, createServer, instructionsFor } from "./server.ts";
 
@@ -50,6 +51,11 @@ export interface McpRouteOptions {
    */
   mainnet?: CheckDeps;
   budgets?: McpBudgets;
+  /**
+   * The jobs the job tools read, with their limit. The site passes the reader its own pages read (`jobToolsOf`), so an
+   * agent and a person see one reading. Default: this process's reader on the environment's network.
+   */
+  jobs?: JobTools;
   /** Errors outside a tool's answer and requests the server refused. Default: one line to the server log. */
   onerror?: (error: Error) => void;
   /** A page for people: a browser that opens the endpoint is sent there. Without it, a browser gets the JSON card. */
@@ -115,7 +121,7 @@ export function createMcpRoute(options: McpRouteOptions = {}): McpRoute {
   const feed = options.feed ?? (options.arena ? new ArenaFeed(options.arena) : arenaFeed(config, options.reader ? { rpc: options.reader } : {}));
   const limits = { check: createBudget(budgets.check), race: createBudget(budgets.race), arena: createBudget(budgets.arena) };
 
-  const handler = createMcpHandler(({ requestInfo }) => createServer({ config, reader, feed, list, mainnet, limits, caller: callerOf(requestInfo) }), {
+  const handler = createMcpHandler(({ requestInfo }) => createServer({ config, reader, feed, list, mainnet, limits, caller: callerOf(requestInfo), ...(options.jobs ? { jobs: options.jobs } : {}) }), {
     maxRequestBodySize: MAX_BODY_BYTES,
     // No push notifications (the tool list only changes with a release), so no subscription stream is ever held open.
     maxSubscriptions: 0,

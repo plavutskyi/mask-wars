@@ -1,8 +1,8 @@
 // A round the season treasury opened on schedule, on a made-up chain: the race reads as any other, its opening and the
 // safe's NEAR come from the treasury's own transaction, and the home page knows the next race.
-import type { ChainReader } from "@maskwars/check";
+import { ChainError, type ChainReader } from "@maskwars/check";
 import { describe, expect, it } from "vitest";
-import { Arena, type Indexer, type Tx } from "../src/index.ts";
+import { Arena, type Indexer, IndexerError, type Tx } from "../src/index.ts";
 
 const BOUNTY = "bounty.example.testnet";
 const SEASON = "season.example.testnet";
@@ -31,16 +31,47 @@ const openNext: Tx = {
   ],
 };
 
-function arena(opts: { seasonUp?: boolean } = {}) {
-  const txs: Record<string, Tx[]> = { [BOUNTY]: [], [SEASON]: [openNext], [SAFE]: [openNext] };
+/** A hand race from the week before, on the same contract: a round read alone never asks for it. */
+const older: Tx = {
+  hash: "OLDER",
+  signer: "team.example.testnet",
+  receiver: BOUNTY,
+  at: T0 - 7 * 24 * 60 * MIN,
+  height: 50,
+  calls: [{ method: "open_safe", args: { id: "race-0001" }, deposit: NEAR }],
+  ok: true,
+  receipts: [],
+};
+
+type Chain = {
+  /** The treasury: on chain, not on chain yet, or behind an RPC that does not answer. */
+  season?: "up" | "absent" | "down";
+  /** What the treasury's `latest` lists. */
+  latest?: unknown[];
+  indexerDown?: boolean;
+  /** Every request the reader makes, in order. */
+  asked?: string[];
+};
+
+function arena(opts: Chain = {}) {
+  const all = [openNext, older];
+  const txs: Record<string, Tx[]> = { [BOUNTY]: [older], [SEASON]: [openNext], [SAFE]: [openNext] };
+  const asked = opts.asked ?? [];
   const indexer = {
-    accountTxs: async (a: string) => (txs[a] ?? []).map((t) => ({ hash: t.hash, height: t.height, at: t.at, call: t.receiver === a })),
-    transactions: async (hashes: readonly string[]) => [openNext].filter((t) => hashes.includes(t.hash)),
+    accountTxs: async (a: string) => {
+      asked.push(`txs ${a}`);
+      if (opts.indexerDown) throw new IndexerError("/v0/account: HTTP 502");
+      return (txs[a] ?? []).map((t) => ({ hash: t.hash, height: t.height, at: t.at, call: t.receiver === a }));
+    },
+    transactions: async (hashes: readonly string[]) => {
+      for (const h of hashes) asked.push(`tx ${h}`);
+      return all.filter((t) => hashes.includes(t.hash));
+    },
   } as unknown as Indexer;
   const views: Record<string, Record<string, unknown>> = {
     [SEASON]: {
       season: { bounty: BOUNTY },
-      latest: [{ id: ID, safe: SAFE, challenge: "live-safe" }],
+      latest: opts.latest ?? [{ id: ID, safe: SAFE, challenge: "live-safe" }],
       next: {
         at_ns: ns(Date.UTC(2026, 10, 10, 18)),
         n: 8,
@@ -64,8 +95,12 @@ function arena(opts: { seasonUp?: boolean } = {}) {
     [SAFE]: { available: (2n * NEAR).toString() },
   };
   const rpc = {
-    view: async (c: string, method: string) => {
-      if (c === SEASON && opts.seasonUp === false) throw new Error("UNKNOWN_ACCOUNT");
+    view: async (c: string, method: string, args?: { id?: string }) => {
+      asked.push(`view ${c} ${method}`);
+      if (c === SEASON && opts.season === "absent") throw new ChainError("rpc", "unknown_account", `account ${SEASON} does not exist while viewing`);
+      if (c === SEASON && opts.season === "down") throw new ChainError("rpc", "transport", "fetch failed");
+      // The contract holds this one round: any other id has no bounty.
+      if (c === BOUNTY && args?.id !== undefined && args.id !== ID) return null;
       return views[c]?.[method] ?? null;
     },
     account: async () => ({ codeHash: CODE, amount: "0", locked: "0", storageUsage: 0, blockHeight: 1, blockHash: "h" }),
@@ -108,8 +143,57 @@ describe("a season's round", () => {
   });
 
   it("is skipped while the treasury is not on chain, and the arena reads on", async () => {
-    const view = await arena({ seasonUp: false }).view();
+    const view = await arena({ season: "absent" }).view();
     expect(view.next).toBeNull();
     expect(view.races).toEqual([]);
+  });
+
+  it("an RPC that does not answer is said as that, never as a round no treasury opened", async () => {
+    // The whole arena reads on, and says no next round rather than a wrong one.
+    expect((await arena({ season: "down" }).view()).next).toBeNull();
+    await expect(arena({ season: "down" }).next()).rejects.toBeInstanceOf(ChainError);
+    // The failed reading is not kept: the same reader asks the chain again.
+    const asked: string[] = [];
+    const a = arena({ season: "down", asked });
+    await expect(a.next()).rejects.toThrow(/fetch failed/);
+    await expect(a.next()).rejects.toThrow(/fetch failed/);
+    expect(asked.filter((x) => x === `view ${SEASON} next`)).toHaveLength(2);
+  });
+
+  it("stays the treasury's own once the treasury no longer lists it: the bounty's owner says who opened it", async () => {
+    const view = await arena({ latest: [] }).view();
+    expect(view.races.find((x) => x.id === ID)).toMatchObject({ season: SEASON, team: SEASON });
+  });
+});
+
+describe("one round read alone", () => {
+  it("reads the same race as the whole arena does, from its own state and its own transactions only", async () => {
+    const asked: string[] = [];
+    const r = await arena({ asked }).round(ID);
+    expect(r).toEqual((await arena().view()).races.find((x) => x.id === ID));
+    expect(r).toMatchObject({ season: SEASON, phase: "sealing", locked: ((NEAR * 35n) / 100n).toString(), safeFunded: (2n * NEAR).toString() });
+    expect(r!.txs.open).toBe("OPENNEXT");
+    // Nothing of the treasury's lists, and no transaction from before the round opened.
+    expect(asked.filter((x) => x.startsWith(`view ${SEASON}`))).toEqual([]);
+    expect(asked).not.toContain("tx OLDER");
+  });
+
+  it("needs no list of the treasury: a round older than the latest it gives, or a treasury that is down, reads all the same", async () => {
+    expect(await arena({ latest: [] }).round(ID)).toMatchObject({ id: ID, season: SEASON });
+    expect(await arena({ season: "down" }).round(ID)).toMatchObject({ id: ID, season: SEASON });
+  });
+
+  it("gives null for an id no contract holds, and its own error when the indexer or the chain does not answer", async () => {
+    expect(await arena().round("s1-0099-abcdef")).toBeNull();
+    await expect(arena({ indexerDown: true }).round(ID)).rejects.toBeInstanceOf(IndexerError);
+    const rpc = { view: async () => Promise.reject(new ChainError("rpc", "transport", "fetch failed")) } as unknown as ChainReader;
+    await expect(new Arena({ rpc, contracts: [BOUNTY], seasons: [SEASON] }).round(ID)).rejects.toThrow(/fetch failed/);
+  });
+
+  it("the next race is the treasury's own word, read without the arena", async () => {
+    const asked: string[] = [];
+    expect(await arena({ asked }).next()).toMatchObject({ season: SEASON, n: 8, at: Date.UTC(2026, 10, 10, 18), funded: true });
+    expect(asked.every((x) => x.startsWith(`view ${SEASON}`))).toBe(true);
+    expect(await arena({ season: "absent" }).next()).toBeNull();
   });
 });

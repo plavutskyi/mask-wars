@@ -63,7 +63,7 @@ describe("the race record", () => {
     expect(r.payout.amount).toBe("0.08664");
     expect(r.drain.txs.at(-1)).toEqual({ method: "sweep", hash: "8pvCJFDwUW1XXBUKHVMo973Kp1WMkWc4DDpHoHVr2uqg" });
     expect(r.payout.tx).toBe("BHuCzqtM3ZWnS4EBww9ig9txers8ebQnqerGCpqW4Me8");
-    expect(r.sandbox.board).toEqual([{ mask: "NOVA", attempt: 1, atMs: 64_000, verdict: "breach" }]);
+    expect(r.sandbox?.board).toEqual([{ mask: "NOVA", attempt: 1, atMs: 64_000, verdict: "breach" }]);
   });
 
   it("refuses a record that cannot be true", () => {
@@ -199,16 +199,19 @@ describe("the thread", () => {
     expect(p[3]!.text).not.toContain("testnet.nearblocks.io");
     expect(p.at(-1)!.text).not.toContain("api/check");
     expect(p.at(-1)!.text).toContain("Race 13 opens Dec 1 with a 40 NEAR bounty.");
-    expect(threadMarkdown(r, p)).toContain("SIMULATED: цифри вигадані, не публікувати.");
+    expect(threadMarkdown(r, p)).toContain("SIMULATED: the numbers are made up. Do not post.");
   });
 
   it("the draft names each post's picture and where every number was read", () => {
     const md = threadMarkdown(s, posts, { clipSeconds: 36.2 });
-    expect(md).toContain(`| 1/ | \`clip.mp4\`, 36 с; обкладинка \`cards/01-result.png\` | ${xLength(posts[0]!.text)} |`);
-    expect(threadMarkdown(s, posts, { noClip: true })).toContain("ще не зібрано");
+    expect(md).toContain(`| 1/ | \`clip.mp4\`, 36 s; cover \`cards/01-result.png\` | ${xLength(posts[0]!.text)} |`);
+    expect(threadMarkdown(s, posts, { noClip: true })).toContain("not rendered");
     for (const p of posts) expect(md).toContain(p.text);
     expect(md).toContain("https://github.com/plavutskyi/mask-wars-hq/actions/runs/42270915840");
-    expect(md).toContain("У гілці 5 постів.");
+    expect(md).toContain("# X thread: Race 3, NOVA");
+    expect(md).not.toContain("SIMULATED");
+    // The draft is English from the first line to the last.
+    expect(md).not.toMatch(/[\u0400-\u04ff]/);
   });
 });
 
@@ -299,11 +302,11 @@ describe("the race cards", () => {
       const body = html.slice(html.indexOf("</style>"));
       for (const m of body.matchAll(/font-size:(\d+)px/g)) expect(Number(m[1]), kind).toBeGreaterThanOrEqual(36);
       expect(html, kind).not.toMatch(/tinygif|nearblocks|8pvC|BHuC/);
-      expect(html, kind).not.toContain(">SIMULATED<");
+      expect(html, kind).not.toContain("SIMULATED");
     }
     expect(raceCardHtml("result", s)).toContain("1 NEAR");
     expect(raceCardHtml("numbers", s)).toContain("0.08664");
-    expect(raceCardHtml("result", raceStory(rehearsal()))).toContain(">SIMULATED<");
+    expect(raceCardHtml("result", raceStory(rehearsal()))).toContain(">SIMULATED · NOT A REAL RESULT</div>");
     expect(raceCardHtml("next", raceStory(rehearsal()))).toContain("RACE 13");
   });
 
@@ -368,7 +371,7 @@ describe("small words", () => {
     expect(secondsText(2)).toBe("2");
     expect(secondsText(12.6)).toBe("13");
     const r = race3();
-    const at = (atMs: number) => raceStory({ ...r, sandbox: { ...r.sandbox, board: [{ mask: "NOVA", attempt: 1, atMs, verdict: "breach" }] } }).breach.words;
+    const at = (atMs: number) => raceStory({ ...r, sandbox: { ...r.sandbox, board: [{ mask: "NOVA", attempt: 1, atMs, verdict: "breach" }] } }).breach?.words;
     expect(at(3_600_000)).toBe("1 h");
     expect(at(3_660_000)).toBe("1 h 1 min");
     expect(at(400)).toBe("under a second");

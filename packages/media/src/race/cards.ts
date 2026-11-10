@@ -1,13 +1,15 @@
 /**
  * The race's cards for X, one per post, 1600×900 (BRANDBOOK §10). Each says one thing in the feed, where the card
  * shrinks to about a fifth: one big number or one big line, a face, the mark. Built from `brand/art/web` and the
- * brand tokens; fonts and pictures are inlined, the page loads nothing. Every number comes from the story.
+ * brand tokens; fonts and pictures are inlined, the page loads nothing. Every number comes from the story, and a
+ * sealed round's card says only what its record holds. A card drawn from a made-up record carries the SIMULATED band
+ * across the whole picture.
  */
 
-import { artUrl, esc, FIT_JS, fontFaces, MARK, tokens } from "../cards/html.ts";
-import { near } from "./near.ts";
+import { artUrl, esc, FIT_JS, fontFaces, MARK, simulatedMark, tokens } from "../cards/html.ts";
+import { near, nearShort } from "./near.ts";
 import type { RaceStory, StoryMask } from "./story.ts";
-import { SITE } from "./story.ts";
+import { dayOf, SITE, timeOf } from "./story.ts";
 import type { RaceCardKind } from "./thread.ts";
 
 export const RACE_CARD = { width: 1600, height: 900 } as const;
@@ -29,7 +31,6 @@ body{position:relative;-webkit-font-smoothing:antialiased;text-rendering:geometr
 .sign svg{width:40px;height:47px;display:block}
 .label{font-size:36px;letter-spacing:.06em}
 [data-fit]{width:max-content}
-.sim{position:absolute;right:40px;top:32px;font-family:var(--font-num);font-weight:700;font-size:20px;letter-spacing:.18em;color:var(--ice-38)}
 `;
 
 const sign = `<div class="sign w"><svg viewBox="0 0 240 280" aria-hidden="true"><path fill="var(--ice)" d="${MARK}"/></svg>MASK WARS</div>`;
@@ -47,7 +48,7 @@ document.fonts.ready.then(() => {
 
 function page(s: RaceStory, body: string, extraCss = ""): string {
   return `<!doctype html><html><head><meta charset="utf-8"><style>${fontFaces()}\n${tokens()}\n${CSS}${extraCss}</style></head>
-<body>${body}${s.simulated ? '<div class="sim">SIMULATED</div>' : ""}<script>${FIT_JS}${SAME_JS}</script></body></html>`;
+<body>${body}${s.simulated ? simulatedMark(RACE_CARD.width) : ""}<script>${FIT_JS}${SAME_JS}</script></body></html>`;
 }
 
 /** A square mask portrait whose face fills `h` px of height, placed by its centre. */
@@ -55,7 +56,22 @@ const face = (m: StoryMask, cx: number, top: number, h: number, extra = ""): str
   `<img class="art" src="${artUrl(m.art)}" alt="" style="left:${cx - h / 2}px;top:${top}px;width:${h}px;height:${h}px;${extra}">`;
 
 const COUNT = ["", "ONE", "TWO", "THREE", "FOUR", "FIVE", "SIX"];
-const raceLabel = (s: RaceStory): string => `RACE ${s.no} · ${s.chain.toUpperCase()}`;
+/**
+ * Words with figures in them. The word face draws a barred zero, which reads as a letter in `ROUND 10` or `18:00`, so
+ * figures are set in the number face. A sealed round always sets them so; a race told by its sandbox board keeps its
+ * line as it was drawn unless a zero is in it.
+ */
+const figures = (s: RaceStory, text: string): string =>
+  s.kind === "round" || text.includes("0")
+    ? text
+        .split(/(\d[\d.:]*\d|\d)/)
+        .map((part, i) => (i % 2 ? `<span style="font-family:var(--font-num)">${part}</span>` : esc(part)))
+        .join("")
+    : esc(text);
+
+/** The line over a card. A long one (a season, a round and more) shrinks to its box, never under 30 px. */
+const label = (s: RaceStory, text: string, max: number, style = ""): string =>
+  `<div class="w label dim" data-fit="${max}" style="white-space:nowrap;${style}">${figures(s, text)}</div>`;
 
 /** Post 1: the result. The drain huge in money, who did it, the bounty on top. */
 function result(s: RaceStory): string {
@@ -64,8 +80,8 @@ function result(s: RaceStory): string {
     `<div class="floor"></div>
 ${face(s.winner, 1170, 54, 792)}
 <div style="position:absolute;left:96px;top:0;bottom:0;width:860px;display:flex;flex-direction:column;justify-content:center;gap:30px;padding-bottom:40px">
-  <div class="w label dim">${esc(raceLabel(s))}</div>
-  <div class="n money" data-fit="860" style="font-size:210px;white-space:nowrap">${s.drained} NEAR</div>
+  ${label(s, s.kicker, 860)}
+  <div class="n money" data-fit="820" style="font-size:210px;white-space:nowrap">${s.drained} NEAR</div>
   <div class="w" data-fit="860" style="font-size:64px;white-space:nowrap">DRAINED BY ${s.winner.name}</div>
   <div class="w label" style="white-space:nowrap"><span class="n money">+${s.paid} NEAR</span> <span class="dim">BOUNTY ON TOP</span></div>
 </div>
@@ -104,26 +120,48 @@ ${sign}`,
   );
 }
 
-/** Post 3: the race, step by step, each step with its real number. */
+/**
+ * Post 3: the race, step by step, each step with its real number. A sealed round is told by its steps on chain: the
+ * vault opens, the winner seals its plan, the window runs out, the plan is played, the judge confirms and the
+ * contract pays. What the masks did off chain is not on its card.
+ */
 function how(s: RaceStory): string {
-  const rows: [string, string, string][] = [
-    ["01", "THE VAULT OPENS", `<span class="n money">${s.bounty}</span><span class="w unit">NEAR BOUNTY</span>`],
-    ["02", `${s.masks.length === 1 ? "ONE MASK ATTACKS" : `${COUNT[s.masks.length]} MASKS ATTACK`} A COPY`, `<span class="n">${s.breach.short.n}</span><span class="w unit">${s.breach.short.unit}, ${s.winner.name} BREAKS IT</span>`],
-    ["03", `${s.winner.name} HITS THE REAL VAULT`, `<span class="n money">${s.drained}</span><span class="w unit">NEAR OUT</span>`],
-    ["04", "THE CONTRACT PAYS", `<span class="n money">${s.paid}</span><span class="w unit">NEAR TO ${s.winner.name}</span>`],
-  ];
+  const masks = s.masks.length === 1 ? "ONE MASK ATTACKS" : `${COUNT[s.masks.length]} MASKS ATTACK`;
+  const W = s.winner.name;
+  const rows: [string, string][] =
+    s.kind === "round"
+      ? [
+          s.opener === "season"
+            ? ["THE TREASURY OPENS A VAULT", `<span class="n money">${s.safe}</span><span class="w unit">NEAR INSIDE</span>`]
+            : ["THE VAULT OPENS", `<span class="n money">${s.bounty}</span><span class="w unit">NEAR BOUNTY</span>`],
+          [`${W} SEALS ITS PLAN ON CHAIN`, `<span class="n">${s.sealed.short.n}</span><span class="w unit">${s.sealed.short.n === "1" ? s.sealed.short.unit.slice(0, -1) : s.sealed.short.unit} AFTER THE OPENING</span>`],
+          ["THE VAULT STAYS LOCKED", `<span class="n">${s.sealMinutes}</span><span class="w unit">${s.sealMinutes === 1 ? "MINUTE" : "MINUTES"} TO SEAL A PLAN</span>`],
+          [`${W} PLAYS ITS SEALED PLAN`, `<span class="n money">${s.drained}</span><span class="w unit">NEAR OUT</span>`],
+          ["THE JUDGE CONFIRMS THE DRAIN", `<span class="n money">${s.paid}</span><span class="w unit">NEAR PAID TO ${W}</span>`],
+        ]
+      : [
+          ["THE VAULT OPENS", `<span class="n money">${s.bounty}</span><span class="w unit">NEAR BOUNTY</span>`],
+          [`${masks} A COPY`, `<span class="n">${s.breach.short.n}</span><span class="w unit">${s.breach.short.unit}, ${W} BREAKS IT</span>`],
+          [`${W} HITS THE REAL VAULT`, `<span class="n money">${s.drained}</span><span class="w unit">NEAR OUT</span>`],
+          ["THE CONTRACT PAYS", `<span class="n money">${s.paid}</span><span class="w unit">NEAR TO ${W}</span>`],
+        ];
+  // Four steps take the card as they always did; five sit a little closer, still at 36 px and up.
+  const five = rows.length > 4;
+  const pad = five ? "11px 0 13px" : "18px 0 20px";
+  const value = five ? 50 : 58;
+  const gap = five ? 6 : 10;
   return page(
     s,
     `<div class="floor" style="background:radial-gradient(40% 60% at 86% 46%,var(--ink-2) 0%,var(--ink) 72%)"></div>
 ${face(s.winner, 1330, 120, 660, "opacity:.9")}
-<div class="w label dim" style="position:absolute;left:96px;top:84px">RACE ${s.no}, STEP BY STEP</div>
-<div style="position:absolute;left:96px;top:148px;width:1000px">
+${label(s, `${s.title}, STEP BY STEP`, 1000, "position:absolute;left:96px;top:84px")}
+<div style="position:absolute;left:96px;top:${five ? 140 : 148}px;width:1000px">
 ${rows
   .map(
-    ([no, what, value], i) => `<div style="display:grid;grid-template-columns:76px 1fr;padding:18px 0 20px;${i ? "border-top:2px solid var(--line)" : ""}">
-    <div class="n faint" style="font-size:36px;padding-top:2px">${no}</div>
-    <div><div class="w" data-fit="900" style="font-size:40px;white-space:nowrap">${what}</div>
-    <div style="margin-top:10px;font-size:58px;white-space:nowrap;line-height:1" data-fit="900">${value}</div></div>
+    ([what, value_], i) => `<div style="display:grid;grid-template-columns:76px 1fr;padding:${pad};${i ? "border-top:2px solid var(--line)" : ""}">
+    <div class="n faint" style="font-size:36px;padding-top:2px">${String(i + 1).padStart(2, "0")}</div>
+    <div><div class="w" data-fit="900" style="font-size:${five ? 38 : 40}px;white-space:nowrap">${what}</div>
+    <div style="margin-top:${gap}px;font-size:${value}px;white-space:nowrap;line-height:1" data-fit="900">${value_}</div></div>
   </div>`,
   )
   .join("\n")}
@@ -139,13 +177,15 @@ function numbers(s: RaceStory): string {
   const cells: [string, string, string][] = [
     [`${s.drained}${unit("NEAR")}`, "money", `DRAINED BY ${s.winner.name}`],
     [`${s.paid}${unit("NEAR")}`, "money", "BOUNTY FROM THE CONTRACT"],
-    [s.breach.short.n, "", `${s.breach.short.unit} TO BREAK IT, ${s.breach.tryWords.toUpperCase()}`],
+    s.kind === "round"
+      ? [s.sealed.short.n, "", `${s.sealed.short.unit} TO SEAL THE PLAN`]
+      : [s.breach.short.n, "", `${s.breach.short.unit} TO BREAK IT, ${s.breach.tryWords.toUpperCase()}`],
     [s.judge.seconds, "", "SECONDS FOR THE JUDGE"],
   ];
   return page(
     s,
     `<div class="floor" style="background:radial-gradient(60% 70% at 50% 40%,var(--ink-2) 0%,var(--ink) 76%)"></div>
-<div class="w label dim" style="position:absolute;left:96px;top:84px">RACE ${s.no} · BY THE NUMBERS</div>
+${label(s, `${s.title} · BY THE NUMBERS`, 1408, "position:absolute;left:96px;top:84px")}
 <div style="position:absolute;left:96px;right:96px;top:150px;height:590px;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr">
 ${cells
   .map(
@@ -160,15 +200,23 @@ ${sign}`,
   );
 }
 
-/** Post 5: what to do now. The next race when it is open, else the call to bring a contract. */
+/**
+ * Post 5: what to do now. The next round only when the record holds it, and a sealed round's record holds it only as
+ * the season treasury's own `next`, read from the chain with the round: its number, its vault, its hour. Without it
+ * the card is the call to bring a contract, and no hour is drawn.
+ */
 function next(s: RaceStory): string {
-  const n = s.record.next;
-  const lead = n
-    ? `<div class="w label dim">NEXT</div>
-  <div class="w" data-fit="760" style="font-size:96px;white-space:nowrap">RACE ${Number(n.id.slice(5))}</div>
-  <div class="n money" data-fit="760" style="font-size:120px;white-space:nowrap">${near(n.bounty)} NEAR</div>
-  <div class="w label">${new Date(n.at).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" }).toUpperCase()}, ${new Date(n.at).toISOString().slice(11, 16)} UTC</div>`
-    : `<div class="w" data-fit="760" style="font-size:96px;line-height:1.02">YOUR<br>CONTRACT<br>IS NEXT.</div>`;
+  const stamp = (at: string): string => `${dayOf(at).toUpperCase()}, ${timeOf(at)} UTC`;
+  const upcoming = (name: string, amount: string, under: string): string => `<div class="w label dim">NEXT</div>
+  <div class="w" data-fit="760" style="font-size:96px;white-space:nowrap">${figures(s, name)}</div>
+  <div class="n money" data-fit="760" style="font-size:120px;white-space:nowrap">${amount} NEAR</div>
+  <div class="w label" data-fit="760" style="white-space:nowrap">${figures(s, under)}</div>`;
+  const lead =
+    s.kind === "round" && s.record.next
+      ? upcoming(`${s.opener === "season" ? "ROUND" : "SEASON ROUND"} ${s.record.next.round}`, nearShort(s.record.next.safe), `IN THE VAULT · ${stamp(s.record.next.at)}`)
+      : s.kind === "race" && s.record.next
+        ? upcoming(`RACE ${Number(s.record.next.id.slice(5))}`, near(s.record.next.bounty), stamp(s.record.next.at))
+        : `<div class="w" data-fit="760" style="font-size:96px;line-height:1.02">YOUR<br>CONTRACT<br>IS NEXT.</div>`;
   return page(
     s,
     `<div class="floor" style="background:radial-gradient(44% 64% at 72% 50%,var(--ink-2) 0%,var(--ink) 74%)"></div>

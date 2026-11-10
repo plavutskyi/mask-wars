@@ -23,18 +23,25 @@ describe("cards", () => {
     expect(() => cardHtml("win", parseEvent(ex.win_card_small))).toThrow(/×3/);
   });
 
-  it("no small print: no ids, handles' addresses or text under 30 px except the SIMULATED tag", () => {
+  it("no small print: no ids, handles' addresses or text under 30 px, and no SIMULATED band on real numbers", () => {
     for (const c of cards()) {
       const html = cardHtml(c.card, live(c.event));
       expect(html).not.toMatch(/f-s0-\d+/);
-      expect(html).not.toContain("SIMULATED</div>");
+      expect(html).not.toContain("SIMULATED");
       const body = html.slice(html.indexOf("</style>"));
       for (const m of body.matchAll(/font-size:(\d+)px/g)) expect(Number(m[1]), c.card).toBeGreaterThanOrEqual(30);
     }
   });
 
-  it("SIMULATED numbers carry the tag", () => {
-    expect(cardHtml("win", parseEvent(ex.win_card))).toContain(">SIMULATED<");
+  it("SIMULATED numbers carry the band across the whole card, never a stamp in a corner", () => {
+    for (const c of cards()) {
+      const html = cardHtml(c.card, c.event);
+      expect(html, c.card).toContain('class="sim-band"');
+      expect(html, c.card).toContain(">SIMULATED · NOT A REAL RESULT</div>");
+      const band = /class="sim-band" style="([^"]+)"/.exec(html)![1]!;
+      expect(band, c.card).toMatch(/left:-10%;top:50%;width:120%/);
+      expect(Number(/font-size:(\d+)px/.exec(band)![1]), c.card).toBeGreaterThanOrEqual(48);
+    }
   });
 
   it("renders a 1600×900 PNG with no console error", async () => {

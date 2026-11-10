@@ -1,1 +1,4 @@
 out/
+# Build outputs of a race's clip, for looking at: they stay out of the repository.
+shots/**/frames/
+shots/**/clip-sheet.jpg

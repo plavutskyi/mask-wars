@@ -1,0 +1,25 @@
+[package]
+name = "jobs-world"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+publish = false
+description = "A long-running NEAR sandbox with the real jobs and crews contracts and a job in every phase, for the jobs reader, the site and outside agents."
+
+[[bin]]
+name = "jobs-world"
+path = "src/main.rs"
+
+# The world is built on the jobs contracts' own sandbox harness, read-only: the same deployment, keys and stand-ins.
+[dependencies]
+jobs-sandbox = { path = "../../../contracts/jobs/sandbox" }
+# The judges' own boxes (services/judge-tests/src/sealed.rs), read-only: masks seal real work for the judges' keys, and
+# the world's stand-in judge opens it and seals the winner's work for the client, as the judge does in its TEE.
+maskwars-judge-tests = { path = "../../../services/judge-tests" }
+anyhow = "1"
+near-workspaces = "0.24"
+serde_json = "1"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "time"] }
+
+[workspace]
+resolver = "2"

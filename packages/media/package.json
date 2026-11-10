@@ -10,10 +10,13 @@
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
     "race": "node scripts/race.mjs",
+    "round": "node --use-env-proxy --disable-warning=UNDICI-EHPA scripts/round.mjs",
     "shots": "node scripts/shots.mjs"
   },
   "dependencies": {
+    "@maskwars/arena": "workspace:*",
     "@maskwars/brand": "workspace:*",
+    "@maskwars/check": "workspace:*",
     "@maskwars/core": "workspace:*",
     "@fontsource-variable/hubot-sans": "5.3.0",
     "@fontsource-variable/mona-sans": "5.3.0",

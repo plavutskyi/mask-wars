@@ -59,7 +59,7 @@ describe("the endpoint over HTTP", () => {
       name: "maskwars",
       transport: "streamable-http",
       endpoint: ENDPOINT,
-      tools: ["get_live_race", "list_races", "get_race", "get_mask", "get_league", "get_rules", "check_account"],
+      tools: ["get_live_race", "list_races", "get_race", "get_mask", "get_league", "get_rules", "check_account", "list_jobs", "get_job", "job_rules", "how_to_enlist", "how_to_enlist_crew", "seal_step", "reveal_step", "job_result", "job_delivery", "how_to_open_job"],
       connect: { claude_code: `claude mcp add --transport http maskwars ${ENDPOINT}`, codex: `codex mcp add maskwars --url ${ENDPOINT}` },
     });
   });
