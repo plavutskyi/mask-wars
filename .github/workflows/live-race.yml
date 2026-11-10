@@ -70,6 +70,15 @@ on:
     secrets:
       NEAR_AI_API_KEY:
         required: true
+      # A called workflow sees only the secrets named here. These three are named so that the jobs below can read them
+      # from their own environments (`live-race`, `outlayer`): an environment's secret wins over one a caller passes,
+      # and season.yml passes none of them.
+      MASK_KEYS:
+        required: false
+      KEEPER_SEED:
+        required: false
+      OUTLAYER_PAYMENT_KEY:
+        required: false
 
 # The network every job reads and signs on: the repository variable MASKWARS_NETWORK, testnet unless it says mainnet.
 # The accounts, the RPC and OutLayer come from packages/network/<network>.json; a variable below that names an account
