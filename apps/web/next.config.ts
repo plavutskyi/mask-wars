@@ -9,8 +9,29 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const network = (process.env.MASKWARS_NETWORK ?? '').trim() || 'testnet';
 if (network !== 'testnet' && network !== 'mainnet') throw new Error(`MASKWARS_NETWORK: testnet or mainnet, not "${network}"`);
 
+// The other deployment of the same site, built for the other network: its origin, or nothing. With it the menu sends a
+// visitor there for the parts that are on chain only on that network (apps/web/lib/site.ts, which reads it by the same
+// rule). An origin only, https unless it is a local run; anything else stops the build, so a typo never ships links
+// that lead nowhere.
+const sibling = (process.env.MASKWARS_SIBLING_URL ?? '').trim();
+if (sibling) {
+  let origin = '';
+  try {
+    origin = new URL(sibling).origin;
+  } catch {
+    /* not a URL at all */
+  }
+  if (origin !== sibling || !(sibling.startsWith('https://') || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(sibling))) {
+    throw new Error(`MASKWARS_SIBLING_URL: an https origin like https://testnet.maskwars.xyz, not "${sibling}"`);
+  }
+  // The two sites are two addresses. This one's own is APP_ORIGIN (maskwars.xyz when unset): canonical links and the
+  // vault's API answer to it, so a second site that forgot to name itself must not ship as a copy of the first.
+  const own = (process.env.APP_ORIGIN ?? '').trim().replace(/\/+$/, '') || 'https://maskwars.xyz';
+  if (own === sibling) throw new Error(`MASKWARS_SIBLING_URL: the other site, not this one. This site is ${own}: set APP_ORIGIN to its own origin`);
+}
+
 const config: NextConfig = {
-  env: { MASKWARS_NETWORK: network },
+  env: { MASKWARS_NETWORK: network, MASKWARS_SIBLING_URL: sibling },
   transpilePackages: ['@maskwars/arena', '@maskwars/brand', '@maskwars/check', '@maskwars/hire', '@maskwars/mind', '@maskwars/network'],
   outputFileTracingRoot: root,
   turbopack: { root },

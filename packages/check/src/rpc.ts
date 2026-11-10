@@ -3,7 +3,10 @@
 // - failover (the default): the second is tried only when the first is down or overloaded. Answers that are the same
 //   on every node (no such account, a contract panic) never switch endpoints.
 // - cross-check: every read goes to every endpoint at the same block, and an answer counts only when they all give
-//   the same one. A node that is down or no longer keeps the block sits that read out, and the tally says so.
+//   the same one. The block is the lowest final head any of them names, so each of them has it; heads more than
+//   `MAX_LAG_BLOCKS` apart are no common head and stop the check like any other disagreement. A node that is down or
+//   no longer keeps a block sits that read out, and the tally says so: the caller decides what a read one node alone
+//   answered is worth (MASK CHECK warns).
 
 export const TESTNET_RPCS = ["https://rpc.testnet.fastnear.com", "https://rpc.testnet.near.org"] as const;
 
@@ -15,7 +18,10 @@ export const MAINNET_ARCHIVAL: Readonly<Record<string, string>> = {
   "https://rpc.mainnet.fastnear.com": "https://archival-rpc.mainnet.fastnear.com",
 };
 
-/** In cross-check mode, an endpoint whose final head is further behind the highest one than this sits the check out. */
+/**
+ * In cross-check mode, how far apart the endpoints' final heads may be: about a minute of blocks. Further apart, one
+ * of them is stale or one is ahead of the chain, and nothing says which, so there is no head to read at.
+ */
 export const MAX_LAG_BLOCKS = 100;
 
 /** A code hash of 32 zero bytes: the account has no contract. */
@@ -197,7 +203,11 @@ export class ChainReader {
     return this.endpoints.filter((e) => !live.includes(e)).map((e) => new ChainError("rpc", "transport", this.#tally?.down.get(e) ?? `${e}: down`));
   }
 
-  /** The lowest final height among the endpoints that are not far behind the highest: every one of them has it. */
+  /**
+   * The lowest final head among the endpoints that answer: every one of them has that block, so none can pull the
+   * check to a height the others have not reached. Heads more than `MAX_LAG_BLOCKS` apart are a disagreement: the
+   * endpoint ahead may have made its head up, the one behind may serve an old chain, and one answer cannot tell.
+   */
   async #finalHeight(): Promise<number> {
     const live = this.#live();
     const heads = await Promise.all(
@@ -211,10 +221,16 @@ export class ChainReader {
         }
       }),
     );
-    const heights = heads.flatMap((h) => ("height" in h ? [h.height] : []));
-    if (heights.length === 0) throw allFailed([...heads.flatMap((h) => ("error" in h ? [h.error] : [])), ...this.#earlier(live)]);
+    const known = heads.flatMap((h) => (typeof h.height === "number" ? [{ endpoint: h.endpoint, height: h.height }] : []));
+    if (known.length === 0) throw allFailed([...heads.flatMap((h) => ("error" in h ? [h.error] : [])), ...this.#earlier(live)]);
+    const heights = known.map((h) => h.height);
+    const low = Math.min(...heights);
     const top = Math.max(...heights);
-    return Math.min(...heights.filter((h) => h >= top - MAX_LAG_BLOCKS));
+    if (top - low > MAX_LAG_BLOCKS) {
+      const said = known.map((h) => `${hostOf(h.endpoint)} ${h.height}`).join(" vs ");
+      throw new ChainError("rpc", "disagree", `final head: ${said}, ${top - low} blocks apart`);
+    }
+    return low;
   }
 
   /** Every endpoint, the same read: the answer when all that answer agree, a `disagree` error when they do not. */
@@ -358,7 +374,8 @@ export class ChainReader {
     }
     let json: { result?: Record<string, unknown>; error?: RpcErrorBody };
     try {
-      json = (await response.json()) as typeof json;
+      // A body of `null` is JSON and no answer: it reads as an empty result below, like any body without one.
+      json = ((await response.json()) ?? {}) as typeof json;
     } catch (error) {
       throw new ChainError(endpoint, "server", `HTTP ${response.status}, invalid JSON`, { cause: error });
     }

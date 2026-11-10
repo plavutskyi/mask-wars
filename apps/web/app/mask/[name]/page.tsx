@@ -1,13 +1,14 @@
 import { duration, near } from '@maskwars/arena/format';
 import { nearText, times, timesText } from '@maskwars/forge';
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { MaskPage } from '@/components/arena/MaskPage';
 import { PersonPage } from '@/components/arena/PersonPage';
 import { Unreachable } from '@/components/arena/Unreachable';
 import { readArena } from '@/lib/arena';
 import { pageMeta } from '@/lib/meta';
 import { readPerson } from '@/lib/person';
+import { maskElsewhere } from '@/lib/site';
 
 // One mask: how often it broke the safe, what it took, its fastest break, every race it ran. A mask a person forged
 // (contracts/masks) has its own page: its face, its mind, what the arena paid it, its × and its prize for its owner.
@@ -52,6 +53,12 @@ export default async function MaskRoute({ params }: Props) {
   } catch {
     return <Unreachable />;
   }
-  if (hit.i < 0) notFound();
+  if (hit.i < 0) {
+    // Not a mask of this network. A person's mask lives where the forge is: on a site without it, the same page of the
+    // other site answers (307: the day the forge is on chain here, this site answers again).
+    const away = maskElsewhere(key);
+    if (away) redirect(away);
+    notFound();
+  }
   return <MaskPage mask={hit.view.league[hit.i]!} rank={hit.i + 1} network={hit.view.network} />;
 }

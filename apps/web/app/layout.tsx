@@ -2,11 +2,13 @@ import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import { color } from '@maskwars/brand';
 import { LINE, pageMeta, SITE } from '@/lib/meta';
+import { siteOrigin } from '@/lib/site';
 import { hubot, mona } from './fonts';
 import './globals.css';
 
+// Every canonical address and card of this deployment points at its own host: the site on the other network has its own.
 export const metadata: Metadata = {
-  metadataBase: new URL('https://maskwars.xyz'),
+  metadataBase: new URL(siteOrigin()),
   ...pageMeta({ title: SITE, description: LINE, path: '/' }),
 };
 

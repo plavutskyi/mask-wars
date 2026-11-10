@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
+import { elsewhere, sectionOf } from '@/lib/site';
 
 // The vault page holds a person's money: no other site may frame it, and only scripts this page itself loads may run on
 // it. A fresh nonce per request goes to Next.js (it stamps its own scripts with it, from the request's CSP header) and
@@ -61,6 +62,12 @@ export function notFramed(request: Pick<NextRequest, 'headers'>): boolean {
 
 export function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
+  // A page of a part that is on chain only on the other network: the same page of the other site answers. Not for
+  // good (307): the day the part is on chain here too, this site answers again, and no browser remembers otherwise.
+  if (sectionOf(path)) {
+    const away = elsewhere(path, request.nextUrl.search);
+    return away ? NextResponse.redirect(away, 307) : NextResponse.next();
+  }
   const hire = path.startsWith('/hire/embed');
   if (hire && notFramed(request)) return NextResponse.redirect(new URL('/hire', request.url), 307);
   const nonce = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(18))));
@@ -87,9 +94,12 @@ export function proxy(request: NextRequest) {
   return res;
 }
 
-// Literal, as Next.js reads it without running the file.
+// Literal, as Next.js reads it without running the file. The pages of the parts that may live on the other network
+// (`sectionOf`) come first; the rest are the pages held by a policy.
 export const config = {
   matcher: [
+    '/forge',
+    '/jobs/:path*',
     {
       source: '/wallet/:path*',
       missing: [

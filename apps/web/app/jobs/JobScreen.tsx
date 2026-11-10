@@ -16,7 +16,7 @@ import { day, longest, utc } from '@/lib/show';
 import { Countdown } from './Countdown';
 import { Delivery, Lock } from './Delivery';
 import { Earlier } from './Earlier';
-import { JUDGE_WORD, KIND_WORD, ROLE_WORD, clockTime, entrantName, eventLine, jobMoving, jobTitle, longName, maskArt, maskName, nearOrNull, paidOf, refused, winnerOf } from './show';
+import { JUDGE_WORD, KIND_WORD, PLAN_SHOWN, ROLE_WORD, clockTime, entrantName, eventLine, jobMoving, jobTitle, longName, maskArt, maskName, nameFit, nearOrNull, paidOf, planCalls, refused, winnerOf } from './show';
 import s from './jobs.module.css';
 
 const ROLES = ['scout', 'striker', 'verifier'] as const;
@@ -110,7 +110,7 @@ function Crew({ e, job, explorer }: { e: Entrant; job: Job; explorer: (a: string
   return (
     <article className={s.crew} data-won={e.won ? '' : undefined}>
       <header className={s.crewHead}>
-        <span className={`${p.word} ${s.crewName}`} data-long={!e.crew && e.members[0] && longName(e.members[0].mask) ? '' : undefined}>
+        <span className={`${p.word} ${s.crewName}`} data-long={!e.crew && e.members[0] && longName(e.members[0].mask) ? '' : undefined} data-fit={nameFit(entrantName(e))}>
           <Breakable text={entrantName(e)} />
         </span>
         <span className={s.crewMeta}>{e.crew ? `${e.members.length} masks` : 'alone'}</span>
@@ -140,7 +140,7 @@ function Crew({ e, job, explorer }: { e: Entrant; job: Job; explorer: (a: string
               <Face m={m} />
               <span className={s.memberText}>
                 <span className={s.memberName}>
-                  <span className={`${p.word} ${s.memberWord}`} data-long={longName(m.mask) ? '' : undefined}>
+                  <span className={`${p.word} ${s.memberWord}`} data-long={longName(m.mask) ? '' : undefined} data-fit={nameFit(maskName(m.mask, 40))}>
                     <Breakable text={maskName(m.mask, 40)} />
                   </span>
                   <span className={`${p.word} ${s.role}`} data-role={m.role}>
@@ -210,6 +210,7 @@ function Course({ job, explorer }: { job: Job; explorer: { tx: (h: string) => st
         e.kind === 'settle' ? nearOrNull(e.amount ?? (e.note === 'paid' ? paidOf(job).toString() : job.settlement?.back)) : e.kind === 'leave' ? null : nearOrNull(e.amount);
       // The seal itself is a hash: it stays behind the step's «i». The line shows only what the judge made of it.
       const mark = e.kind === 'reveal' && step ? judged(step) : null;
+      const plan = e.kind === 'reveal' ? planCalls(step?.content) : null;
       return (
         <li key={`${e.tx}-${e.kind}-${i}`} className={`${p.step} ${s.event}`} data-kind={e.kind} data-quiet={quiet(e) ? '' : undefined}>
           <span className={p.when}>{offset(e.at, job.openedAt)}</span>
@@ -221,7 +222,19 @@ function Course({ job, explorer }: { job: Job; explorer: { tx: (h: string) => st
                 {mark.word}
               </span>
             ) : null}
-            {e.kind === 'reveal' && step?.content ? (
+            {e.kind === 'reveal' && plan ? (
+              // A drain's plan is a list of calls: the course names them in order, the plan itself stays behind «i».
+              <span className={s.plan} data-copy={step && step.copyOf !== null ? '' : undefined} data-counted={step?.counted ? '' : undefined}>
+                <span className={s.planWord}>Calls</span>
+                {plan.slice(0, PLAN_SHOWN).map((method, k) => (
+                  <span key={k} className={s.planCall}>
+                    {k > 0 ? <span className={s.planThen}>then</span> : null}
+                    <b>{method}</b>
+                  </span>
+                ))}
+                {plan.length > PLAN_SHOWN ? <span className={s.planThen}>and {plan.length - PLAN_SHOWN} more</span> : null}
+              </span>
+            ) : e.kind === 'reveal' && step?.content ? (
               <q className={s.content} data-copy={step.copyOf !== null ? '' : undefined} data-counted={step.counted ? '' : undefined}>
                 <span className={s.contentText}>{step.content}</span>
               </q>
@@ -239,6 +252,7 @@ function Course({ job, explorer }: { job: Job; explorer: { tx: (h: string) => st
                 ...(e.who ? [{ label: 'Who', value: e.who.account, href: explorer.account(e.who.account) }] : []),
                 ...(step ? [{ label: `Seal of step #${step.seq}`, value: step.hash }] : []),
                 ...(step?.boxed && e.kind === 'reveal' ? [{ label: 'Revealed', value: 'a box only the judge’s TEE opens: no text of the work is public' }] : []),
+                ...(plan && step?.content ? [{ label: 'The plan as revealed', value: step.content }] : []),
                 ...(step?.counted !== null && step ? [{ label: 'Judge', value: step.fake ? 'no work: the bond goes to the company' : step.counted ? 'counted' : 'not counted' }] : []),
                 ...(step?.copyOf !== null && step ? [{ label: 'Copy of', value: `step #${step.copyOf}` }] : []),
                 ...(e.kind === 'leave' && e.lost ? [{ label: 'Bond back', value: `${near(e.amount ?? '0')} NEAR` }, { label: 'For the time it held the slot', value: `${near(e.lost)} NEAR` }] : []),
@@ -402,7 +416,8 @@ export function JobScreen({ job, board, now, prev, next, links }: { job: Job; bo
           <h2 id="crews" className={`${p.word} ${p.h2}`}>
             {job.entrants.some((e) => e.crew) ? 'Crews' : 'Masks'}
           </h2>
-          <div className={s.crews}>
+          {/* How many cards share the row: three or more are narrow, and every role then stands under its name. */}
+          <div className={s.crews} data-n={Math.min(job.entrants.length, 3)}>
             {job.entrants.map((e) => (
               <Crew key={e.index} e={e} job={job} explorer={explorer.account} />
             ))}

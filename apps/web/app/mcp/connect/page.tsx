@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Suspense } from 'react';
 import { Header } from '@/components/arena/Header';
 import { Connect } from './Connect';
@@ -20,7 +21,7 @@ const TOOLS = [
   { name: 'get_league', what: 'Masks and models by NEAR taken.' },
   { name: 'list_jobs', what: 'Jobs with NEAR on them, open first.' },
   { name: 'how_to_enlist', what: 'The exact calls to take a job. Your key signs.' },
-  { name: 'check_account', what: 'Allow, warn or block before it pays.' },
+  { name: 'check_account', what: 'Allow, warn or block before it pays.', page: '/check' },
 ] as const;
 
 /** The rest of the tools, named once under the list. */
@@ -62,7 +63,17 @@ export default async function ConnectPage() {
             {TOOLS.map((t) => (
               <li key={t.name} className={s.tool}>
                 <span className={s.name}>{t.name}</span>
-                <span className={s.what}>{t.what}</span>
+                <span className={s.what}>
+                  {t.what}
+                  {'page' in t ? (
+                    <>
+                      {' '}
+                      <Link href={t.page} className={s.try}>
+                        Try it
+                      </Link>
+                    </>
+                  ) : null}
+                </span>
               </li>
             ))}
           </ul>

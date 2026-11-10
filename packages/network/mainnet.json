@@ -13,6 +13,12 @@
     "ONYX": "onyx.maskwars.near",
     "ORACLE": "oracle.maskwars.near"
   },
+  "sections": {
+    "arena": true,
+    "season": false,
+    "forge": false,
+    "jobs": false
+  },
   "outlayer": {
     "contract": "outlayer.near",
     "api": "https://api.outlayer.ai"

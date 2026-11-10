@@ -150,8 +150,9 @@ describe("maskCheck", () => {
     const n = node();
     n.gcBelow = HEAD - 50_000;
     const r = await check(n, "old-plain.testnet");
+    // Testnet is read from one node at a time: there the missing window is said, and no more.
     expect(r.verdict).toBe("allow");
-    expect(codes(r)).toContain("history_unavailable");
+    expect(r.reasons.find((x) => x.code === "history_unavailable")).toMatchObject({ level: "info" });
   });
 
   it("warns and checks nothing on chain when no RPC answers", async () => {

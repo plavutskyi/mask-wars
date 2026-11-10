@@ -5,7 +5,7 @@ import { Arena, Indexer } from "@maskwars/arena";
 import { type Recording as ArenaRecording, replayFetch } from "@maskwars/arena/replay";
 import { ChainReader, mainnetList, readerFor } from "@maskwars/check";
 import { Client, StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
-import { type ArenaFeed, BUDGETS, type McpBudgets, TESTNET, createMcpRoute } from "../src/index.ts";
+import { type ArenaFeed, BUDGETS, type McpBudgets, TESTNET, type TeeDeployment, createMcpRoute } from "../src/index.ts";
 import { RecordedNode, type Recording } from "./node.ts";
 
 export const ENDPOINT = "https://maskwars.xyz/mcp";
@@ -64,7 +64,7 @@ export function recordedMainnet() {
 }
 
 /** The route over a recorded chain, and an MCP client of either protocol era that talks to it in memory. */
-export function setup(options: { rec?: Recording; budgets?: McpBudgets; page?: string; arena?: Arena; feed?: ArenaFeed } = {}) {
+export function setup(options: { rec?: Recording; budgets?: McpBudgets; page?: string; arena?: Arena; feed?: ArenaFeed; tee?: TeeDeployment } = {}) {
   const node = new RecordedNode(options.rec);
   const errors: Error[] = [];
   const recorded = options.arena || options.feed ? null : recordedArena();
@@ -76,6 +76,7 @@ export function setup(options: { rec?: Recording; budgets?: McpBudgets; page?: s
     budgets: options.budgets ?? BUDGETS,
     onerror: (e) => errors.push(e),
     ...(options.page ? { page: options.page } : {}),
+    ...(options.tee ? { tee: options.tee } : {}),
   });
   const serve = (req: Request): Promise<Response> => {
     if (req.method === "GET") return route.GET(req);

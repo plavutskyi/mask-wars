@@ -39,6 +39,8 @@
 .word,
 .live,
 .net,
+.netCell,
+.tag,
 .link,
 .sheetLink {
   font-family: var(--font-word);
@@ -58,6 +60,64 @@
   font-size: 12px;
   letter-spacing: 0.14em;
   color: var(--ice-60);
+}
+
+/* The same place when the site has a sibling on the other network: the switch between the two. Both networks stand
+   in one frame, always in the same order; this site's is lit, the other is a link to the same page there. */
+.nets {
+  display: inline-flex;
+  align-items: stretch;
+  gap: 2px;
+  height: 28px;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.netCell {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 9px 0;
+  border-radius: 1px;
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: 0.14em;
+  color: var(--ice-60);
+  transition:
+    color 160ms,
+    background-color 160ms;
+}
+
+.netCell[aria-current] {
+  background: color-mix(in srgb, var(--ice) 14%, transparent);
+  color: var(--ice);
+}
+
+/* A full 44 px under the pointer and the thumb, whatever the frame's height. */
+a.netCell::after {
+  content: '';
+  position: absolute;
+  inset: -10px 0;
+}
+
+/* The network a menu item leaves for: a part of the product that is on chain only there. */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  height: 18px;
+  margin-left: 8px;
+  padding: 1px 5px 0 6px;
+  border: 1px solid color-mix(in srgb, var(--ice) 26%, transparent);
+  border-radius: var(--radius);
+  font-size: 10px;
+  line-height: 1;
+  letter-spacing: 0.14em;
+  color: var(--ice-60);
+  transition:
+    color 160ms,
+    border-color 160ms;
 }
 
 .center {
@@ -152,8 +212,15 @@
 }
 
 @media (hover: hover) {
-  .link:hover {
+  .link:hover,
+  a.netCell:hover {
     color: var(--ice);
+  }
+
+  .link:hover .tag,
+  .sheetLink:hover .tag {
+    color: var(--ice);
+    border-color: color-mix(in srgb, var(--ice) 48%, transparent);
   }
 }
 
@@ -187,6 +254,113 @@
   }
 }
 
+/* An item marked with the other network is wider by that network's name. Beside the race clock the links then stand
+   closer, and go behind the one button sooner: one marked item under 1366, with LIVE under 1536; two marked items
+   under 1560, with LIVE under 1700. Nothing ever reaches the clock. */
+@media (max-width: 1919px) {
+  .head[data-center]:has(.links[data-away]) .links,
+  .head[data-center]:has(.links[data-away]) .right {
+    gap: 16px;
+  }
+}
+
+@media (max-width: 1699px) {
+  .head[data-center]:has(.live):has(.links[data-away='2']) .links {
+    display: none;
+  }
+
+  .head[data-center]:has(.live):has(.links[data-away='2']) .toggle {
+    display: grid;
+  }
+}
+
+@media (max-width: 1559px) {
+  .head[data-center]:has(.links[data-away='2']) .links {
+    display: none;
+  }
+
+  .head[data-center]:has(.links[data-away='2']) .toggle {
+    display: grid;
+  }
+}
+
+@media (max-width: 1535px) {
+  .head[data-center]:has(.live):has(.links[data-away]) .links {
+    display: none;
+  }
+
+  .head[data-center]:has(.live):has(.links[data-away]) .toggle {
+    display: grid;
+  }
+}
+
+@media (max-width: 1365px) {
+  .head[data-center]:has(.links[data-away]) .links {
+    display: none;
+  }
+
+  .head[data-center]:has(.links[data-away]) .toggle {
+    display: grid;
+  }
+}
+
+/* The switch between the two networks is wider than the plain mark was. Where the links would reach it they go
+   behind the one button: under 1024; with a marked item and LIVE under 1140; with two marked items under 1200, and
+   with LIVE beside them under 1240. */
+@media (max-width: 1239px) {
+  .head:has(.nets):has(.live):has(.links[data-away='2']) .links {
+    display: none;
+  }
+
+  .head:has(.nets):has(.live):has(.links[data-away='2']) .toggle {
+    display: grid;
+  }
+}
+
+@media (max-width: 1199px) {
+  .head:has(.nets):has(.links[data-away='2']) .links {
+    display: none;
+  }
+
+  .head:has(.nets):has(.links[data-away='2']) .toggle {
+    display: grid;
+  }
+}
+
+@media (max-width: 1139px) {
+  .head:has(.nets):has(.live):has(.links[data-away]) .links {
+    display: none;
+  }
+
+  .head:has(.nets):has(.live):has(.links[data-away]) .toggle {
+    display: grid;
+  }
+}
+
+@media (max-width: 1023px) {
+  .head:has(.nets) .links {
+    display: none;
+  }
+
+  .head:has(.nets) .toggle {
+    display: grid;
+  }
+}
+
+/* Beside the race clock on a narrower screen the switch keeps this site's network only, as the plain mark did, and
+   under 1024 it steps aside for the clock: the way to the other network is in the open menu, a tap away. */
+@media (max-width: 1189px) {
+  .head[data-center] .nets a.netCell {
+    display: none;
+  }
+}
+
+@media (max-width: 1023px) {
+  .head[data-center] .nets {
+    display: none;
+  }
+}
+
 @media (max-width: 899px) {
   .links {
     display: none;
@@ -199,7 +373,8 @@
 
 @media (max-width: 760px) {
   .word,
-  .net {
+  .net,
+  .nets:not([data-sheet]) {
     display: none;
   }
 
@@ -296,6 +471,24 @@
     opacity: 0;
     transform: translateY(10px);
   }
+}
+
+/* In the open menu the network an item leaves for stands at the end of its row. */
+.sheetLink .tag {
+  height: 24px;
+  margin-left: auto;
+  padding: 1px 8px 0 9px;
+  font-size: 11px;
+}
+
+/* In the open menu the switch between the two networks stands beside the mark, where the header has it. */
+.nets[data-sheet] {
+  height: 32px;
+  margin: 0 auto 0 6px;
+}
+
+.nets[data-sheet] .netCell {
+  padding: 1px 10px 0;
 }
 
 .sheetQuiet {

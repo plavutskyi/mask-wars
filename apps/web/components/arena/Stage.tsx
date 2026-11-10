@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { artOf, day, shortAccount, toneOf } from '@/lib/show';
+import type { Across } from '@/lib/site';
 import { twoLines } from '../arena3d/headline';
 import { ArenaAudio } from '../arena3d/sound';
 import type { ArenaState } from '../arena3d/types';
@@ -154,7 +155,22 @@ function useShown(scene: Scene | null, on: boolean, key: string): ArenaState {
   return done ? rest : (intro[Math.min(p.step, last)] ?? rest);
 }
 
-export function Stage({ race, next = null, serverNow, error }: { race: Race | null; next?: NextRace | null; serverNow: number; error?: boolean }) {
+/** The home page's one line about the other network (`acrossOf`), with the time of the round that opens there next. */
+export type AcrossLine = Across & { readonly at: number | null };
+
+export function Stage({
+  race,
+  next = null,
+  serverNow,
+  error,
+  across = null,
+}: {
+  race: Race | null;
+  next?: NextRace | null;
+  serverNow: number;
+  error?: boolean;
+  across?: AcrossLine | null;
+}) {
   const router = useRouter();
   const [now, setNow] = useState(serverNow);
   const running = race !== null && (race.phase === 'sealing' || race.phase === 'racing');
@@ -175,6 +191,9 @@ export function Stage({ race, next = null, serverNow, error }: { race: Race | nu
   // In its last minutes the page asks the chain as often as during a race, so the new round is on screen as it opens.
   const nearly = !running && next !== null && next.funded && next.at - now < 3 * 60_000 && now - next.at < 15 * 60_000;
   const ticking = running || live || upNext !== null;
+  // The other network has its line only between races: while this arena runs, the screen is the race's alone.
+  const other = !running && !live ? across : null;
+  const otherAt = other?.at && other.at > now ? new Date(other.at).toISOString().slice(11, 16) : null;
 
   // The clock ticks on the device; the race itself is read again from the chain every few seconds while it runs.
   useEffect(() => {
@@ -297,6 +316,7 @@ export function Stage({ race, next = null, serverNow, error }: { race: Race | nu
       data-phase={race?.phase ?? 'empty'}
       data-tone={tone}
       data-three={three.mode === 'on' ? '' : undefined}
+      data-across={other ? '' : undefined}
       style={{ '--heat': heat.toFixed(3) } as CSSProperties}
     >
       <div className={s.flatBack} aria-hidden>
@@ -357,6 +377,32 @@ export function Stage({ race, next = null, serverNow, error }: { race: Race | nu
         <button type="button" className={s.sound} onClick={toggleSound} aria-pressed={sound} aria-label="Sound">
           <SpeakerIcon on={sound} />
         </button>
+        {other ? (
+          <a
+            href={other.href}
+            className={s.across}
+            aria-label={
+              other.kind === 'season'
+                ? `The daily season runs on ${other.network}${otherAt ? `: the next round opens at ${otherAt} UTC` : ''}. Open the ${other.network} site`
+                : `Races for real NEAR run on ${other.network}. Open the ${other.network} site`
+            }
+          >
+            <span className={s.acrossWhat}>
+              <span className={s.word}>{other.kind === 'season' ? 'Daily season' : 'Races for real NEAR'}</span>
+              <span className={`${s.word} ${s.acrossTag}`}>{other.network}</span>
+            </span>
+            <span className={s.acrossGo}>
+              {otherAt ? (
+                <span className={s.acrossTime}>
+                  <span className={`${s.word} ${s.acrossNext}`}>Next round</span>
+                  <b>{otherAt}</b>
+                  <span className={s.word}>UTC</span>
+                </span>
+              ) : null}
+              <Arrow className={s.acrossArr} />
+            </span>
+          </a>
+        ) : null}
       </footer>
       <span className={s.sr} aria-live="polite">
         {race && live ? `${raceName(race.id)} is live` : ''}

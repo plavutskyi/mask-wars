@@ -3,14 +3,15 @@
 The wasm modules MASK WARS runs inside a TEE on OutLayer. A file's name is the SHA-256 of its bytes, and OutLayer
 refuses a file whose bytes do not match the name. The site serves them at `https://maskwars.xyz/outlayer/<file>`.
 
-The judge and the brain are built from this repository by their `build.sh`, which gives the same bytes in any folder
-on any machine, so anyone can rebuild them and compare the SHA-256.
+The judge, the brain and MASK CHECK are built from this repository by their `build.sh`, which gives the same bytes in
+any folder on any machine, so anyone can rebuild them and compare the SHA-256.
 
 | Module | SHA-256 | Source | What it does |
 | --- | --- | --- | --- |
 | Judge v6 | `1f8e1aca…86f7` | `services/judge` | The current judge, one for testnet and mainnet. Reads a drain from the chain and checks the revealed plan of a sealed round; on mainnet it reads through three RPC operators |
 | Brain, mainnet build | `a1922652…bae0` | `services/brain`, `build.sh --mainnet` | The mind of a forged mask, the build for mainnet: an answer of up to 24 000 tokens, the longest run OutLayer gives, and its own manifest inside the wasm |
 | Brain | `c32820e0…f264` | `services/brain`, `build.sh` | The same mind, the build for testnet |
+| MASK CHECK | `1dae2166…4264` | `services/check`, `build.sh` | The paid, signed check: allow, warn or block on an account before anyone pays it, run inside a TEE and signed there. It carries the two shared lists, so a change to either list is a new build; CI fails a commit whose file here is not its own build |
 | Brain, mainnet build | `65540964…a4fd` | `services/brain`, `build.sh --mainnet` | Earlier build for mainnet: an answer of up to 3 000 tokens, too few for a live safe |
 | Brain | `f3d6787d…1282` | `services/brain` | Earlier build for testnet |
 | Judge v5 | `b3818697…ab83` | `services/judge` | Earlier judge: the bounty contract that holds no key |

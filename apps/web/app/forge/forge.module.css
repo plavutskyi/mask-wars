@@ -662,6 +662,45 @@
   text-align: center;
 }
 
+/* The factory is not on chain yet: one line that says so and one button to the show. Nothing here promises a forge. */
+.closed {
+  width: min(760px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.closed .lede {
+  margin: 0;
+}
+
+.closedLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px 14px;
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.4;
+  font-weight: 500;
+  color: var(--ice-60);
+  text-wrap: balance;
+}
+
+.closedWord.closedWord {
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  color: var(--ice);
+}
+
+.closedBtn {
+  width: min(380px, 100%);
+  margin-top: 4px;
+}
+
 .doneNext {
   display: inline-flex;
   align-items: center;

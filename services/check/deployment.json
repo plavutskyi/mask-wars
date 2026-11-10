@@ -1,0 +1,10 @@
+{
+  "about": "Where the MASK CHECK module is published on OutLayer and what a signed verdict costs. `wasm_sha256`, `rules` and `key` are null until a version is published and its first calls are checked; until then nothing sends an agent here. `rules` is what the module states in every signed message: the sha256 of what decides an answer. The site and the MCP server read this file.",
+  "outlayer": "testnet",
+  "api": "https://testnet-api.outlayer.ai",
+  "project": "tinygif8324.testnet/check",
+  "price_usd_micro": 10000,
+  "wasm_sha256": null,
+  "rules": null,
+  "key": null
+}

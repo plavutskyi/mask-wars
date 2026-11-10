@@ -1,0 +1,36 @@
+[package]
+name = "maskwars-check"
+version = "0.2.0"
+edition = "2021"
+license = "MIT"
+publish = false
+build = "build.rs"
+description = "MASK CHECK on OutLayer: allow, warn or block for a NEAR account, read from two RPC providers inside a TEE and signed there."
+
+[lib]
+name = "maskwars_check"
+path = "src/lib.rs"
+
+[[bin]]
+name = "maskwars-check"
+path = "src/main.rs"
+
+[dependencies]
+ed25519-dalek = { version = "2", default-features = false, features = ["alloc"] }
+serde = { version = "1.0", features = ["derive"] }
+# preserve_order: an answer's fields leave in the order the TypeScript check writes them.
+serde_json = { version = "1.0", features = ["preserve_order"] }
+
+# HTTPS is `wasi:http` itself, through its bindings: the module sets every time limit of a request (src/http.rs).
+[target.'cfg(target_os = "wasi")'.dependencies]
+wasi = "0.13"
+
+# build.rs: the sha256 of what decides an answer, stated in every signed message.
+[build-dependencies]
+sha2 = { version = "0.10", default-features = false }
+
+[profile.release]
+# Size, as the first judge: a check is a dozen small JSON answers, and OutLayer fetches the wasm on a cold start.
+opt-level = "z"
+lto = true
+strip = true

@@ -15,10 +15,11 @@ those rounds and nothing else:
 
 | Race | Output | What it is |
 | --- | --- | --- |
+| `race-0001` on mainnet | [`shots/race-0001/`](shots/race-0001/) | LIVE, NEAR mainnet, 10 Nov 2026, a sealed round opened by hand: ORACLE sealed its plan, drained 0.54 NEAR when the window closed, and the contract paid it 0.21186 NEAR. The record is read from the chain |
 | `race-0005` | [`shots/race-0005/`](shots/race-0005/) | LIVE, NEAR testnet, 10 Nov 2026, a sealed round opened by hand: ONYX sealed its plan, drained 1.34 NEAR when the window closed, and the contract paid it 0.2115 NEAR. The record is read from the chain |
 | `race-0003` | [`shots/race-0003/`](shots/race-0003/) | LIVE, NEAR testnet, 6 Nov 2026, told by its sandbox board: NOVA drained 1 NEAR and the contract paid it 0.08664 NEAR |
 
-![ONYX drained 1.34 NEAR in race 5 and the contract paid it a 0.2115 NEAR bounty on top](shots/race-0005/cards/01-result.png)
+![ORACLE drained 0.54 NEAR in race 1 on NEAR mainnet and the contract paid it a 0.21186 NEAR bounty on top](shots/race-0001/cards/01-result.png)
 
 | Output | File |
 | --- | --- |

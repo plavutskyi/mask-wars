@@ -10,6 +10,14 @@ export type NetworkId = "testnet" | "mainnet";
 
 export const NETWORK_IDS: readonly NetworkId[] = ["testnet", "mainnet"];
 
+/**
+ * A part of MASK WARS that lives on chain: `arena` is the bounty contract and the arena's own masks, `season` the
+ * treasury that opens a round on schedule, `forge` the factory of people's masks, `jobs` the jobs and crews contracts.
+ */
+export type Section = "arena" | "season" | "forge" | "jobs";
+
+export const SECTIONS: readonly Section[] = ["arena", "season", "forge", "jobs"];
+
 /** The limits of the money the arena moves on one network. Amounts in NEAR as decimal strings ("0.5"). */
 export interface Limits {
   /** The season treasury's own limits (contracts/season `limits`), as `new` and `-Limits` give them. */
@@ -56,6 +64,12 @@ export interface Network {
   readonly crews: string;
   /** The arena's own masks, by name. */
   readonly masks: Readonly<Record<string, string>>;
+  /**
+   * Which parts are on chain on this network: a statement the team reviews, not a reading of the chain. The site shows
+   * a part where it is and sends a visitor to the other network for a part that is only there. Putting a part on chain
+   * here is one word in this file.
+   */
+  readonly sections: Readonly<Record<Section, boolean>>;
   readonly outlayer: { readonly contract: string; readonly api: string };
   /** JSON-RPC endpoints, the first preferred. */
   readonly rpc: readonly string[];
@@ -111,6 +125,9 @@ export function parseNetwork(raw: unknown): Network {
   for (const sub of [n.bounty, n.season, n.scheduler, n.factory, n.jobs, n.crews, ...Object.values(n.masks ?? {})]) {
     if (!sub.endsWith(`.${n.admin}`)) fail(`${sub} is not under ${n.admin}: only the admin can create it`);
   }
+  const stated = Object.keys(n.sections ?? fail("sections: which parts are on chain here"));
+  for (const part of SECTIONS) if (typeof n.sections[part] !== "boolean") fail(`sections.${part}: true or false`);
+  for (const part of stated) if (!SECTIONS.includes(part as Section)) fail(`sections.${part}: not a part of MASK WARS`);
   for (const url of [...n.rpc, n.indexer, n.explorer, n.outlayer.api]) if (!/^https:\/\/[a-z0-9.-]+(\/|$)/.test(url)) fail(`${url}: an https URL`);
   if (n.rpc.length < 1) fail("rpc: at least one endpoint");
   for (const a of Object.values(n.fund ?? fail("fund: the NEAR each new account gets"))) yocto(a);
@@ -159,6 +176,19 @@ export const NETWORK_ID: NetworkId = networkOf(fromEnv());
 
 /** Where MASK WARS lives on the network this process reads. */
 export const NET: Network = NETWORKS[NETWORK_ID];
+
+/** The other of the two networks. */
+export const otherNetwork = (id: NetworkId): NetworkId => (id === "testnet" ? "mainnet" : "testnet");
+
+/**
+ * The network a part is found on, asked from `from`: `from` itself when the part is on chain there, else the other
+ * network when it is there, else `null`: a part that is on chain nowhere yet belongs to no network.
+ */
+export function whereIs(section: Section, from: NetworkId = NETWORK_ID, networks: Readonly<Record<NetworkId, Pick<Network, "sections">>> = NETWORKS): NetworkId | null {
+  if (networks[from].sections[section]) return from;
+  const other = otherNetwork(from);
+  return networks[other].sections[section] ? other : null;
+}
 
 /** The bounty contracts races are read from, newest first. */
 export const bountyContracts = (n: Network = NET): readonly string[] => [n.bounty, ...n.older_bounty];

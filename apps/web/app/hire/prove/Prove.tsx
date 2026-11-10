@@ -21,6 +21,7 @@ import {
   type VaultProof,
 } from '@maskwars/hire';
 import { Mark } from '@/components/Mark';
+import { passkeyHost } from '@/lib/site';
 import { nearSignIn } from '@/app/wallet/near';
 import { loadWho, rememberKnown } from '@/app/wallet/store';
 import { pageName } from '../embed/host';
@@ -114,7 +115,7 @@ export function Prove({ rpId }: { rpId: string }) {
     setAsk(a);
     // The relay id stays out of this tab's history.
     if (a) window.history.replaceState(null, '', window.location.pathname);
-    setPasskeys(passkeysSupported() && window.location.hostname === rpId);
+    setPasskeys(passkeysSupported() && passkeyHost(window.location.hostname, rpId));
     setOpener(Boolean(window.opener));
   }, [rpId]);
 

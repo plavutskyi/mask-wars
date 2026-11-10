@@ -1,0 +1,551 @@
+/* Ask before you pay: one account, one button, one verdict. BRANDBOOK §3, §4, §8, §9. Tokens only.
+   The verdict's colour is its meaning: --live refuses, --amber is a result to look at, an allow stays --ice, because
+   it says only that nothing was found. */
+
+.screen {
+  --gut: clamp(16px, 4.4vw, 64px);
+  position: relative;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  isolation: isolate;
+  overflow: clip;
+  background: var(--ink);
+}
+
+.screen ::selection {
+  background: var(--ice);
+  color: var(--ink);
+}
+
+.word {
+  font-family: var(--font-word);
+  font-weight: 800;
+  font-stretch: 125%;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+}
+
+.hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.world {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+}
+
+.worldImg {
+  object-fit: cover;
+  object-position: center 64.5%;
+  opacity: 0.62;
+}
+
+.body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 520px);
+  align-items: center;
+  align-content: center;
+  column-gap: clamp(32px, 5vw, 96px);
+  max-width: 1312px;
+  width: 100%;
+  margin: 0 auto;
+  padding: calc(64px + env(safe-area-inset-top) + 32px) var(--gut) 64px;
+}
+
+.intro {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+
+/* Two lines at every width: "ask before" is the longer one and sets the size. */
+.title {
+  font-size: clamp(34px, 4.2vw, 68px);
+  line-height: 0.96;
+}
+
+.lede {
+  max-width: 30em;
+  font-size: 17px;
+  line-height: 1.45;
+  color: var(--ice-60);
+  text-wrap: pretty;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 32px 32px 16px;
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--ink-2) 92%, transparent);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.field {
+  display: block;
+}
+
+.input {
+  display: block;
+  width: 100%;
+  height: 68px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--line);
+  /* The brand's own face, not a terminal's: the arena's longest safe id fits the field on the narrowest phone.
+     16 px and up, so a phone does not zoom the page when the field takes focus. */
+  font-family: var(--font-num);
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--ice);
+  caret-color: var(--ice);
+  transition: box-shadow 160ms;
+}
+
+.input::placeholder {
+  color: var(--ice-38);
+}
+
+.input:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px var(--ice);
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 68px;
+  border-radius: var(--radius);
+  background: var(--ice);
+  color: var(--ink);
+  font-size: 15px;
+  transition:
+    transform 100ms cubic-bezier(0.2, 0, 0, 1),
+    opacity 240ms;
+}
+
+.btn .word {
+  letter-spacing: 0.05em;
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.btn:focus-visible,
+.summary:focus-visible,
+.dev:focus-visible,
+.tx:focus-visible {
+  outline: 2px solid var(--ice);
+  outline-offset: 2px;
+}
+
+/* The verdict's place holds its height from the first paint, so nothing below it moves when the answer lands. */
+.result {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 168px;
+}
+
+.idle {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Before the first answer: the three it can be, in their colours, dimmed. */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 22px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 30px;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  opacity: 0.42;
+}
+
+.legend [data-verdict='allow'] {
+  color: var(--ice);
+}
+
+.legend [data-verdict='warn'] {
+  color: var(--amber);
+}
+
+.legend [data-verdict='block'] {
+  color: var(--live);
+}
+
+.keep {
+  white-space: nowrap;
+}
+
+.hint,
+.refused {
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--ice-60);
+  text-wrap: pretty;
+}
+
+.refused {
+  color: var(--live);
+}
+
+.wait {
+  display: flex;
+  align-items: center;
+  height: 44px;
+}
+
+/* While the chain is read: a caret, as a terminal waits for its answer. */
+.caret {
+  display: inline-block;
+  width: 2px;
+  height: 40px;
+  background: var(--ice-38);
+  animation: blink 1s steps(2, jump-none) infinite;
+}
+
+@keyframes blink {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.verdict {
+  --c: var(--ice);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: land 320ms cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+.verdict[data-verdict='warn'] {
+  --c: var(--amber);
+}
+
+.verdict[data-verdict='block'] {
+  --c: var(--live);
+}
+
+@keyframes land {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(1.03);
+  }
+}
+
+.stamp {
+  font-size: 56px;
+  line-height: 0.96;
+  letter-spacing: 0.02em;
+  color: var(--c);
+}
+
+.who {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--ice-60);
+  overflow-wrap: anywhere;
+}
+
+.net {
+  margin-left: 6px;
+  padding: 2px 6px;
+  border-radius: var(--radius);
+  box-shadow: inset 0 0 0 1px var(--line);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.line {
+  font-size: 15px;
+  line-height: 1.45;
+  font-weight: 500;
+  color: var(--ice);
+  text-wrap: pretty;
+  /* An account id has no spaces; on a phone it breaks rather than run out of the panel. */
+  overflow-wrap: anywhere;
+}
+
+/* Details: everything technical waits behind one quiet control. */
+.more {
+  border-top: 1px solid var(--line);
+}
+
+.summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 56px;
+  list-style: none;
+  cursor: pointer;
+  color: var(--ice-60);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  transition: color 160ms;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.summary::-webkit-details-marker {
+  display: none;
+}
+
+.chev {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 200ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+details[open] > .summary {
+  color: var(--ice);
+}
+
+details[open] > .summary .chev {
+  transform: rotate(180deg);
+}
+
+.reasons {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.reason {
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr);
+  column-gap: 12px;
+  align-items: baseline;
+  padding: 12px 0;
+  font-size: 14px;
+  line-height: 1.45;
+  box-shadow: inset 0 1px 0 var(--line);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--ice-38);
+  /* On the first line's middle, whatever the line wraps to. */
+  transform: translateY(-1px);
+}
+
+.reason[data-level='warn'] .dot {
+  background: var(--amber);
+}
+
+.reason[data-level='block'] .dot {
+  background: var(--live);
+}
+
+.text {
+  color: var(--ice);
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
+}
+
+.reason[data-level='info'] .text {
+  color: var(--ice-60);
+}
+
+.tx {
+  white-space: nowrap;
+  color: var(--ice);
+  text-decoration: underline;
+  text-decoration-color: var(--ice-38);
+  text-underline-offset: 3px;
+}
+
+.dl {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 6px 16px;
+  margin: 0;
+  padding: 14px 0;
+  font-size: 13px;
+  line-height: 1.5;
+  box-shadow: inset 0 1px 0 var(--line);
+}
+
+.dl dt {
+  color: var(--ice-60);
+}
+
+.dl dd {
+  margin: 0;
+  color: var(--ice);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.how {
+  padding: 4px 0 16px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ice-60);
+  text-wrap: pretty;
+}
+
+/* The one way out for a developer: quiet, a whole row to tap. */
+.dev {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 56px;
+  font-size: 14px;
+  line-height: 1.3;
+  color: var(--ice-60);
+  box-shadow: inset 0 1px 0 var(--line);
+  transition: color 160ms;
+}
+
+.arrow {
+  flex: none;
+  width: 24px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  transition: transform 200ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+@media (hover: hover) {
+  .btn:hover:not(:disabled) {
+    opacity: 0.9;
+  }
+  .summary:hover,
+  .dev:hover {
+    color: var(--ice);
+  }
+  .dev:hover .arrow {
+    transform: translateX(4px);
+  }
+  .tx:hover {
+    text-decoration-color: var(--ice);
+  }
+}
+
+@media (max-width: 1000px) {
+  .body {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 40px;
+    max-width: 640px;
+  }
+}
+
+@media (max-width: 760px) {
+  .body {
+    align-content: start;
+    padding-top: calc(64px + env(safe-area-inset-top) + 16px);
+    padding-bottom: calc(32px + env(safe-area-inset-bottom));
+    row-gap: 32px;
+  }
+  .intro {
+    gap: 16px;
+  }
+  .title {
+    font-size: clamp(30px, 9.4vw, 56px);
+  }
+  .lede {
+    font-size: 15px;
+  }
+  .panel {
+    padding: 20px 16px 8px;
+    gap: 20px;
+  }
+  .input {
+    padding: 0 16px;
+    font-size: 16px;
+  }
+  .btn {
+    height: 72px;
+    font-size: 13px;
+  }
+  .result {
+    min-height: 176px;
+  }
+  .stamp {
+    font-size: 48px;
+  }
+  /* One line on every phone: the words narrow on the width axis before they shrink (BRANDBOOK §4). */
+  .legend {
+    flex-wrap: nowrap;
+    gap: 14px;
+    font-size: clamp(18px, 6.2vw, 24px);
+    font-stretch: 100%;
+    white-space: nowrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .caret {
+    animation: none;
+  }
+  .verdict {
+    animation: fade 200ms both;
+  }
+  .btn,
+  .chev,
+  .arrow {
+    transition: opacity 200ms;
+  }
+  .btn:active:not(:disabled) {
+    transform: none;
+  }
+  .dev:hover .arrow {
+    transform: none;
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}

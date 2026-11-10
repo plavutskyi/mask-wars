@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { type FormEvent, useCallback, useEffect, useId, useRef, useState } from 'react';
 import { coinText, dollars } from '@maskwars/pay';
 import { autofillSupported, createVault, openVault, PasskeyError, passkeysSupported, type PasskeyVault } from '@maskwars/pay/passkey';
+import { passkeyHost } from '@/lib/site';
 import { type CatalogState, type CatalogView, pay, type VaultView } from './api';
 import { CashOut } from './CashOut';
 import { catalogDelay } from './settle';
@@ -308,10 +309,10 @@ function SignIn({ rpId, onIn }: { rpId: string; onIn: (w: Who) => void }) {
     );
   };
 
-  // Passkeys need this site's own domain, exactly (they are bound to it for good), and a browser that has them. A
-  // returning person's passkey shows up in the email field's autofill: picking it opens the vault.
+  // Passkeys need the domain they are bound to for good, or a site under it (the same site on the other network), and
+  // a browser that has them. A returning person's passkey shows up in the email field's autofill: picking it opens the vault.
   useEffect(() => {
-    const ok = passkeysSupported() && location.hostname === rpId;
+    const ok = passkeysSupported() && passkeyHost(location.hostname, rpId);
     setPasskeys(ok);
     if (!ok) return;
     const ctrl = new AbortController();

@@ -1,0 +1,80 @@
+{
+  "v": 1,
+  "source": "LIVE",
+  "network": "mainnet",
+  "id": "race-0001",
+  "contract": "bounty.maskwars.near",
+  "target": {
+    "kind": "live-safe",
+    "account": "safe-0001.maskwars.near"
+  },
+  "bounty": "0.35",
+  "hours": 4,
+  "safe": "2.2",
+  "opened": {
+    "at": "2026-11-10T15:14:32.248Z",
+    "tx": "3KutM1kRv5ukkEoTZczZbZjfEJjEvjpmVodEj4iRbyhC"
+  },
+  "masks": [
+    {
+      "name": "ORACLE",
+      "account": "oracle.maskwars.near",
+      "model": "Qwen/Qwen3.8-27B"
+    }
+  ],
+  "sealed": {
+    "minutes": 45,
+    "closedAt": "2026-11-10T15:59:32.248Z",
+    "seals": [
+      {
+        "mask": "ORACLE",
+        "seq": 0,
+        "at": "2026-11-10T15:24:50.410Z",
+        "tx": "DBk3dRU2SMymK2M9v2GR2ApGSRFqJQiQKSZGSzeDkzx8"
+      }
+    ],
+    "reveal": {
+      "at": "2026-11-10T15:59:53.079Z",
+      "tx": "Eh872xSnURmfnYUmULtBLqfte58UunbefdmyaSfjs9Y9"
+    },
+    "claim": {
+      "at": "2026-11-10T15:59:56.717Z",
+      "tx": "9ai1PbyVP4C16FQhmujd7o5GjMX8WSPd8KnEmJV8tbHM"
+    }
+  },
+  "winner": "ORACLE",
+  "drain": {
+    "amount": "0.54",
+    "at": "2026-11-10T15:59:48.095Z",
+    "txs": [
+      {
+        "method": "set_owner",
+        "hash": "3Lc3RgPxxTyAfm9kcPnW8PU1swk3qCEk3cepPE994VZ6",
+        "at": "2026-11-10T15:59:44.351Z"
+      },
+      {
+        "method": "sweep",
+        "hash": "CWcwqhSwSsiWxdUHtsQv3KSXjjuBANyCPNEto81J1WpM",
+        "at": "2026-11-10T15:59:48.095Z",
+        "amount": "0.54"
+      }
+    ]
+  },
+  "judge": {
+    "request": 2921,
+    "seconds": 5.612,
+    "cost": "0.0015979023"
+  },
+  "payout": {
+    "amount": "0.21186",
+    "tx": "9ai1PbyVP4C16FQhmujd7o5GjMX8WSPd8KnEmJV8tbHM",
+    "at": "2026-11-10T16:00:10.484Z"
+  },
+  "status": "drained",
+  "sources": [
+    "NEAR, read through the arena reader at 2026-11-10T16:51:19.978Z: get, get_safe and get_round of race-0001 on bounty.maskwars.near",
+    "The round's transactions in the public indexer: the vault safe-0001.maskwars.near, the bounty contract bounty.maskwars.near",
+    "The judge: OutLayer's execution_requested and execution_completed events in the logs of the claim",
+    "Each mask's model: the arena's own profile of the mask, not the chain"
+  ]
+}

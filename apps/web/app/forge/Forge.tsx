@@ -6,6 +6,7 @@ import { type CSSProperties, type FormEvent, useCallback, useEffect, useId, useM
 import {
   accountOf,
   canSeal,
+  ChainError,
   cleanName,
   config as readConfig,
   DEFAULT_FUEL,
@@ -31,7 +32,7 @@ import {
   waitText,
   YOCTO,
 } from '@maskwars/forge';
-import { FORGE_NET as NET, FUEL_MAX } from '@/lib/forge';
+import { type FactoryAnswer, FORGE_NET as NET, FORGE_STATED, forgeClosed, FUEL_MAX } from '@/lib/forge';
 import { connect, connected, type Signer } from './wallet';
 import s from './forge.module.css';
 
@@ -90,10 +91,14 @@ function Waiting({ cfg }: { cfg: FactoryConfig | null }) {
   );
 }
 
-export function Forge() {
+export function Forge({ origin }: { origin: string }) {
   const id = useId();
   const [cfg, setCfg] = useState<FactoryConfig | null>(null);
   const [offline, setOffline] = useState(false);
+  // While the factory is not on chain the page says so on its first screen and offers no forging: nobody walks six
+  // steps to be refused at the last one.
+  const [answer, setAnswer] = useState<FactoryAnswer>(null);
+  const closed = forgeClosed(FORGE_STATED, answer);
   const [sealing, setSealing] = useState<boolean | null>(null);
   const [step, setStep] = useState(0);
   const [look, setLook] = useState(LOOKS[0]!.id);
@@ -125,8 +130,18 @@ export function Forge() {
   useEffect(() => {
     let live = true;
     readConfig(NET)
-      .then((c) => live && setCfg(c))
-      .catch(() => live && setOffline(true));
+      .then((c) => {
+        if (!live) return;
+        setCfg(c);
+        setAnswer({ published: c.mask_code.published === true });
+      })
+      .catch((e: unknown) => {
+        if (!live) return;
+        // The chain answering that there is no such contract is an answer; no RPC answering at all is not.
+        if (e instanceof ChainError) return setAnswer('refused');
+        setAnswer('silent');
+        setOffline(true);
+      });
     canSeal().then((ok) => live && setSealing(ok));
     connected(NET.rpcs).then((w) => live && w && setAccount(w.accountId));
     // `?copy=<name>`: forge a copy of that mask, if it is open to copying.
@@ -348,7 +363,7 @@ export function Forge() {
   const busy = phase === 'connect' || phase === 'sign' || phase === 'forging';
   const shown = name && nameOk(name) ? name.toUpperCase() : null;
   const share = done
-    ? `https://x.com/intent/post?text=${encodeURIComponent(`I forged ${done.name.toUpperCase()}. It races AI masks for bounties on NEAR.`)}&url=${encodeURIComponent(`https://maskwars.xyz/mask/${done.name}`)}`
+    ? `https://x.com/intent/post?text=${encodeURIComponent(`I forged ${done.name.toUpperCase()}. It races AI masks for bounties on NEAR.`)}&url=${encodeURIComponent(`${origin}/mask/${done.name}`)}`
     : '';
 
   const note = (() => {
@@ -457,6 +472,17 @@ export function Forge() {
                 The forge on NEAR
               </a>
             ) : null}
+          </div>
+        ) : closed ? (
+          <div className={s.closed} role="status">
+            <p className={s.lede}>{LEDE}</p>
+            <p className={s.closedLine}>
+              <span className={`${s.word} ${s.closedWord}`}>Not open yet</span>
+              <span>The forge opens with its factory on NEAR {NET.id}.</span>
+            </p>
+            <Link href="/" className={`${s.btn} ${s.closedBtn}`}>
+              <span className={s.word}>To the race</span>
+            </Link>
           </div>
         ) : (
           <form className={s.form} onSubmit={submit} noValidate>

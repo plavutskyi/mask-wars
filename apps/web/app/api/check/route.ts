@@ -3,8 +3,8 @@ import { callerOf, createLimiter } from '@/lib/limit';
 
 // MASK CHECK for agents: GET /api/check?account=<id>[&network=testnet|mainnet] → allow, warn or block with reasons, read
 // live from NEAR. Without `network` the account says which: `.testnet` reads testnet, everything else mainnet. Mainnet
-// is read from two independent RPC providers that must agree. A machine endpoint: any origin may call it, and every
-// answer is read fresh from the chain.
+// is read from two independent RPC providers that must agree: what one of them says alone is a warning, never an
+// allow. A machine endpoint: any origin may call it, and every answer is read fresh from the chain.
 export const dynamic = 'force-dynamic';
 
 const readers = { testnet: readerFor('testnet', { env: process.env }), mainnet: readerFor('mainnet', { env: process.env }) };

@@ -175,7 +175,7 @@ describe("the round's story", () => {
     expect([s.season, s.round, s.no, s.opener]).toEqual([1, 1, 1, "season"]);
     const other = raceStory(rehearsal());
     if (other.kind !== "round") throw new Error("a round");
-    expect([other.title, other.kicker]).toEqual(["SEASON 2 · ROUND 12", "SEASON 2 · ROUND 12 · NEAR"]);
+    expect([other.title, other.kicker]).toEqual(["SEASON 2 · ROUND 12", "SEASON 2 · ROUND 12 · NEAR MAINNET"]);
     expect(other.breach).toMatchObject({ tryWords: "third try", words: "1 min 27 s" });
     expect(other.paid).toBe("39.87761");
     expect(other.links.run).toBe("https://github.com/plavutskyi/mask-wars/actions/runs/42270915840");

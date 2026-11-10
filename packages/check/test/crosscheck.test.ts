@@ -49,13 +49,60 @@ describe("cross-check", () => {
     expect(reader.tally).toMatchObject({ reads: 1, agreed: 1 });
   });
 
-  it("does not wait for a node far behind: it sits the read out and the tally says so", async () => {
+  it("reads at the lower head whichever node names it, up to the limit", async () => {
+    for (const lag of [1, MAX_LAG_BLOCKS]) {
+      const first = nodes();
+      first.a.head = HEAD - lag;
+      expect((await first.reader.head()).height).toBe(HEAD - lag);
+      expect(first.reader.tally).toMatchObject({ reads: 1, agreed: 1 });
+      const second = nodes();
+      second.b.head = HEAD - lag;
+      expect((await second.reader.head()).height).toBe(HEAD - lag);
+    }
+  });
+
+  it("refuses a head only one node vouches for: a node far behind stops the check, it does not sit it out", async () => {
+    const { a, b, reader } = nodes();
+    b.head = HEAD - MAX_LAG_BLOCKS - 1;
+    const e = await reader.head().catch((x: unknown) => x);
+    expect(e).toBeInstanceOf(ChainError);
+    expect((e as ChainError).kind).toBe("disagree");
+    expect((e as ChainError).message).toBe(`rpc: final head: a.example ${HEAD} vs b.example ${HEAD - MAX_LAG_BLOCKS - 1}, ${MAX_LAG_BLOCKS + 1} blocks apart`);
+    // Nothing was read at a height one node chose alone.
+    expect(heights(a)).toEqual(["final"]);
+    expect(heights(b)).toEqual(["final"]);
+    expect(reader.tally).toMatchObject({ reads: 0, agreed: 0 });
+  });
+
+  it("a node that names a head far ahead cannot push the honest one out and answer alone", async () => {
+    for (const liar of ["a", "b"] as const) {
+      const n = nodes();
+      n[liar].head = HEAD + 100_000;
+      // The liar would say the account is rich and old at its own height; nobody asks it there.
+      n[liar].setAccount("pay.near", HEAD + 1, { amount: (1000n * NEAR).toString(), code_hash: CODE_B, storage_usage: 300 });
+      await expect(n.reader.account("pay.near")).rejects.toMatchObject({ kind: "disagree" });
+      expect(heights(n.a)).toEqual(["final"]);
+      expect(heights(n.b)).toEqual(["final"]);
+      expect(n.reader.tally).toMatchObject({ reads: 0, agreed: 0 });
+    }
+  });
+
+  it("a node ahead by less than the limit is read at the other's head, where it must answer alike", async () => {
+    const { a, b, reader } = nodes();
+    b.head = HEAD + MAX_LAG_BLOCKS;
+    b.setAccount("pay.near", HEAD + 1, { amount: (1000n * NEAR).toString(), code_hash: CODE_B, storage_usage: 300 });
+    expect(await reader.account("pay.near")).toMatchObject({ amount: NEAR.toString(), codeHash: CODE_A, blockHeight: HEAD });
+    expect(heights(a)).toEqual(["final", HEAD]);
+    expect(heights(b)).toEqual(["final", HEAD]);
+    expect(reader.tally).toMatchObject({ reads: 1, agreed: 1 });
+  });
+
+  it("a node that lacks a block at the common head sits that read out, and the tally says so", async () => {
     const { b, reader } = nodes();
-    b.head = HEAD - MAX_LAG_BLOCKS - 400;
-    expect((await reader.head()).height).toBe(HEAD);
-    expect(reader.tally?.agreed).toBe(0);
-    expect(reader.tally?.reads).toBe(1);
-    expect(reader.tally?.missing.get(B)).toContain("UNKNOWN_BLOCK");
+    b.gcBelow = HEAD - 1_000;
+    expect((await reader.account("pay.near", { block_id: HEAD - 5_000 }))?.amount).toBe(NEAR.toString());
+    expect(reader.tally).toMatchObject({ reads: 1, agreed: 0 });
+    expect(reader.tally?.missing.get(B)).toContain("GARBAGE_COLLECTED_BLOCK");
   });
 
   it("refuses the answer when the nodes disagree, naming both", async () => {

@@ -764,13 +764,123 @@
   outline-offset: -4px;
 }
 
+/* The other network, between races: one quiet line in the deck's free corner, on the line of the quiet link, across
+   from the sound. What runs there, the network's name, the time of its next round when the other site gave one. */
+.across {
+  position: absolute;
+  left: var(--gut);
+  bottom: calc(20px + env(safe-area-inset-bottom));
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 44px;
+  font-size: 12px;
+  line-height: 1;
+  color: var(--ice-60);
+  white-space: nowrap;
+  transition: color 160ms;
+}
+
+.across .word {
+  letter-spacing: 0.1em;
+}
+
+.acrossWhat,
+.acrossGo,
+.acrossTime {
+  display: inline-flex;
+  align-items: center;
+}
+
+.acrossWhat {
+  gap: 10px;
+}
+
+.acrossGo {
+  gap: 12px;
+}
+
+.acrossTime {
+  gap: 6px;
+}
+
+/* The time is a number: Mona, as every number on the arena (BRANDBOOK §4). */
+.acrossTime b {
+  font-family: var(--font-num);
+  font-size: 13px;
+  font-weight: 800;
+  font-stretch: 125%;
+  letter-spacing: 0.02em;
+  color: var(--ice);
+}
+
+.acrossTag {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 1px 5px 0 6px;
+  border: 1px solid color-mix(in srgb, var(--ice) 26%, transparent);
+  border-radius: var(--radius);
+  font-size: 10px;
+  letter-spacing: 0.14em !important;
+  transition: border-color 160ms;
+}
+
+.acrossArr {
+  width: 20px;
+  height: 10px;
+  transition: transform 200ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.across:focus-visible {
+  outline: 1px solid var(--ice-60);
+  outline-offset: 4px;
+}
+
 @media (hover: hover) {
   .btn:hover {
     opacity: 0.9;
   }
   .quiet:hover,
-  .sound:hover {
+  .sound:hover,
+  .across:hover {
     color: var(--ice);
+  }
+
+  .across:hover .acrossTag {
+    border-color: color-mix(in srgb, var(--ice) 48%, transparent);
+  }
+
+  .across:hover .acrossArr {
+    transform: translateX(3px);
+  }
+}
+
+/* On a laptop the time stands without its two words: the line never reaches the quiet link in the middle. */
+@media (max-width: 1279px) {
+  .acrossNext {
+    display: none;
+  }
+}
+
+/* Where the corner is too narrow for it, the line takes a row of its own under the deck, edge to edge: what runs
+   there on the left, when and the way there on the right. The deck is that much taller, and the arena composes above it. */
+@media (max-width: 1099px) {
+  .screen[data-across] {
+    --bottom: calc(225px + env(safe-area-inset-bottom));
+  }
+
+  .across {
+    position: static;
+    align-self: stretch;
+    justify-content: space-between;
+    min-height: 48px;
+    margin-top: 1px;
+    border-top: 1px solid var(--line);
+  }
+
+  [data-across] .sound {
+    bottom: calc(75px + env(safe-area-inset-bottom));
   }
 }
 
@@ -844,6 +954,41 @@
   .sound {
     right: 12px;
     bottom: calc(8px + env(safe-area-inset-bottom));
+  }
+
+  /* With the line about the other network under it, the deck is one row taller. */
+  .screen[data-across] {
+    --bottom: calc(197px + env(safe-area-inset-bottom));
+  }
+
+  [data-across] .sound {
+    bottom: calc(59px + env(safe-area-inset-bottom));
+  }
+
+  /* The whole line inside the phone's own width: a size down, closer together. */
+  .across {
+    gap: 10px;
+    font-size: 11px;
+  }
+
+  .acrossWhat,
+  .acrossGo {
+    gap: 8px;
+  }
+
+  .acrossTime b {
+    font-size: 12px;
+  }
+
+  .acrossArr {
+    width: 16px;
+    height: 8px;
+  }
+}
+
+@media (max-width: 359px) {
+  .acrossTime {
+    display: none;
   }
 }
 

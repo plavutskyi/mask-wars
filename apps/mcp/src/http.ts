@@ -8,6 +8,7 @@ import { ArenaFeed, arenaFeed } from "./feed.ts";
 import type { JobTools } from "./jobs.ts";
 import { type Budget, callerOf, createBudget } from "./limit.ts";
 import { type CheckDeps, SERVER_NAME, SERVER_VERSION, TOOL_NAMES, createServer, instructionsFor } from "./server.ts";
+import type { TeeDeployment } from "./tee.ts";
 
 export interface McpBudgets {
   /** Every HTTP request to the endpoint. */
@@ -50,6 +51,8 @@ export interface McpRouteOptions {
    * the mainnet shared list.
    */
   mainnet?: CheckDeps;
+  /** Where check_account's paid twin runs inside a TEE. Default: what services/check/deployment.json says is published. */
+  tee?: TeeDeployment;
   budgets?: McpBudgets;
   /**
    * The jobs the job tools read, with their limit. The site passes the reader its own pages read (`jobToolsOf`), so an
@@ -121,7 +124,8 @@ export function createMcpRoute(options: McpRouteOptions = {}): McpRoute {
   const feed = options.feed ?? (options.arena ? new ArenaFeed(options.arena) : arenaFeed(config, options.reader ? { rpc: options.reader } : {}));
   const limits = { check: createBudget(budgets.check), race: createBudget(budgets.race), arena: createBudget(budgets.arena) };
 
-  const handler = createMcpHandler(({ requestInfo }) => createServer({ config, reader, feed, list, mainnet, limits, caller: callerOf(requestInfo), ...(options.jobs ? { jobs: options.jobs } : {}) }), {
+  const deps = { config, reader, feed, list, mainnet, limits, ...(options.tee ? { tee: options.tee } : {}), ...(options.jobs ? { jobs: options.jobs } : {}) };
+  const handler = createMcpHandler(({ requestInfo }) => createServer({ ...deps, caller: callerOf(requestInfo) }), {
     maxRequestBodySize: MAX_BODY_BYTES,
     // No push notifications (the tool list only changes with a release), so no subscription stream is ever held open.
     maxSubscriptions: 0,

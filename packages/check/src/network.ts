@@ -2,7 +2,7 @@
 //
 // - testnet: FastNEAR first, the near.org node when it is down. As it always was.
 // - mainnet: two independent providers, FastNEAR and dRPC, asked every read at the same block. An answer counts only
-//   when both give the same one. FastNEAR's regular node keeps about 17 h of blocks, so for an older block it hands
+//   when both give the same one, and a read one of them answered alone is a warning. FastNEAR's regular node keeps about 17 h of blocks, so for an older block it hands
 //   over to FastNEAR's archival node; dRPC keeps about 30 h. rpc.mainnet.near.org is not used: it is deprecated, adds
 //   3 s to every call and answers 429.
 import { isTestnetName } from "./account.ts";

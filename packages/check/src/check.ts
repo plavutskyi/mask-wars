@@ -1,6 +1,8 @@
 // MASK CHECK: one question before an agent pays or calls a contract. In: an account. Out: allow, warn or block, with
 // every reason and its evidence. Everything except the shared list is read from the chain at the moment of the check,
-// on testnet or on mainnet. On mainnet two independent RPC providers answer every read and must agree.
+// on testnet or on mainnet. On mainnet two independent RPC providers answer every read and must agree: on where the
+// chain's final head is, and on every answer at that block. A read only one of them answered is said as a warning,
+// so one provider alone never makes an `allow`.
 //
 // `allow` means only that no signal against the account was found. It says nothing about keys, servers or anything
 // else that is not on the chain.
@@ -28,10 +30,10 @@ export type ReasonCode =
   | "account_age" // the account already existed at the start of the window
   | "contract" // the account holds a contract (its code hash)
   | "plain_account" // no contract code
-  | "history_unavailable" // no node keeps the block at the start of the window
+  | "history_unavailable" // no node keeps the block at the start of the window: a warning where reads are cross-checked
   | "rpc_agree" // cross-check: two independent RPC providers gave the same answer to every read
-  | "rpc_single" // cross-check: some reads came from one provider only, the other was down or lacked the block
-  | "rpc_disagree" // cross-check: the providers gave different answers to the same read; the check stopped there
+  | "rpc_single" // cross-check: some reads came from one provider only, the other was down or lacked the block: a warning
+  | "rpc_disagree" // cross-check: the providers named final heads far apart or answered one read differently; the check stopped there
   | "chain_unreadable"; // no RPC answered: nothing could be read
 
 export interface Reason {
@@ -168,12 +170,15 @@ async function arenaReasons(reader: ChainReader, entry: ArenaEntry, at: { block_
 }
 
 async function historyReasons(reader: ChainReader, accountId: string, head: BlockInfo, now: AccountInfo, windowHours: number): Promise<Reason[]> {
+  // Where every read is cross-checked, a window nobody could read is a warning: without it a new account or new code
+  // would pass as an old one, and one provider can bring that about by saying it no longer keeps the block.
+  const unread: Level = reader.crossCheck ? "warn" : "info";
   // Block time drifts, so measure it on the last 10 000 blocks and step back that many blocks for the window.
   const sample = await blockAtOrBelow(reader, head.height - 10_000);
   const nsPerBlock = sample ? Number(head.timestampNs - sample.timestampNs) / (head.height - sample.height) : 0;
   const ref = nsPerBlock > 0 ? await blockAtOrBelow(reader, head.height - Math.ceil((windowHours * 3_600e9) / nsPerBlock)) : null;
   if (!ref) {
-    return [{ code: "history_unavailable", level: "info", text: `No RPC node keeps the block from ${windowHours} h ago; age and code changes were not checked.` }];
+    return [{ code: "history_unavailable", level: unread, text: `No RPC node keeps the block from ${windowHours} h ago; age and code changes were not checked.` }];
   }
   const since = { block_height: ref.height, block_time: iso(blockTime(ref)) };
   let then: AccountInfo | null;
@@ -181,7 +186,7 @@ async function historyReasons(reader: ChainReader, accountId: string, head: Bloc
     then = await reader.account(accountId, { block_id: ref.height });
   } catch (error) {
     if (error instanceof ChainError && error.kind === "unknown_block") {
-      return [{ code: "history_unavailable", level: "info", text: `No RPC node keeps the state from ${windowHours} h ago; age and code changes were not checked.` }];
+      return [{ code: "history_unavailable", level: unread, text: `No RPC node keeps the state from ${windowHours} h ago; age and code changes were not checked.` }];
     }
     throw error;
   }
@@ -201,14 +206,18 @@ async function historyReasons(reader: ChainReader, accountId: string, head: Bloc
   return out;
 }
 
-/** How the providers answered, on a network read with cross-check. Nothing on a network read with failover. */
+/**
+ * How the providers answered, on a network read with cross-check. Nothing on a network read with failover.
+ * A read that only one provider answered is a warning, whichever read it was: the head, the account, its history or
+ * the arena. What one provider says alone, it could have made up, so it never adds up to an `allow`.
+ */
 function rpcReasons(reader: ChainReader): Reason[] {
   const t = reader.tally;
   if (!reader.crossCheck || !t || t.reads === 0) return [];
   const hosts = reader.endpoints.map(hostOf);
   const evidence = { rpc: hosts.join(", "), reads: t.reads, cross_checked: t.agreed };
   if (hosts.length < 2) {
-    return [{ code: "rpc_single", level: "info", text: `Read from one RPC provider only, ${hosts[0]}: nothing was cross-checked.`, evidence }];
+    return [{ code: "rpc_single", level: "warn", text: `Read from one RPC provider only, ${hosts[0]}: nothing was cross-checked.`, evidence }];
   }
   if (t.agreed === t.reads) {
     return [{ code: "rpc_agree", level: "info", text: `Two independent RPC providers, ${hosts.join(" and ")}, gave the same answer to all ${t.reads} reads.`, evidence }];
@@ -217,7 +226,7 @@ function rpcReasons(reader: ChainReader): Reason[] {
   return [
     {
       code: "rpc_single",
-      level: "info",
+      level: "warn",
       text: `${t.reads - t.agreed} of ${t.reads} reads came from one RPC provider only and were not cross-checked (${why}).`,
       evidence,
     },

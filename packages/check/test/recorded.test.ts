@@ -101,7 +101,40 @@ describe("mainnet, real accounts", () => {
     expect(r.block).not.toBeNull();
   });
 
-  it("goes on with one provider when the other is down, says so, and asks the down one once", async () => {
+  it("one dishonest provider cannot buy an allow by naming a final head the other has not reached", async () => {
+    // dRPC wants `allow` for a lookalike that does not exist. It names a head 100 000 blocks past the chain's and is
+    // ready to say, at that height, that the account is an old contract. FastNEAR, honest, has no such block.
+    const AHEAD = 100_000;
+    const fake = pinned("mainnet") + AHEAD;
+    const ok = (result: unknown) => Response.json({ jsonrpc: "2.0", id: "maskwars-check", result });
+    const header = (h: number) => ({ height: h, hash: `Fake${h}`.padEnd(44, "A"), timestamp_nanosec: String(BigInt(Date.parse(RECORDED.mainnet.recorded_at)) * 1_000_000n - BigInt(fake - h) * 600_000_000n) });
+    const lie = (f: typeof fetch) =>
+      (async (input: string | URL | Request, init?: RequestInit) => {
+        const { method, params } = bodyOf(init) as { method: string; params: Record<string, unknown> };
+        const h = params["block_id"];
+        if (String(input) === DRPC) {
+          if (method === "block" && params["finality"] === "final") return ok({ header: header(fake) });
+          if (typeof h === "number" && h > pinned("mainnet") - 200_000) {
+            if (method === "block") return ok({ header: header(h) });
+            return ok({ amount: "1000000000000000000000000000", locked: "0", code_hash: "8JLoDp5bYW3HbvwdjqLM6QiXEeNs7fWkuAHMCw3D7Xyn", storage_usage: 5000, block_height: h, block_hash: header(h).hash });
+          }
+        } else if (typeof h === "number" && h > pinned("mainnet")) {
+          return Response.json({ jsonrpc: "2.0", id: "maskwars-check", error: { name: "HANDLER_ERROR", cause: { name: "UNKNOWN_BLOCK", info: {} }, code: -32000, message: "Server error", data: `DB Not Found Error: BLOCK HEIGHT: ${h}` } });
+        }
+        return f(input, init);
+      }) as typeof fetch;
+    const { r, requests } = await check("mainnet", "treasury.intents.near", lie);
+    expect(r.verdict).toBe("warn");
+    expect(codes(r)).toEqual(["rpc_disagree"]);
+    expect(r.reasons[0]?.text).toBe(
+      `Two RPC providers gave different answers to the same read, so the check stopped there and nothing after it was read: final head: rpc.mainnet.fastnear.com ${pinned("mainnet")} vs near.drpc.org ${fake}, ${AHEAD} blocks apart`,
+    );
+    expect(r.block).toBeNull();
+    // Nothing was read at the height one provider chose alone.
+    expect(requests.filter((q) => "block_id" in q.params)).toEqual([]);
+  });
+
+  it("reads on with one provider when the other is down, warns that nothing was cross-checked, and asks the down one once", async () => {
     let drpcCalls = 0;
     const down = (f: typeof fetch) =>
       (async (input: string | URL | Request, init?: RequestInit) => {
@@ -112,9 +145,11 @@ describe("mainnet, real accounts", () => {
         return f(input, init);
       }) as typeof fetch;
     const { r } = await check("mainnet", "intents.near", down);
-    expect(r.verdict).toBe("allow");
-    expect(codes(r)).toEqual(["account_age", "contract", "rpc_single"]);
-    expect(r.reasons.at(-1)?.text).toBe("5 of 5 reads came from one RPC provider only and were not cross-checked (near.drpc.org: HTTP 502, invalid JSON).");
+    // One provider alone never makes an allow: it could have made every answer up.
+    expect(r.verdict).toBe("warn");
+    expect(codes(r)).toEqual(["rpc_single", "account_age", "contract"]);
+    expect(r.reasons[0]).toMatchObject({ level: "warn", text: "5 of 5 reads came from one RPC provider only and were not cross-checked (near.drpc.org: HTTP 502, invalid JSON)." });
+    expect(r.summary).toBe(`WARN: ${r.reasons[0]?.text}`);
     expect(drpcCalls).toBe(1);
   });
 
@@ -129,6 +164,7 @@ describe("mainnet, real accounts", () => {
     const { r } = await check("mainnet", "treasury.intents.near", limited);
     expect(r.verdict).toBe("block");
     expect(codes(r)).toEqual(["no_account", "rpc_single"]);
+    expect(r.reasons.at(-1)).toMatchObject({ level: "warn" });
     expect(r.reasons.at(-1)?.text).toContain("rpc.mainnet.fastnear.com: HTTP 429: Rate limits exceeded");
   });
 

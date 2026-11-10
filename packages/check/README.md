@@ -43,18 +43,26 @@ The network is a parameter. Left out, the account names it: `.testnet` reads tes
 | | mainnet | testnet |
 | --- | --- | --- |
 | RPC | `rpc.mainnet.fastnear.com` and `near.drpc.org`: two independent providers | `rpc.testnet.fastnear.com`, then `rpc.testnet.near.org` if it is down |
-| How | Every read goes to both, at one block. An answer counts only when both give the same one | The first node answers; the second only on an outage |
+| How | Every read goes to both, at one block. An answer counts only when both give the same one; what one says alone is a warning | The first node answers; the second only on an outage |
 | Older blocks | FastNEAR's regular node keeps about 17 h, so the 24 h reads go to `archival-rpc.mainnet.fastnear.com`; dRPC keeps about 30 h | Testnet nodes keep the last few epochs |
 | Shared list | [`list.mainnet.json`](list.mainnet.json): empty until season 0 opens its races | [`list.json`](list.json) |
 | Explorer in evidence | `nearblocks.io` | `testnet.nearblocks.io` |
 | Override | `MASKCHECK_MAINNET_RPC` | `MASKCHECK_RPC` |
 
-On mainnet the two providers keep each other honest. The reader takes the lower of their two final heads, which both
-have, and pins every read to it. A provider that answers the same read differently (another balance, another code
-hash, an account the other says does not exist) stops the check: `rpc_disagree`, `warn`. A provider that is down,
-rate-limited or no longer keeps a block sits that read out, and the answer says so (`rpc_single`); a provider that
-went down is not asked again during the same check, so one hung node costs one timeout. `rpc.mainnet.near.org` is
-not used: it is deprecated, adds 3 s to every call and answers 429.
+On mainnet the two providers keep each other honest, and one of them alone never makes an `allow`.
+
+- **One head.** The reader takes the lower of their two final heads, which both have, and pins every read to it. A
+  provider cannot pull the check to a height the other has not reached. Heads more than 100 blocks apart (about a
+  minute) are no common head: one provider is stale or one is ahead of the chain, and nothing says which, so the
+  check stops: `rpc_disagree`, `warn`.
+- **One answer.** A provider that answers the same read differently (another balance, another code hash, an account
+  the other says does not exist) stops the check the same way.
+- **Both, or a warning.** A provider that is down, rate-limited or no longer keeps a block sits that read out, and
+  the answer says so: `rpc_single`, `warn`, whichever read it was. A window nobody could read is `warn` too
+  (`history_unavailable`). A provider that went down is not asked again during the same check, so one hung node
+  costs one timeout.
+
+`rpc.mainnet.near.org` is not used: it is deprecated, adds 3 s to every call and answers 429.
 
 ## Signals
 
@@ -73,12 +81,13 @@ names a safe.
 | `code_deployed`, `code_changed` | warn | A contract appeared or its code changed within 24 h | `code_hash` now and 24 h back |
 | `unused_implicit` | warn | An implicit account nobody has used yet | `view_account` → `UNKNOWN_ACCOUNT` on a 64-hex or `0x` id |
 | `chain_unreadable` | warn | No RPC answered: nothing on chain was checked | — |
-| `rpc_disagree` | warn | Mainnet: the two providers gave different answers to the same read; the check stopped there | both providers, the same read at the same block |
+| `rpc_disagree` | warn | Mainnet: the two providers named final heads more than 100 blocks apart, or gave different answers to the same read; the check stopped there | both providers, the same read at the same block |
+| `rpc_single` | warn | Mainnet: some reads came from one provider only, and why the other sat them out | — |
+| `history_unavailable` | warn on mainnet, info on testnet | No node keeps the block from 24 h ago: age and code changes were not checked | — |
 | `arena_withstood` | info | The safe's race ended and nobody drained it | `get(race)` → `refunded` |
 | `account_age`, `contract`, `plain_account` | info | What the account is | `view_account` |
 | `rpc_agree` | info | Mainnet: both providers gave the same answer to every read | — |
-| `rpc_single` | info | Mainnet: some reads came from one provider only, and why the other sat them out | — |
-| `arena_pending`, `arena_unreadable`, `history_unavailable` | info | What could not be read, said plainly | — |
+| `arena_pending`, `arena_unreadable` | info | What could not be read, said plainly | — |
 
 The 24 h point is found on chain: block time is measured over the last 10 000 blocks and the reader steps back that
 many blocks. Regular RPC nodes keep the last few epochs; if none of them still has that block, the answer says so
@@ -159,8 +168,8 @@ an account it has no signal for.
 ### Limits on mainnet
 
 - Two public providers on free plans. Under heavy load one of them rate-limits; the check goes on with the other and
-  says `rpc_single`. Both down: `chain_unreadable`, `warn`, nothing on chain read. A keyed endpoint goes in
-  `MASKCHECK_MAINNET_RPC`.
+  says `rpc_single`, which is a `warn`: while one provider is out, no mainnet account gets an `allow`. Both down:
+  `chain_unreadable`, `warn`, nothing on chain read. A keyed endpoint goes in `MASKCHECK_MAINNET_RPC`.
 - Two providers that agree can still both be wrong; two independent ones lying the same way at the same block is what
   the cross-check makes hard, not impossible.
 - No arena safes on mainnet yet: until season 0 adds them to `list.mainnet.json`, a mainnet check reads existence,

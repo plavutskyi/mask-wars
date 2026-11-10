@@ -88,6 +88,8 @@ jobs:
               - contracts/masks/catalog.json
               - contracts/masks/factory/src/**
               - services/brain/*.json
+              - services/check/deployment.json
+              - services/check/src/lib.rs
             check:
               - *node
               - packages/check/**
@@ -138,6 +140,15 @@ jobs:
               - services/judge-review/**
               - contracts/jobs/**
               - contracts/crews/**
+            # MASK CHECK on OutLayer. `check` above is the package; the module carries the package's two lists and
+            # replays its vectors, so a change to any of them builds and tests the module again.
+            check-module:
+              - *ci
+              - services/check/**
+              - packages/check/list.json
+              - packages/check/list.mainnet.json
+              - packages/check/test/vectors.json
+              - apps/web/public/outlayer/maskwars-check-*.wasm
       - name: The jobs this run needs
         id: pick
         env:
@@ -154,7 +165,9 @@ jobs:
             echo false
           }
           live() { if [ "$LIVE" = true ]; then echo true; else on "$@"; fi; }
-          modules=$(for m in vault judge judge-tests judge-review; do if [ "$(on "$m")" = true ]; then echo "$m"; fi; done | jq -Rnc '[inputs]')
+          # A module's filter carries its name; MASK CHECK's is `check-module`, since `check` is the package's.
+          filter_of() { if [ "$1" = check ]; then echo check-module; else echo "$1"; fi; }
+          modules=$(for m in vault judge judge-tests judge-review check; do if [ "$(on "$(filter_of "$m")")" = true ]; then echo "$m"; fi; done | jq -Rnc '[inputs]')
           {
             echo "typescript=$(on typescript typescript-reads)"
             echo "check=$(live check)"
@@ -360,6 +373,32 @@ jobs:
           there=$("$RUNNER_TEMP/elsewhere/build.sh" | tail -1 | cut -d' ' -f1)
           echo "here $here, elsewhere $there"
           test "$here" = "$there"
+      - name: MASK CHECK again, built in another folder, gives the same bytes
+        if: matrix.module == 'check'
+        run: |
+          there="$RUNNER_TEMP/elsewhere"
+          mkdir -p "$there/services/check" "$there/packages/check"
+          (cd services/check && cp -r src Cargo.toml Cargo.lock rust-toolchain.toml build.rs build.sh manifest.json "$there/services/check/")
+          cp packages/check/list.json packages/check/list.mainnet.json "$there/packages/check/"
+          here=$(sha256sum services/check/target/wasm32-wasip2/release/maskwars-check.wasm | cut -d' ' -f1)
+          again=$("$there/services/check/build.sh" | tail -1 | cut -d' ' -f1)
+          echo "here $here, elsewhere $again"
+          test "$here" = "$again"
+      # The file the site serves and OutLayer fetches is the build of this very commit: its name is the sha256 of
+      # the wasm built above, and its bytes are that wasm. A source change without a new file fails here.
+      - name: The MASK CHECK wasm in the site's folder is this commit's build
+        if: matrix.module == 'check'
+        run: |
+          built=services/check/target/wasm32-wasip2/release/maskwars-check.wasm
+          sha=$(sha256sum "$built" | cut -d' ' -f1)
+          served="apps/web/public/outlayer/maskwars-check-$sha.wasm"
+          ls apps/web/public/outlayer/maskwars-check-*.wasm
+          test -f "$served" || { echo "::error::no $served: run services/check/build.sh and copy the wasm there under its sha256"; exit 1; }
+          cmp "$built" "$served"
+      # A signed answer of the module, checked the way a caller would: with Node and the public key alone.
+      - name: MASK CHECK's signature verifies outside Rust
+        if: matrix.module == 'check'
+        run: node --test services/check/verify.test.mjs
       - name: Fingerprint (the OutLayer version key and the file name on maskwars.xyz)
         run: sha256sum services/${{ matrix.module }}/target/wasm32-wasip2/release/maskwars-${{ matrix.module }}.wasm
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

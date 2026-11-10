@@ -1,12 +1,13 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { Mark } from '../Mark';
-import { Menu, type Place } from './Menu';
+import { Menu, Net, type Place } from './Menu';
 import s from './header.module.css';
 
 /**
  * The top 8 % of every page: the mark, what the race is doing now, LIVE when it is, and one quiet menu. The network
- * rides beside the mark on arena pages only, where every number is read from it.
+ * rides beside the mark only on the pages that live on it, where every number is read from it; when the site has a
+ * sibling on the other network, it is the switch between the two.
  */
 export function Header({
   center,
@@ -28,11 +29,7 @@ export function Header({
         <Mark className={s.mark} />
         <span className={s.word}>Mask Wars</span>
       </Link>
-      {network ? (
-        <span className={s.net} title={`NEAR ${network}`}>
-          {network}
-        </span>
-      ) : null}
+      {network ? <Net network={network} /> : null}
       {center ? <div className={s.center}>{center}</div> : null}
       <div className={s.right}>
         {live ? (
@@ -41,7 +38,7 @@ export function Header({
             Live
           </span>
         ) : null}
-        <Menu here={here} />
+        <Menu here={here} network={network} />
       </div>
     </header>
   );

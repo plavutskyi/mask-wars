@@ -1,0 +1,17 @@
+{
+  "author_secrets": {
+    "profile": "check"
+  },
+  "capabilities": {
+    "network": [
+      { "host": "rpc.mainnet.fastnear.com", "timeout_secs": 10 },
+      { "host": "near.drpc.org", "timeout_secs": 10 },
+      { "host": "archival-rpc.mainnet.fastnear.com", "timeout_secs": 10 },
+      { "host": "rpc.testnet.fastnear.com", "timeout_secs": 10 },
+      { "host": "rpc.testnet.near.org", "timeout_secs": 10 }
+    ]
+  },
+  "display": {
+    "name": "MASK CHECK"
+  }
+}

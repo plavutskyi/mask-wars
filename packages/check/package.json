@@ -14,7 +14,8 @@
     "check": "node --use-env-proxy --disable-warning=UNDICI-EHPA scripts/check.ts",
     "demo": "node --use-env-proxy --disable-warning=UNDICI-EHPA scripts/demo.ts",
     "record": "node --use-env-proxy --disable-warning=UNDICI-EHPA scripts/record.ts",
-    "add-safe": "node --use-env-proxy --disable-warning=UNDICI-EHPA scripts/add-safe.ts"
+    "add-safe": "node --use-env-proxy --disable-warning=UNDICI-EHPA scripts/add-safe.ts",
+    "vectors": "node scripts/vectors.ts"
   },
   "dependencies": {
     "@maskwars/network": "workspace:*",

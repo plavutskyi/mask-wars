@@ -76,6 +76,49 @@ export function maskName(m: Mask | null | undefined, max = 22): string {
 /** A mask named by its whole account: the screen sets it in the narrow cut and lets it take two lines, never cut. */
 export const longName = (m: Mask): boolean => m.name === m.account && m.account.length > 10;
 
+/**
+ * The cut of the face a name is set in so it stands whole in a narrow card: the full width up to 10 letters, then
+ * narrower along the width axis, never a smaller size and never an ellipsis (BRANDBOOK §4). A person's mask has up to
+ * 16 letters.
+ */
+export function nameFit(name: string): 'wide' | 'mid' | 'narrow' {
+  return name.length <= 10 ? 'wide' : name.length <= 13 ? 'mid' : 'narrow';
+}
+
+/**
+ * The methods a revealed drain plan calls, in order, or `null` when the content is not such a plan. A plan is what the
+ * mask sealed: a JSON list of calls on the safe, `[{"method":"set_owner","args":{…}}, …]`.
+ */
+export function planCalls(content: string | null | undefined): string[] | null {
+  if (!content || content[0] !== '[') return null;
+  let list: unknown;
+  try {
+    list = JSON.parse(content);
+  } catch {
+    return null;
+  }
+  if (!Array.isArray(list) || list.length === 0) return null;
+  const methods: string[] = [];
+  for (const call of list) {
+    const method = call && typeof call === 'object' ? (call as { method?: unknown }).method : null;
+    if (typeof method !== 'string' || !/^[A-Za-z_][A-Za-z0-9_]{0,63}$/.test(method)) return null;
+    methods.push(method);
+  }
+  return methods;
+}
+
+/** How many of a plan's calls the course names before it says how many more there are. */
+export const PLAN_SHOWN = 4;
+
+/** A revealed plan in one line a person reads: `set_owner, then sweep`. The plan itself stays behind the step's «i». */
+export function planLine(content: string | null | undefined): string | null {
+  const methods = planCalls(content);
+  if (!methods) return null;
+  const shown = methods.slice(0, PLAN_SHOWN);
+  const more = methods.length - shown.length;
+  return `${shown.join(', then ')}${more > 0 ? `, and ${more} more` : ''}`;
+}
+
 /** The art of one of the arena's masks; any other mask shows the mark it is cut from. */
 export function maskArt(m: Mask): string | null {
   return m.slug && ['nova', 'onyx', 'oracle'].includes(m.slug) ? `/art/${m.slug}.webp` : null;

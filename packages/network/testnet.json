@@ -15,6 +15,12 @@
     "ONYX": "onyx.tinygif8324.testnet",
     "ORACLE": "oracle.tinygif8324.testnet"
   },
+  "sections": {
+    "arena": true,
+    "season": true,
+    "forge": false,
+    "jobs": true
+  },
   "outlayer": {
     "contract": "outlayer.testnet",
     "api": "https://testnet-api.outlayer.ai"

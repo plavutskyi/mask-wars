@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { NETWORKS, bountyContracts, networkOf, onNetwork, parseNetwork, teams, yocto, type NetworkId } from "../src/index.ts";
+import { NETWORKS, SECTIONS, bountyContracts, networkOf, onNetwork, otherNetwork, parseNetwork, teams, whereIs, yocto, type NetworkId } from "../src/index.ts";
 
 const NEAR = 10n ** 24n;
 /** What the season treasury's `min_prize(masks)` asks of a round's bounty: storage and reserve, and 0.1 NEAR left. */
@@ -62,6 +62,78 @@ describe("the two networks", () => {
     expect(() => yocto("1e3")).toThrow();
     expect(onNetwork("mainnet", "0e6879a4be880000000000000000000000000000000000000000000000000000")).toBe(true);
     expect(onNetwork("mainnet", "nova.tinygif8324.testnet")).toBe(false);
+  });
+});
+
+// What is on chain where is written once, in packages/network/<network>.json: the site reads it to show a part on its
+// own network and to send a visitor to the other network for a part that is only there.
+describe("which parts are on chain on which network", () => {
+  const raw = (net: NetworkId) => JSON.parse(readFileSync(new URL(`../${net}.json`, import.meta.url), "utf8"));
+
+  it("mainnet has the arena; the season, the forge and the jobs are not there yet", () => {
+    expect(NETWORKS.mainnet.sections).toEqual({ arena: true, season: false, forge: false, jobs: false });
+  });
+
+  it("testnet has the arena, the season and the jobs market; the factory of people's masks is not on chain yet", () => {
+    expect(NETWORKS.testnet.sections).toEqual({ arena: true, season: true, forge: false, jobs: true });
+  });
+
+  it("every part is stated on every network, as true or false, and nothing else is", () => {
+    for (const net of ["testnet", "mainnet"] as const) expect(Object.keys(NETWORKS[net].sections).sort()).toEqual([...SECTIONS].sort());
+    const m = raw("mainnet");
+    const { sections: _, ...none } = m;
+    expect(() => parseNetwork(none)).toThrow("sections");
+    const { jobs: __, ...three } = m.sections;
+    expect(() => parseNetwork({ ...m, sections: three })).toThrow("sections.jobs: true or false");
+    expect(() => parseNetwork({ ...m, sections: { ...m.sections, forge: "yes" } })).toThrow("sections.forge: true or false");
+    expect(() => parseNetwork({ ...m, sections: { ...m.sections, casino: true } })).toThrow("sections.casino");
+  });
+
+  // The rule, on a picture written out here: the files above change as parts go on chain, the rule does not.
+  it("a part is found on the asking network first, then on the other, then nowhere", () => {
+    expect(otherNetwork("mainnet")).toBe("testnet");
+    expect(otherNetwork("testnet")).toBe("mainnet");
+    const picture = {
+      mainnet: { sections: { arena: true, season: false, forge: false, jobs: false } },
+      testnet: { sections: { arena: true, season: true, forge: false, jobs: true } },
+    };
+    // On both: each network answers for itself.
+    for (const from of ["testnet", "mainnet"] as const) expect(whereIs("arena", from, picture)).toBe(from);
+    // On one only: found there from either side.
+    for (const part of ["season", "jobs"] as const) {
+      expect(whereIs(part, "mainnet", picture)).toBe("testnet");
+      expect(whereIs(part, "testnet", picture)).toBe("testnet");
+    }
+    // On chain nowhere: no network to send a visitor to, from either side.
+    expect(whereIs("forge", "mainnet", picture)).toBeNull();
+    expect(whereIs("forge", "testnet", picture)).toBeNull();
+    // The other way round: a part only mainnet has is found on mainnet.
+    const turned = { mainnet: picture.testnet, testnet: picture.mainnet };
+    expect(whereIs("jobs", "testnet", turned)).toBe("mainnet");
+    expect(whereIs("jobs", "mainnet", turned)).toBe("mainnet");
+  });
+
+  it("putting a part on chain is one word in the network's file, on either network", () => {
+    for (const net of ["testnet", "mainnet"] as const) {
+      const other = otherNetwork(net);
+      for (const part of SECTIONS) {
+        const file = raw(net);
+        const after = { ...NETWORKS, [net]: parseNetwork({ ...file, sections: { ...file.sections, [part]: true } }) } as typeof NETWORKS;
+        expect(whereIs(part, net, after), `${part} on ${net}`).toBe(net);
+        // Seen from the other network it is there, unless that network has the part itself.
+        expect(whereIs(part, other, after), `${part} from ${other}`).toBe(NETWORKS[other].sections[part] ? other : net);
+      }
+    }
+  });
+
+  it("without a default, the files themselves answer", () => {
+    for (const part of SECTIONS) {
+      for (const from of ["testnet", "mainnet"] as const) {
+        const other = otherNetwork(from);
+        const expected = NETWORKS[from].sections[part] ? from : NETWORKS[other].sections[part] ? other : null;
+        expect(whereIs(part, from), `${part} from ${from}`).toBe(expected);
+      }
+    }
   });
 });
 

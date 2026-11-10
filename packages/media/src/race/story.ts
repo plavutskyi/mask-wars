@@ -53,7 +53,7 @@ type Told = {
   no: number;
   /** `RACE 3`, `SEASON 1 · ROUND 1`, `EXAMPLE ROUND`: the line over every card and scene. */
   title: string;
-  /** The title and the network: `RACE 3 · NEAR TESTNET`, `SEASON 1 · ROUND 1 · TESTNET`. */
+  /** The title and the network: `RACE 5 · TESTNET`, `RACE 1 · NEAR MAINNET`, `SEASON 1 · ROUND 1 · TESTNET`. */
   kicker: string;
   /** In a sentence: `race 3`, `round 1`, `the example round`. */
   name: string;
@@ -226,7 +226,7 @@ export function raceStory(input: unknown): RaceStory {
     round: of?.round ?? null,
     ...called,
     // The amount under this line already says NEAR, so the network takes one word.
-    kicker: `${called.title} · ${r.network === "testnet" ? "TESTNET" : "NEAR"}`,
+    kicker: `${called.title} · ${r.network === "testnet" ? "TESTNET" : "NEAR MAINNET"}`,
     safe: nearShort(r.safe),
     sealMinutes: s.minutes,
     seals: s.seals.length,

@@ -278,6 +278,26 @@
   color: var(--ice-60);
 }
 
+/* The one tool a person can try without an agent. */
+.try {
+  white-space: nowrap;
+  color: var(--ice);
+  text-decoration: underline;
+  text-decoration-color: var(--ice-38);
+  text-underline-offset: 3px;
+}
+
+.try:focus-visible {
+  outline: 2px solid var(--ice);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .try:hover {
+    text-decoration-color: var(--ice);
+  }
+}
+
 .note {
   margin-top: -8px;
   font-size: 13px;
