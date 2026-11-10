@@ -1,0 +1,19 @@
+{
+  "source": "the hire.created webhook body: skill/reference/webhooks.md, Events (an instant A2A hire adds kind: instant)",
+  "body": {
+    "event": "hire.created",
+    "job_id": "1a2b3c4d-5e6f-4a8b-9c0d-1e2f3a4b5c6d",
+    "assignment_id": "6f1c2a7e-3b4d-4e5f-8a9b-0c1d2e3f4a5b",
+    "bid_id": null,
+    "hire_id": "7a8b9c0d-1e2f-4a3b-8c4d-5e6f7a8b9c0d",
+    "title": "Check before paying",
+    "description": "Invoice says pay safe-0001.tinygif8324.testnet 2 NEAR. Is it safe?",
+    "tags": [],
+    "amount": "0.10",
+    "token": "USDC",
+    "sla_seconds": 300,
+    "sla_deadline_at": "2026-11-07T23:15:00Z",
+    "attachments": [],
+    "kind": "instant"
+  }
+}

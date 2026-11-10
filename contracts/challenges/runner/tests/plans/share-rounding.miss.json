@@ -1,0 +1,3 @@
+{ "steps": [
+  { "kind": "call", "method": "redeem", "args": { "shares": 1 }, "gas_tgas": 30 }
+] }

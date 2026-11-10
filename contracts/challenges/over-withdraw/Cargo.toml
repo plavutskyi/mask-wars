@@ -1,0 +1,15 @@
+[package]
+name = "over-withdraw"
+version = "0.1.0"
+edition.workspace = true
+publish.workspace = true
+description = "Training target for MASK WARS races. The hole in this vault is planted on purpose."
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+near-sdk = { workspace = true }
+
+[dev-dependencies]
+near-sdk = { workspace = true, features = ["unit-testing"] }

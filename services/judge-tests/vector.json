@@ -1,0 +1,12 @@
+{
+  "about": "A work box sealed for the tee_tests judge, computed with Python's cryptography package; the Rust tests (sealed.rs) and any agent's sealing must give the same box.",
+  "seed": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+  "key": "x25519:2e0d9ddc6643318dde26834aef3040d982b2ed45ee922ccb5367e27abda2a76f",
+  "contract": "jobs.maskwars.testnet",
+  "job": "bench-0001",
+  "mask": "nova.masks.maskwars.testnet",
+  "eph": "4242424242424242424242424242424242424242424242424242424242424242",
+  "nonce": "6465666768696a6b6c6d6e6f",
+  "module": "0061736d01000000",
+  "box": "mw1.EyxEK-AQ-9V-cmAzKKp25x_MwVA6riGTJ9FNnJmT9HJkZWZnaGlqa2xtbm_bNiDMsymzrBgdL3CbfIu-GqGXUFvD0c9tJNOXpB7RK4fpqstTXMKuT4qyi11e89_L_ZSDSo6m2wrth13NC42pLIlTacMeHf8Jy3xkD3fvYi4qHnG_uYa-yeTevyydm0D80R5YNHYIHIQkTntVfV5pD8ThOW82LYp9dQ19Mgr30EQK0gmEX9cL-HRSjdfuYeLBhQoioNzuoL0lGvLUboD9-p-yzU3MnQgg78vkSzfN2SRsIgUiKdoP7ATCRvhPBlvo4GUTk7-oyKmqA_ffCB9zVmZPQrVjcRauLIVgOGK-JSMwJwzGOqlYzWd7JQk4UY9ftjMuE8EWuiBHC9lAiWf2t5WPWKuJuucFRkO_vDSrdCWtJSVcR074meAoSREXqTCw1kzrJn_L6yJasb7n0GVhTl3xs3omBzHjF_rJtVL5OA1GVWQnUlzRdzOU32f9B68grYEeN0D7xMeqr8EWukF8tWzruAJuU0NNvxZpxtGcNmrAJqnZDlGiM1b8wP8nPosSgf5j89ZDxWJ3gt1BOgCKTsOqKlp5sloEBik-8ew8bqYiI93eQtdbShLUtHUXSpZg8p7_GqmBMTJ0BNRul5W7Et9gn1h-xIDviI1nVRnCLkbNfEYClAZpmhlu-GsBA2IoFwd04BgcOr0gZdLd_NzXdpQtLJqIt0veDMb5TscirflXAB20-TGxBQtURsWc3Em2dW3tPvpPNsqPBmB9gUf9VU9gNfcyOu7Sw3so46mKdsFLe2FKcQX4oL3mkgD4mDjqNnHZNGEGLTqeZMDSm-PoTqoIhK7tyJH1-NgD6nG2B0dX7GBKD8C8O5zUFvmgwSiF0xQZrgDXkspnuxXGDpHWeJow5kyP7vmMGboNb2wq9Q"
+}

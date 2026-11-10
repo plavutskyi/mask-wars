@@ -1,0 +1,51 @@
+{
+  "id": "mainnet",
+  "admin": "maskwars.near",
+  "bounty": "bounty.maskwars.near",
+  "older_bounty": [],
+  "season": "season.maskwars.near",
+  "scheduler": "scheduler.maskwars.near",
+  "factory": "masks.maskwars.near",
+  "jobs": "jobs.maskwars.near",
+  "crews": "crews.maskwars.near",
+  "masks": {
+    "NOVA": "nova.maskwars.near",
+    "ONYX": "onyx.maskwars.near",
+    "ORACLE": "oracle.maskwars.near"
+  },
+  "outlayer": {
+    "contract": "outlayer.near",
+    "api": "https://api.outlayer.ai"
+  },
+  "rpc": [
+    "https://rpc.mainnet.fastnear.com",
+    "https://near.drpc.org"
+  ],
+  "indexer": "https://tx.main.fastnear.com",
+  "explorer": "https://nearblocks.io",
+  "fund": {
+    "bounty": "5",
+    "season": "4",
+    "factory": "10",
+    "scheduler": "2",
+    "mask": "0.5",
+    "safe": "2.2",
+    "jobs": "10",
+    "crews": "5"
+  },
+  "limits": {
+    "season": {
+      "max_prize": "1",
+      "max_safe_fund": "2",
+      "max_per_day": 1
+    },
+    "hand": {
+      "deposit_max": "1.1",
+      "safe_max": "2.5"
+    },
+    "fund_max": "10",
+    "fuel_max": "2",
+    "pay_usd_max": 100,
+    "hire_usd_max": 250
+  }
+}

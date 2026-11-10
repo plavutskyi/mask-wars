@@ -1,0 +1,3 @@
+{ "steps": [
+  { "kind": "call", "method": "withdraw_exits", "args": {}, "gas_tgas": 30 }
+] }

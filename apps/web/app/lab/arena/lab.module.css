@@ -1,0 +1,89 @@
+/* Lab only: a switch for the states and a mock of the page's own interface over the arena. */
+
+.screen {
+  position: relative;
+  height: 100svh;
+  min-height: 480px;
+  background: var(--ink);
+}
+
+.head {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 3;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  padding: 0 clamp(16px, 4.4vw, 64px);
+  pointer-events: none;
+}
+
+.mark {
+  width: 24px;
+  height: 28px;
+  background: var(--ice);
+  clip-path: polygon(19.6% 0, 50% 31%, 80.4% 0, 93.3% 33.9%, 57.5% 55.4%, 57.5% 63.9%, 89.2% 45%, 68.3% 100%, 50% 81.4%, 31.7% 100%, 10.8% 45%, 42.5% 63.9%, 42.5% 55.4%, 6.7% 33.9%);
+}
+
+.deck {
+  position: absolute;
+  inset: auto 0 0;
+  z-index: 3;
+  display: flex;
+  justify-content: center;
+  padding: 24px 16px calc(28px + env(safe-area-inset-bottom));
+  pointer-events: none;
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: min(380px, 100%);
+  height: 68px;
+  border-radius: var(--radius);
+  background: var(--ice);
+  color: var(--ink);
+  font-family: var(--font-word);
+  font-weight: 800;
+  font-stretch: 125%;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 15px;
+}
+
+.panel {
+  position: fixed;
+  left: 12px;
+  top: 12px;
+  z-index: 10;
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+  max-width: calc(100vw - 24px);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--ink-2) 88%, transparent);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.chip {
+  min-height: 32px;
+  padding: 0 10px;
+  border-radius: var(--radius);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ice-60);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.chip[aria-pressed='true'] {
+  color: var(--ink);
+  background: var(--ice);
+}

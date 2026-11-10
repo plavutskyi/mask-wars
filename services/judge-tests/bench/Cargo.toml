@@ -1,0 +1,13 @@
+[package]
+name = "judge-tests-bench"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+publish = false
+description = "The judge's work runner built for a bare Wasm host, so the sandbox can count what a test set costs in host instructions."
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+maskwars-judge-tests = { path = ".." }

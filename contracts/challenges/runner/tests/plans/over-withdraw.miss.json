@@ -1,0 +1,6 @@
+{
+  "steps": [
+    { "kind": "call", "method": "deposit", "deposit": "1000000000000000000000000", "gas_tgas": 30 },
+    { "kind": "call", "method": "withdraw", "args": { "amount": "1000000000000000000000000" }, "gas_tgas": 30 }
+  ]
+}

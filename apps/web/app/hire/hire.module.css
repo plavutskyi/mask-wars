@@ -1,0 +1,497 @@
+/* Hire the swarm, for builders: the name, the swarm on the arena floor, the real button, and the one line to paste.
+   BRANDBOOK §1, §3, §4, §8, §9. Tokens only. */
+
+.screen {
+  --gut: clamp(16px, 4.4vw, 64px);
+  position: relative;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  isolation: isolate;
+  overflow: clip;
+  background: var(--ink);
+}
+
+.screen ::selection {
+  background: var(--ice);
+  color: var(--ink);
+}
+
+.word {
+  font-family: var(--font-word);
+  font-weight: 800;
+  font-stretch: 125%;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+}
+
+.grow {
+  flex: 1;
+}
+
+.world {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+}
+
+.worldImg {
+  object-fit: cover;
+  object-position: center 64.5%;
+  opacity: 0.55;
+}
+
+/* Stage: the words and the button on the left, the swarm standing on the floor on the right. */
+
+.stage {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  column-gap: clamp(24px, 4vw, 80px);
+  width: 100%;
+  max-width: 1312px;
+  margin: 0 auto;
+  padding: calc(64px + env(safe-area-inset-top) + 16px) var(--gut) 24px;
+}
+
+.copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 24px;
+  min-width: 0;
+}
+
+/* Three words, three lines on a desk; two lines where the stage stacks. */
+.title {
+  font-size: clamp(34px, 5.6vw, 84px);
+  line-height: 0.94;
+}
+
+.title span {
+  display: block;
+}
+
+.lede {
+  max-width: 28em;
+  font-size: 17px;
+  line-height: 1.45;
+  color: var(--ice-60);
+  text-wrap: pretty;
+}
+
+/* The real element, at the brand's full button height: its shadow root takes the size through its part. */
+.try {
+  padding-top: 4px;
+}
+
+.try mask-wars-hire::part(button) {
+  height: 68px;
+  padding: 0 26px;
+  font-size: 15px;
+}
+
+/* Here the site's own faces are loaded already. */
+.try mask-wars-hire::part(label) {
+  font-family: var(--font-word);
+}
+
+.try mask-wars-hire::part(amount) {
+  font-family: var(--font-num);
+  font-size: 22px;
+}
+
+.swarm {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  height: min(46svh, 420px);
+  pointer-events: none;
+}
+
+.maskBox {
+  position: relative;
+  height: 100%;
+  aspect-ratio: 1;
+  margin: 0 -15%;
+  /* On the box, which is its own stacking context: the art's black melts into the arena. */
+  mix-blend-mode: lighten;
+}
+
+.maskBox[data-i='0'],
+.maskBox[data-i='2'] {
+  height: 78%;
+  margin-bottom: 3%;
+  opacity: 0.7;
+}
+
+.maskBox[data-i='1'] {
+  z-index: 1;
+}
+
+.maskImg {
+  object-fit: contain;
+}
+
+/* How the money goes: four stops on one line, one large word each, on their own dark plate so the arena floor's
+   reflections never sit behind the words. The explanation is behind «i». */
+
+.flow {
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 600px;
+  padding-top: 8px;
+}
+
+.flowTop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+}
+
+.flowLabel {
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  color: var(--ice);
+}
+
+.info {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin: 0 -10px;
+  font-family: var(--font-num);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ice-60);
+  transition: color 160ms;
+}
+
+.info::before {
+  content: '';
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+
+.info[aria-expanded='true'] {
+  color: var(--ice);
+}
+
+.stops {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-radius: var(--radius);
+  background: rgba(6, 5, 12, 0.86);
+  box-shadow: inset 0 0 0 1px var(--line);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Each stop: its number, then its word, the route running left to right. */
+.stop {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px 16px 20px;
+}
+
+.stop + .stop {
+  box-shadow: inset 1px 0 0 var(--line);
+}
+
+.stopNum {
+  font-family: var(--font-num);
+  font-size: 15px;
+  font-weight: 800;
+  font-stretch: 125%;
+  line-height: 1;
+  color: var(--ice-60);
+}
+
+.stop:last-child .stopNum {
+  color: var(--money);
+}
+
+.stopWord {
+  font-size: 16px;
+  line-height: 1.15;
+  letter-spacing: 0.04em;
+  color: var(--ice);
+  overflow-wrap: anywhere;
+}
+
+/* Opened with «i»: the four stops stand in a column, each word with its one line beside it. */
+.stops[data-open] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.stops[data-open] .stop {
+  display: grid;
+  grid-template-columns: 28px 132px minmax(0, 1fr);
+  align-items: baseline;
+  column-gap: 12px;
+  padding: 16px 18px;
+}
+
+.stops[data-open] .stop + .stop {
+  box-shadow: inset 0 1px 0 var(--line);
+}
+
+.stopLine {
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--ice);
+  text-wrap: pretty;
+}
+
+/* Whether deposit addresses are open yet, under the four lines. */
+.flowNote {
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--ice-60);
+}
+
+/* Narrower than about 540 px: two rows of two, so every word stays whole and large. */
+@container (max-width: 539px) {
+  .stops:not([data-open]) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .stops[data-open] .stop {
+    grid-template-columns: 28px minmax(0, 1fr);
+    row-gap: 6px;
+  }
+  .stops[data-open] .stopLine {
+    grid-column: 2;
+  }
+  .stops:not([data-open]) .stop:nth-child(3) {
+    box-shadow: inset 0 1px 0 var(--line);
+  }
+  .stops:not([data-open]) .stop:nth-child(4) {
+    box-shadow:
+      inset 1px 0 0 var(--line),
+      inset 0 1px 0 var(--line);
+  }
+}
+
+/* The band: the one line to paste and the button that copies it. */
+
+.band {
+  position: relative;
+  flex: none;
+  padding: 24px var(--gut) calc(32px + env(safe-area-inset-bottom));
+}
+
+.band::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: -20% 0 0;
+  background: linear-gradient(to bottom, transparent, var(--ink) 38%);
+  pointer-events: none;
+}
+
+.embed {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 1184px;
+  margin: 0 auto;
+}
+
+.embedTop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+}
+
+.embedLabel {
+  font-size: 15px;
+  letter-spacing: 0.08em;
+}
+
+.tabs {
+  display: flex;
+}
+
+.tab {
+  min-width: 88px;
+  min-height: 44px;
+  padding: 0 12px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--ice-60);
+  box-shadow: inset 0 -2px 0 transparent;
+  transition:
+    color 160ms,
+    box-shadow 160ms;
+}
+
+.tab[aria-selected='true'] {
+  color: var(--ice);
+  box-shadow: inset 0 -2px 0 var(--ice);
+}
+
+.embedRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 240px;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.code {
+  display: flex;
+  align-items: center;
+  min-height: 68px;
+  padding: 14px 20px;
+  border-radius: var(--radius);
+  background: var(--ink-2);
+  box-shadow: inset 0 0 0 1px var(--line);
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ice);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 68px;
+  border-radius: var(--radius);
+  background: var(--ice);
+  color: var(--ink);
+  font-size: 15px;
+  transition:
+    transform 100ms cubic-bezier(0.2, 0, 0, 1),
+    opacity 240ms;
+}
+
+.btn .word {
+  letter-spacing: 0.06em;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.embedNote {
+  min-height: 20px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--ice-60);
+  text-wrap: pretty;
+}
+
+.tab:focus-visible,
+.btn:focus-visible,
+.info:focus-visible {
+  outline: 2px solid var(--ice);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .btn:hover {
+    opacity: 0.9;
+  }
+  .tab:hover,
+  .info:hover {
+    color: var(--ice);
+  }
+}
+
+/* Narrower desks: the swarm above the words, the route in two rows. */
+@media (max-width: 1000px) {
+  .stage {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 8px;
+    max-width: 680px;
+  }
+  .swarm {
+    order: -1;
+    height: min(34svh, 340px);
+  }
+}
+
+@media (max-width: 760px) {
+  .stage {
+    padding-top: calc(64px + env(safe-area-inset-top));
+    padding-bottom: 8px;
+  }
+  .copy {
+    gap: 18px;
+  }
+  .title {
+    font-size: clamp(32px, 10vw, 56px);
+  }
+  .title span:not(:first-child) {
+    display: inline;
+  }
+  .lede {
+    font-size: 15px;
+  }
+  .swarm {
+    height: min(30svh, 260px);
+    margin: 0 calc(-1 * var(--gut));
+  }
+  .maskBox {
+    margin: 0 -14%;
+  }
+  .try {
+    align-self: stretch;
+  }
+  .try mask-wars-hire {
+    display: block;
+  }
+  .try mask-wars-hire::part(button) {
+    width: 100%;
+    height: 68px;
+    justify-content: center;
+    font-size: 13px;
+  }
+  .band {
+    padding-top: 16px;
+  }
+  .embedRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .code {
+    padding: 14px 16px;
+    font-size: 13px;
+  }
+  .btn {
+    min-height: 68px;
+    font-size: 13px;
+  }
+  .embedLabel {
+    font-size: 13px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .tab {
+    transition: opacity 200ms;
+  }
+  .btn:active {
+    transform: none;
+  }
+}

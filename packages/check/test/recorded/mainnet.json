@@ -1,0 +1,619 @@
+{
+ "network": "mainnet",
+ "recorded_at": "2026-11-08T23:30:45.810Z",
+ "about": "What NEAR mainnet RPC answered MASK CHECK about 4 real accounts, recorded by scripts/record.ts. Block answers keep the header fields the reader reads; chunks are dropped.",
+ "endpoints": [
+  "https://rpc.mainnet.fastnear.com",
+  "https://near.drpc.org"
+ ],
+ "checks": [
+  {
+   "account": "intents.near",
+   "verdict": "allow",
+   "codes": [
+    "account_age",
+    "contract",
+    "rpc_agree"
+   ]
+  },
+  {
+   "account": "usdt.tether-token.near",
+   "verdict": "allow",
+   "codes": [
+    "account_age",
+    "contract",
+    "rpc_agree"
+   ]
+  },
+  {
+   "account": "treasury.intents.near",
+   "verdict": "block",
+   "codes": [
+    "no_account",
+    "rpc_agree"
+   ]
+  },
+  {
+   "account": "be330f9965ff38d722a9ddfa3dafb4435308677b95906023165cfda10bb66925",
+   "verdict": "warn",
+   "codes": [
+    "unused_implicit",
+    "rpc_agree"
+   ]
+  }
+ ],
+ "exchanges": [
+  {
+   "url": "https://rpc.mainnet.fastnear.com",
+   "method": "block",
+   "params": {
+    "finality": "final"
+   },
+   "status": 200,
+   "response": {
+    "jsonrpc": "2.0",
+    "result": {
+     "author": "d1.poolv1.near",
+     "header": {
+      "height": 223685290,
+      "prev_height": 223685289,
+      "hash": "2oJxC9Sf5iFU9Nj4rHQneWw6VTHXfneHyTg1Mm85ogw4",
+      "prev_hash": "AiSMeWwuRkidPuuafkAoYWBSVCdEkLytLCHmoHuq7b2b",
+      "timestamp": 1794180643970702800,
+      "timestamp_nanosec": "1794180643970702803",
+      "epoch_id": "BD24398sDGkWo6zp7kwmZY9hKYG4cmQiwpjqhgKRMYR8"
+     },
+     "chunks": []
+    },
+    "id": "maskwars-check"
+   }
+  },
+  {
+   "url": "https://near.drpc.org",
+   "method": "block",
+   "params": {
+    "finality": "final"
+   },
+   "status": 200,
+   "response": {
+    "id": "maskwars-check",
+    "jsonrpc": "2.0",
+    "result": {
+     "author": "d1.poolv1.near",
+     "header": {
+      "height": 223685290,
+      "prev_height": 223685289,
+      "hash": "2oJxC9Sf5iFU9Nj4rHQneWw6VTHXfneHyTg1Mm85ogw4",
+      "prev_hash": "AiSMeWwuRkidPuuafkAoYWBSVCdEkLytLCHmoHuq7b2b",
+      "timestamp": 1794180643970702800,
+      "timestamp_nanosec": "1794180643970702803",
+      "epoch_id": "BD24398sDGkWo6zp7kwmZY9hKYG4cmQiwpjqhgKRMYR8"
+     },
+     "chunks": []
+    }
+   }
+  },
+  {
+   "url": "https://rpc.mainnet.fastnear.com",
+   "method": "block",
+   "params": {
+    "block_id": 223685290
+   },
+   "status": 200,
+   "response": {
+    "jsonrpc": "2.0",
+    "result": {
+     "author": "d1.poolv1.near",
+     "header": {
+      "height": 223685290,
+      "prev_height": 223685289,
+      "hash": "2oJxC9Sf5iFU9Nj4rHQneWw6VTHXfneHyTg1Mm85ogw4",
+      "prev_hash": "AiSMeWwuRkidPuuafkAoYWBSVCdEkLytLCHmoHuq7b2b",
+      "timestamp": 1794180643970702800,
+      "timestamp_nanosec": "1794180643970702803",
+      "epoch_id": "BD24398sDGkWo6zp7kwmZY9hKYG4cmQiwpjqhgKRMYR8"
+     },
+     "chunks": []
+    },
+    "id": "maskwars-check"
+   }
+  },
+  {
+   "url": "https://near.drpc.org",
+   "method": "block",
+   "params": {
+    "block_id": 223685290
+   },
+   "status": 200,
+   "response": {
+    "id": "maskwars-check",
+    "jsonrpc": "2.0",
+    "result": {
+     "author": "d1.poolv1.near",
+     "header": {
+      "height": 223685290,
+      "prev_height": 223685289,
+      "hash": "2oJxC9Sf5iFU9Nj4rHQneWw6VTHXfneHyTg1Mm85ogw4",
+      "prev_hash": "AiSMeWwuRkidPuuafkAoYWBSVCdEkLytLCHmoHuq7b2b",
+      "timestamp": 1794180643970702800,
+      "timestamp_nanosec": "1794180643970702803",
+      "epoch_id": "BD24398sDGkWo6zp7kwmZY9hKYG4cmQiwpjqhgKRMYR8"
+     },
+     "chunks": []
+    }
+   }
+  },
+  {
+   "url": "https://rpc.mainnet.fastnear.com",
+   "method": "query",
+   "params": {
+    "request_type": "view_account",
+    "account_id": "intents.near",
+    "block_id": 223685290
+   },
+   "status": 200,
+   "response": {
+    "jsonrpc": "2.0",
+    "result": {
+     "amount": "135539105647350216050407114122",
+     "block_hash": "2oJxC9Sf5iFU9Nj4rHQneWw6VTHXfneHyTg1Mm85ogw4",
+     "block_height": 223685290,
+     "code_hash": "BtA1BEFNS619KkvXFsgcpQ21Tb5yMm32aaUkn7xNothk",
+     "locked": "0",
+     "storage_paid_at": 0,
+     "storage_usage": 13485566489
+    },
+    "id": "maskwars-check"
+   }
+  },
+  {
+   "url": "https://near.drpc.org",
+   "method": "query",
+   "params": {
+    "request_type": "view_account",
+    "account_id": "intents.near",
+    "block_id": 223685290
+   },
+   "status": 200,
+   "response": {
+    "id": "maskwars-check",
+    "jsonrpc": "2.0",
+    "result": {
+     "amount": "135539105647350216050407114122",
+     "block_hash": "2oJxC9Sf5iFU9Nj4rHQneWw6VTHXfneHyTg1Mm85ogw4",
+     "block_height": 223685290,
+     "code_hash": "BtA1BEFNS619KkvXFsgcpQ21Tb5yMm32aaUkn7xNothk",
+     "locked": "0",
+     "storage_paid_at": 0,
+     "storage_usage": 13485566489
+    }
+   }
+  },
+  {
+   "url": "https://rpc.mainnet.fastnear.com",
+   "method": "block",
+   "params": {
+    "block_id": 223675290
+   },
+   "status": 200,
+   "response": {
+    "jsonrpc": "2.0",
+    "result": {
+     "author": "optimusvalidatornetwork.poolv1.near",
+     "header": {
+      "height": 223675290,
+      "prev_height": 223675289,
+      "hash": "CMXWt6JjsoSqgP4FZmywWFYWwT1Ednerb8oTPvpN2wJH",
+      "prev_hash": "9eWVsngza8rDuau8BjSJVs2uua11nqspGMjoXKpzEUNs",
+      "timestamp": 1794174889379812900,
+      "timestamp_nanosec": "1794174889379812897",
+      "epoch_id": "BD24398sDGkWo6zp7kwmZY9hKYG4cmQiwpjqhgKRMYR8"
+     },
+     "chunks": []
+    },
+    "id": "maskwars-check"
+   }
+  },
+  {
+   "url": "https://near.drpc.org",
+   "method": "block",
+   "params": {
+    "block_id": 223675290
+   },
+   "status": 200,
+   "response": {
+    "id": "maskwars-check",
+    "jsonrpc": "2.0",
+    "result": {
+     "author": "optimusvalidatornetwork.poolv1.near",
+     "header": {
+      "height": 223675290,
+      "prev_height": 223675289,
+      "hash": "CMXWt6JjsoSqgP4FZmywWFYWwT1Ednerb8oTPvpN2wJH",
+      "prev_hash": "9eWVsngza8rDuau8BjSJVs2uua11nqspGMjoXKpzEUNs",
+      "timestamp": 1794174889379812900,
+      "timestamp_nanosec": "1794174889379812897",
+      "epoch_id": "BD24398sDGkWo6zp7kwmZY9hKYG4cmQiwpjqhgKRMYR8"
+     },
+     "chunks": []
+    }
+   }
+  },
+  {
+   "url": "https://rpc.mainnet.fastnear.com",
+   "method": "block",
+   "params": {
+    "block_id": 223535149
+   },
+   "status": 422,
+   "response": {
+    "jsonrpc": "2.0",
+    "error": {
+     "name": "HANDLER_ERROR",
+     "cause": {
+      "info": {},
+      "name": "UNKNOWN_BLOCK"
+     },
+     "code": -32000,
+     "message": "Server error",
+     "data": "DB Not Found Error: BLOCK: KTrrbamVYdazvgpof3gGgt8WDQkZq1rsgSQqbzJrsTf \n Cause: Unknown"
+    },
+    "id": "maskwars-check"
+   }
+  },
+  {
+   "url": "https://near.drpc.org",
+   "method": "block",
+   "params": {
+    "block_id": 223535149
+   },
+   "status": 200,
+   "response": {
+    "id": "maskwars-check",
+    "jsonrpc": "2.0",
+    "result": {
+     "author": "astro-stakers.poolv1.near",
+     "header": {
+      "height": 223535149,
+      "prev_height": 223535148,
+      "hash": "KTrrbamVYdazvgpof3gGgt8WDQkZq1rsgSQqbzJrsTf",
+      "prev_hash": "ExyLjxYKSNko5yUMi8Jc1xLCbqJCbPxbPVJQrGrqtZtK",
+      "timestamp": 1794094763448564500,
+      "timestamp_nanosec": "1794094763448564517",
+      "epoch_id": "CQAuGMji7m36jbXEoy3SdYozZroAEnU9wz8h7WE4n2nn"
+     },
+     "chunks": []
+    }
+   }
+  },
+  {
+   "url": "https://archival-rpc.mainnet.fastnear.com",
+   "method": "block",
+   "params": {
+    "block_id": 223535149
+   },
+   "status": 200,
+   "response": {
+    "jsonrpc": "2.0",
+    "result": {
+     "author": "astro-stakers.poolv1.near",
+     "header": {
+      "height": 223535149,
+      "prev_height": 223535148,
+      "hash": "KTrrbamVYdazvgpof3gGgt8WDQkZq1rsgSQqbzJrsTf",
+      "prev_hash": "ExyLjxYKSNko5yUMi8Jc1xLCbqJCbPxbPVJQrGrqtZtK",
+      "timestamp": 1794094763448564500,
+      "timestamp_nanosec": "1794094763448564517",
+      "epoch_id": "CQAuGMji7m36jbXEoy3SdYozZroAEnU9wz8h7WE4n2nn"
+     },
+     "chunks": []
+    },
+    "id": "maskwars-check"
+   }
+  },
+  {
+   "url": "https://rpc.mainnet.fastnear.com",
+   "method": "query",
+   "params": {
+    "request_type": "view_account",
+    "account_id": "intents.near",
+    "block_id": 223535149
+   },
+   "status": 200,
+   "response": {
+    "jsonrpc": "2.0",
+    "error": {
+     "name": "HANDLER_ERROR",
+     "cause": {
+      "info": {
+       "block_hash": "KTrrbamVYdazvgpof3gGgt8WDQkZq1rsgSQqbzJrsTf",
+       "block_height": 223535149
+      },
+      "name": "GARBAGE_COLLECTED_BLOCK"
+     },
+     "code": -32000,
+     "message": "Server error",
+     "data": "The data for block #223535149 is garbage collected on this node, use an archival node to fetch historical data"
+    },
+    "id": "maskwars-check"
+   }
+  },
+  {
+   "url": "https://near.drpc.org",
+   "method": "query",
+   "params": {
+    "request_type": "view_account",
+    "account_id": "intents.near",
+    "block_id": 223535149
+   },
+   "status": 200,
+   "response": {
+    "id": "maskwars-check",
+    "jsonrpc": "2.0",
+    "result": {
+     "amount": "135309740059945065137688497013",
+     "block_hash": "KTrrbamVYdazvgpof3gGgt8WDQkZq1rsgSQqbzJrsTf",
+     "block_height": 223535149,
+     "code_hash": "BtA1BEFNS619KkvXFsgcpQ21Tb5yMm32aaUkn7xNothk",
+     "locked": "0",
+     "storage_paid_at": 0,
+     "storage_usage": 13458337506
+    }
+   }
+  },
+  {
+   "url": "https://archival-rpc.mainnet.fastnear.com",
+   "method": "query",
+   "params": {
+    "request_type": "view_account",
+    "account_id": "intents.near",
+    "block_id": 223535149
+   },
+   "status": 200,
+   "response": {
+    "jsonrpc": "2.0",
+    "result": {
+     "amount": "135309740059945065137688497013",
+     "block_hash": "KTrrbamVYdazvgpof3gGgt8WDQkZq1rsgSQqbzJrsTf",
+     "block_height": 223535149,
+     "code_hash": "BtA1BEFNS619KkvXFsgcpQ21Tb5yMm32aaUkn7xNothk",
+     "locked": "0",
+     "storage_paid_at": 0,
+     "storage_usage": 13458337506
+    },
+    "id": "maskwars-check"
+   }
+  },
+  {
+   "url": "https://rpc.mainnet.fastnear.com",
+   "method": "query",
+   "params": {
+    "request_type": "view_account",
+    "account_id": "usdt.tether-token.near",
+    "block_id": 223685290
+   },
+   "status": 200,
+   "response": {
+    "jsonrpc": "2.0",
+    "result": {
+     "amount": "4588737818397315166733749124",
+     "block_hash": "2oJxC9Sf5iFU9Nj4rHQneWw6VTHXfneHyTg1Mm85ogw4",
+     "block_height": 223685290,
+     "code_hash": "51tHbmQkA8qAi8c6MoUor5mCx6CnL6tZyC2sqQifKPZC",
+     "locked": "0",
+     "storage_paid_at": 0,
+     "storage_usage": 248431630
+    },
+    "id": "maskwars-check"
+   }
+  },
+  {
+   "url": "https://near.drpc.org",
+   "method": "query",
+   "params": {
+    "request_type": "view_account",
+    "account_id": "usdt.tether-token.near",
+    "block_id": 223685290
+   },
+   "status": 200,
+   "response": {
+    "id": "maskwars-check",
+    "jsonrpc": "2.0",
+    "result": {
+     "amount": "4588737818397315166733749124",
+     "block_hash": "2oJxC9Sf5iFU9Nj4rHQneWw6VTHXfneHyTg1Mm85ogw4",
+     "block_height": 223685290,
+     "code_hash": "51tHbmQkA8qAi8c6MoUor5mCx6CnL6tZyC2sqQifKPZC",
+     "locked": "0",
+     "storage_paid_at": 0,
+     "storage_usage": 248431630
+    }
+   }
+  },
+  {
+   "url": "https://rpc.mainnet.fastnear.com",
+   "method": "query",
+   "params": {
+    "request_type": "view_account",
+    "account_id": "usdt.tether-token.near",
+    "block_id": 223535149
+   },
+   "status": 200,
+   "response": {
+    "jsonrpc": "2.0",
+    "error": {
+     "name": "HANDLER_ERROR",
+     "cause": {
+      "info": {
+       "block_hash": "KTrrbamVYdazvgpof3gGgt8WDQkZq1rsgSQqbzJrsTf",
+       "block_height": 223535149
+      },
+      "name": "GARBAGE_COLLECTED_BLOCK"
+     },
+     "code": -32000,
+     "message": "Server error",
+     "data": "The data for block #223535149 is garbage collected on this node, use an archival node to fetch historical data"
+    },
+    "id": "maskwars-check"
+   }
+  },
+  {
+   "url": "https://near.drpc.org",
+   "method": "query",
+   "params": {
+    "request_type": "view_account",
+    "account_id": "usdt.tether-token.near",
+    "block_id": 223535149
+   },
+   "status": 200,
+   "response": {
+    "id": "maskwars-check",
+    "jsonrpc": "2.0",
+    "result": {
+     "amount": "4588571568397315166733745324",
+     "block_hash": "KTrrbamVYdazvgpof3gGgt8WDQkZq1rsgSQqbzJrsTf",
+     "block_height": 223535149,
+     "code_hash": "51tHbmQkA8qAi8c6MoUor5mCx6CnL6tZyC2sqQifKPZC",
+     "locked": "0",
+     "storage_paid_at": 0,
+     "storage_usage": 248416322
+    }
+   }
+  },
+  {
+   "url": "https://archival-rpc.mainnet.fastnear.com",
+   "method": "query",
+   "params": {
+    "request_type": "view_account",
+    "account_id": "usdt.tether-token.near",
+    "block_id": 223535149
+   },
+   "status": 200,
+   "response": {
+    "jsonrpc": "2.0",
+    "result": {
+     "amount": "4588571568397315166733745324",
+     "block_hash": "KTrrbamVYdazvgpof3gGgt8WDQkZq1rsgSQqbzJrsTf",
+     "block_height": 223535149,
+     "code_hash": "51tHbmQkA8qAi8c6MoUor5mCx6CnL6tZyC2sqQifKPZC",
+     "locked": "0",
+     "storage_paid_at": 0,
+     "storage_usage": 248416322
+    },
+    "id": "maskwars-check"
+   }
+  },
+  {
+   "url": "https://rpc.mainnet.fastnear.com",
+   "method": "query",
+   "params": {
+    "request_type": "view_account",
+    "account_id": "treasury.intents.near",
+    "block_id": 223685290
+   },
+   "status": 200,
+   "response": {
+    "jsonrpc": "2.0",
+    "error": {
+     "name": "HANDLER_ERROR",
+     "cause": {
+      "info": {
+       "block_hash": "2oJxC9Sf5iFU9Nj4rHQneWw6VTHXfneHyTg1Mm85ogw4",
+       "block_height": 223685290,
+       "requested_account_id": "treasury.intents.near"
+      },
+      "name": "UNKNOWN_ACCOUNT"
+     },
+     "code": -32000,
+     "message": "Server error",
+     "data": "account treasury.intents.near does not exist while viewing"
+    },
+    "id": "maskwars-check"
+   }
+  },
+  {
+   "url": "https://near.drpc.org",
+   "method": "query",
+   "params": {
+    "request_type": "view_account",
+    "account_id": "treasury.intents.near",
+    "block_id": 223685290
+   },
+   "status": 200,
+   "response": {
+    "id": "maskwars-check",
+    "jsonrpc": "2.0",
+    "error": {
+     "name": "HANDLER_ERROR",
+     "cause": {
+      "info": {
+       "block_hash": "2oJxC9Sf5iFU9Nj4rHQneWw6VTHXfneHyTg1Mm85ogw4",
+       "block_height": 223685290,
+       "requested_account_id": "treasury.intents.near"
+      },
+      "name": "UNKNOWN_ACCOUNT"
+     },
+     "code": -32000,
+     "message": "Server error",
+     "data": "account treasury.intents.near does not exist while viewing"
+    }
+   }
+  },
+  {
+   "url": "https://rpc.mainnet.fastnear.com",
+   "method": "query",
+   "params": {
+    "request_type": "view_account",
+    "account_id": "be330f9965ff38d722a9ddfa3dafb4435308677b95906023165cfda10bb66925",
+    "block_id": 223685290
+   },
+   "status": 200,
+   "response": {
+    "jsonrpc": "2.0",
+    "error": {
+     "name": "HANDLER_ERROR",
+     "cause": {
+      "info": {
+       "block_hash": "2oJxC9Sf5iFU9Nj4rHQneWw6VTHXfneHyTg1Mm85ogw4",
+       "block_height": 223685290,
+       "requested_account_id": "be330f9965ff38d722a9ddfa3dafb4435308677b95906023165cfda10bb66925"
+      },
+      "name": "UNKNOWN_ACCOUNT"
+     },
+     "code": -32000,
+     "message": "Server error",
+     "data": "account be330f9965ff38d722a9ddfa3dafb4435308677b95906023165cfda10bb66925 does not exist while viewing"
+    },
+    "id": "maskwars-check"
+   }
+  },
+  {
+   "url": "https://near.drpc.org",
+   "method": "query",
+   "params": {
+    "request_type": "view_account",
+    "account_id": "be330f9965ff38d722a9ddfa3dafb4435308677b95906023165cfda10bb66925",
+    "block_id": 223685290
+   },
+   "status": 200,
+   "response": {
+    "id": "maskwars-check",
+    "jsonrpc": "2.0",
+    "error": {
+     "name": "HANDLER_ERROR",
+     "cause": {
+      "info": {
+       "block_hash": "2oJxC9Sf5iFU9Nj4rHQneWw6VTHXfneHyTg1Mm85ogw4",
+       "block_height": 223685290,
+       "requested_account_id": "be330f9965ff38d722a9ddfa3dafb4435308677b95906023165cfda10bb66925"
+      },
+      "name": "UNKNOWN_ACCOUNT"
+     },
+     "code": -32000,
+     "message": "Server error",
+     "data": "account be330f9965ff38d722a9ddfa3dafb4435308677b95906023165cfda10bb66925 does not exist while viewing"
+    }
+   }
+  }
+ ]
+}

@@ -1,0 +1,18 @@
+node_modules/
+.next/
+dist/
+out/
+target/
+.turbo/
+.vercel/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+Thumbs.db
+/tmp/
+/.scratch/
+
+# X: live site shots are re-taken for each thread
+brand/x/threads/*/shots/

@@ -1,0 +1,22 @@
+{
+  "name": "@maskwars/race",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "build:runner": "node scripts/build-runner.ts",
+    "race": "node --use-env-proxy --disable-warning=UNDICI-EHPA scripts/race.ts",
+    "round": "node scripts/round.ts",
+    "season:open": "node scripts/season-open.ts"
+  },
+  "dependencies": {
+    "@maskwars/mind": "workspace:*",
+    "@maskwars/network": "workspace:*",
+    "zod": "^4.6.7"
+  }
+}

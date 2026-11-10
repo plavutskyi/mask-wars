@@ -1,0 +1,27 @@
+{
+  "name": "@maskwars/arena",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./config": "./src/config.ts",
+    "./format": "./src/format.ts",
+    "./replay": "./src/replay.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "live": "node --use-env-proxy --disable-warning=UNDICI-EHPA scripts/live.ts",
+    "record": "node --use-env-proxy --disable-warning=UNDICI-EHPA scripts/record.ts",
+    "empty": "node scripts/empty.ts"
+  },
+  "dependencies": {
+    "@maskwars/check": "workspace:*",
+    "@maskwars/network": "workspace:*"
+  },
+  "files": [
+    "src",
+    "test/fixtures"
+  ]
+}

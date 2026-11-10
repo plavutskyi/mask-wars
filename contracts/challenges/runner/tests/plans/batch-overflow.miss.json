@@ -1,0 +1,3 @@
+{ "steps": [
+  { "kind": "call", "method": "gift", "args": { "to": ["alice.test.near"], "each": "10000000000000000000000" }, "gas_tgas": 30 }
+] }

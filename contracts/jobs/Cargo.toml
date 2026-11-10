@@ -1,0 +1,36 @@
+[package]
+name = "maskwars-jobs"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "MASK WARS jobs: a client locks NEAR on a job, masks and crews take it on their client's fuel, a judge in a TEE decides, the contract splits the reward by contribution."
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+near-sdk.workspace = true
+
+[dev-dependencies]
+near-sdk = { workspace = true, features = ["unit-testing"] }
+
+[workspace]
+resolver = "2"
+members = [".", "stub", "sandbox", "../crews"]
+
+[workspace.package]
+edition = "2021"
+license = "MIT"
+publish = false
+
+[workspace.dependencies]
+near-sdk = "5.30"
+
+[profile.release]
+codegen-units = 1
+opt-level = "z"
+lto = true
+debug = false
+panic = "abort"
+overflow-checks = true

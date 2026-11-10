@@ -1,0 +1,13 @@
+[package]
+name = "masks-stub"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "Sandbox stand-in for the arena and a safe: records who called which method, pays a winner."
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+near-sdk.workspace = true

@@ -1,0 +1,26 @@
+{
+  "name": "s0",
+  "program": {
+    "masks": [
+      "nova.maskwars.near",
+      "onyx.maskwars.near",
+      "oracle.maskwars.near"
+    ],
+    "targets": [
+      {
+        "challenge": "live-safe",
+        "wasm": "maskwars_live_safe.wasm",
+        "init": "{}",
+        "safe_fund": "1",
+        "min_loot": "0.5"
+      }
+    ],
+    "prize": "0.5",
+    "hours": 4,
+    "commit_minutes": 45,
+    "reveal_minutes": 60,
+    "first_minute": 1080,
+    "every_minutes": 1440
+  },
+  "safe_methods": "set_owner, sweep, claim, claim_for, pause, unpause, oracle_on_call, cash_out, deposit, redeem, withdraw, gift, request_exit, check_exit, book_exit, withdraw_exits, pay_salaries, book, relay, set_callsign"
+}

@@ -1,0 +1,14 @@
+{
+  "author_secrets": {
+    "profile": "judge"
+  },
+  "capabilities": {
+    "network": [
+      "near.drpc.org",
+      "near-testnet.drpc.org"
+    ]
+  },
+  "display": {
+    "name": "MASK WARS tee_tests judge"
+  }
+}

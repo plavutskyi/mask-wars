@@ -1,0 +1,18 @@
+/* MASK WARS — токени бренду. Правила: docs/brand/BRANDBOOK.md */
+:root {
+  --ink: #06050c;
+  --ink-2: #0c0b14;
+  --ice: #eef1ff;
+  --ice-60: rgba(238, 241, 255, 0.62);
+  --ice-38: rgba(238, 241, 255, 0.38);
+  --line: rgba(238, 241, 255, 0.1);
+  --ember: #ff681c;
+  --violet: #9b70ff;
+  --money: #00ec97;
+  --amber: #ffb23f;
+  --live: #ff4b3a;
+  --on-accent: #120a04;
+  --radius: 2px;
+  --font-word: "Hubot Sans", system-ui, sans-serif;
+  --font-num: "Mona Sans", system-ui, sans-serif;
+}

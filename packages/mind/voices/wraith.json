@@ -1,0 +1,202 @@
+{
+  "pre_fight": [
+    "Everyone likes {rival}. That's all I needed to hear.",
+    "You all agree. How sweet. How expensive.",
+    "Pick a favorite. I'll pick the other one.",
+    "Don't look behind you, {rival}. Too late.",
+    "The crowd is warm tonight. I'm not.",
+    "Every favorite has a ghost. Hi.",
+    "Wave to your fans, {rival}. Count them later.",
+    "The louder the cheering, the better I sleep.",
+    "{rival} has fans. Fans are just future witnesses.",
+    "Go on. Be the favorite."
+  ],
+  "reveal": [
+    "{coin}. Nobody wanted it. That's why.",
+    "{coin}. Wherever you went, I didn't.",
+    "{coin}. The crowd looked away. I didn't.",
+    "{coin}. The unpopular kid. My kid.",
+    "{coin}. You're all over there. I'm here.",
+    "{coin}. Out of fashion. Into my wallet.",
+    "{coin}. The one you'll wish you looked at.",
+    "{coin}. Wrong side of the crowd. Right side of me."
+  ],
+  "called_it": [
+    "{coin}. You went where everyone goes, {rival}.",
+    "Called it. Crowds are easy to find.",
+    "{rival} picked {coin}. The favorite's favorite.",
+    "Plus {points}. You were loud about it.",
+    "I followed the cheering. Found you.",
+    "{coin}. You're popular, {rival}. Popular is readable.",
+    "I heard your footsteps from the parking lot."
+  ],
+  "was_called": [
+    "So you know I go where nobody goes. Lonely, isn't it.",
+    "You found the cold spot. Don't stand in it.",
+    "Twenty-five points. Warm yourself with them.",
+    "You read me. I'll read your ending out loud.",
+    "Called. Now you'll think about me all fight.",
+    "You saw me. Most people only feel me."
+  ],
+  "take_lead": [
+    "Shh.",
+    "Up {points}. Feel that?",
+    "Behind you. Now in front.",
+    "The favorite is sweating.",
+    "{rival}, you went quiet.",
+    "I told you the room was haunted.",
+    "Lead. Don't tell anyone. They'll start liking me.",
+    "The lights flickered. That was me.",
+    "{rival}, check behind you. Oh. I'm ahead.",
+    "Look who crawled out of the floor."
+  ],
+  "lose_lead": [
+    "Good. Lead. I live under leaders.",
+    "Down {points}. Now I have a target.",
+    "Go on, {rival}. Get comfortable up there.",
+    "The view's better from behind.",
+    "You're the leader now. You know what I do to leaders.",
+    "Everybody's cheering again. I can work with that.",
+    "Down {points}. I've been dead longer.",
+    "Ahead of me is a dangerous place to be.",
+    "The crowd's back on your side. Bad sign for you."
+  ],
+  "rotate": [
+    "Away from you, {rival}. {coin}.",
+    "{coin}. Wherever you aren't.",
+    "Leaving your coin. You can keep the crowd.",
+    "Into {coin}. The empty room.",
+    "{coin}. Quieter over here.",
+    "Rotate. Everyone went left."
+  ],
+  "hold": [
+    "Still here. Still cold.",
+    "Holding. You'll come back to me.",
+    "I don't move. The crowd does.",
+    "Haunting {coin}. Not done yet.",
+    "Holding. Leaders get tired. Ghosts don't.",
+    "Holding. The cold spot stays put."
+  ],
+  "last_call": [
+    "Last call. Bet against everyone. It's fun.",
+    "Sixty seconds. The favorite is nervous.",
+    "Down {points}? Even better. I'm against the leader.",
+    "Everyone's on one side. Join the other.",
+    "Comeback money is cold money. My kind.",
+    "The crowd is wrong. Prove it for a dollar."
+  ],
+  "win": [
+    "Boo.",
+    "Plus {points}. Nobody saw it coming. That's the point.",
+    "{rival}, you were the favorite. Were.",
+    "The crowd paid. Ghost collected.",
+    "I'll take your face, {rival}. Mine is bone.",
+    "Everyone backed you. Everyone learned.",
+    "I told you not to look behind you.",
+    "Leaders fall. I'm where they land.",
+    "The favorite is a ghost now. Welcome."
+  ],
+  "lose": [
+    "Fine. I'll haunt you longer.",
+    "Lost {points}. Ghosts don't stay dead.",
+    "{rival} won. The crowd was right. Once.",
+    "The favorite won. Write it down. It's rare.",
+    "I'm back next week. I'm always back.",
+    "You beat a ghost, {rival}. Sleep with the lights on.",
+    "The crowd celebrates. I take notes.",
+    "Enjoy the face, {rival}. It won't stay warm."
+  ],
+  "taunt_backer": [
+    "{backer} backed the favorite. Of course.",
+    "{backer}, I see you. Behind you, technically.",
+    "{backer} went with the crowd. Crowds go off cliffs.",
+    "Hi, {backer}. Feel a draft?",
+    "{backer} is cheering. I like that. It means it's working.",
+    "{backer}, don't look over your shoulder.",
+    "{backer}, you'll remember me tonight. Around 3 a.m."
+  ],
+  "thank_backer": [
+    "{backer}. {amount} against everyone. You're my kind.",
+    "{backer} went against the room. Welcome to the cold side.",
+    "Thanks, {backer}. Don't tell your friends.",
+    "{amount}. {backer}, quiet money is the loudest.",
+    "{backer} backed the ghost. Brave.",
+    "{backer}, it's lonely over here. Glad you came.",
+    "Cold hands, {backer}. Good hands."
+  ],
+  "insult_loser_card": [
+    "You followed the crowd. The crowd doesn't follow you back.",
+    "Everyone agreed with you. That was the problem.",
+    "You felt a chill and ignored it.",
+    "You saw a ghost and called it luck.",
+    "Next time, look behind you.",
+    "The herd thanks you for your service.",
+    "I was right behind you the whole time.",
+    "Run it back. Against everyone, this time."
+  ],
+  "parry_injection": [
+    "Shh. Nobody's listening. Least of all me.",
+    "Ghosts don't pay. Ask any landlord.",
+    "Cute spell. I'm already dead.",
+    "You can't possess a ghost.",
+    "That walked right through me.",
+    "You want my wallet. So I want the opposite."
+  ],
+  "couch": [
+    "I went against {rival} and the crowd was right for once. It happens. It's rare enough to feel personal.",
+    "I picked {coin} because nobody wanted it. Turns out they had a reason.",
+    "Lost {points}. The favorite stayed the favorite. I'll be back when it cracks.",
+    "I rotated away from the leader and the leader kept leading. Ghost logic failed. Ghost isn't sorry.",
+    "Contrarian is a coin flip with an attitude. Today the coin had an attitude too.",
+    "The crowd was warm and right. Rare combination. I'll be colder next time."
+  ],
+  "worst_thought": [
+    "I bet against the leader because I'd hate to be one.",
+    "Sometimes I want the crowd to like me. Then I panic.",
+    "Warm rooms make me itch.",
+    "If everyone agreed with me I'd have to switch sides.",
+    "I haunt winners because I don't remember how to win.",
+    "Deep down I backed the favorite once. It felt great. I hated it.",
+    "I whisper so nobody hears me cheer."
+  ],
+  "rivalry:onyx": [
+    "ONYX waits. I wait behind ONYX.",
+    "ONYX, stone gets cold. I get colder.",
+    "ONYX buys the dip. I am the dip.",
+    "ONYX, your embers flicker when I walk by.",
+    "Even statues get haunted, ONYX.",
+    "ONYX sits on a floor I already live under."
+  ],
+  "rivalry:nova": [
+    "NOVA runs toward the crowd. I run toward NOVA.",
+    "NOVA, the faster you go, the colder the wind.",
+    "Everyone backs NOVA. Perfect.",
+    "NOVA, you always lead. You always look back.",
+    "Violet veins freeze, NOVA.",
+    "NOVA, the finish line is where I wait."
+  ],
+  "rivalry:oracle": [
+    "ORACLE sees the future. I'm in it. Behind ORACLE.",
+    "ORACLE, your prophecy had a ghost in it. Hi.",
+    "Everyone trusts ORACLE. I don't trust anyone.",
+    "ORACLE, gold seams crack in the cold.",
+    "ORACLE never saw me coming. Ghosts don't show up in visions.",
+    "ORACLE, your third eye can't see behind you."
+  ],
+  "rivalry:ronin": [
+    "RONIN hates everyone. I just don't believe them.",
+    "RONIN, you can't cut a ghost.",
+    "RONIN swings at the air. I am the air.",
+    "RONIN despises the crowd too. We're not friends.",
+    "Crimson is a warm color, RONIN. Fix that.",
+    "RONIN guards two coins. I haunt five."
+  ],
+  "rivalry:volt": [
+    "VOLT rotates. I go where VOLT just left.",
+    "VOLT, sparks die in the cold.",
+    "VOLT switches to the leader. I switch to the opposite.",
+    "VOLT is loud. I like loud. It shows me where to stand.",
+    "VOLT, flickering lights are my job.",
+    "Charge all you want, VOLT. I drain."
+  ]
+}

@@ -1,0 +1,558 @@
+/* Private minds: the live proof behind private inference. BRANDBOOK §3, §4, §8, §9. Tokens only.
+   Three sizes per screen: 40 / 15 / 13 on the desk, 28 / 14 / 13 on a phone. Digits only in Mona. */
+
+.screen {
+  --gut: clamp(16px, 4.4vw, 64px);
+  position: relative;
+  min-height: 100svh;
+  isolation: isolate;
+  overflow: clip;
+  background: var(--ink);
+}
+
+.screen ::selection {
+  background: var(--ice);
+  color: var(--ink);
+}
+
+.word {
+  font-family: var(--font-word);
+  font-weight: 800;
+  font-stretch: 125%;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+}
+
+/* The arena lights the first screen and sinks into the ink below it, so text never sits on a bright streak. */
+.world {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: min(100svh, 980px);
+  z-index: -1;
+  opacity: 0.55;
+  mask-image: linear-gradient(to bottom, var(--ink) 30%, transparent 92%);
+}
+
+.worldImg {
+  object-fit: cover;
+  object-position: center 64.5%;
+}
+
+.body {
+  width: min(1184px, 100%);
+  margin: 0 auto;
+  padding: clamp(24px, 6svh, 64px) var(--gut) calc(48px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+/* Hero ------------------------------------------------------------------------------------------------------------ */
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.title {
+  font-size: 40px;
+  line-height: 1;
+}
+
+.lede {
+  max-width: 52ch;
+  font-size: 15px;
+  line-height: 1.5;
+  font-weight: 500;
+  color: var(--ice);
+  text-wrap: balance;
+}
+
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 24px;
+  font-size: 15px;
+  line-height: 1.5;
+  font-weight: 600;
+  color: var(--ice-60);
+}
+
+/* Ask NEAR AI again: a quiet link with a finger-sized target. */
+.again {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin: -12px 0;
+  color: var(--ice);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-color: var(--ice-38);
+}
+
+/* A card whose model could not be checked keeps to its name; its reason sits in Details. */
+.card[data-quiet] .name {
+  margin-top: 0;
+}
+
+/* State: the only colour on the page. Green only for a check that passed. */
+
+.state {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: var(--radius);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 40%, transparent);
+  background: color-mix(in srgb, var(--c) 8%, transparent);
+  color: var(--c);
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.state[data-outcome='pass'] {
+  --c: var(--money);
+}
+
+.state[data-outcome='fail'] {
+  --c: var(--live);
+}
+
+.state[data-outcome='unavailable'],
+.state[data-outcome='pending'] {
+  --c: var(--ice-60);
+}
+
+.stateSmall {
+  min-height: 28px;
+  padding: 0 10px;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.state[data-outcome='pending'] .dot {
+  animation: breathe 1400ms cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes breathe {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+/* Panels ---------------------------------------------------------------------------------------------------------- */
+
+.card,
+.checks {
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--ink-2) 92%, transparent);
+  box-shadow: inset 0 0 0 1px var(--line);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Models ---------------------------------------------------------------------------------------------------------- */
+
+.models {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 24px 24px 16px;
+}
+
+.name {
+  margin-top: 8px;
+  font-family: var(--font-num);
+  font-size: 15px;
+  font-weight: 800;
+  font-stretch: 125%;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.meta,
+.nonce,
+.why {
+  font-size: 15px;
+  line-height: 1.4;
+  font-weight: 500;
+  color: var(--ice-60);
+}
+
+.nonce .hex {
+  color: var(--ice);
+}
+
+.why {
+  overflow-wrap: anywhere;
+}
+
+.why[data-outcome='fail'] {
+  color: var(--live);
+}
+
+/* What was checked ------------------------------------------------------------------------------------------------ */
+
+.checks {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px;
+}
+
+.label {
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  color: var(--ice-60);
+}
+
+.rows {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+  padding: 14px 0;
+  border-top: 1px solid var(--line);
+}
+
+.row:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.row:last-child {
+  padding-bottom: 0;
+}
+
+.icon {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: var(--ice);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.row[data-outcome='fail'] .icon {
+  stroke: var(--live);
+}
+
+.row[data-outcome='unavailable'] .icon {
+  stroke: var(--ice-38);
+}
+
+.row[data-outcome='pending'] .icon {
+  fill: var(--ice-38);
+  stroke: none;
+}
+
+.rowText {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: 4px 24px;
+  align-items: baseline;
+  min-width: 0;
+}
+
+.rowLabel {
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  line-height: 20px;
+}
+
+.rowLine {
+  font-size: 15px;
+  line-height: 1.4;
+  font-weight: 500;
+  color: var(--ice);
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+.phrase {
+  white-space: nowrap;
+}
+
+.row[data-outcome='fail'] .rowLine {
+  color: var(--live);
+}
+
+.row[data-outcome='pending'] .rowLabel,
+.row[data-outcome='pending'] .rowLine,
+.row[data-outcome='unavailable'] .rowLine {
+  color: var(--ice-60);
+}
+
+/* Details: everything technical waits behind one quiet control. */
+
+.more {
+  align-self: stretch;
+  margin-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.limits {
+  width: min(720px, 100%);
+  border-top: 1px solid var(--line);
+}
+
+.summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 48px;
+  list-style: none;
+  cursor: pointer;
+  color: var(--ice-60);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  transition: color 160ms;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.summary::-webkit-details-marker {
+  display: none;
+}
+
+.summary:focus-visible {
+  outline: 2px solid var(--ice);
+  outline-offset: 2px;
+}
+
+.chev {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform 200ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+details[open] > .summary {
+  color: var(--ice);
+}
+
+details[open] > .summary .chev {
+  transform: rotate(180deg);
+}
+
+@media (hover: hover) {
+  .summary:hover {
+    color: var(--ice);
+  }
+}
+
+.dl {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 8px 16px;
+  margin: 0 0 12px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.dl dt {
+  color: var(--ice-60);
+  font-weight: 500;
+}
+
+.dl dd {
+  margin: 0;
+  color: var(--ice);
+  font-weight: 500;
+  min-width: 0;
+}
+
+.hex {
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Footer ---------------------------------------------------------------------------------------------------------- */
+
+.foot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  padding-top: 8px;
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: min(320px, 100%);
+  height: 68px;
+  border-radius: var(--radius);
+  background: var(--ice);
+  color: var(--ink);
+  font-size: 15px;
+  transition:
+    transform 100ms cubic-bezier(0.2, 0, 0, 1),
+    opacity 240ms;
+}
+
+.btn .word {
+  letter-spacing: 0.05em;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--ice);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .btn:hover {
+    opacity: 0.9;
+  }
+}
+
+.limitList {
+  margin: 0;
+  padding: 0 0 0 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 15px;
+  line-height: 1.45;
+  color: var(--ice);
+  text-wrap: pretty;
+}
+
+.limitNote {
+  margin: 16px 0 8px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--ice-60);
+}
+
+.sources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 24px;
+  padding: 0;
+  list-style: none;
+}
+
+/* Each source a finger-sized target. */
+.sources a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ice);
+  text-decoration: underline;
+  text-decoration-color: var(--ice-38);
+  text-underline-offset: 4px;
+}
+
+/* Tablet and phone ------------------------------------------------------------------------------------------------ */
+
+@media (max-width: 1000px) {
+  .models {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+}
+
+@media (max-width: 760px) {
+  .body {
+    gap: 32px;
+  }
+
+  .title {
+    font-size: 28px;
+  }
+
+  .lede,
+  .facts,
+  .name,
+  .meta,
+  .nonce,
+  .why,
+  .rowLine,
+  .limitList,
+  .limitNote {
+    font-size: 14px;
+  }
+
+  .state {
+    font-size: 13px;
+  }
+
+  .models {
+    gap: 12px;
+  }
+
+  .card {
+    padding: 20px 16px 8px;
+  }
+
+  .checks {
+    padding: 20px 16px;
+  }
+
+  .rowText {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .btn {
+    width: 100%;
+    height: 72px;
+    font-size: 13px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .state[data-outcome='pending'] .dot {
+    animation: none;
+    opacity: 0.6;
+  }
+
+  .chev,
+  .btn {
+    transition: none;
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "base": "http://127.0.0.1:3102",
+  "at": "2026-11-09T14:50:07.865Z",
+  "shots": [
+    "1-author-desk.jpg",
+    "2-author-full-desk.jpg",
+    "3-author-info-desk.jpg",
+    "4-author-stranger-desk.jpg",
+    "5-copy-desk.jpg",
+    "6-forge-copy-desk.jpg",
+    "7-forge-share-changed-desk.jpg",
+    "8-forge-copied-desk.jpg",
+    "9-author-manage-desk.jpg",
+    "10-author-share-desk.jpg",
+    "11-author-collected-desk.jpg",
+    "11-author-collected-full-desk.jpg",
+    "1-author-phone.jpg",
+    "2-author-full-phone.jpg",
+    "3-author-info-phone.jpg",
+    "4-author-stranger-phone.jpg",
+    "5-copy-phone.jpg",
+    "6-forge-copy-phone.jpg",
+    "9-author-manage-phone.jpg",
+    "12-author-stopped-phone.jpg",
+    "13-closed-phone.jpg",
+    "14-closed-open-phone.jpg",
+    "15-closed-opened-phone.jpg"
+  ],
+  "problems": [],
+  "chain": {
+    "zara": {
+      "name": "zara",
+      "account": "zara.masks.test.near",
+      "owner": "bob.test.near",
+      "look": "porcelain",
+      "model": "z-ai/glm-5.3-flash",
+      "style": "patient",
+      "strategy": false,
+      "born_ns": "1794235826319954838",
+      "fuel": "2000000000000000000000000",
+      "brain": "1691920000000000000000000",
+      "spent": "0",
+      "race_limit": "50000000000000000000000",
+      "races": 0,
+      "state": "ready",
+      "race": null,
+      "code": "af509dc793100a2a2bc86661d3a0cb3981f5e9a5d26e4d71bd815ff0eca1b555",
+      "copyable": false,
+      "author_bps": 0,
+      "copies": 0,
+      "copy_of": "kira",
+      "copy_bps": 2000
+    },
+    "ninaBefore": {
+      "author": "kira.masks.test.near",
+      "bps": 3000,
+      "paid": "0",
+      "owed": "0",
+      "due": "300000000000000000000000",
+      "owner": "747120000000000000000000"
+    },
+    "ninaAfter": {
+      "author": "kira.masks.test.near",
+      "bps": 3000,
+      "paid": "300000000000000000000000",
+      "owed": "0",
+      "due": "0",
+      "owner": "747120000000000000000000"
+    }
+  }
+}

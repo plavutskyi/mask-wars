@@ -1,0 +1,37 @@
+[package]
+name = "maskwars-brain"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+publish = false
+description = "The mask's mind on OutLayer: its key for sealed strategies is made from a secret generated inside the TEE."
+
+[lib]
+name = "maskwars_brain"
+path = "src/lib.rs"
+
+[[bin]]
+name = "maskwars-brain"
+path = "src/main.rs"
+
+[features]
+# The mainnet build: also plays the masks of masks.maskwars.near for the keeper maskwars.near (src/mind.rs). Made with
+# `build.sh --mainnet` only once the owner holds maskwars.near (scripts/mainnet/README.md).
+mainnet = []
+
+[dependencies]
+aes-gcm = "0.10"
+hkdf = "0.12"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sha2 = "0.10"
+x25519-dalek = { version = "2", features = ["static_secrets"] }
+
+[target.'cfg(target_os = "wasi")'.dependencies]
+outlayer = "0.2"
+wasi-http-client = "0.2"
+
+[profile.release]
+opt-level = "z"
+lto = true
+strip = true

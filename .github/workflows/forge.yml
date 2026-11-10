@@ -1,0 +1,93 @@
+name: Forge
+
+# The mask factory and the mind's module: unit tests, the factory in a real local NEAR sandbox, and the wasm the owner
+# deploys, with its fingerprint. Its own workflow, so it runs only when they change.
+on:
+  push:
+    branches: [main]
+    paths:
+      - contracts/masks/**
+      - services/brain/**
+      - .github/workflows/forge.yml
+  pull_request:
+    paths:
+      - contracts/masks/**
+      - services/brain/**
+      - .github/workflows/forge.yml
+
+# The token every job gets reads the code and nothing else. Actions are pinned to a commit, not a movable tag.
+permissions:
+  contents: read
+
+# A new push to a pull request stops the run for the push before it. On main every run goes to the end.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/main' && github.run_id || github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  masks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: dtolnay/rust-toolchain@f08ac54821369508305fcb9e0121ec6e30ae9ada # 1.97.0
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          workspaces: contracts/masks
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      - name: Unit tests, and a person forging a mask in a real local sandbox
+        run: cargo test --workspace
+        working-directory: contracts/masks
+      - run: cargo build --release --target wasm32-unknown-unknown -p maskwars-masks -p maskwars-mask
+        working-directory: contracts/masks
+        env:
+          RUSTFLAGS: --cfg near -C link-arg=-s
+      - name: Shrink (the mask code is a global contract at 0.0001 NEAR a byte) and fingerprint
+        run: |
+          curl -sSfL https://github.com/WebAssembly/binaryen/releases/download/version_132/binaryen-version_132-x86_64-linux.tar.gz | tar xz
+          for w in maskwars_masks maskwars_mask; do
+            binaryen-version_132/bin/wasm-opt -Oz --enable-bulk-memory --enable-bulk-memory-opt --enable-sign-ext --enable-mutable-globals --enable-nontrapping-float-to-int --enable-multivalue --enable-reference-types --strip-debug --strip-producers contracts/masks/target/wasm32-unknown-unknown/release/$w.wasm -o $w.wasm
+          done
+          ls -l maskwars_masks.wasm maskwars_mask.wasm
+          # The mask code's sha256 is what the factory's new(...) names and what NEAR keys the global contract by.
+          sha256sum maskwars_masks.wasm maskwars_mask.wasm
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: maskwars-masks-wasm
+          path: |
+            maskwars_masks.wasm
+            maskwars_mask.wasm
+
+  brain:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: dtolnay/rust-toolchain@f08ac54821369508305fcb9e0121ec6e30ae9ada # 1.97.0
+        with:
+          targets: wasm32-wasip2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          workspaces: services/brain
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      - run: cargo test
+        working-directory: services/brain
+      # The same bytes in any folder on any machine (build.sh), so anyone can check the version OutLayer keys.
+      - name: Fingerprint (the OutLayer version key and the file name on maskwars.xyz)
+        run: services/brain/build.sh
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: maskwars-brain-wasm
+          path: services/brain/target/wasm32-wasip2/release/maskwars-brain.wasm
+      # The mainnet build also plays the masks of masks.maskwars.near for the keeper maskwars.near (src/mind.rs): a
+      # version of its own, published only once the owner holds maskwars.near (scripts/mainnet/README.md).
+      - name: The mainnet build, its tests and its fingerprint
+        run: |
+          (cd services/brain && cargo test --features mainnet)
+          services/brain/build.sh --mainnet
+          mkdir -p "$RUNNER_TEMP/mainnet"
+          cp services/brain/target/wasm32-wasip2/release/maskwars-brain.wasm "$RUNNER_TEMP/mainnet/"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: maskwars-brain-mainnet-wasm
+          path: ${{ runner.temp }}/mainnet/maskwars-brain.wasm

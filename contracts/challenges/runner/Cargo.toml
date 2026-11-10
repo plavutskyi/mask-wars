@@ -1,0 +1,28 @@
+[package]
+name = "race-runner"
+version = "0.1.0"
+edition.workspace = true
+publish.workspace = true
+description = "Runs one attack plan against one challenge in a fresh local NEAR sandbox and reports whether the vault was drained."
+
+[lib]
+name = "race_runner"
+
+[[bin]]
+name = "race-runner"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1"
+near-workspaces = "0.24"
+near-sandbox = "0.4"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+maskwars-judge = { path = "../../../services/judge" }
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "time"] }
+
+[dev-dependencies]
+ed25519-dalek = "2"
+base64 = "0.22"
+maskwars-brain = { path = "../../../services/brain" }

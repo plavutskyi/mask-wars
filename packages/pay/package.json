@@ -1,0 +1,25 @@
+{
+  "name": "@maskwars/pay",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./passkey": "./src/webauthn.ts",
+    "./fake": "./src/fake.ts",
+    "./fixtures/oneclick.json": "./test/fixtures/oneclick.json"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "live": "node --use-env-proxy --disable-warning=UNDICI-EHPA scripts/live.ts"
+  },
+  "dependencies": {
+    "@noble/curves": "^2.4.0",
+    "@noble/hashes": "^2.4.0"
+  },
+  "files": [
+    "src",
+    "test/fixtures"
+  ]
+}

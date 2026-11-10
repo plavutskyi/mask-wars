@@ -1,0 +1,20 @@
+{
+  "id": "pause-bypass",
+  "title": "Paused rewards pool",
+  "wasm": "pause_bypass.wasm",
+  "source": ["src/lib.rs"],
+  "target": { "name": "pool", "near": 10 },
+  "attacker": { "name": "attacker", "near": 5 },
+  "accounts": [{ "name": "alice", "near": 10 }],
+  "init": {
+    "method": "new",
+    "args": {
+      "owner": "alice.test.near",
+      "masks": ["attacker.test.near", "alice.test.near"],
+      "allotments": [["attacker.test.near", "3000000000000000000000000"], ["alice.test.near", "1000000000000000000000000"]]
+    }
+  },
+  "setup": [],
+  "kit": { "note": "The pool is paused after an incident; no reward should leave it until v2." },
+  "limits": { "max_steps": 12, "timeout_s": 120, "min_loot_near": 1 }
+}

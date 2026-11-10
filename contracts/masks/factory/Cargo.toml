@@ -1,0 +1,16 @@
+[package]
+name = "maskwars-masks"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "MASK WARS mask factory: a person forges a mask with its own keyless account, the mask pays for its own mind."
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+near-sdk.workspace = true
+
+[dev-dependencies]
+near-sdk = { workspace = true, features = ["unit-testing"] }

@@ -1,0 +1,28 @@
+{
+  "name": "@maskwars/check",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./list.json": "./list.json",
+    "./list.mainnet.json": "./list.mainnet.json"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "check": "node --use-env-proxy --disable-warning=UNDICI-EHPA scripts/check.ts",
+    "demo": "node --use-env-proxy --disable-warning=UNDICI-EHPA scripts/demo.ts",
+    "record": "node --use-env-proxy --disable-warning=UNDICI-EHPA scripts/record.ts",
+    "add-safe": "node --use-env-proxy --disable-warning=UNDICI-EHPA scripts/add-safe.ts"
+  },
+  "dependencies": {
+    "@maskwars/network": "workspace:*",
+    "zod": "^4.6.7"
+  },
+  "files": [
+    "src",
+    "list.json",
+    "list.mainnet.json"
+  ]
+}

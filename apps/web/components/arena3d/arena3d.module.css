@@ -1,0 +1,591 @@
+/* The arena's type layer. Positions mirror compose() in layout.ts, so the sum and the names stand where the
+   scene puts the vault and the masks from the first paint; once the scene runs it writes the exact anchors
+   (--vx, --vy, --m{i}x, --m{i}b) inline. BRANDBOOK §3, §4, §8, §9. Tokens only. */
+
+.root {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 420px;
+  overflow: clip;
+  isolation: isolate;
+  background: var(--ink);
+  color: var(--ice);
+  container: arena / size;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.word {
+  font-family: var(--font-word);
+  font-weight: 800;
+  font-stretch: 125%;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Stage ------------------------------------------------------------------------- */
+
+.poster {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background: var(--ink);
+}
+
+.canvas {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 1200ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.root[data-ready] .canvas {
+  opacity: 1;
+}
+
+/* The lens: corners fall to ink, the eye goes to the vault. */
+.vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(120% 90% at 50% 42%, transparent 52%, color-mix(in srgb, var(--ink) 72%, transparent) 100%);
+}
+
+/* Anchors ------------------------------------------------------------------------- */
+
+.hud {
+  --avail: calc(100cqh - var(--top) - var(--bottom));
+  --hz: calc(var(--top) + var(--avail) * 0.62);
+  --D: min(calc(var(--avail) * 0.56), 50cqw, 560px);
+  --hm: min(calc(var(--avail) * 0.24), 15cqw, 250px, calc(var(--avail) * 0.38 - var(--gap) - 40px));
+  --gap: calc(var(--avail) * 0.05);
+  --sx: min(26cqw, calc(var(--hm) * 2.9));
+  --side: calc(var(--avail) * 0.02);
+  --my: calc(var(--hz) + var(--gap) + var(--hm) / 2);
+  --vx: 50cqw;
+  --vy: calc(var(--hz) - var(--D) / 2 - var(--avail) * 0.02);
+  --m0x: calc(50cqw - var(--sx));
+  --m1x: 50cqw;
+  --m2x: calc(50cqw + var(--sx));
+  --m0b: calc(var(--my) - var(--side) + var(--hm) * 0.465);
+  --m1b: calc(var(--my) + var(--hm) / 2);
+  --m2b: calc(var(--my) - var(--side) + var(--hm) * 0.465);
+  /* Three sizes on screen (BRANDBOOK §4): the number, the clock, the word. */
+  --t-word: 15px;
+  --t-mid: clamp(22px, calc(var(--D) * 0.068), 30px);
+  --t-pay: clamp(34px, calc(var(--D) * 0.13), 64px);
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+@container arena (max-aspect-ratio: 9 / 10) {
+  .hud {
+    --D: min(86cqw, calc(var(--avail) * 0.5), 440px);
+    --hm: min(38cqw, calc(var(--avail) * 0.24), calc(var(--avail) * 0.38 - var(--gap) - 40px));
+    --gap: calc(var(--avail) * 0.05);
+    --sx: 31cqw;
+    --t-word: 13px;
+    --t-pay: 34px;
+  }
+
+  /* A phone's door is narrow: the «i» goes under the line, never onto the ring; the ink under the number reaches
+     down to it, so the seam never runs through it. */
+  .under {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .stack::before {
+    height: calc(var(--D) * 0.56);
+    transform: translate(-50%, -32%);
+  }
+}
+
+/* The vault's number ------------------------------------------------------------------ */
+
+.vault {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(var(--vx), var(--vy));
+}
+
+.stack {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform: translate(-50%, -50%);
+  transition:
+    transform 1000ms cubic-bezier(0.2, 0, 0, 1) var(--lift-delay),
+    opacity 400ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* A pool of ink under the number, so the seam never cuts through it. */
+.stack::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(var(--D) * 0.64);
+  height: calc(var(--D) * 0.4);
+  /* A little low: it holds the line under the number too. */
+  transform: translate(-50%, -40%);
+  border-radius: 50%;
+  background: var(--ink);
+  filter: blur(calc(var(--D) * 0.05));
+  opacity: 0.86;
+  z-index: -1;
+  transition: opacity 600ms;
+}
+
+.sum {
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: center;
+  white-space: nowrap;
+  font-family: var(--font-num);
+  font-weight: 800;
+  font-stretch: 125%;
+  font-size: min(calc(var(--D) * 0.15), calc(var(--D) * 1.02 / var(--chars)), 76px);
+  line-height: 1;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  transition: color 500ms cubic-bezier(0.2, 0, 0, 1) var(--lift-delay);
+}
+
+.unit {
+  margin-left: 0.3em;
+  font-size: 0.34em;
+  letter-spacing: 0.08em;
+  color: var(--ice-60);
+  transition: color 500ms var(--lift-delay);
+}
+
+/* The line under the number. Absolute, so the number never moves when it changes. */
+.under {
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: calc(var(--D) * 0.04);
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: var(--t-word);
+  color: var(--ice-60);
+}
+
+/* No sum to show: the line takes the middle of the door. */
+.stack[data-empty] .under {
+  top: 0;
+  margin-top: 0;
+  transform: translate(-50%, -50%);
+}
+
+/* The page's quiet «i» beside the line: the only thing in the arena a finger can press. */
+.aside {
+  display: inline-flex;
+  pointer-events: auto;
+}
+
+.count {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.7em;
+}
+
+.clock {
+  display: inline-flex;
+  font-family: var(--font-num);
+  font-weight: 800;
+  font-stretch: 125%;
+  font-size: var(--t-mid);
+  line-height: 1;
+  color: var(--ice);
+}
+
+.clock[data-wait] {
+  visibility: hidden;
+}
+
+.slot {
+  display: inline-block;
+  width: 0.72em;
+  text-align: center;
+}
+
+.colon {
+  display: inline-block;
+  width: 0.3em;
+  text-align: center;
+  transform: translateY(-0.04em);
+}
+
+.line {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.42em;
+}
+
+.num {
+  font-family: var(--font-num);
+  font-weight: 800;
+  font-stretch: 125%;
+  font-size: 1.12em;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.won {
+  color: var(--amber);
+}
+
+/* Broken: the halves part and the money lifts out of the vault. */
+.root[data-state='breach'] .stack {
+  transform: translate(-50%, -50%) translateY(calc(var(--D) * -0.2));
+}
+
+.root[data-state='breach'] .sum {
+  color: var(--money);
+}
+
+.root[data-state='breach'] .unit {
+  color: color-mix(in srgb, var(--money) 70%, transparent);
+}
+
+.root[data-state='breach'] .stack::before {
+  opacity: 0.9;
+}
+
+/* Paid: one number, at the winner. The vault's number leaves. */
+.root[data-state='paid'] .stack {
+  opacity: 0;
+  transform: translate(-50%, -50%) translateY(calc(var(--D) * -0.26)) scale(0.94);
+  transition-delay: 0ms;
+}
+
+/* With the page's line, the line stays in the open door: the sum has gone to the winner, how it broke stays. */
+.root[data-keep] .stack {
+  opacity: 1;
+  transform: translate(-50%, -50%) translateY(calc(var(--D) * -0.115 - 8px));
+}
+
+.root[data-keep] .sum {
+  opacity: 0;
+  transition:
+    color 500ms cubic-bezier(0.2, 0, 0, 1),
+    opacity 400ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.root[data-state='idle'] .sum {
+  color: var(--ice);
+}
+
+/* Masks' names --------------------------------------------------------------------- */
+
+.cap {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: max-content;
+  max-width: calc(var(--sx) - 12px);
+  text-align: center;
+  white-space: nowrap;
+  transition: opacity 500ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.cap[data-slot='0'] {
+  transform: translate(var(--m0x), calc(var(--m0b) + 12px)) translateX(-50%);
+}
+
+.cap[data-slot='1'] {
+  transform: translate(var(--m1x), calc(var(--m1b) + 12px)) translateX(-50%);
+}
+
+.cap[data-slot='2'] {
+  transform: translate(var(--m2x), calc(var(--m2b) + 12px)) translateX(-50%);
+}
+
+.name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: var(--t-word);
+  letter-spacing: 0.08em;
+  color: var(--ice-60);
+  transition: color 500ms;
+}
+
+/* Long names narrow along the width axis, never by size (BRANDBOOK §4). */
+.cap[data-long] .name {
+  font-stretch: 85%;
+  letter-spacing: 0.04em;
+}
+
+.tries {
+  font-size: var(--t-word);
+  font-weight: 500;
+  color: var(--ice-60);
+}
+
+.tries b {
+  font-weight: 800;
+  font-stretch: 125%;
+  color: var(--ice);
+  font-variant-numeric: tabular-nums;
+}
+
+.root[data-state='idle'] .name,
+.root[data-state='held'] .name {
+  color: var(--ice-38);
+}
+
+.root[data-state='breach'] .cap .name {
+  color: var(--ice-38);
+}
+
+.root[data-state='breach'] .cap[data-win] .name {
+  color: var(--amber);
+}
+
+/* One number on screen: the losers' names go with their light. */
+.root[data-state='paid'] .cap {
+  opacity: 0;
+}
+
+.root[data-state='paid'] .name {
+  color: var(--ice-38);
+}
+
+/* The payout: one number where the pulse lands ------------------------------------------------ */
+
+.payout {
+  --pw: 0px;
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: max-content;
+  white-space: nowrap;
+  --py: calc(var(--wb) + 8px);
+  transform: translate(clamp(calc(var(--pw) / 2 + 16px), var(--wx), calc(100cqw - var(--pw) / 2 - 16px)), var(--py)) translateX(-50%);
+}
+
+.payout[data-slot='0'] {
+  --wx: var(--m0x);
+  --wb: var(--m0b);
+}
+
+.payout[data-slot='1'] {
+  --wx: var(--m1x);
+  --wb: var(--m1b);
+}
+
+.payout[data-slot='2'] {
+  --wx: var(--m2x);
+  --wb: var(--m2b);
+}
+
+.payout > * {
+  animation: land 700ms cubic-bezier(0.2, 0, 0, 1) var(--pay-delay) both;
+}
+
+.payout > .payee {
+  animation-delay: calc(var(--pay-delay) + 120ms);
+}
+
+.root[data-still] .payout > * {
+  animation: none;
+}
+
+.paid {
+  display: inline-flex;
+  align-items: baseline;
+  font-family: var(--font-num);
+  font-weight: 800;
+  font-stretch: 125%;
+  font-size: var(--t-pay);
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: var(--money);
+  font-variant-numeric: tabular-nums;
+}
+
+.paid::before {
+  content: '+';
+  margin-right: 0.06em;
+}
+
+.paid .unit {
+  color: color-mix(in srgb, var(--money) 70%, transparent);
+}
+
+.payee {
+  font-size: var(--t-word);
+  letter-spacing: 0.08em;
+  color: var(--amber);
+}
+
+/* A phone's row is tight: a side winner's number is wider than its mask and would touch the chin of the middle
+   one, which stands lower. The number lands under that chin instead, a little smaller and closer to its name,
+   and never lower than 10px above the button under the stage (51px is this block's height on a phone). */
+@container arena (max-aspect-ratio: 9 / 10) {
+  .payout {
+    --t-pay: 30px;
+    --py: min(calc(var(--wb) + 8px), calc(100cqh - var(--bottom) - 41px));
+    gap: 2px;
+  }
+
+  .payout[data-slot='0'],
+  .payout[data-slot='2'] {
+    --wb: calc(var(--m1b) - 2px);
+  }
+}
+
+@keyframes land {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Sound: one quiet button ---------------------------------------------------------------- */
+
+.sound {
+  position: absolute;
+  right: max(12px, env(safe-area-inset-right));
+  bottom: calc(var(--bottom) + max(12px, env(safe-area-inset-bottom)));
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius);
+  color: var(--ice-38);
+  transition:
+    color 200ms,
+    transform 100ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.sound[aria-pressed='true'] {
+  color: var(--ice);
+}
+
+.sound:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) {
+  .sound:hover {
+    color: var(--ice);
+  }
+}
+
+.sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* No WebGL: the brand frames stand in ---------------------------------------------------------- */
+
+.frameWorld {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.7;
+}
+
+.frameWorld img {
+  object-fit: cover;
+  object-position: center 60%;
+}
+
+.frameVault {
+  position: absolute;
+  /* Placed with left/top, never transform or opacity: either would isolate the image and show its black. */
+  left: calc(var(--vx) - var(--D) / 2);
+  top: calc(var(--vy) - var(--D) / 2);
+  width: var(--D);
+  height: var(--D);
+}
+
+.frameVault img,
+.frameMask img {
+  object-fit: contain;
+  mix-blend-mode: lighten;
+}
+
+.frameMask {
+  --fm: calc(var(--hm) * 1.35);
+  position: absolute;
+  width: var(--fm);
+  height: var(--fm);
+}
+
+.frameMask[data-slot='0'] {
+  left: calc(var(--m0x) - var(--fm) / 2);
+  top: calc(var(--m0b) - var(--fm) * 0.88);
+}
+
+.frameMask[data-slot='1'] {
+  left: calc(var(--m1x) - var(--fm) / 2);
+  top: calc(var(--m1b) - var(--fm) * 0.88);
+}
+
+.frameMask[data-slot='2'] {
+  left: calc(var(--m2x) - var(--fm) / 2);
+  top: calc(var(--m2b) - var(--fm) * 0.88);
+}
+
+/* Reduced motion: every change is a 200 ms fade, nothing travels (BRANDBOOK §9). */
+@media (prefers-reduced-motion: reduce) {
+  .canvas,
+  .stack,
+  .sum,
+  .unit,
+  .cap,
+  .name {
+    transition-duration: 200ms !important;
+    transition-delay: 0ms !important;
+  }
+
+  .root[data-state='breach'] .stack,
+  .root[data-state='paid'] .stack {
+    transform: translate(-50%, -50%);
+  }
+
+  .payout > * {
+    animation: fade 200ms linear both !important;
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}

@@ -1,0 +1,372 @@
+/* Plug your agent in: one command, one button. BRANDBOOK §1, §4, §8, §9. Tokens only. */
+
+.screen {
+  --gut: clamp(16px, 4.4vw, 64px);
+  position: relative;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  isolation: isolate;
+  overflow: clip;
+  background: var(--ink);
+}
+
+.screen ::selection {
+  background: var(--ice);
+  color: var(--ink);
+}
+
+.word {
+  font-family: var(--font-word);
+  font-weight: 800;
+  font-stretch: 125%;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+}
+
+.world {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+}
+
+.worldImg {
+  object-fit: cover;
+  object-position: center 64.5%;
+  opacity: 0.62;
+}
+
+.tab:focus-visible,
+.btn:focus-visible {
+  outline: 2px solid var(--ice);
+  outline-offset: 2px;
+}
+
+.body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 520px);
+  align-items: center;
+  align-content: center;
+  column-gap: clamp(32px, 5vw, 96px);
+  max-width: 1312px;
+  width: 100%;
+  margin: 0 auto;
+  padding: calc(64px + env(safe-area-inset-top) + 32px) var(--gut) 64px;
+}
+
+/* The left column on a desk: the title, then what an agent reads. On a phone its parts take their own places. */
+.side {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  min-width: 0;
+}
+
+.intro {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.title {
+  font-size: clamp(34px, 5.4vw, 80px);
+  line-height: 0.96;
+}
+
+.lede {
+  max-width: 30em;
+  font-size: 17px;
+  line-height: 1.45;
+  color: var(--ice-60);
+  text-wrap: pretty;
+}
+
+/* What an agent reads first: the tool it calls and the line it gets back, live from the arena. */
+.live {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  /* The lede's measure: both end on one edge. */
+  max-width: 510px;
+  margin: 0;
+  padding: 18px 20px 20px;
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--ink) 84%, transparent);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.ask {
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ice-60);
+}
+
+.ask::after {
+  content: ' \2192';
+}
+
+/* Two lines tall before the answer arrives, so nothing moves when it does. */
+.answer {
+  min-height: calc(2 * 1.45em);
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.45;
+  font-weight: 500;
+  color: var(--ice);
+  text-wrap: pretty;
+  /* An account id has no spaces; on a phone it breaks rather than run out of the card. */
+  overflow-wrap: anywhere;
+}
+
+.keep {
+  white-space: nowrap;
+}
+
+/* While the arena is read: a caret, as a terminal waits for its answer. */
+.caret {
+  display: inline-block;
+  width: 2px;
+  height: 1.1em;
+  vertical-align: -0.2em;
+  background: var(--ice-38);
+  animation: blink 1s steps(2, jump-none) infinite;
+}
+
+@keyframes blink {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.money {
+  white-space: nowrap;
+  font-weight: 700;
+  color: var(--money);
+}
+
+.answer[data-ready] {
+  animation: arrive 320ms cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+@keyframes arrive {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 32px;
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--ink-2) 92%, transparent);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  box-shadow: inset 0 -1px 0 var(--line);
+}
+
+.tab {
+  min-height: 48px;
+  padding: 0 4px;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  color: var(--ice-60);
+  box-shadow: inset 0 -2px 0 transparent;
+  transition: color 160ms, box-shadow 160ms;
+}
+
+.tab[aria-selected='true'] {
+  color: var(--ice);
+  box-shadow: inset 0 -2px 0 var(--ice);
+}
+
+.way {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Two lines tall on every tab, so the button never jumps when the tab changes. */
+.cmd {
+  display: block;
+  min-height: 88px;
+  padding: 20px;
+  border-radius: var(--radius);
+  background: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--line);
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--ice);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+.prompt {
+  color: var(--ice-38);
+  user-select: none;
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 68px;
+  border-radius: var(--radius);
+  background: var(--ice);
+  color: var(--ink);
+  font-size: 15px;
+  transition:
+    transform 100ms cubic-bezier(0.2, 0, 0, 1),
+    opacity 240ms;
+}
+
+.btn .word {
+  letter-spacing: 0.05em;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) {
+  .btn:hover {
+    opacity: 0.9;
+  }
+  .tab:hover {
+    color: var(--ice);
+  }
+}
+
+.tools {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  list-style: none;
+}
+
+.tool {
+  display: grid;
+  grid-template-columns: 136px minmax(0, 1fr);
+  column-gap: 16px;
+  align-items: baseline;
+  padding: 14px 0;
+  font-size: 15px;
+  line-height: 1.4;
+  box-shadow: inset 0 1px 0 var(--line);
+}
+
+.name {
+  font-weight: 600;
+  color: var(--ice);
+}
+
+.what {
+  color: var(--ice-60);
+}
+
+.note {
+  margin-top: -8px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ice-60);
+  text-wrap: pretty;
+}
+
+@media (max-width: 1000px) {
+  .body {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 40px;
+    max-width: 640px;
+  }
+  /* The command and its button come right after the title; what an agent reads follows them. */
+  .side {
+    display: contents;
+  }
+  /* As wide as the panel above it. */
+  .live {
+    order: 1;
+    max-width: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .body {
+    padding-top: calc(64px + env(safe-area-inset-top) + 16px);
+    padding-bottom: calc(32px + env(safe-area-inset-bottom));
+    row-gap: 32px;
+  }
+  .intro {
+    gap: 16px;
+  }
+  .title {
+    font-size: clamp(30px, 9.4vw, 56px);
+  }
+  .lede {
+    font-size: 15px;
+  }
+  .live {
+    padding: 16px;
+  }
+  .answer {
+    font-size: 15px;
+  }
+  .panel {
+    padding: 20px 16px;
+    gap: 20px;
+  }
+  /* Long words narrow on the width axis, never in size (BRANDBOOK §4). */
+  .tab {
+    font-size: 12px;
+    font-stretch: 85%;
+    letter-spacing: 0.04em;
+  }
+  .cmd {
+    min-height: 74px;
+    padding: 16px;
+    font-size: 13px;
+  }
+  .btn {
+    height: 72px;
+    font-size: 13px;
+  }
+  .tool {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 2px;
+    font-size: 13px;
+  }
+}
+
+/* The narrowest phones fit the longest command in three lines. */
+@media (max-width: 359px) {
+  .cmd {
+    min-height: 96px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .answer[data-ready],
+  .caret {
+    animation: none;
+  }
+  .btn,
+  .tab {
+    transition: opacity 200ms;
+  }
+  .btn:active {
+    transform: none;
+  }
+}

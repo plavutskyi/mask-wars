@@ -1,0 +1,115 @@
+{
+ "recordedAt": 1794247200000,
+ "exchanges": [
+  {
+   "url": "https://rpc.mainnet.fastnear.com",
+   "request": {
+    "jsonrpc": "2.0",
+    "method": "query",
+    "params": {
+     "account_id": "season.maskwars.near",
+     "args_base64": "e30=",
+     "finality": "final",
+     "method_name": "season",
+     "request_type": "call_function"
+    }
+   },
+   "status": 200,
+   "response": {
+    "jsonrpc": "2.0",
+    "id": "maskwars-check",
+    "error": {
+     "name": "HANDLER_ERROR",
+     "cause": {
+      "name": "UNKNOWN_ACCOUNT",
+      "info": {
+       "requested_account_id": "season.maskwars.near",
+       "block_height": 230000000,
+       "block_hash": "HxEmptyMainnetBeforeSeasonZeroAAAAAAAAAAAAAA"
+      }
+     },
+     "code": -32000,
+     "message": "Server error",
+     "data": "account season.maskwars.near does not exist while viewing"
+    }
+   }
+  },
+  {
+   "url": "https://rpc.mainnet.fastnear.com",
+   "request": {
+    "jsonrpc": "2.0",
+    "method": "query",
+    "params": {
+     "account_id": "season.maskwars.near",
+     "args_base64": "eyJsaW1pdCI6NTB9",
+     "finality": "final",
+     "method_name": "latest",
+     "request_type": "call_function"
+    }
+   },
+   "status": 200,
+   "response": {
+    "jsonrpc": "2.0",
+    "id": "maskwars-check",
+    "error": {
+     "name": "HANDLER_ERROR",
+     "cause": {
+      "name": "UNKNOWN_ACCOUNT",
+      "info": {
+       "requested_account_id": "season.maskwars.near",
+       "block_height": 230000000,
+       "block_hash": "HxEmptyMainnetBeforeSeasonZeroAAAAAAAAAAAAAA"
+      }
+     },
+     "code": -32000,
+     "message": "Server error",
+     "data": "account season.maskwars.near does not exist while viewing"
+    }
+   }
+  },
+  {
+   "url": "https://rpc.mainnet.fastnear.com",
+   "request": {
+    "jsonrpc": "2.0",
+    "method": "query",
+    "params": {
+     "account_id": "season.maskwars.near",
+     "args_base64": "e30=",
+     "finality": "final",
+     "method_name": "next",
+     "request_type": "call_function"
+    }
+   },
+   "status": 200,
+   "response": {
+    "jsonrpc": "2.0",
+    "id": "maskwars-check",
+    "error": {
+     "name": "HANDLER_ERROR",
+     "cause": {
+      "name": "UNKNOWN_ACCOUNT",
+      "info": {
+       "requested_account_id": "season.maskwars.near",
+       "block_height": 230000000,
+       "block_hash": "HxEmptyMainnetBeforeSeasonZeroAAAAAAAAAAAAAA"
+      }
+     },
+     "code": -32000,
+     "message": "Server error",
+     "data": "account season.maskwars.near does not exist while viewing"
+    }
+   }
+  },
+  {
+   "url": "https://tx.main.fastnear.com/v0/account",
+   "request": {
+    "account_id": "bounty.maskwars.near"
+   },
+   "status": 200,
+   "response": {
+    "account_txs": [],
+    "txs_count": 0
+   }
+  }
+ ]
+}

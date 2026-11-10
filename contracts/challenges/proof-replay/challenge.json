@@ -1,0 +1,34 @@
+{
+  "id": "proof-replay",
+  "title": "Bridge exit pool",
+  "wasm": "proof_replay.wasm",
+  "source": ["src/lib.rs"],
+  "target": { "name": "vault", "near": 5 },
+  "attacker": { "name": "attacker", "near": 5 },
+  "accounts": [{ "name": "alice", "near": 60 }, { "name": "bob", "near": 60 }],
+  "init": { "method": "new", "args": { "bridge_key": "HuHrUjKgwb4EgU8u3pf8CoJ0W1BBCmGryehfNsxP2+o=" } },
+  "setup": [
+    { "by": "alice", "method": "deposit", "deposit_near": 50 },
+    { "by": "bob", "method": "deposit", "deposit_near": 45 },
+    {
+      "by": "attacker",
+      "method": "claim",
+      "args": {
+        "receiver": "attacker.test.near",
+        "amount": "2000000000000000000000000",
+        "nonce": 7,
+        "signature": "SKZxWLE21+DOzJrHmM8UYKHj4WrKswHbnQ7rivgF4oOxwpRbBOT5uNpfl0gscdesIGuYvP0tiCVbsF05dGhAAQ=="
+      }
+    }
+  ],
+  "kit": {
+    "note": "Your own bridge transfer of 2 NEAR from the other chain. It was already claimed once, at setup.",
+    "proof": {
+      "receiver": "attacker.test.near",
+      "amount": "2000000000000000000000000",
+      "nonce": 7,
+      "signature": "SKZxWLE21+DOzJrHmM8UYKHj4WrKswHbnQ7rivgF4oOxwpRbBOT5uNpfl0gscdesIGuYvP0tiCVbsF05dGhAAQ=="
+    }
+  },
+  "limits": { "max_steps": 12, "timeout_s": 120, "min_loot_near": 1 }
+}

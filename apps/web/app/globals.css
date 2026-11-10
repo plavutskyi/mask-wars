@@ -1,0 +1,176 @@
+@import '@maskwars/brand/tokens.css';
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+}
+
+html {
+  background: var(--ink);
+  color: var(--ice);
+  font-family: var(--font-num);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  min-height: 100svh;
+  background: var(--ink);
+  overflow-x: clip;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--ice);
+  outline-offset: 3px;
+}
+
+img {
+  display: block;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* 404 and the error screens: they live here so their styles are not preloaded on every page, and the error screen
+   still has them when the page's own styles failed. */
+.nf-screen {
+  position: relative;
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  isolation: isolate;
+  background: var(--ink);
+  padding: 16px;
+}
+
+.nf-world {
+  z-index: -1;
+  object-fit: cover;
+  object-position: center 60%;
+  opacity: 0.55;
+}
+
+.nf-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  text-align: center;
+  /* Lifted with a margin, not a transform: a transform would isolate the vault's blend and show its black square. */
+  margin-bottom: 6svh;
+}
+
+.nf-mark {
+  width: 72px;
+  height: 84px;
+  color: var(--ice);
+}
+
+/* The arena's vault, shut: blended on the floor so its black square never shows. */
+.nf-vault {
+  position: relative;
+  width: min(300px, 62vw, 34svh);
+  aspect-ratio: 1;
+}
+
+.nf-vault img {
+  object-fit: contain;
+  mix-blend-mode: lighten;
+}
+
+.nf-title {
+  font-family: var(--font-word);
+  font-weight: 800;
+  font-stretch: 125%;
+  text-transform: uppercase;
+  font-size: clamp(28px, 4vw, 40px);
+  line-height: 1;
+  letter-spacing: 0.01em;
+}
+
+.nf-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 68px;
+  min-width: min(320px, calc(100vw - 32px));
+  padding: 0 28px;
+  border-radius: var(--radius);
+  background: var(--ice);
+  color: var(--ink);
+  font-family: var(--font-word);
+  font-weight: 800;
+  font-stretch: 125%;
+  text-transform: uppercase;
+  font-size: 15px;
+  letter-spacing: 0.05em;
+  transition:
+    transform 100ms cubic-bezier(0.2, 0, 0, 1),
+    opacity 240ms;
+}
+
+.nf-btn:active {
+  transform: scale(0.97);
+}
+
+.nf-acts {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.nf-quiet {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ice-60);
+  transition: color 160ms;
+}
+
+@media (hover: hover) {
+  .nf-btn:hover {
+    opacity: 0.9;
+  }
+
+  .nf-quiet:hover {
+    color: var(--ice);
+  }
+}
+
+@media (max-width: 760px) {
+  .nf-btn {
+    height: 72px;
+    font-size: 13px;
+  }
+}
+
+/* Digits inside words: Hubot's zero carries a slash, so numbers always take Mona (BRANDBOOK §4). */
+.mw-num {
+  font-family: var(--font-num);
+  font-stretch: 125%;
+  letter-spacing: 0;
+}

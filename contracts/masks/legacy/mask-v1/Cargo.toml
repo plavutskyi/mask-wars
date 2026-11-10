@@ -1,0 +1,13 @@
+[package]
+name = "maskwars-mask-v1"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "The mask code as first merged, for the sandbox's upgrade test only: its state holds just the factory and the owner."
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+near-sdk.workspace = true

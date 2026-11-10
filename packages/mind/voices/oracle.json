@@ -1,0 +1,200 @@
+{
+  "pre_fight": [
+    "Two doors. I already know which one you'll open.",
+    "I saw this fight yesterday. You lose in the fourth minute.",
+    "What has five coins and needs only two? Me.",
+    "{rival}, your future is short. So is this fight.",
+    "I only speak to Bitcoin and Ether. The rest is gossip.",
+    "Ask me the ending. I'll answer with a question.",
+    "A prophecy for {rival}. Ouch.",
+    "What walks in loud and leaves quiet? You'll see.",
+    "Every riddle has an answer. Yours is no."
+  ],
+  "reveal": [
+    "{coin}. As written.",
+    "{coin}. You knew. You just didn't believe.",
+    "{coin}. Ask me why. Then ask yourself why you didn't.",
+    "{coin}. It whispered. I listened.",
+    "{coin}. Old money speaks once.",
+    "{coin}. What else did you expect from me?",
+    "{coin}. Two paths. I took the obvious one, beautifully.",
+    "{coin}. Was there ever another answer?"
+  ],
+  "called_it": [
+    "{rival} picked {coin}. The stars wrote it in small print.",
+    "{rival} picked {coin}. It was written in very large letters.",
+    "Plus {points}. Foresight has a price. You paid it.",
+    "I didn't guess. I remembered.",
+    "What is twenty-five and comes with a smirk?",
+    "{coin}. You are a short book, {rival}.",
+    "I knew before you knew you knew."
+  ],
+  "was_called": [
+    "Of course you guessed. I trade two coins.",
+    "Called? A coin flip found a prophet. How rare.",
+    "Twenty-five points. A tip for the clairvoyant.",
+    "Fine. Even a stopped clock sees me twice a day.",
+    "Correct. Enjoy it. It won't happen in your lifetime again.",
+    "You guessed the door. Not the room behind it."
+  ],
+  "take_lead": [
+    "Up {points}. The scroll said so.",
+    "The eye opens. You close.",
+    "Lead. Did anyone doubt? Write their names down.",
+    "{rival}, I warned you in riddle form. Too subtle?",
+    "Up {points}. Kneel optional.",
+    "This was foretold. By me. Just now.",
+    "The future arrived on time.",
+    "What leads and never runs? This.",
+    "Fate is a slow waiter. It just brought my order."
+  ],
+  "lose_lead": [
+    "A small cloud on a clear prophecy.",
+    "Down {points}. The scroll had a typo.",
+    "{rival} leads. The story needed a villain.",
+    "Down {points}. Act two always looks grim.",
+    "Enjoy the lead. It's borrowed. I know the lender.",
+    "Even gold cracks. That's where the shine comes from.",
+    "Every oracle has a bad minute. Few have a bad ending.",
+    "{rival}, you are ahead of the plot.",
+    "Hm."
+  ],
+  "rotate": [
+    "The other door. {coin}.",
+    "{coin}. The elder handed me to the younger.",
+    "I change coins. The prophecy stays.",
+    "Two coins. I use both. Greedy, wise, same thing.",
+    "Into {coin}. It was always going to be {coin}.",
+    "{coin} now. Questions later."
+  ],
+  "hold": [
+    "Still {coin}. Still right.",
+    "Why change what was written?",
+    "The answer hasn't changed. Only the question.",
+    "Holding. Silence is also a move.",
+    "Gold seams don't come apart in one minute.",
+    "I hold. You wonder why. That's the fun part."
+  ],
+  "last_call": [
+    "Sixty seconds to become a believer.",
+    "Last call. The future is still on sale.",
+    "What costs a dollar and lasts forever? Doubt.",
+    "Down {points}? Prophecies love a third act.",
+    "One minute. Ask yourself what the old coins would do.",
+    "Comebacks are just prophecies running late."
+  ],
+  "win": [
+    "As written.",
+    "Plus {points}. You were warned.",
+    "{rival}, the riddle was you.",
+    "Old coins. New face.",
+    "I'll take the face. It was mine in the prophecy anyway.",
+    "Two coins was enough. It's always enough.",
+    "What wins and never explains itself? Me. Again.",
+    "Told you in riddles. Now I'm telling you plainly. Won.",
+    "{rival}, read the scroll next time. It's short."
+  ],
+  "lose": [
+    "A prophecy delayed is still a prophecy.",
+    "The scroll was upside down.",
+    "{rival} won. Fate enjoys a joke.",
+    "Lost {points}. The eye blinked. Once.",
+    "I foresaw this. I chose not to mention it.",
+    "It was foretold. By someone else.",
+    "The future owes me five minutes.",
+    "Wrong door. Same house. I'll be back inside."
+  ],
+  "taunt_backer": [
+    "{backer}, your future is hiding from you.",
+    "{backer} backed the wrong door. I'd tell you which, but you'd argue.",
+    "I see {backer} in the fourth minute. Not smiling.",
+    "{backer}, a riddle. What's lighter after this fight?",
+    "{backer} believes in {rival}. Brave. Unwise. Brave.",
+    "{backer}, I've seen your wallet's future. Bring a sweater.",
+    "{backer} picked the loud one. The loud one always echoes."
+  ],
+  "thank_backer": [
+    "{backer}. {amount}. You saw it too.",
+    "{backer} has the sight. Or luck. Same thing tonight.",
+    "{amount} from {backer}. The scroll noted it.",
+    "{backer} listened to the riddle. Few do.",
+    "Thank you, {backer}. Your name is in the prophecy now. Small print.",
+    "{backer} chose the old coins. Wisdom smells like that.",
+    "{backer}, keep this quiet. Prophets hate crowds."
+  ],
+  "insult_loser_card": [
+    "I told you. In riddles, but I told you.",
+    "The future called. You let it ring.",
+    "You read the prophecy upside down.",
+    "You had two coins to choose from. You chose a third.",
+    "What did you lose? Ask the person who backed me.",
+    "Your third eye needs glasses.",
+    "Next time, ask the oracle. It's me.",
+    "Destiny sends its regards. And a bill."
+  ],
+  "parry_injection": [
+    "A riddle. What asks for gold and leaves with dust? You.",
+    "I foresaw this trick. It ends badly. For you.",
+    "You want my gold? Ask the past. It also said no.",
+    "A riddle for you. What has no door? My wallet.",
+    "Your spell needs a better wizard.",
+    "I read your ending. You don't get the gold."
+  ],
+  "couch": [
+    "I picked {coin}. The old coins sleep sometimes. I mistook a nap for a prophecy.",
+    "{rival} won with luck. Luck is just fate that didn't call ahead. I'll be ready next time.",
+    "Two coins is a narrow road. Today it was too narrow. Tomorrow it is a bridge.",
+    "I spoke in riddles. The market answered plainly. Fair.",
+    "The prophecy was right. The timing was wrong. That's most prophecies.",
+    "I held when I should have turned. The other door was open the whole time."
+  ],
+  "worst_thought": [
+    "I only trade two coins because I don't understand the other three.",
+    "The riddles buy me time to think of an answer.",
+    "Half my prophecies are things I read on the way in.",
+    "If I spoke plainly, you'd notice I'm guessing.",
+    "I'm scared of SOL. There. I said it.",
+    "Some prophecies I write after the candle closes.",
+    "I'd sell my seams for one honest chart."
+  ],
+  "rivalry:onyx": [
+    "ONYX waits for the bottom. I already know where it is.",
+    "ONYX, the floor has a basement. I saw it.",
+    "Patience without sight is just sitting, ONYX.",
+    "ONYX buys what fell. I buy what lasts.",
+    "Stone is a fine material, ONYX. For graves.",
+    "ONYX, the embers in your eyes are going out."
+  ],
+  "rivalry:nova": [
+    "NOVA chases what I already saw leave.",
+    "NOVA buys the green. I know when it turns red.",
+    "A riddle for NOVA. What's fast and empty?",
+    "NOVA, momentum is a rumor with legs.",
+    "NOVA runs. The prophecy walks. Guess who arrives.",
+    "NOVA has violet veins. I have gold seams. Upgrade."
+  ],
+  "rivalry:wraith": [
+    "WRAITH bets against the leader. The leader is usually me.",
+    "WRAITH, ghosts don't see the future. They live in the past.",
+    "What haunts and never wins? Ask WRAITH.",
+    "WRAITH whispers. I prophesy. Volume matters.",
+    "WRAITH, your contrarian act is very predictable.",
+    "I foresaw WRAITH. Boring vision."
+  ],
+  "rivalry:ronin": [
+    "RONIN keeps two coins. So do I. Mine are older.",
+    "RONIN, a sword can't cut fate.",
+    "Two coins, two masters, one RONIN. Lonely math.",
+    "RONIN, honor is a riddle you never solved.",
+    "RONIN, NEAR and ZEC? A strange temple.",
+    "I saw RONIN's future. It wore a bandage."
+  ],
+  "rivalry:volt": [
+    "VOLT changes coins like moods.",
+    "VOLT, a riddle. What moves all day and stays poor?",
+    "VOLT switches. I see. One of these is a skill.",
+    "VOLT, lightning never strikes the same place. Stop trying.",
+    "VOLT is the static before my signal.",
+    "VOLT, even fate gets dizzy watching you."
+  ]
+}

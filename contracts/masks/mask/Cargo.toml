@@ -1,0 +1,16 @@
+[package]
+name = "maskwars-mask"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+description = "A mask's own account: no key of its own, race keys only from its factory, winnings only to its owner."
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+near-sdk.workspace = true
+
+[dev-dependencies]
+near-sdk = { workspace = true, features = ["unit-testing"] }

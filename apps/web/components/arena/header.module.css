@@ -1,0 +1,319 @@
+/* Header: the top 8 % of every page. BRANDBOOK §2, §8. Tokens only. */
+
+.head {
+  --gut: clamp(16px, 4.4vw, 64px);
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: 64px;
+  padding: 0 var(--gut);
+  padding-top: env(safe-area-inset-top);
+  box-sizing: content-box;
+  flex: none;
+}
+
+/* Over a page that draws its own scene to the top edge. */
+.head[data-overlay] {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.mark {
+  width: 24px;
+  height: 28px;
+  color: var(--ice);
+}
+
+.word,
+.live,
+.net,
+.link,
+.sheetLink {
+  font-family: var(--font-word);
+  font-weight: 800;
+  font-stretch: 125%;
+  text-transform: uppercase;
+}
+
+.word {
+  font-size: 17px;
+  letter-spacing: 0.05em;
+}
+
+/* The network, beside the mark: every number on the page is read from it. */
+.net {
+  padding-top: 2px;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  color: var(--ice-60);
+}
+
+.center {
+  position: absolute;
+  left: 50%;
+  top: calc(env(safe-area-inset-top) + 32px);
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+.right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+/* LIVE only on a real process: one colour, one dot, nothing else in --live. */
+.live {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  color: var(--live);
+}
+
+.live i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--live);
+  animation: pulse 1600ms ease-in-out infinite;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* The quiet links: in the header on a wide screen. */
+.links {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  color: var(--ice-60);
+  transition: color 160ms;
+}
+
+.link[aria-current='page'] {
+  color: var(--ice);
+}
+
+/* Forge appears only while the factory is open: it fades in where it stands, nothing else moves. */
+.link[data-place='forge'] {
+  color: var(--ember);
+  animation: arrive 400ms cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+@keyframes arrive {
+  from {
+    opacity: 0;
+  }
+}
+
+/* One button for the menu where the links do not fit. */
+.toggle {
+  display: none;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-right: -10px;
+  color: var(--ice);
+  border-radius: var(--radius);
+  transition: transform 100ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.toggle:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) {
+  .link:hover {
+    color: var(--ice);
+  }
+}
+
+/* Beside the race clock the links need the whole width of a laptop; without it, a tablet's is enough. */
+@media (max-width: 1279px) {
+  .head[data-center] .links {
+    display: none;
+  }
+
+  .head[data-center] .toggle {
+    display: grid;
+  }
+}
+
+@media (max-width: 899px) {
+  .links {
+    display: none;
+  }
+
+  .toggle {
+    display: grid;
+  }
+}
+
+@media (max-width: 760px) {
+  .word,
+  .net {
+    display: none;
+  }
+
+  /* The clock steps beside the mark, its label over the digits, so it never meets LIVE and the menu on a phone. */
+  .center {
+    position: static;
+    transform: none;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+    line-height: 1;
+  }
+
+  .right {
+    gap: 16px;
+  }
+
+  .live {
+    font-size: 12px;
+  }
+}
+
+/* The open menu: the whole screen, the arena's ink, the words big enough to hit with a thumb. ------------------- */
+
+.sheet {
+  --gut: clamp(16px, 4.4vw, 64px);
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  padding: env(safe-area-inset-top) var(--gut) calc(24px + env(safe-area-inset-bottom));
+  background: color-mix(in srgb, var(--ink) 96%, transparent);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  animation: sheetIn 220ms cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+@keyframes sheetIn {
+  from {
+    opacity: 0;
+  }
+}
+
+.sheetHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 64px;
+  flex: none;
+}
+
+.sheetHead .toggle {
+  display: grid;
+}
+
+.sheetLinks {
+  display: flex;
+  flex-direction: column;
+  margin: auto 0;
+  padding: 24px 0;
+}
+
+.sheetLink {
+  display: flex;
+  align-items: center;
+  min-height: 72px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: clamp(30px, 8.4vw, 48px);
+  line-height: 1;
+  letter-spacing: 0.01em;
+  color: var(--ice-60);
+  animation: rise 360ms cubic-bezier(0.2, 0, 0, 1) both;
+  transition: color 160ms;
+}
+
+.sheetLink:first-child {
+  border-top: 1px solid var(--line);
+}
+
+.sheetLink[aria-current='page'] {
+  color: var(--ice);
+}
+
+.sheetLink[data-place='forge'] {
+  color: var(--ember);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+.sheetQuiet {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  min-height: 44px;
+  flex: none;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ice-60);
+  transition: color 160ms;
+}
+
+@media (hover: hover) {
+  .sheetLink:hover,
+  .sheetQuiet:hover {
+    color: var(--ice);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live i {
+    animation: none;
+  }
+
+  .sheetLink {
+    animation: fade 200ms linear both;
+  }
+
+  .sheet {
+    animation-duration: 200ms;
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}

@@ -1,0 +1,67 @@
+{
+  "base": "http://localhost:3123",
+  "at": "2026-11-08T11:31:54.152Z",
+  "shots": [
+    {
+      "file": "idle-desk.jpg",
+      "tier": "high"
+    },
+    {
+      "file": "live-desk.jpg",
+      "tier": "high"
+    },
+    {
+      "file": "breach-desk.jpg",
+      "tier": "high"
+    },
+    {
+      "file": "paid-desk.jpg",
+      "tier": "high"
+    },
+    {
+      "file": "held-desk.jpg",
+      "tier": "high"
+    },
+    {
+      "file": "idle-phone.jpg",
+      "tier": "high"
+    },
+    {
+      "file": "live-phone.jpg",
+      "tier": "high"
+    },
+    {
+      "file": "breach-phone.jpg",
+      "tier": "high"
+    },
+    {
+      "file": "paid-phone.jpg",
+      "tier": "high"
+    },
+    {
+      "file": "held-phone.jpg",
+      "tier": "high"
+    },
+    {
+      "file": "live-phone-low.jpg",
+      "tier": "low"
+    },
+    {
+      "file": "paid-phone-low.jpg",
+      "tier": "low"
+    },
+    {
+      "file": "breach-desk-reduced.jpg",
+      "tier": "high"
+    },
+    {
+      "file": "live-desk-page.jpg",
+      "tier": "high"
+    },
+    {
+      "file": "live-phone-page.jpg",
+      "tier": "high"
+    }
+  ],
+  "problems": []
+}

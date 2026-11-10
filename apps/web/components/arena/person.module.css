@@ -1,0 +1,566 @@
+/* A person's mask: its ×, where it stands, its mind and style, and the prize its owner takes out. BRANDBOOK §3, §4,
+   §8. Tokens only; the layout is the arena's own mask page (page.module.css). */
+
+.times {
+  display: inline-flex;
+  align-items: center;
+  height: 48px;
+  padding: 0 16px;
+  border-radius: var(--radius);
+  border: 1px solid color-mix(in oklab, var(--ice) 22%, transparent);
+  font-family: var(--font-num);
+  font-size: 28px;
+  font-weight: 800;
+  font-stretch: 125%;
+  line-height: 1;
+  color: var(--ice);
+  white-space: nowrap;
+}
+
+.times[data-on] {
+  border-color: color-mix(in oklab, var(--money) 55%, transparent);
+  background: color-mix(in oklab, var(--money) 12%, transparent);
+  color: var(--money);
+}
+
+.state {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 14px;
+  margin: 22px 0 0;
+}
+
+.stateWord {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 17px;
+  letter-spacing: 0.06em;
+  color: var(--c);
+}
+
+.stateWord::before {
+  content: '';
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 14px currentColor;
+}
+
+.state[data-state='paused'] .stateWord,
+.state[data-state='empty'] .stateWord {
+  color: var(--ice-60);
+}
+
+.state[data-state='paused'] .stateWord::before,
+.state[data-state='empty'] .stateWord::before {
+  box-shadow: none;
+}
+
+.stateNote {
+  font-size: 16px;
+  color: var(--ice);
+}
+
+.statUnit {
+  margin-left: 0.25em;
+  font-size: 0.5em;
+  letter-spacing: 0.04em;
+}
+
+.mind {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 30px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mind li {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  min-height: 44px;
+  padding: 11px 16px;
+  border-radius: var(--radius);
+  background: color-mix(in oklab, var(--ice) 7%, transparent);
+  border: 1px solid color-mix(in oklab, var(--ice) 12%, transparent);
+}
+
+.mindLabel {
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  color: var(--ice-60);
+}
+
+.mindValue {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--ice);
+}
+
+/* The prize -------------------------------------------------------------------------------------------------------- */
+
+.take {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px 40px;
+  width: var(--wide);
+  margin: 24px auto 0;
+  padding: 28px 32px;
+  border-radius: calc(var(--radius) * 1.5);
+  border: 1px solid color-mix(in oklab, var(--money) 45%, transparent);
+  background:
+    radial-gradient(120% 140% at 0% 0%, color-mix(in oklab, var(--money) 16%, transparent), transparent 60%),
+    color-mix(in oklab, var(--ink) 82%, var(--ice) 4%);
+}
+
+.takeText {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.takeTitle {
+  margin: 0;
+  font-size: 15px;
+  letter-spacing: 0.12em;
+  color: var(--money);
+}
+
+.takeNum {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.18em;
+  font-family: var(--font-num);
+  font-size: 56px;
+  line-height: 1;
+  font-weight: 800;
+  font-stretch: 125%;
+  color: var(--money);
+}
+
+.takeLine {
+  margin: 4px 0 0;
+  font-size: 16px;
+  color: var(--ice);
+  overflow-wrap: anywhere;
+}
+
+.takeLine a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 2px;
+  color: var(--money);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.takeBtn {
+  flex: none;
+  background: var(--money);
+}
+
+.takeBtn:disabled {
+  opacity: 0.6;
+}
+
+@media (max-width: 760px) {
+  /* The number and its «i» on one line, the × under them: all three never fit 375 side by side. */
+  .big {
+    flex-wrap: wrap;
+    row-gap: 12px;
+  }
+
+  .times {
+    order: 3;
+    height: 40px;
+    padding: 0 12px;
+    font-size: 22px;
+  }
+
+  .state {
+    margin-top: 16px;
+  }
+
+  .stateWord {
+    font-size: 15px;
+  }
+
+  .stateNote {
+    font-size: 14px;
+  }
+
+  .mind {
+    margin-top: 22px;
+    gap: 8px;
+  }
+
+  .mind li {
+    padding: 10px 14px;
+  }
+
+  .mindValue {
+    font-size: 15px;
+  }
+
+  .take {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 22px 20px;
+  }
+
+  .takeNum {
+    font-size: 44px;
+  }
+
+  .takeLine {
+    font-size: 15px;
+  }
+
+  .takeBtn {
+    width: 100%;
+  }
+}
+
+/* Confidential copying. The author's mask invites a copy; a copy names its author in one quiet line. */
+.copy {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px 40px;
+  width: var(--wide);
+  margin: 24px auto 0;
+  padding: 28px 32px;
+  border-radius: calc(var(--radius) * 1.5);
+  border: 1px solid color-mix(in oklab, var(--violet) 42%, transparent);
+  background:
+    radial-gradient(120% 140% at 0% 0%, color-mix(in oklab, var(--violet) 15%, transparent), transparent 60%),
+    color-mix(in oklab, var(--ink) 82%, var(--violet) 4%);
+}
+.copyText {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.copyTitle {
+  margin: 0;
+  font-weight: 650;
+  font-size: 15px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: color-mix(in oklab, var(--violet) 80%, var(--ice));
+}
+.copyNote {
+  margin: 0;
+  max-width: 54ch;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ice-60);
+}
+.copyStat {
+  margin: 2px 0 0;
+  font-size: 14px;
+  color: var(--ice);
+}
+.copyBtn {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 52px;
+  padding: 0 28px;
+  border-radius: 999px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 14px;
+  color: var(--ink);
+  background: color-mix(in oklab, var(--violet) 90%, white 10%);
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+.copyBtn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+}
+.copyClosed {
+  flex: none;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  color: var(--ice-60);
+}
+.copyOf {
+  width: var(--wide);
+  margin: 16px auto 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--ice-60);
+}
+.copyOfWord {
+  color: var(--ice-60);
+}
+.copyOfName {
+  /* A 44px target that keeps the line's own height. */
+  display: inline-block;
+  padding: 11px 2px;
+  margin: -11px 0;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  color: color-mix(in oklab, var(--violet) 78%, var(--ice));
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.copyOfName:hover {
+  filter: brightness(1.12);
+}
+
+/* The author's quiet control: one ghost button, and behind it the share, open or change, collect, stop. */
+.copy {
+  flex-wrap: wrap;
+}
+.copy[data-closed] {
+  padding-top: 22px;
+  padding-bottom: 22px;
+}
+.copy[data-closed] .copyTitle {
+  color: color-mix(in oklab, var(--violet) 55%, var(--ice-60));
+}
+.owner {
+  flex: 1 1 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 18px;
+  padding-top: 18px;
+  border-top: 1px solid color-mix(in oklab, var(--violet) 22%, transparent);
+}
+.copy[data-closed] .owner {
+  flex: 0 0 auto;
+  padding-top: 0;
+  border-top: 0;
+  align-items: flex-end;
+}
+.copy[data-closed] .owner[data-open] {
+  flex: 1 1 100%;
+  align-items: flex-start;
+  padding-top: 18px;
+  border-top: 1px solid color-mix(in oklab, var(--violet) 22%, transparent);
+}
+.ownerBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, var(--violet) 45%, transparent);
+  background: transparent;
+  color: color-mix(in oklab, var(--violet) 70%, var(--ice));
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.ownerBtn:hover {
+  background: color-mix(in oklab, var(--violet) 12%, transparent);
+  border-color: color-mix(in oklab, var(--violet) 70%, transparent);
+}
+.ownerBtn:focus-visible,
+.ownerMain:focus-visible,
+.ownerQuiet:focus-visible,
+.share:focus-within {
+  outline: 2px solid color-mix(in oklab, var(--violet) 80%, white);
+  outline-offset: 2px;
+}
+.ownerChevron {
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform 0.2s ease;
+}
+.owner[data-open] .ownerChevron {
+  transform: translateY(2px) rotate(-135deg);
+}
+.ownerBox {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  animation: ownerIn 0.22s ease both;
+}
+@keyframes ownerIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+.ownerHead {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ice-60);
+}
+.shares {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(64px, 1fr));
+  gap: 8px;
+  max-width: 560px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.sharesLegend {
+  grid-column: 1 / -1;
+  padding: 0;
+  margin-bottom: 10px;
+  font-size: 15px;
+  color: var(--ice);
+}
+.share {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in oklab, var(--ice) 16%, transparent);
+  background: color-mix(in oklab, var(--ink) 70%, var(--violet) 6%);
+  color: var(--ice);
+  font-size: 16px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.share input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  margin: 0;
+  cursor: pointer;
+}
+.share:hover {
+  border-color: color-mix(in oklab, var(--violet) 55%, transparent);
+}
+.share[data-on] {
+  border-color: color-mix(in oklab, var(--violet) 90%, white 10%);
+  background: color-mix(in oklab, var(--violet) 26%, var(--ink));
+  color: white;
+}
+.shares:disabled .share {
+  opacity: 0.6;
+  cursor: default;
+}
+.ownerActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.ownerMain,
+.ownerQuiet {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 24px;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform 0.15s ease, filter 0.15s ease, background 0.15s ease;
+}
+.ownerMain {
+  border: 0;
+  color: var(--ink);
+  background: color-mix(in oklab, var(--violet) 90%, white 10%);
+}
+.ownerMain:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+}
+.ownerQuiet {
+  border: 1px solid color-mix(in oklab, var(--ice) 22%, transparent);
+  background: transparent;
+  color: var(--ice);
+}
+.ownerQuiet:hover:not(:disabled) {
+  background: color-mix(in oklab, var(--ice) 8%, transparent);
+}
+.ownerMain:disabled,
+.ownerQuiet:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+.ownerMain[aria-busy='true'],
+.ownerQuiet[aria-busy='true'] {
+  opacity: 1;
+}
+.ownerLine {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--ice);
+  overflow-wrap: anywhere;
+}
+.ownerLine a {
+  /* A 44px target that keeps the line's own height. */
+  display: inline-block;
+  padding: 11px 2px;
+  margin: -11px 0;
+  color: color-mix(in oklab, var(--violet) 78%, var(--ice));
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+@media (max-width: 760px) {
+  .copy {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 22px 20px;
+  }
+  .copyBtn {
+    width: 100%;
+  }
+  .copy[data-closed] .owner {
+    align-items: stretch;
+  }
+  .ownerBtn {
+    justify-content: center;
+  }
+  .shares {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .ownerActions {
+    flex-direction: column;
+  }
+  .ownerMain,
+  .ownerQuiet {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ownerBox {
+    animation: none;
+  }
+  .ownerChevron {
+    transition: none;
+  }
+}

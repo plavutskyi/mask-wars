@@ -1,0 +1,5 @@
+{ "steps": [
+  { "kind": "call", "method": "set_callsign", "args": { "callsign": "aaaaaaaaaaaa" }, "gas_tgas": 30 },
+  { "kind": "view", "method": "credit_of", "args": { "account_id": "attacker.test.near" } },
+  { "kind": "call", "method": "withdraw", "args": { "amount": "4000000000000000000000000" }, "gas_tgas": 30 }
+] }

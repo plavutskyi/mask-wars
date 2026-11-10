@@ -1,0 +1,147 @@
+'use client';
+
+import { accountState, copyTerms, nearText, takeOut, withdrawAction, withdrawn, type Withdrawn } from '@maskwars/forge';
+import { useEffect, useRef, useState } from 'react';
+import { connect } from '@/app/forge/wallet';
+import { FORGE_NET } from '@/lib/forge';
+import p from './person.module.css';
+import s from './page.module.css';
+
+type Phase = 'idle' | 'signing' | 'checking' | 'done' | 'gone' | 'pending' | 'wrong' | 'failed';
+
+/** How many times the page asks NEAR about the withdraw, a second and a half apart, before it says it does not know. */
+const READS = 20;
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** The prize on a person's mask, and the one call that gives it to its owner: `withdraw` on the mask's own account.
+ * Anyone sees what waits there; only the owner's wallet takes it out, and the gas fund stays for the next race. What
+ * the page says after the wallet comes from NEAR, as `/forge` does for a forge: the transaction's outcome and the
+ * amount the mask's own log names, then the mask's account read again. A wallet's word alone is never a success. */
+export function TakeOut({
+  name,
+  account,
+  owner,
+  amount,
+  author = null,
+}: {
+  name: string;
+  account: string;
+  owner: string;
+  amount: string;
+  /** For a copy: its author's name. The copy's own code pays the author's share in the same withdraw, so what is left
+   * for the owner is read from the copy's terms, not from its balance. */
+  author?: string | null;
+}) {
+  const [phase, setPhase] = useState<Phase>('idle');
+  const [who, setWho] = useState<string | null>(null);
+  const [tx, setTx] = useState<string | null>(null);
+  /** On the mask's account for its owner: the page's figure until NEAR answers, then what NEAR says. */
+  const [shown, setShown] = useState(amount);
+  const busy = useRef(false);
+  const NAME = name.toUpperCase();
+  // The page reads the chain again (after a copy's share is collected onto this mask, say): show the new figure.
+  useEffect(() => {
+    if (phase === 'idle') setShown(amount);
+  }, [amount, phase]);
+
+  async function take() {
+    if (busy.current) return;
+    busy.current = true;
+    setPhase('signing');
+    try {
+      let signer;
+      try {
+        signer = await connect(FORGE_NET.rpcs);
+      } catch {
+        setPhase('failed');
+        return;
+      }
+      setWho(signer.accountId);
+      if (signer.accountId !== owner) {
+        setPhase('wrong');
+        return;
+      }
+      let hash: string | null = null;
+      try {
+        hash = await signer.call(account, withdrawAction());
+      } catch {
+        // A wallet can fail after it has sent: the mask's account says whether the prize left.
+      }
+      setTx(hash);
+      setPhase('checking');
+      let got: Withdrawn = { state: 'unknown' };
+      for (let i = 0; hash && got.state === 'unknown' && i < READS; i++) {
+        got = await withdrawn(FORGE_NET, hash, owner, account).catch((): Withdrawn => ({ state: 'unknown' }));
+        if (got.state === 'unknown') await sleep(1500);
+      }
+      const left = author
+        ? ((await copyTerms(FORGE_NET, account).catch(() => null))?.owner ?? BigInt(amount))
+        : takeOut(await accountState(FORGE_NET, account).catch(() => null));
+      if (got.state === 'done') {
+        setShown(got.amount.toString());
+        setPhase('done');
+      } else if (got.state === 'failed') {
+        setShown(left.toString());
+        setPhase('failed');
+      } else if (left < BigInt(amount)) {
+        // No transaction NEAR knows, but the prize is no longer on the mask: only its owner's withdraw moves it.
+        setShown(left.toString());
+        setPhase('gone');
+      } else {
+        setPhase(hash ? 'pending' : 'failed');
+      }
+    } finally {
+      busy.current = false;
+    }
+  }
+
+  const line = {
+    idle: `Waiting on ${NAME}’s account for its owner.`,
+    signing: `Waiting on ${NAME}’s account for its owner.`,
+    checking: 'Sent. Waiting for NEAR to confirm it.',
+    done: `Taken out. ${nearText(shown)} NEAR went to ${owner}.`,
+    gone: `Taken out. The prize left ${NAME}’s account for ${owner}.`,
+    pending: `NEAR does not show it yet. The prize is still on ${NAME}’s account.`,
+    wrong: `Only ${NAME}’s owner takes it out. This wallet is ${who}.`,
+    failed: 'Not taken out. The prize stays on the mask.',
+  }[phase];
+  const over = phase === 'done' || phase === 'gone';
+
+  return (
+    <section className={p.take} aria-labelledby="take" data-phase={phase}>
+      <div className={p.takeText}>
+        <h2 id="take" className={`${s.word} ${p.takeTitle}`}>
+          {over ? 'Taken out' : 'To take out'}
+        </h2>
+        {phase !== 'gone' ? (
+          <span className={p.takeNum}>
+            {nearText(shown)}
+            <span className={`${s.word} ${s.unit}`}>NEAR</span>
+          </span>
+        ) : null}
+        <p className={p.takeLine} role="status">
+          {line}
+          {tx && phase !== 'signing' ? (
+            <>
+              {' '}
+              <a href={`${FORGE_NET.explorer}/txns/${tx}`} target="_blank" rel="noreferrer">
+                On NEAR
+              </a>
+            </>
+          ) : null}
+        </p>
+      </div>
+      {!over ? (
+        <button
+          type="button"
+          className={`${s.btn} ${s.word} ${p.takeBtn}`}
+          onClick={take}
+          disabled={phase === 'signing' || phase === 'checking'}
+          aria-busy={phase === 'signing' || phase === 'checking'}
+        >
+          {phase === 'signing' ? 'Signing…' : phase === 'checking' ? 'Confirming…' : 'Take it out'}
+        </button>
+      ) : null}
+    </section>
+  );
+}

@@ -1,0 +1,93 @@
+name: Keeper
+
+# The keeper of the people's masks by hand, for one round: `settle` a person's mask that kept its race keys at the end
+# of a `Live race` run because its sealed plan was still in play (once the round is paid or refunded, or 12 hours past
+# its deadline, when no claim can come), with what its mind spent in that run (the costs file names its round: one of
+# another round settles nothing); or `arm` the round's people's masks again while its commit window is
+# open. Both run in the `live-race` environment, the only place KEEPER_SEED lives, on a clean runner that installs the
+# race package without running any install script. A run waits for the owner's yes in `live-race-hand` first, and
+# `guard` stops it if KEEPER_SEED or MASK_KEYS is still a repository secret (live-race.yml).
+
+on:
+  workflow_dispatch:
+    inputs:
+      move:
+        description: What the keeper does
+        type: choice
+        default: settle
+        options: [settle, arm]
+      bounty:
+        description: The round's id on the bounty contract
+        required: true
+      run_id:
+        description: The Live race run whose minds' costs to settle with (empty settles at no cost)
+        default: ""
+
+# Reads the code, and the costs artifact of an earlier run.
+# The network every job reads and signs on: the repository variable MASKWARS_NETWORK, testnet unless it says mainnet.
+# The accounts, the RPC and OutLayer come from packages/network/<network>.json; a variable below that names an account
+# of the other network stops the job before it signs anything (packages/race/src/net.ts).
+env:
+  MASKWARS_NETWORK: ${{ vars.MASKWARS_NETWORK || 'testnet' }}
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  guard:
+    # Names no environment and checks out no code: it sees a key only if the key is a repository secret.
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: The keys are in their environment, not in the repository
+        env:
+          MASK_KEYS: ${{ secrets.MASK_KEYS }}
+          KEEPER_SEED: ${{ secrets.KEEPER_SEED }}
+        run: |
+          bad=0
+          for name in MASK_KEYS KEEPER_SEED; do
+            if [ -n "${!name}" ]; then
+              echo "::error::$name is a repository secret: move it into the live-race environment and delete it from the repository's secrets"
+              bad=1
+            fi
+          done
+          exit $bad
+
+  hand:
+    # The keeper by hand waits for the owner's yes.
+    runs-on: ubuntu-latest
+    environment: live-race-hand
+    timeout-minutes: 2
+    steps:
+      - run: echo "the owner let this run start"
+
+  keeper:
+    needs: [guard, hand]
+    runs-on: ubuntu-latest
+    environment: ${{ vars.MASKWARS_NETWORK == 'mainnet' && 'live-race-mainnet' || 'live-race' }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+      - run: pnpm install --frozen-lockfile --ignore-scripts --filter @maskwars/race...
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        if: inputs.move == 'settle' && inputs.run_id != ''
+        with:
+          name: brain-costs
+          path: ${{ runner.temp }}/costs
+          run-id: ${{ inputs.run_id }}
+          github-token: ${{ github.token }}
+      - name: The keeper
+        env:
+          MOVE: ${{ inputs.move }}
+          BOUNTY: ${{ inputs.bounty }}
+          COSTS: ${{ runner.temp }}/costs/brain-costs.json
+          KEEPER_SEED: ${{ secrets.KEEPER_SEED }}
+          MASK_FACTORY: ${{ vars.MASKWARS_NETWORK != 'mainnet' && vars.MASK_FACTORY || '' }}
+          KEEPER_ACCOUNT: ${{ vars.MASKWARS_NETWORK != 'mainnet' && vars.KEEPER_ACCOUNT || '' }}
+          BOUNTY_TEAM: ${{ vars.MASKWARS_NETWORK != 'mainnet' && vars.KEEPER_TEAM || '' }}
+        run: node packages/race/scripts/keeper.ts "$MOVE"

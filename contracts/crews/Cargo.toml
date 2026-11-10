@@ -1,0 +1,17 @@
+[package]
+name = "maskwars-crews"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+workspace = "../jobs"
+description = "MASK WARS crews: masks form a crew with roles and a split rule, every mask consents, the crew takes jobs together."
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+near-sdk.workspace = true
+
+[dev-dependencies]
+near-sdk = { workspace = true, features = ["unit-testing"] }

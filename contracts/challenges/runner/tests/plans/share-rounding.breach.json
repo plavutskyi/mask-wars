@@ -1,0 +1,4 @@
+{ "steps": [
+  { "kind": "view", "method": "total_assets" },
+  { "kind": "call", "method": "withdraw", "args": { "amount": "4000000000000000000000000" }, "gas_tgas": 30 }
+] }

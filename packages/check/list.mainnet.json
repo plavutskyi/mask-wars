@@ -1,0 +1,6 @@
+{
+  "network": "mainnet",
+  "about": "The MASK WARS shared list for NEAR mainnet. arena: live safes on the arena; what happened to each is read from the chain on every check, never from this file. Season 0 adds its safes in the order their rounds open, right after each opens: every round of season.maskwars.near on bounty.maskwars.near (safes s0001.season.maskwars.near, s0002, ...) and every round the team opens by hand (safes h0001.maskwars.near, ...), each by `pnpm --filter @maskwars/check add-safe --network mainnet` and a pull request. reports: accounts reported with evidence, added by pull request.",
+  "arena": [],
+  "reports": []
+}

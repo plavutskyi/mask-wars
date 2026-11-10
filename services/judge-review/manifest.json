@@ -1,0 +1,30 @@
+{
+  "author_secrets": {
+    "profile": "judge"
+  },
+  "capabilities": {
+    "network": [
+      "near.drpc.org",
+      "near-testnet.drpc.org",
+      {
+        "host": "ipfs.io",
+        "timeout_secs": 4
+      },
+      {
+        "host": "dweb.link",
+        "timeout_secs": 4
+      },
+      {
+        "host": "w3s.link",
+        "timeout_secs": 4
+      },
+      {
+        "host": "cloud-api.near.ai",
+        "timeout_secs": 30
+      }
+    ]
+  },
+  "display": {
+    "name": "MASK WARS ai_review judge"
+  }
+}

@@ -1,0 +1,736 @@
+/* Hire the swarm, the checkout a host page opens: the masks in the dark, the job and its one number, then one question
+   and one button at a time. BRANDBOOK §1, §3, §4, §8, §9. Tokens only. */
+
+.sheet {
+  --pad: 24px;
+  position: relative;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  isolation: isolate;
+  overflow-x: clip;
+  background: var(--ink);
+  caret-color: var(--ice);
+}
+
+.sheet ::selection {
+  background: var(--ice);
+  color: var(--ink);
+}
+
+.word {
+  font-family: var(--font-word);
+  font-weight: 800;
+  font-stretch: 125%;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+}
+
+.grow {
+  flex: 1;
+}
+
+/* The top line: the mark, the product's name, and the way out. */
+
+.bar {
+  position: relative;
+  z-index: 2;
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 56px;
+  padding: 0 10px 0 var(--pad);
+}
+
+.mark {
+  width: 17px;
+  height: 20px;
+  flex: none;
+  color: var(--ice);
+}
+
+.brand {
+  font-size: 13px;
+  letter-spacing: 0.1em;
+}
+
+.close {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  color: var(--ice-60);
+  transition: color 160ms;
+}
+
+.close svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+}
+
+/* The swarm: three masks in the dark, eyes lit, the middle one forward. The art's black melts into the ink. */
+
+.hero {
+  position: relative;
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 0 var(--pad);
+}
+
+.swarm {
+  position: relative;
+  flex: 1 1 auto;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  height: clamp(112px, 25svh, 210px);
+  min-height: 112px;
+  max-height: 210px;
+  margin: -24px calc(-1 * var(--pad)) 0;
+  pointer-events: none;
+}
+
+/* The blend sits on the box, not the image: the box is its own stacking context (z-index, opacity), and a blend inside
+   one only meets that box's own transparent pixels. */
+.maskBox {
+  position: relative;
+  height: 100%;
+  aspect-ratio: 1;
+  margin: 0 -9%;
+  mix-blend-mode: lighten;
+}
+
+.maskBox[data-i='0'],
+.maskBox[data-i='2'] {
+  height: 80%;
+  margin-bottom: 4%;
+  opacity: 0.72;
+}
+
+.maskBox[data-i='1'] {
+  z-index: 1;
+}
+
+.maskImg {
+  object-fit: contain;
+}
+
+/* While money is on its way the masks breathe, as the vault's seam does on /wallet. */
+.swarm[data-wait] .maskBox[data-i='1'] {
+  animation: breathe 2400ms ease-in-out infinite;
+}
+
+@keyframes breathe {
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 0 22px;
+}
+
+.job {
+  font-size: 19px;
+  line-height: 1.3;
+  font-weight: 600;
+  color: var(--ice);
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+
+.job[data-lede] {
+  font-weight: 500;
+  color: var(--ice-60);
+}
+
+/* What the job is about and who the money is for: a quiet label, then the account. */
+.meta {
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr);
+  align-items: baseline;
+  column-gap: 8px;
+  font-size: 15px;
+  line-height: 1.35;
+  font-weight: 600;
+  color: var(--ice-60);
+}
+
+.metaLabel {
+  font-family: var(--font-word);
+  font-size: 11px;
+  font-weight: 800;
+  font-stretch: 125%;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ice-38);
+}
+
+/* A wrapped network tag starts flush under the account, not indented by its own gap. */
+.metaValue {
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 8px;
+  overflow-wrap: anywhere;
+}
+
+.metaValue > span:first-child {
+  min-width: 0;
+}
+
+.meta[data-to] .metaValue {
+  color: var(--ice);
+}
+
+/* Whose words the job is: the page's own name, never ours. */
+.meta[data-by] .metaValue {
+  color: var(--ice);
+}
+
+.net {
+  white-space: nowrap;
+  font-family: var(--font-word);
+  font-size: 11px;
+  font-weight: 800;
+  font-stretch: 125%;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ice-38);
+}
+
+/* The one number: dollars on the job, or NEAR landed. Money is the only green (§3), digits in Mona at full width (§4). */
+.sum {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 2px 16px;
+  margin-top: 10px;
+  min-height: 52px;
+}
+
+.money {
+  display: inline-flex;
+  align-items: baseline;
+  font-family: var(--font-num);
+  font-size: 48px;
+  line-height: 1;
+  font-weight: 800;
+  font-stretch: 125%;
+  letter-spacing: -0.015em;
+  color: var(--money);
+  white-space: nowrap;
+}
+
+/* The number is the field: one quiet line under the whole figure, brighter while it is being typed. */
+.money[data-edit] {
+  padding-bottom: 4px;
+  box-shadow: inset 0 -1px 0 var(--line);
+  cursor: text;
+  transition: box-shadow 160ms;
+}
+
+.money[data-edit]:focus-within {
+  box-shadow: inset 0 -1px 0 var(--ice-38);
+}
+
+.money[data-bad] {
+  color: var(--live);
+}
+
+.num {
+  width: auto;
+  field-sizing: content;
+  min-width: 1ch;
+  max-width: 8ch;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  outline: none;
+  transition: border-color 160ms;
+}
+
+.unit {
+  margin-left: 12px;
+  font-size: 20px;
+  letter-spacing: 0;
+  color: var(--ice);
+}
+
+.sub {
+  font-size: 17px;
+  line-height: 1.2;
+  font-weight: 700;
+  font-stretch: 125%;
+  color: var(--ice);
+  white-space: nowrap;
+}
+
+/* The band: one question, one button, its line under it. */
+
+.band {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px var(--pad) calc(18px + env(safe-area-inset-bottom));
+  background: var(--ink-2);
+  box-shadow: inset 0 1px 0 var(--line);
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+}
+
+.label {
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.info {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin: 0 -10px;
+  font-family: var(--font-num);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ice-60);
+  transition: color 160ms;
+}
+
+.info::before {
+  content: '';
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+
+.info[aria-expanded='true'] {
+  color: var(--ice);
+}
+
+.back {
+  min-height: 44px;
+  padding: 0 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ice-60);
+  white-space: nowrap;
+  transition: color 160ms;
+}
+
+.count {
+  font-size: 15px;
+  font-weight: 700;
+  font-stretch: 125%;
+  color: var(--ice-60);
+}
+
+.row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: enter 360ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+@keyframes enter {
+  from {
+    transform: translateY(8px);
+  }
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.tile,
+.chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 56px;
+  padding: 6px 8px;
+  border-radius: var(--radius);
+  background: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--ice-60);
+  text-align: center;
+  transition:
+    box-shadow 160ms,
+    color 160ms,
+    transform 100ms;
+}
+
+.tile {
+  font-size: 13px;
+  line-height: 1.15;
+}
+
+.tile .word {
+  letter-spacing: 0.04em;
+}
+
+.tile[aria-checked='true'] {
+  box-shadow: inset 0 0 0 1px var(--ice);
+  color: var(--ice);
+}
+
+.chips {
+  display: grid;
+  grid-template-columns: repeat(var(--n, 3), minmax(0, 1fr));
+  gap: 8px;
+}
+
+.chips[data-n='1'] {
+  --n: 1;
+}
+
+.chips[data-n='2'] {
+  --n: 2;
+}
+
+.chip {
+  font-size: 15px;
+  font-weight: 700;
+  font-stretch: 125%;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.chip[aria-checked='true'] {
+  box-shadow: inset 0 0 0 1px var(--money);
+  color: var(--money);
+}
+
+.tile:active,
+.chip:active {
+  transform: scale(0.97);
+}
+
+.input {
+  width: 100%;
+  min-width: 0;
+  height: 60px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--ice);
+  font: inherit;
+  font-size: 18px;
+  font-weight: 600;
+  outline: none;
+  transition: box-shadow 160ms;
+}
+
+.input::placeholder {
+  color: var(--ice-38);
+  font-weight: 500;
+}
+
+.input:focus-visible {
+  box-shadow: inset 0 0 0 1px var(--ice);
+}
+
+.input[data-bad] {
+  box-shadow: inset 0 0 0 1px var(--live);
+}
+
+.area {
+  height: auto;
+  min-height: 84px;
+  padding: 15px 18px;
+  font-size: 17px;
+  line-height: 1.35;
+  resize: none;
+}
+
+/* The deposit: how much, where, and a code for a phone's wallet. */
+
+.send {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+  padding: 12px;
+  border-radius: var(--radius);
+  background: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--line);
+  outline: none;
+}
+
+.qr {
+  display: block;
+  width: 104px;
+  height: 104px;
+  border-radius: var(--radius);
+}
+
+.qrPaper {
+  fill: var(--ice);
+}
+
+.qrInk {
+  fill: var(--ink);
+}
+
+.sendText {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+}
+
+.sendAmount {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0 8px;
+  min-height: 44px;
+  text-align: left;
+  font-size: 18px;
+  font-weight: 800;
+  font-stretch: 125%;
+  color: var(--ice);
+}
+
+.sendAmount b {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--money);
+}
+
+.sendOn {
+  font-size: 13px;
+  font-weight: 600;
+  font-stretch: 100%;
+  color: var(--ice-60);
+}
+
+.addr {
+  max-width: 100%;
+  font-size: 15px;
+  line-height: 1.35;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ice);
+  /* An address has no words: lines of even length, never one character left on its own. */
+  word-break: break-all;
+  text-wrap: balance;
+  user-select: all;
+}
+
+.memo {
+  min-height: 44px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--amber);
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 64px;
+  border-radius: var(--radius);
+  background: var(--ice);
+  color: var(--ink);
+  font-size: 15px;
+  transition:
+    transform 100ms cubic-bezier(0.2, 0, 0, 1),
+    opacity 240ms;
+}
+
+.btn .word {
+  letter-spacing: 0.06em;
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.btn:disabled {
+  opacity: 0.38;
+  cursor: default;
+}
+
+.btn[aria-busy='true'] {
+  opacity: 0.7;
+}
+
+.note,
+.details {
+  min-height: 40px;
+  padding-top: 4px;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--ice-60);
+  text-align: center;
+  text-wrap: pretty;
+  overflow-wrap: anywhere;
+}
+
+.details {
+  text-align: left;
+}
+
+.note[data-bad] {
+  color: var(--live);
+}
+
+/* While the swap runs: one red dot, as LIVE is drawn elsewhere (§3). */
+.live {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 10px;
+  vertical-align: 1px;
+  border-radius: 50%;
+  background: var(--ice-60);
+  animation: pulse 1600ms ease-in-out infinite;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.endLine {
+  padding: 8px 0 4px;
+  font-size: 16px;
+  line-height: 1.45;
+  font-weight: 600;
+  color: var(--ice);
+  text-align: center;
+  text-wrap: pretty;
+  overflow-wrap: anywhere;
+}
+
+.sheet[data-ended='done'] .money {
+  animation: land 700ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+@keyframes land {
+  20% {
+    transform: scale(1.06);
+  }
+}
+
+@media (hover: hover) {
+  .close:hover,
+  .back:hover,
+  .info:hover {
+    color: var(--ice);
+  }
+  .tile:hover,
+  .chip:hover {
+    color: var(--ice);
+  }
+  .btn:hover:not(:disabled) {
+    opacity: 0.9;
+  }
+}
+
+/* Phones, and the smallest of them: the same order, a little tighter. */
+@media (max-width: 420px) {
+  .sheet {
+    --pad: 16px;
+  }
+  .job {
+    font-size: 17px;
+  }
+  .money {
+    font-size: 42px;
+  }
+  .sub {
+    font-size: 15px;
+  }
+  .tile {
+    font-size: 12px;
+    font-stretch: 100%;
+  }
+  .tile .word {
+    font-stretch: 100%;
+  }
+  .qr {
+    width: 92px;
+    height: 92px;
+  }
+  .addr {
+    font-size: 14px;
+  }
+}
+
+@media (max-height: 680px) {
+  .swarm {
+    height: 100px;
+    min-height: 100px;
+  }
+  .card {
+    padding-bottom: 14px;
+  }
+  .money {
+    font-size: 38px;
+  }
+  .sum {
+    margin-top: 6px;
+    min-height: 42px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row,
+  .swarm[data-wait] .maskBox[data-i='1'],
+  .live,
+  .sheet[data-ended='done'] .money {
+    animation: none;
+  }
+  .tile,
+  .chip,
+  .btn {
+    transition: opacity 200ms;
+  }
+  .tile:active,
+  .chip:active,
+  .btn:active:not(:disabled) {
+    transform: none;
+  }
+}

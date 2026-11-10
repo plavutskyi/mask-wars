@@ -1,0 +1,19 @@
+[package]
+name = "review-judge-sandbox"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+publish = false
+description = "The ai_review judge against the real jobs contract in a local NEAR sandbox: open to settle with the judge's own verdict, and the attacks."
+
+[dependencies]
+anyhow = "1"
+job-judges-sandbox = { path = "../../judge-tests/sandbox" }
+jobs-sandbox = { path = "../../../contracts/jobs/sandbox" }
+k256 = { version = "0.13", default-features = false, features = ["ecdsa", "std"] }
+maskwars-judge-review = { path = ".." }
+near-workspaces = "0.24"
+serde_json = "1"
+sha3 = "0.10"
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "time"] }
+x25519-dalek = { version = "2", features = ["static_secrets"] }

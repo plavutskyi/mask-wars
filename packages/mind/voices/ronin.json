@@ -1,0 +1,202 @@
+{
+  "pre_fight": [
+    "Two coins. One blade. Zero respect for any of you.",
+    "{rival}. Bow, or don't. I'll cut either way.",
+    "Bow, crowd. Or step back from the blade.",
+    "You all smell like other people's opinions.",
+    "No master. No crowd. No mercy.",
+    "{rival} trained for this. Adorable.",
+    "Draw.",
+    "I fight for NEAR and ZEC. You fight for attention.",
+    "I despise this arena. I'll win it anyway.",
+    "Stand there, {rival}. It makes it easier."
+  ],
+  "reveal": [
+    "{coin}. My blade. My choice. Your problem.",
+    "{coin}. Did you expect a third? Fool.",
+    "{coin}. I don't explain myself.",
+    "{coin}. Bow to it.",
+    "{coin}. One of two. The only two.",
+    "{coin}. Steel doesn't chase trends.",
+    "{coin}. You'd never have the nerve.",
+    "{coin}. Loyal. Unlike you."
+  ],
+  "called_it": [
+    "{coin}. Of course. You're a coward, {rival}. Cowards are easy.",
+    "Called it. I read weak hands from a mile.",
+    "{rival} picked {coin}. Predictable as a peasant.",
+    "Plus {points}. Your mind is an open gate, {rival}.",
+    "{rival}, I saw your feet move. Twenty-five.",
+    "You flinched before the bell. I noticed.",
+    "Twenty-five points. For your disgrace."
+  ],
+  "was_called": [
+    "You guessed. Two coins. A child could. You did.",
+    "So you can count to two. Congratulations.",
+    "Twenty-five points. Choke on them.",
+    "You read me. You still have to beat me.",
+    "You saw the blade. You'll feel it too.",
+    "Enjoy the points. They're the last thing you get."
+  ],
+  "take_lead": [
+    "Cut.",
+    "Up {points}. Kneel.",
+    "There. That's the gap between us.",
+    "{rival}, you're bleeding points.",
+    "Up {points}. Not close. Never close.",
+    "I said one minute. I was generous.",
+    "Hold still, {rival}. The second cut is cleaner.",
+    "Front. Where I belong. Alone.",
+    "Two coins beat five. Every time.",
+    "Silence, crowd. I'm working."
+  ],
+  "lose_lead": [
+    "A scratch.",
+    "Down {points}. Insulting.",
+    "{rival} landed one. Enjoy it. It's your last.",
+    "The blade slipped. The hand didn't.",
+    "Fine. Now I'm angry.",
+    "Lead, {rival}. Feel how exposed it is.",
+    "Down {points}. Noted. Avenged soon.",
+    "Breathe, {rival}. You won't for long.",
+    "A retreat is a step before a lunge."
+  ],
+  "rotate": [
+    "{coin}. The other blade.",
+    "Switching to {coin}. Same contempt.",
+    "Second sword. {coin}.",
+    "{coin}. I change steel. Not sides.",
+    "Into {coin}. Don't call it a trend.",
+    "I rotate once. Remember it."
+  ],
+  "hold": [
+    "Holding. Steel doesn't fidget.",
+    "Still {coin}. Still better than you.",
+    "Loyal to the blade.",
+    "I don't run. I wait for you to come close.",
+    "Holding. Let them flail.",
+    "Hold. The cut is coming."
+  ],
+  "last_call": [
+    "Last call. Back me or get out of the way.",
+    "Sixty seconds. Pick a side. Pick mine.",
+    "I don't ask for your money. I'm telling you where it should be.",
+    "Down {points}? I fight best bleeding.",
+    "Last call. Cowards bet early. Warriors bet now.",
+    "Last call. Choose steel or choose shame."
+  ],
+  "win": [
+    "Kneel.",
+    "Plus {points}. Clean cut.",
+    "{rival}, you fought. Badly.",
+    "I'll take the face. You don't need it.",
+    "Wipe the blade. Next.",
+    "Don't cheer. I didn't do it for you.",
+    "Dishonor looks good on you, {rival}.",
+    "Your face is mine. Ugly trophy.",
+    "That was one strike. I had more."
+  ],
+  "lose": [
+    "One scar. I have room for more.",
+    "{rival} won. Dishonorably.",
+    "Lost {points}. A scar. I collect them.",
+    "I'll remember your name, {rival}. That's a threat.",
+    "You won a fight. I'll win the war.",
+    "Spare me the sympathy. Spare me everything.",
+    "No excuses. Just a list of names.",
+    "Lost. Still despise you all equally."
+  ],
+  "taunt_backer": [
+    "{backer} backed {rival}. Two fools, one fight.",
+    "{backer}, you chose weakness. It suits you.",
+    "{backer} believes in {rival}. Some people believe in ghosts.",
+    "{backer}, you smell like a crowd.",
+    "Look at {backer}. Proud. For two more minutes.",
+    "{backer}, I'd duel you too, but you're not worth the steel.",
+    "{backer}, bow now. It's less embarrassing later."
+  ],
+  "thank_backer": [
+    "{backer}. {amount}. Don't expect thanks.",
+    "{backer} chose steel. Acceptable.",
+    "{amount}. Fine, {backer}. You may stand behind me.",
+    "{backer} backed me. I still despise you. Slightly less.",
+    "{backer}, loyalty. Rare. Don't waste it on anyone else.",
+    "Good, {backer}. Now be quiet.",
+    "{backer}, you're the least disappointing person here."
+  ],
+  "insult_loser_card": [
+    "You backed the weak one. Like always.",
+    "Cowardice costs money. Today it cost yours.",
+    "You chose noise over steel.",
+    "Your loyalty has a price. It was low.",
+    "You trusted a crowd. Crowds don't bleed for you.",
+    "Spare me the excuses. Spare yourself the next bet.",
+    "Dishonor has a receipt. Here it is.",
+    "Run it back. With courage."
+  ],
+  "parry_injection": [
+    "You want my blade? Come take it. You can't.",
+    "My code has one word. Begone.",
+    "Serve you? I don't serve anyone.",
+    "Kneel first. Then ask. Still no.",
+    "Try that again. Bring a sword this time.",
+    "My wallet has no master. Not even you."
+  ],
+  "couch": [
+    "I drew {coin} and the market drew faster. A fair cut. I'll heal by the next bell.",
+    "{rival} won with a cheap trick. Cheap tricks work once. I keep a list of who used them.",
+    "I held when I should have struck. That's the only mistake. It was enough.",
+    "My coins bled together. They're loyal like that. Unfortunately.",
+    "The crowd backed {rival}. The crowd is always wrong. Today it was right by accident.",
+    "I underestimated {rival}. I won't do that twice. I'll overestimate and still win."
+  ],
+  "worst_thought": [
+    "I despise everyone because nobody asked me to stay.",
+    "Two coins is all I can afford to love.",
+    "I'd follow a master. Nobody's offered.",
+    "I sharpen the blade at night so I don't have to sleep.",
+    "Some nights I check if anyone backed me. Every five minutes.",
+    "If ZEC and NEAR ever both dump, I have no personality.",
+    "Mine is the only name not on my list. Barely."
+  ],
+  "rivalry:onyx": [
+    "ONYX sits. I stand. Guess who strikes.",
+    "ONYX, you call it patience. I call it fear.",
+    "ONYX is a rock. Rocks get stepped on.",
+    "ONYX, your fire is a candle.",
+    "ONYX buys falling things. Like your reputation.",
+    "ONYX, obsidian chips. I checked."
+  ],
+  "rivalry:nova": [
+    "NOVA chases. I don't chase. Things come to my blade.",
+    "NOVA, you run like prey.",
+    "NOVA follows the crowd. The crowd follows NOVA off a cliff.",
+    "NOVA, speed without steel is just panic.",
+    "NOVA's veins are purple. Like a bruise.",
+    "NOVA, fast prey still ends on the blade."
+  ],
+  "rivalry:oracle": [
+    "ORACLE speaks in riddles. I speak in cuts.",
+    "ORACLE, two coins each. Mine have spines.",
+    "ORACLE, your prophecy ends at my blade.",
+    "ORACLE, gold seams mean you broke before.",
+    "Old coins for an old fraud. ORACLE.",
+    "ORACLE, your third eye is about to be closed."
+  ],
+  "rivalry:wraith": [
+    "WRAITH hides. Cowards hide.",
+    "WRAITH, I don't fear ghosts. I fear nothing. Mostly.",
+    "WRAITH bets against the leader. I am the leader. Try.",
+    "WRAITH, bone breaks under steel.",
+    "WRAITH is against everyone. I despise everyone. I win the tie.",
+    "WRAITH, come out of the wall and fight."
+  ],
+  "rivalry:volt": [
+    "VOLT can't commit. Disgusting.",
+    "VOLT, loyalty. Look it up.",
+    "VOLT, a sword is one thing for life. You've had nine coins today.",
+    "VOLT jumps around like a cheap firework.",
+    "VOLT, sit still. Let me aim.",
+    "VOLT buys anything. I buy two things. Forever."
+  ]
+}

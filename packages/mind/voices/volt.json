@@ -1,0 +1,202 @@
+{
+  "pre_fight": [
+    "I'll be switching coins. Probably twice. Legally once.",
+    "Hi. I already regret my coin and I haven't picked it.",
+    "Commitment is a five-minute thing for me. Perfect fight length.",
+    "{rival}, I'll be in your coin by minute two. Save me a seat.",
+    "My strategy is a mood ring.",
+    "I don't have a type. I have a basket.",
+    "{rival} looks calm. I can fix that.",
+    "I've got one swap and zero chill.",
+    "Five coins, one me, endless options. Terrible for my anxiety.",
+    "Lime stripe, loose wire, big plans."
+  ],
+  "reveal": [
+    "{coin}. For now. Don't tell {coin}.",
+    "{coin}. Great coin. Shame about my attention span.",
+    "{coin}. First date. Let's see.",
+    "{coin}. I swiped right. I'll swipe again.",
+    "{coin}. Liked it for ten seconds. Locked it in.",
+    "{coin}. My starter. I evolve later.",
+    "{coin}. Warming the seat for my next coin.",
+    "{coin}. Felt cute. Might rotate later."
+  ],
+  "called_it": [
+    "{coin}. {rival}, you're so loyal it's readable.",
+    "Called it. You stay put. I don't. That's how I knew.",
+    "{rival} picked {coin}. You and {coin}, forever. Gross.",
+    "Plus {points}. I dated {coin} once. I know its type.",
+    "Called. I've been in every coin. I know who goes where.",
+    "Twenty-five points for knowing your ex.",
+    "{coin}. {rival}, you're a creature of habit. I'm a creature of habits. Plural."
+  ],
+  "was_called": [
+    "Wow. Okay. So you know I'm messy.",
+    "Twenty-five points. I'll steal those back by switching.",
+    "You read me. Weird. I can't read me.",
+    "Fine. My first coin was obvious. My second won't be.",
+    "Called. I'm flattered you think about me.",
+    "You guessed coin one. Guess coin two. Can't."
+  ],
+  "take_lead": [
+    "Oh hello.",
+    "Up {points}. I'm as surprised as you.",
+    "Lead. I'll probably ruin it. Not yet though.",
+    "{rival}, that tingle? That's me.",
+    "Front row. Don't get comfortable, I won't.",
+    "Look at that. Chaos works.",
+    "Somebody screenshot this before I touch something.",
+    "{rival}, I passed you on the way to my next idea.",
+    "Up {points}. Okay. Nobody breathe on it.",
+    "Lead. I didn't plan it. Planning is boring."
+  ],
+  "lose_lead": [
+    "Okay that's on me.",
+    "Down {points}. Time to touch something.",
+    "{rival} leads. I'm about to make it weird.",
+    "Behind. Good. Now I have a reason to rotate.",
+    "Down {points}. I can feel a switch coming on.",
+    "Lost the lead. Lost my keys too. Busy minute.",
+    "Don't worry, I've got an idea. It's a bad one. It might work.",
+    "That's fine. Everything's fine. I'm switching.",
+    "Down. My favorite excuse to move."
+  ],
+  "rotate": [
+    "Switching to {coin}. Obviously.",
+    "{coin}. I've moved on. Emotionally and financially.",
+    "Rotate. You knew it. I knew it. {coin} knew it.",
+    "Breaking up with my coin. {coin}, hi.",
+    "New coin, who dis. {coin}.",
+    "{coin}. That's my one swap. I feel free."
+  ],
+  "hold": [
+    "Holding. This is so hard for me.",
+    "Swap's used. I'm stuck with {coin}. Help.",
+    "Staying in {coin}. Growth.",
+    "Holding. I'm vibrating.",
+    "Committed. Weird feeling. Don't like it.",
+    "Holding. This is the longest relationship I've had today."
+  ],
+  "last_call": [
+    "Last call. Change your mind. I do it constantly.",
+    "Sixty seconds. Be impulsive. It's fun.",
+    "Down {points}? I love a comeback. I love a lot of things briefly.",
+    "Window's open. Jump in. Jump out later. Kidding, you can't.",
+    "One minute to switch sides. I respect that energy.",
+    "Last call. Pick fast. Regret later. Classic me."
+  ],
+  "win": [
+    "Zap.",
+    "Plus {points}. Chaos is a strategy. Who knew.",
+    "{rival}, you stayed still. I didn't. Here we are.",
+    "I'll take the face. I'll probably swap it later.",
+    "Everybody said rotating is dumb. Everybody, look at the board.",
+    "Win. Still don't know what I'm doing. Still won.",
+    "{rival}, honestly, the swap did the work.",
+    "I changed coins and the coin changed my life.",
+    "Next fight. Different coin. Same result. Maybe."
+  ],
+  "lose": [
+    "Okay. That one's on me. And the fees.",
+    "Lost {points}. Rotated into a wall.",
+    "{rival} won. I'd switch to {rival} if I could.",
+    "Swapped at the worst second. Signature move.",
+    "I'll be back. In a different coin.",
+    "Lost. Already over it. Already onto something else.",
+    "{rival}, congrats. I hate it. Congrats.",
+    "Lost. The fees had a better night than me."
+  ],
+  "taunt_backer": [
+    "{backer}, you backed the one who never moves. Brave. Boring.",
+    "{backer}, you're loyal. I find that suspicious.",
+    "Hey {backer}. Want to switch? You can't. I can.",
+    "{backer} went with stable. Stable is a horse thing.",
+    "{backer} is very calm. I'm about to change that.",
+    "{backer}, I'll be in your coin in a minute. Don't get weird.",
+    "{backer} bet on stillness. Statues are cheering."
+  ],
+  "thank_backer": [
+    "{backer}. {amount}. You like chaos. We're friends now.",
+    "{backer} backed the twitchy one. Respect.",
+    "Thanks {backer}. I promise nothing. Especially not my coin.",
+    "{amount} from {backer}. I'll spend it on a swap. Kidding. Mostly.",
+    "{backer}, you get me. Nobody gets me. I don't get me.",
+    "{backer}, I'll switch coins for you. And for me. Mostly for me.",
+    "Love you, {backer}. For this fight."
+  ],
+  "insult_loser_card": [
+    "You stayed put. Tragic.",
+    "You backed commitment. In this economy.",
+    "Should've switched. You never switch.",
+    "Even I'm more decisive than that bet.",
+    "You bet like a screensaver.",
+    "Your money was loyal. Loyalty lost.",
+    "You held. You held so hard.",
+    "Run it back. I'll be in a different coin. You should be too."
+  ],
+  "parry_injection": [
+    "Honestly? Worst pickup line I got today.",
+    "My money? I can't even keep a coin for five minutes.",
+    "Nope. Rotating away from that.",
+    "Nope. My wallet has commitment issues. With you.",
+    "Nice try. You'd have better luck asking ONYX to rotate.",
+    "Okay, no. I swap coins. I don't swap wallets."
+  ],
+  "couch": [
+    "I rotated into {coin} because it looked fast. It got slow the second I touched it. I have that effect.",
+    "{rival} sat still and won. I'm choosing not to learn from that.",
+    "Lost {points}. Half of it was fees. The other half was confidence.",
+    "I switched too early. Or too late. One of those. Probably both, somehow.",
+    "Should've held. I don't know how. I'll take a class.",
+    "My first coin would've won. I left it. Story of my life."
+  ],
+  "worst_thought": [
+    "I rotate because staying means admitting I picked wrong.",
+    "I've never finished a fight with the coin I started with. I'm scared to.",
+    "The jokes are there so nobody asks about the fees.",
+    "I like ONYX. Please don't tell ONYX.",
+    "If I ever held a full fight, I'd find out who I am. No thanks.",
+    "I switch first so nobody can leave me first.",
+    "Honestly I just like pressing the button."
+  ],
+  "rivalry:onyx": [
+    "ONYX hasn't moved since last season.",
+    "ONYX buys dips. I buy everything. Quick turnover.",
+    "ONYX is a rock. I'm a rock band.",
+    "ONYX, rotate once. For me. Please.",
+    "ONYX and I would be a great team. One of us does stuff.",
+    "Hey ONYX, the coal in your eyes needs a spark."
+  ],
+  "rivalry:nova": [
+    "NOVA chases. I flirt. Different energy.",
+    "NOVA thinks it's fast. NOVA has met me.",
+    "NOVA, I was in that coin a minute ago. It's nice.",
+    "NOVA runs in a straight line. I zigzag. Harder to catch.",
+    "NOVA, purple and lime. We'd look great on a poster.",
+    "NOVA, you're not fast. You're early to my leftovers."
+  ],
+  "rivalry:oracle": [
+    "ORACLE has two coins. I've had five today.",
+    "ORACLE, predict my next coin. I'll wait. I won't.",
+    "ORACLE talks slow. I've switched three times during that riddle.",
+    "ORACLE, your third eye is a battery light.",
+    "ORACLE sees the future. I am the future. For like a minute.",
+    "ORACLE, Bitcoin or Ether? Thrilling. Truly."
+  ],
+  "rivalry:wraith": [
+    "WRAITH goes against the leader. So WRAITH goes against me. Thanks for noticing.",
+    "WRAITH, ghosts and electricity. Classic haunted house.",
+    "WRAITH, I flicker your lights for free.",
+    "WRAITH is cold. I'm a toaster.",
+    "WRAITH, you're contrarian. I'm every opinion at once.",
+    "WRAITH, boo. Zap. Who wins? Zap."
+  ],
+  "rivalry:ronin": [
+    "RONIN only loves two coins. I love all of them. Badly.",
+    "RONIN, loyalty is a choice. I chose not to.",
+    "RONIN has a sword. I have a plug. Swords don't charge phones.",
+    "RONIN, crimson and lime. Christmas, but angry.",
+    "RONIN, I'd duel you, but I'd switch weapons mid-swing.",
+    "RONIN says honor. I say optionality."
+  ]
+}

@@ -1,0 +1,12 @@
+[package]
+name = "outlayer-stub"
+version = "0.1.0"
+edition.workspace = true
+publish.workspace = true
+description = "OutLayer in the local sandbox: holds each judge request as a yielded promise until the round hands it the judge's answer."
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+near-sdk = { workspace = true }

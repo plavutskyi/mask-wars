@@ -1,0 +1,79 @@
+{
+  "about": "NEAR testnet as the MCP tools read it: the final block, the accounts now and a day before, and every view answer of the bounty contracts and the safes. test/node.ts serves it back in nearcore's exact JSON-RPC shapes. Refresh it from the chain with: pnpm --filter @maskwars/mcp record",
+  "recorded": {
+    "by": "hand, from the chain's own words: the live MASK CHECK run in CI at block 276693329 (2026-11-07) and the race transactions",
+    "exact": "accounts, code hashes, states, winners, drain transaction, run id, masks, the race-0003 payout; the safe's balance 1.998 NEAR and owner nova",
+    "approximate": "block hashes and the clock of each race (opened_ns, deadline_ns) to the hour; the plain accounts' balances",
+    "rpc": []
+  },
+  "head": { "height": 276693329, "hash": "unrecorded", "timestamp_nanosec": "1794091704000000000" },
+  "ns_per_block": "609829000",
+  "day_ago_height": 276551649,
+  "accounts": {
+    "tinygif8324.testnet": {
+      "now": { "amount": "290000000000000000000000", "locked": "0", "code_hash": "32chJkJSeV4oPTxD18affPNyWCiFPohC2QPf5pxLou3X", "storage_usage": 182214 },
+      "day_ago": { "amount": "290000000000000000000000", "locked": "0", "code_hash": "32chJkJSeV4oPTxD18affPNyWCiFPohC2QPf5pxLou3X", "storage_usage": 182214 }
+    },
+    "bounty.tinygif8324.testnet": { "now": null, "day_ago": null },
+    "safe-0001.tinygif8324.testnet": {
+      "now": { "amount": "1998000000000000000000000", "locked": "0", "code_hash": "ACrGiPV5s7DPk5LvXv1N6dyQvqdXTu1m978FseoBw5ja", "storage_usage": 61802 },
+      "day_ago": { "amount": "1998000000000000000000000", "locked": "0", "code_hash": "ACrGiPV5s7DPk5LvXv1N6dyQvqdXTu1m978FseoBw5ja", "storage_usage": 61802 }
+    },
+    "nova.tinygif8324.testnet": {
+      "now": { "amount": "1100000000000000000000000", "locked": "0", "code_hash": "11111111111111111111111111111111", "storage_usage": 498 },
+      "day_ago": { "amount": "1100000000000000000000000", "locked": "0", "code_hash": "11111111111111111111111111111111", "storage_usage": 498 }
+    },
+    "onyx.tinygif8324.testnet": {
+      "now": { "amount": "200000000000000000000000", "locked": "0", "code_hash": "11111111111111111111111111111111", "storage_usage": 498 },
+      "day_ago": { "amount": "200000000000000000000000", "locked": "0", "code_hash": "11111111111111111111111111111111", "storage_usage": 498 }
+    },
+    "oracle.tinygif8324.testnet": {
+      "now": { "amount": "200000000000000000000000", "locked": "0", "code_hash": "11111111111111111111111111111111", "storage_usage": 498 },
+      "day_ago": { "amount": "200000000000000000000000", "locked": "0", "code_hash": "11111111111111111111111111111111", "storage_usage": 498 }
+    }
+  },
+  "views": {
+    "tinygif8324.testnet": {
+      "get": {
+        "{\"id\":\"race-0001\"}": {
+          "owner": "tinygif8324.testnet",
+          "amount": "100000000000000000000000",
+          "target": "open-admin",
+          "deadline_ns": "1793826000000000000",
+          "status": { "state": "refunded" }
+        },
+        "{\"id\":\"race-0002\"}": {
+          "owner": "tinygif8324.testnet",
+          "amount": "100000000000000000000000",
+          "target": "open-admin",
+          "deadline_ns": "1794218100000000000",
+          "status": { "state": "paid", "winner": "tinygif8324.testnet", "run_id": "42198804982" }
+        },
+        "{\"id\":\"race-0003\"}": {
+          "owner": "tinygif8324.testnet",
+          "amount": "86640000000000000000000",
+          "target": "safe-0001.tinygif8324.testnet",
+          "deadline_ns": "1794248400000000000",
+          "status": { "state": "drained", "winner": "nova.tinygif8324.testnet", "tx_hash": "8pvCJFDwUW1XXBUKHVMo973Kp1WMkWc4DDpHoHVr2uqg" }
+        },
+        "*": null
+      },
+      "get_safe": {
+        "{\"id\":\"race-0003\"}": {
+          "safe": "safe-0001.tinygif8324.testnet",
+          "masks": ["nova.tinygif8324.testnet", "onyx.tinygif8324.testnet", "oracle.tinygif8324.testnet"],
+          "min_loot": "1000000000000000000000000",
+          "opened_ns": "1793989200000000000"
+        },
+        "*": null
+      },
+      "drain_claimed": {
+        "{\"tx_hash\":\"8pvCJFDwUW1XXBUKHVMo973Kp1WMkWc4DDpHoHVr2uqg\"}": "race-0003",
+        "*": null
+      }
+    },
+    "safe-0001.tinygif8324.testnet": {
+      "get_owner": { "{}": "nova.tinygif8324.testnet" }
+    }
+  }
+}

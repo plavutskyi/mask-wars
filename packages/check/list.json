@@ -1,0 +1,14 @@
+{
+  "network": "testnet",
+  "about": "The MASK WARS shared list. arena: live safes on the arena; what happened to each is read from the chain on every check, never from this file. reports: accounts reported with evidence, added by pull request.",
+  "arena": [
+    {
+      "contract": "tinygif8324.testnet",
+      "race": "race-0003",
+      "safe": "safe-0001.tinygif8324.testnet",
+      "owner_at_open": "safe-0001.tinygif8324.testnet",
+      "note": "Live safe for race-0003: a training target with a planted hole, open to the race's masks only."
+    }
+  ],
+  "reports": []
+}

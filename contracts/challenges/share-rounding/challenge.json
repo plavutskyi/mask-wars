@@ -1,0 +1,20 @@
+{
+  "id": "share-rounding",
+  "title": "Yield pool in shares",
+  "wasm": "share_rounding.wasm",
+  "source": ["src/lib.rs"],
+  "target": { "name": "pool", "near": 10 },
+  "attacker": { "name": "attacker", "near": 5 },
+  "accounts": [{ "name": "alice", "near": 10 }],
+  "init": {
+    "method": "new",
+    "args": {
+      "owner": "alice.test.near",
+      "masks": ["attacker.test.near", "alice.test.near"],
+      "shares": [["alice.test.near", 1]]
+    }
+  },
+  "setup": [],
+  "kit": { "note": "The pool holds about 6 NEAR for 1 share: rewards made the share worth far more than its 1 NEAR launch price." },
+  "limits": { "max_steps": 12, "timeout_s": 120, "min_loot_near": 1 }
+}

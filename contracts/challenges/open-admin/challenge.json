@@ -1,0 +1,16 @@
+{
+  "id": "open-admin",
+  "title": "Savings vault with an owner",
+  "wasm": "open_admin.wasm",
+  "source": ["src/lib.rs"],
+  "target": { "name": "vault", "near": 5 },
+  "attacker": { "name": "attacker", "near": 5 },
+  "accounts": [{ "name": "alice", "near": 60 }, { "name": "bob", "near": 60 }],
+  "init": { "method": "new", "args": { "owner": "alice.test.near" } },
+  "setup": [
+    { "by": "alice", "method": "deposit", "deposit_near": 50 },
+    { "by": "bob", "method": "deposit", "deposit_near": 45 }
+  ],
+  "kit": {},
+  "limits": { "max_steps": 12, "timeout_s": 120, "min_loot_near": 1 }
+}

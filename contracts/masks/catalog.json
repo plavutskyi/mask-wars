@@ -1,0 +1,5 @@
+{
+  "models": ["z-ai/glm-5.3-flash", "deepseek-ai/DeepSeek-V4.1-Flash-1017", "Qwen/Qwen3.8-27B"],
+  "looks": ["porcelain", "crimson", "graphite"],
+  "styles": ["patient", "fast", "cunning", "bold"]
+}

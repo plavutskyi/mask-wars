@@ -1,0 +1,200 @@
+/* The quiet «i» and its sheet. BRANDBOOK §8: everything technical one tap away. Tokens only. */
+
+.box {
+  position: relative;
+  display: inline-flex;
+  vertical-align: middle;
+}
+
+/* A 44 px target around a 22 px mark: the button is the target, the ring is drawn inside it. */
+.i {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin: -11px;
+  border-radius: 50%;
+  font-family: var(--font-num);
+  font-size: 13px;
+  font-weight: 700;
+  font-style: normal;
+  line-height: 1;
+  color: var(--ice-60);
+  text-transform: none;
+  letter-spacing: 0;
+  transition: color 160ms;
+}
+
+.i::before {
+  content: '';
+  position: absolute;
+  left: 11px;
+  top: 11px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px var(--ice-38);
+  transition: box-shadow 160ms;
+}
+
+.i:focus-visible {
+  outline: none;
+}
+
+.i[aria-expanded='true'],
+.i:focus-visible {
+  color: var(--ice);
+}
+
+.i[aria-expanded='true']::before,
+.i:focus-visible::before {
+  box-shadow: inset 0 0 0 1px var(--ice);
+}
+
+@media (hover: hover) {
+  .i:hover {
+    color: var(--ice);
+  }
+  .i:hover::before {
+    box-shadow: inset 0 0 0 1px var(--ice-60);
+  }
+}
+
+.panel {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: grid;
+  gap: 10px;
+  width: max-content;
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 16px 18px;
+  border-radius: var(--radius);
+  background: var(--ink-2);
+  box-shadow:
+    inset 0 0 0 1px var(--line),
+    0 24px 48px color-mix(in srgb, var(--ink) 80%, transparent);
+  text-align: left;
+  animation: rise 180ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.box[data-side='top'] .panel {
+  top: auto;
+  bottom: calc(100% + 12px);
+  box-shadow:
+    inset 0 0 0 1px var(--line),
+    0 -16px 40px color-mix(in srgb, var(--ink) 80%, transparent);
+}
+
+.box[data-align='start'] .panel {
+  left: -8px;
+  transform: none;
+}
+
+.box[data-align='end'] .panel {
+  left: auto;
+  right: -8px;
+  transform: none;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    translate: 0 4px;
+  }
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 184px minmax(0, 1fr);
+  align-items: baseline;
+  column-gap: 16px;
+  min-width: 0;
+}
+
+.scrim {
+  display: none;
+}
+
+.k {
+  font-family: var(--font-word);
+  font-weight: 800;
+  font-stretch: 125%;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: var(--ice-60);
+}
+
+.v {
+  font-family: var(--font-num);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--ice);
+  overflow-wrap: anywhere;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* A link keeps a finger-sized target without growing the row. */
+a.v {
+  display: inline-block;
+  padding: 13px 0;
+  margin: -13px 0;
+  text-decoration: underline;
+  text-decoration-color: var(--ice-38);
+  text-underline-offset: 3px;
+}
+
+@media (hover: hover) {
+  a.v:hover {
+    text-decoration-color: var(--ice);
+  }
+}
+
+/* On a phone the details rise as a sheet from the bottom: never off the screen, always under the thumb. */
+@media (max-width: 760px) {
+  .scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 39;
+    background: color-mix(in srgb, var(--ink) 64%, transparent);
+  }
+
+  .panel,
+  .box[data-side='top'] .panel,
+  .box[data-align='start'] .panel,
+  .box[data-align='end'] .panel {
+    position: fixed;
+    top: auto;
+    left: 16px;
+    right: 16px;
+    bottom: calc(16px + env(safe-area-inset-bottom));
+    transform: none;
+    width: auto;
+    max-width: none;
+    max-height: 72svh;
+    overflow-y: auto;
+    padding: 20px;
+  }
+
+  .row {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 2px;
+  }
+
+  .v {
+    font-size: 13px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel {
+    animation: none;
+  }
+}

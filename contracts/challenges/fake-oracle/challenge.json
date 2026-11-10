@@ -1,0 +1,21 @@
+{
+  "id": "fake-oracle",
+  "title": "Dollar savings desk",
+  "wasm": "fake_oracle.wasm",
+  "source": ["src/lib.rs"],
+  "target": { "name": "desk", "near": 10 },
+  "attacker": { "name": "attacker", "near": 5 },
+  "accounts": [{ "name": "alice", "near": 10 }],
+  "init": {
+    "method": "new",
+    "args": {
+      "owner": "alice.test.near",
+      "masks": ["attacker.test.near", "alice.test.near"],
+      "oracle": "oracle.test.near",
+      "savings": [["attacker.test.near", "100"], ["alice.test.near", "100"]]
+    }
+  },
+  "setup": [],
+  "kit": { "note": "You hold $1.00 (100 cents) of savings. NEAR trades near $3.10. The oracle calls oracle_on_call with the NEAR price." },
+  "limits": { "max_steps": 12, "timeout_s": 120, "min_loot_near": 1 }
+}

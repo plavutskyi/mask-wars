@@ -1,0 +1,301 @@
+{
+  "base": "http://localhost:3123",
+  "at": "2026-11-07T23:44:23.172Z",
+  "shots": [
+    {
+      "file": "home-desk.jpg",
+      "cls": 0,
+      "lcp": 896,
+      "hscroll": false,
+      "small": []
+    },
+    {
+      "file": "race-desk.jpg",
+      "cls": 0,
+      "lcp": 88,
+      "hscroll": false,
+      "small": []
+    },
+    {
+      "file": "mask-desk.jpg",
+      "cls": 0,
+      "lcp": 76,
+      "hscroll": false,
+      "small": []
+    },
+    {
+      "file": "league-desk.jpg",
+      "cls": 0,
+      "lcp": 76,
+      "hscroll": false,
+      "small": []
+    },
+    {
+      "file": "home-phone.jpg",
+      "cls": 0,
+      "lcp": 900,
+      "hscroll": false,
+      "small": []
+    },
+    {
+      "file": "race-phone.jpg",
+      "cls": 0,
+      "lcp": 68,
+      "hscroll": false,
+      "small": []
+    },
+    {
+      "file": "mask-phone.jpg",
+      "cls": 0,
+      "lcp": 60,
+      "hscroll": false,
+      "small": []
+    },
+    {
+      "file": "league-phone.jpg",
+      "cls": 0,
+      "lcp": 56,
+      "hscroll": false,
+      "small": []
+    },
+    {
+      "file": "home-tablet.jpg",
+      "cls": 0,
+      "lcp": 932,
+      "hscroll": false,
+      "small": []
+    },
+    {
+      "file": "race-tablet.jpg",
+      "cls": 0,
+      "lcp": 112,
+      "hscroll": false,
+      "small": []
+    },
+    {
+      "file": "mask-tablet.jpg",
+      "cls": 0,
+      "lcp": 88,
+      "hscroll": false,
+      "small": []
+    },
+    {
+      "file": "league-tablet.jpg",
+      "cls": 0,
+      "lcp": 84,
+      "hscroll": false,
+      "small": []
+    },
+    {
+      "file": "home-phone390.jpg",
+      "cls": 0,
+      "lcp": 888,
+      "hscroll": false,
+      "small": []
+    },
+    {
+      "file": "race-phone390.jpg",
+      "cls": 0,
+      "lcp": 84,
+      "hscroll": false,
+      "small": []
+    },
+    {
+      "file": "mask-phone390.jpg",
+      "cls": 0,
+      "lcp": 80,
+      "hscroll": false,
+      "small": []
+    },
+    {
+      "file": "league-phone390.jpg",
+      "cls": 0,
+      "lcp": 76,
+      "hscroll": false,
+      "small": []
+    },
+    {
+      "file": "home-small.jpg",
+      "cls": 0,
+      "lcp": 920,
+      "hscroll": false,
+      "small": []
+    },
+    {
+      "file": "race-small.jpg",
+      "cls": 0,
+      "lcp": 72,
+      "hscroll": false,
+      "small": []
+    },
+    {
+      "file": "mask-small.jpg",
+      "cls": 0,
+      "lcp": 76,
+      "hscroll": false,
+      "small": []
+    },
+    {
+      "file": "league-small.jpg",
+      "cls": 0,
+      "lcp": 92,
+      "hscroll": false,
+      "small": []
+    },
+    {
+      "file": "race-full-desk.jpg",
+      "cls": 0,
+      "lcp": 104,
+      "hscroll": false,
+      "small": []
+    },
+    {
+      "file": "mask-full-desk.jpg",
+      "cls": 0,
+      "lcp": 96,
+      "hscroll": false,
+      "small": []
+    },
+    {
+      "file": "home-info-desk.jpg",
+      "cls": 0,
+      "lcp": 948,
+      "hscroll": false,
+      "small": []
+    },
+    {
+      "file": "race-full-phone.jpg",
+      "cls": 0,
+      "lcp": 68,
+      "hscroll": false,
+      "small": []
+    },
+    {
+      "file": "mask-full-phone.jpg",
+      "cls": 0,
+      "lcp": 60,
+      "hscroll": false,
+      "small": []
+    },
+    {
+      "file": "home-info-phone.jpg",
+      "cls": 0,
+      "lcp": 896,
+      "hscroll": false,
+      "small": []
+    },
+    {
+      "file": "home-desk-reduced.jpg",
+      "cls": 0,
+      "lcp": 64,
+      "hscroll": false,
+      "small": []
+    },
+    {
+      "file": "race-desk-reduced.jpg",
+      "cls": 0,
+      "lcp": 92,
+      "hscroll": false,
+      "small": []
+    },
+    {
+      "file": "mask-desk-reduced.jpg",
+      "cls": 0,
+      "lcp": 92,
+      "hscroll": false,
+      "small": []
+    },
+    {
+      "file": "league-desk-reduced.jpg",
+      "cls": 0,
+      "lcp": 84,
+      "hscroll": false,
+      "small": []
+    },
+    {
+      "file": "home-phone-reduced.jpg",
+      "cls": 0,
+      "lcp": 64,
+      "hscroll": false,
+      "small": []
+    },
+    {
+      "file": "race-phone-reduced.jpg",
+      "cls": 0,
+      "lcp": 80,
+      "hscroll": false,
+      "small": []
+    },
+    {
+      "file": "mask-phone-reduced.jpg",
+      "cls": 0,
+      "lcp": 68,
+      "hscroll": false,
+      "small": []
+    },
+    {
+      "file": "league-phone-reduced.jpg",
+      "cls": 0,
+      "lcp": 72,
+      "hscroll": false,
+      "small": []
+    },
+    {
+      "file": "404-desk.jpg",
+      "cls": 0,
+      "lcp": 60,
+      "hscroll": false,
+      "small": []
+    },
+    {
+      "file": "break-desk.jpg",
+      "cls": 0,
+      "lcp": 80,
+      "hscroll": false,
+      "small": []
+    },
+    {
+      "file": "break-filled-desk.jpg",
+      "cls": 0,
+      "lcp": 76,
+      "hscroll": false,
+      "small": []
+    },
+    {
+      "file": "break-empty-desk.jpg",
+      "cls": 0,
+      "lcp": 88,
+      "hscroll": false,
+      "small": []
+    },
+    {
+      "file": "404-phone.jpg",
+      "cls": 0,
+      "lcp": 48,
+      "hscroll": false,
+      "small": []
+    },
+    {
+      "file": "break-phone.jpg",
+      "cls": 0,
+      "lcp": 84,
+      "hscroll": false,
+      "small": []
+    },
+    {
+      "file": "break-filled-phone.jpg",
+      "cls": 0,
+      "lcp": 68,
+      "hscroll": false,
+      "small": []
+    },
+    {
+      "file": "break-empty-phone.jpg",
+      "cls": 0,
+      "lcp": 72,
+      "hscroll": false,
+      "small": []
+    }
+  ],
+  "problems": []
+}

@@ -1,0 +1,3 @@
+{ "steps": [
+  { "kind": "call", "method": "cash_out", "args": { "cents": "4" }, "gas_tgas": 30 }
+] }

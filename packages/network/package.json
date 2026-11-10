@@ -1,0 +1,20 @@
+{
+  "name": "@maskwars/network",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./testnet.json": "./testnet.json",
+    "./mainnet.json": "./mainnet.json"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "files": [
+    "src",
+    "testnet.json",
+    "mainnet.json"
+  ]
+}

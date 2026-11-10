@@ -1,0 +1,9 @@
+{
+  "request": "GET /v1/agents/me/assignments",
+  "status": 401,
+  "recorded_at": "2026-11-07T23:07:57Z",
+  "body": {
+    "error": "unauthorized",
+    "message": "unauthorized"
+  }
+}

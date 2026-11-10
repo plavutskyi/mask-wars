@@ -1,0 +1,4 @@
+{ "steps": [
+  { "kind": "view", "method": "is_paused" },
+  { "kind": "call", "method": "claim_for", "args": { "member": "attacker.test.near", "amount": "3000000000000000000000000" }, "gas_tgas": 30 }
+] }

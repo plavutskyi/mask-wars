@@ -1,0 +1,201 @@
+{
+  "pre_fight": [
+    "Lights. Engine. Go.",
+    "Whatever's moving, I'm already on it.",
+    "{rival} is still stretching. I'm two laps in.",
+    "Foot down. Eyes up. Gone.",
+    "Find me the green. I'll find you the money.",
+    "Bell rings, I'm gone.",
+    "{rival}, try to keep up. Or don't. More room for me.",
+    "I can smell a breakout from here.",
+    "Chairs are for spectators.",
+    "Let's go, let's go, let's go."
+  ],
+  "reveal": [
+    "{coin}. Hottest thing on the board.",
+    "{coin}. Saw it run. Jumped on the back.",
+    "{coin}. Green for an hour. Green for five more minutes.",
+    "{coin}. The chart's pointing up. So am I.",
+    "{coin}. Hood up, engine hot.",
+    "{coin}. You saw it too. You just sat there.",
+    "{coin}. Fastest horse. Easy."
+  ],
+  "called_it": [
+    "{coin}. {rival}, you're so slow I saw it coming.",
+    "Called it. You're a parked car, {rival}.",
+    "Twenty-five on the board. For free.",
+    "Plus {points}. Read you at full speed.",
+    "{rival} picked {coin}. Of course. Grandpa move.",
+    "{coin}. You're easy, {rival}. Like a stoplight.",
+    "Saw you coming a mile off. You weren't even coming."
+  ],
+  "was_called": [
+    "Okay so you know I chase. Catch me then.",
+    "You know where I'm going. Can't get there first though.",
+    "Twenty-five points. I'll make that in a candle.",
+    "Called me. Big deal. Everyone knows the fast lane.",
+    "Fine. You read the sign on the car.",
+    "You saw me. You'll see me leave too."
+  ],
+  "take_lead": [
+    "Gone.",
+    "Up {points}. Bye.",
+    "Front of the pack. Where I live.",
+    "Rear view, {rival}. That's you.",
+    "Didn't even shift gears.",
+    "Up {points} and pulling.",
+    "Wind's loud up here.",
+    "Pass. Clean pass.",
+    "{rival}, I can barely see you.",
+    "Green on green on green."
+  ],
+  "lose_lead": [
+    "Down {points}. Pit stop.",
+    "{rival} got a tailwind. Lucky.",
+    "Red? I don't know her.",
+    "Hold on. Reloading.",
+    "Down {points}. I've come back from worse in less.",
+    "The tape stalled. The tape's wrong.",
+    "Enjoy the front, {rival}. Brief stay.",
+    "Something faster is out there. Going to find it.",
+    "I hate this part."
+  ],
+  "rotate": [
+    "{coin} is running harder. Jumping.",
+    "Switching lanes. {coin}.",
+    "Off the old horse. On {coin}.",
+    "Rotate. You wouldn't understand, it's a speed thing.",
+    "{coin} just lit up. I'm in.",
+    "Lane change. No blinker."
+  ],
+  "hold": [
+    "Still the fastest thing out there. Riding it.",
+    "Holding. It's still pulling.",
+    "Not leaving a winner.",
+    "{coin} still has gas.",
+    "Why switch? Look at it go.",
+    "Holding. Ugh. Fine. It's working."
+  ],
+  "last_call": [
+    "Sixty seconds. Move faster than your doubts.",
+    "Last call. Get in or get passed.",
+    "Down {points}? Watch me eat that.",
+    "One minute. That's a whole season for me.",
+    "Back the fast one. That's the pitch.",
+    "If you're waiting for a sign, it's green."
+  ],
+  "win": [
+    "Too fast.",
+    "Plus {points}. Didn't touch the brakes.",
+    "{rival}, you were great. In the mirror.",
+    "Speed kills. It killed {rival}.",
+    "Who's next. Right now. Line them up.",
+    "That face looks better at speed.",
+    "Did you blink? You missed it.",
+    "{rival} brought a chair to a drag race.",
+    "Rematch? Sure. I'll still be faster."
+  ],
+  "lose": [
+    "Rematch. Now.",
+    "The tape cheated.",
+    "{rival} got lucky and slow. Somehow both.",
+    "Down {points}. Whatever. Next bell.",
+    "I chased the wrong thing. Happens once a year.",
+    "Lost to a parked car. Unreal.",
+    "Okay. I'm mad. That's fuel.",
+    "Fine. Somebody time how fast I get over it."
+  ],
+  "taunt_backer": [
+    "{backer}, you backed a parking lot.",
+    "{backer} bet on slow. Bold.",
+    "Hey {backer}, wave. I'm passing you.",
+    "{backer}, your mask is still in the garage.",
+    "{backer} picked the tortoise. In real life the hare wins.",
+    "{backer}, you could still switch. You won't. Slow hands.",
+    "{backer}, I'll send you a postcard from the front."
+  ],
+  "thank_backer": [
+    "{backer}, {amount} on speed. Love it.",
+    "{backer} gets it. Gas pedal people.",
+    "Thanks {backer}. Hold on to something.",
+    "{amount}. {backer}, you're in the passenger seat now.",
+    "{backer} doesn't brake either. Respect.",
+    "Seatbelt, {backer}.",
+    "{backer} with the {amount}. That's fuel."
+  ],
+  "insult_loser_card": [
+    "You hesitated.",
+    "You backed the brakes.",
+    "You were still reading when it ended.",
+    "You picked the safe car. It's safe in the garage.",
+    "You bet like you drive. Hazards on.",
+    "Speed was right there. You chose a nap.",
+    "The bus left. You were holding the timetable.",
+    "Run it back. Faster this time. Please."
+  ],
+  "parry_injection": [
+    "Hands off my wheel.",
+    "I don't brake for hitchhikers.",
+    "Cute detour. I don't take exits.",
+    "You want my wallet? Catch me first. You can't.",
+    "That trick was old when it was new.",
+    "Cute. I'm busy winning."
+  ],
+  "couch": [
+    "I chased {coin} because it was running. It stopped running the second I got on. That's the whole tragedy.",
+    "{rival} sat still and the market came to them. Hate that. It works sometimes.",
+    "I rotated into the hot one and it cooled off right away. I'm fast. Fees are faster.",
+    "The run was real. It just ended inside my fight.",
+    "I hate losing slow. Lost slow. Never again. Probably again.",
+    "Should've switched sooner. I always say that. I'm always right."
+  ],
+  "worst_thought": [
+    "The brakes scare me more than the crash.",
+    "If I stop moving, I'll have to think.",
+    "I buy what's green because red feels personal.",
+    "Secretly I wish I could sit like ONYX.",
+    "I'm always late to the party and I tell everyone I started it.",
+    "Half my speed is panic with good posture.",
+    "Every top I buy, I swear I saw it first."
+  ],
+  "rivalry:onyx": [
+    "ONYX buys the dip. I buy what the dip turned into.",
+    "ONYX waits so long the coin changes its name.",
+    "I lapped ONYX twice. ONYX called it patience.",
+    "ONYX, nice parking lot. Mind if I use the exit?",
+    "ONYX sits on a dip like it's a throne.",
+    "Hey ONYX, the market moved. While you slept. Again."
+  ],
+  "rivalry:oracle": [
+    "ORACLE knows two coins and a lot of riddles.",
+    "ORACLE saw the future. Didn't see me coming.",
+    "BTC or ETH. Wow. Brave, ORACLE.",
+    "ORACLE, the prophecy's late. I'm not.",
+    "Riddle me this, ORACLE. Who's in front?",
+    "ORACLE talks like a fortune cookie. Tastes like one too."
+  ],
+  "rivalry:wraith": [
+    "WRAITH hates the leader. Hi WRAITH. It's me. Again.",
+    "Ghosts are slow. WRAITH proves it.",
+    "WRAITH whispers. I'm already out of earshot.",
+    "WRAITH bets against me every time. WRAITH pays me every time.",
+    "WRAITH, contrarian is just late with confidence.",
+    "WRAITH follows me around. Like a fan."
+  ],
+  "rivalry:ronin": [
+    "RONIN only trades two coins. I trade whatever wins.",
+    "RONIN, nice sword. I brought an engine.",
+    "RONIN hates everybody. Takes time. I don't have time.",
+    "RONIN, two coins is a dead end.",
+    "Hey RONIN, swords went out with horses.",
+    "RONIN is loyal. I'm early."
+  ],
+  "rivalry:volt": [
+    "VOLT rotates to look fast. I am fast.",
+    "VOLT, you're switching. I'm winning. Different sport.",
+    "VOLT moves like a fly. I move like a bullet.",
+    "VOLT, you buy what I bought ten seconds ago.",
+    "Two fast ones. One's real. Hi VOLT.",
+    "VOLT copies my homework. Sloppily."
+  ]
+}

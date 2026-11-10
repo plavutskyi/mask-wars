@@ -1,0 +1,22 @@
+{
+  "name": "@maskwars/mind",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./attestation": "./src/attestation.ts",
+    "./models": "./src/models.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "verify:attestation": "node --use-env-proxy --disable-warning=UNDICI-EHPA scripts/verify-attestation.ts"
+  },
+  "dependencies": {
+    "@noble/curves": "^2.4.0",
+    "@noble/hashes": "^2.4.0",
+    "@phala/dcap-qvl": "0.7.0",
+    "zod": "^4.6.7"
+  }
+}

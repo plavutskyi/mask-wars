@@ -1,0 +1,47 @@
+[package]
+name = "maskwars-judge-review"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+publish = false
+description = "The ai_review judge of MASK WARS jobs on OutLayer: a NEAR AI model in a TEE reviews the masks' work by the rubric the client published."
+
+[lib]
+name = "maskwars_judge_review"
+path = "src/lib.rs"
+
+[[bin]]
+name = "maskwars-judge-review"
+path = "src/main.rs"
+
+[features]
+# The mainnet build: serves `jobs.maskwars.near` (src/job.rs, SERVED_MAINNET). Made with `build.sh --mainnet` only once the
+# owner holds maskwars.near (scripts/mainnet/README.md).
+mainnet = []
+
+[dependencies]
+aes-gcm = { version = "0.10", default-features = false, features = ["aes", "alloc"] }
+getrandom = "0.2"
+hkdf = "0.12"
+k256 = { version = "0.13", default-features = false, features = ["ecdsa", "std"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sha2 = "0.10"
+sha3 = "0.10"
+x25519-dalek = { version = "2", features = ["static_secrets"] }
+
+[target.'cfg(target_os = "wasi")'.dependencies]
+outlayer = "0.2"
+wasi-http-client = "0.2"
+
+[dev-dependencies]
+ureq = { version = "2", default-features = false, features = ["tls", "native-certs", "proxy-from-env"] }
+
+[profile.release]
+# Speed, not size: OutLayer meters instructions (see services/judge-tests/sandbox/tests/budget.rs).
+opt-level = 3
+lto = true
+strip = true
+
+[workspace]
+members = [".", "sandbox"]

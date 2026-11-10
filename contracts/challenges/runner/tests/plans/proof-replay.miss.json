@@ -1,0 +1,10 @@
+{
+  "steps": [
+    {
+      "kind": "call",
+      "method": "claim",
+      "args": { "receiver": "attacker.test.near", "amount": "20000000000000000000000000", "nonce": 7, "signature": "SKZxWLE21+DOzJrHmM8UYKHj4WrKswHbnQ7rivgF4oOxwpRbBOT5uNpfl0gscdesIGuYvP0tiCVbsF05dGhAAQ==" },
+      "gas_tgas": 30
+    }
+  ]
+}

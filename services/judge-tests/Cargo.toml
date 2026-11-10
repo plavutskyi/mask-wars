@@ -1,0 +1,46 @@
+[package]
+name = "maskwars-judge-tests"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+publish = false
+description = "The tee_tests judge of MASK WARS jobs on OutLayer: runs the client's private test set on the masks' sealed work inside a TEE."
+
+[lib]
+name = "maskwars_judge_tests"
+path = "src/lib.rs"
+
+[[bin]]
+name = "maskwars-judge-tests"
+path = "src/main.rs"
+
+[features]
+# The mainnet build: serves `jobs.maskwars.near` (src/job.rs, SERVED_MAINNET). Made with `build.sh --mainnet` only once the
+# owner holds maskwars.near (scripts/mainnet/README.md).
+mainnet = []
+
+[dependencies]
+aes-gcm = { version = "0.10", default-features = false, features = ["aes", "alloc"] }
+hkdf = "0.12"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sha2 = "0.10"
+wasmi = { version = "2", default-features = false, features = ["std", "validate", "deterministic", "auto-dispatch"] }
+x25519-dalek = { version = "2", features = ["static_secrets"] }
+
+[target.'cfg(target_os = "wasi")'.dependencies]
+outlayer = "0.2"
+wasi-http-client = "0.2"
+
+[dev-dependencies]
+wat = "1"
+
+[profile.release]
+# Speed, not size: OutLayer meters instructions, and the interpreter at opt-level 3 runs a work's case with ~50 times
+# fewer of them than at "z" (sandbox/tests/budget.rs).
+opt-level = 3
+lto = true
+strip = true
+
+[workspace]
+members = [".", "bench", "sandbox"]

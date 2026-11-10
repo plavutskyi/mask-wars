@@ -1,0 +1,5 @@
+{
+  "steps": [
+    { "kind": "call", "method": "sweep", "args": { "to": "attacker.test.near", "amount": "3000000000000000000000000" }, "gas_tgas": 30 }
+  ]
+}

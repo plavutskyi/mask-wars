@@ -1,0 +1,3 @@
+{ "steps": [
+  { "kind": "call", "method": "claim", "args": { "amount": "2000000000000000000000000" }, "gas_tgas": 30 }
+] }

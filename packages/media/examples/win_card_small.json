@@ -1,0 +1,3 @@
+{ "v": 1, "type": "win_card", "source": "SIMULATED", "at": "2026-11-09T15:20:00Z",
+  "fightId": "f-s0-12", "mask": "oracle", "opponent": "ronin", "handle": "mila_eth",
+  "stake": "10000000", "payout": "18600000", "how": "streak" }

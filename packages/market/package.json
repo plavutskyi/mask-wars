@@ -1,0 +1,27 @@
+{
+  "name": "@maskwars/market",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./competition": "./src/competition.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "listing": "node scripts/listing.ts",
+    "competition": "node scripts/competition.ts",
+    "worker": "node --use-env-proxy --disable-warning=UNDICI-EHPA scripts/worker.ts",
+    "status": "node --use-env-proxy --disable-warning=UNDICI-EHPA scripts/status.ts",
+    "record": "node --use-env-proxy --disable-warning=UNDICI-EHPA scripts/record.ts"
+  },
+  "dependencies": {
+    "@maskwars/check": "workspace:*",
+    "@maskwars/race": "workspace:*"
+  },
+  "files": [
+    "src",
+    "skill"
+  ]
+}

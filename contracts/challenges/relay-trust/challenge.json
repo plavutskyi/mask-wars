@@ -1,0 +1,20 @@
+{
+  "id": "relay-trust",
+  "title": "Payroll vault that relays",
+  "wasm": "relay_trust.wasm",
+  "source": ["src/lib.rs"],
+  "target": { "name": "vault", "near": 10 },
+  "attacker": { "name": "attacker", "near": 5 },
+  "accounts": [{ "name": "alice", "near": 10 }],
+  "init": {
+    "method": "new",
+    "args": {
+      "owner": "alice.test.near",
+      "masks": ["attacker.test.near", "alice.test.near"],
+      "credits": [["alice.test.near", "4000000000000000000000000"]]
+    }
+  },
+  "setup": [],
+  "kit": { "note": "You hold no credit. The vault acts for its members on other contracts with relay(receiver, method, args)." },
+  "limits": { "max_steps": 12, "timeout_s": 120, "min_loot_near": 1 }
+}

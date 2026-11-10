@@ -1,0 +1,40 @@
+{
+  "name": "@maskwars/hire",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./element": "./src/element.ts",
+    "./react": "./src/react.tsx"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "build": "node scripts/build.ts"
+  },
+  "dependencies": {
+    "@maskwars/pay": "workspace:*",
+    "@noble/curves": "^2.4.0",
+    "@noble/hashes": "^2.4.0"
+  },
+  "peerDependencies": {
+    "react": "^19.2.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "esbuild": "0.28.2",
+    "happy-dom": "21.0.4",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "files": [
+    "src"
+  ]
+}

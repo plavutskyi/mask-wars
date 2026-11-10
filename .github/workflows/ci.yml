@@ -1,0 +1,477 @@
+name: CI
+
+# Each job runs only when the files it builds or reads change, so a change to the site does not wait for the Rust
+# sandbox. `ci-ok` sums the run up: green when every job passed or was not needed. It is the one check to require.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # Monday to Saturday: the live jobs, since NEAR testnet and 1Click change with no change here.
+    - cron: "23 5 * * 1-6"
+    # Sunday: every job, whatever changed (the "every job" check in `changes` names this line).
+    - cron: "23 5 * * 0"
+  # By hand: every job.
+  workflow_dispatch:
+
+# The token every job gets reads the code and nothing else. Actions are pinned to a commit, not a movable tag.
+permissions:
+  contents: read
+
+# A new push to a pull request stops the run for the push before it. On main every run goes to the end.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/main' && github.run_id || github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  # What the change touches. A job runs when one of its filters matches a changed file, and every job runs when this
+  # file changes. A Rust job's filter holds its crate and every folder it builds or takes by path: a new path
+  # dependency goes into the filter with it.
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # A pull request's list of files comes from the API.
+      pull-requests: read
+    outputs:
+      typescript: ${{ steps.pick.outputs.typescript }}
+      check: ${{ steps.pick.outputs.check }}
+      arena: ${{ steps.pick.outputs.arena }}
+      pay: ${{ steps.pick.outputs.pay }}
+      contracts: ${{ steps.pick.outputs.contracts }}
+      challenges: ${{ steps.pick.outputs.challenges }}
+      bounty: ${{ steps.pick.outputs.bounty }}
+      season: ${{ steps.pick.outputs.season }}
+      jobs: ${{ steps.pick.outputs.jobs }}
+      outlayer: ${{ steps.pick.outputs.outlayer }}
+    steps:
+      # A push is compared with the commit before it in git; a pull request needs no checkout.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        if: github.event_name == 'push'
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        id: filter
+        if: github.event_name == 'push' || github.event_name == 'pull_request'
+        with:
+          # A file matches a filter when one of its patterns names it and none of its `!` patterns does.
+          predicate-quantifier: some-with-excludes
+          filters: |
+            # This file, and the line endings every file is checked out with.
+            ci: &ci
+              - .github/workflows/ci.yml
+              - .gitattributes
+            node: &node
+              - *ci
+              - package.json
+              - pnpm-lock.yaml
+              - pnpm-workspace.yaml
+            # The live safe, built in the challenges workspace by the bounty and season jobs.
+            live-safe: &live-safe
+              - contracts/challenges/live-safe/**
+              - contracts/challenges/*.toml
+              - contracts/challenges/Cargo.lock
+            # TypeScript: any change outside the Rust, docs and agent folders, so a file the code starts to read from
+            # a new place is never left out...
+            typescript:
+              - "**"
+              - "!.claude/**"
+              - "!.github/**"
+              - "!contracts/**"
+              - "!docs/**"
+              - "!public/**"
+              - "!services/**"
+              - "!*.md"
+            # ...and the files in those folders that the packages and their tests read.
+            typescript-reads:
+              - *ci
+              - RULES.md
+              - contracts/challenges/**
+              - contracts/masks/catalog.json
+              - contracts/masks/factory/src/**
+              - services/brain/*.json
+            check:
+              - *node
+              - packages/check/**
+            arena:
+              - *node
+              - packages/arena/**
+              - packages/check/**
+            pay:
+              - *node
+              - packages/pay/**
+            contracts:
+              - *ci
+              - contracts/**
+            # The sandbox runner builds the bounty contract and the season treasury next to its workspace and takes
+            # the judge by path.
+            challenges:
+              - *ci
+              - contracts/challenges/**
+              - contracts/bounty/**
+              - contracts/season/**
+              - services/judge/**
+            bounty:
+              - *ci
+              - contracts/bounty/**
+              - *live-safe
+            season:
+              - *ci
+              - contracts/season/**
+              - *live-safe
+            judge:
+              - *ci
+              - services/judge/**
+            vault:
+              - *ci
+              - services/vault/**
+            # Jobs v2: the jobs and crews contracts, and the two judges that run their sandbox against them.
+            jobs:
+              - *ci
+              - contracts/jobs/**
+              - contracts/crews/**
+            judge-tests:
+              - *ci
+              - services/judge-tests/**
+              - contracts/jobs/**
+              - contracts/crews/**
+            judge-review:
+              - *ci
+              - services/judge-review/**
+              - contracts/jobs/**
+              - contracts/crews/**
+      - name: The jobs this run needs
+        id: pick
+        env:
+          # The API lists at most 3000 files of a pull request: a bigger one runs every job.
+          ALL: ${{ github.event_name == 'workflow_dispatch' || github.event.schedule == '23 5 * * 0' || github.event.pull_request.changed_files >= 3000 }}
+          LIVE: ${{ github.event_name == 'schedule' }}
+          CHANGED: ${{ steps.filter.outputs.changes || '[]' }}
+        run: |
+          has() { jq -e --arg f "$1" 'index($f) != null' >/dev/null <<<"$CHANGED"; }
+          on() {
+            for f in "$@"; do
+              if [ "$ALL" = true ] || has "$f"; then echo true; return; fi
+            done
+            echo false
+          }
+          live() { if [ "$LIVE" = true ]; then echo true; else on "$@"; fi; }
+          modules=$(for m in vault judge judge-tests judge-review; do if [ "$(on "$m")" = true ]; then echo "$m"; fi; done | jq -Rnc '[inputs]')
+          {
+            echo "typescript=$(on typescript typescript-reads)"
+            echo "check=$(live check)"
+            echo "arena=$(live arena)"
+            echo "pay=$(live pay)"
+            echo "contracts=$(on contracts)"
+            echo "challenges=$(on challenges)"
+            echo "bounty=$(on bounty)"
+            echo "season=$(on season)"
+            echo "jobs=$(on jobs)"
+            echo "outlayer=$modules"
+          } | tee -a "$GITHUB_OUTPUT" | sed 's/^/- /; s/=/: /' | { echo "### Jobs this run needs"; cat; } >> "$GITHUB_STEP_SUMMARY"
+
+  typescript:
+    needs: changes
+    if: needs.changes.outputs.typescript == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm test
+
+  # MASK CHECK against NEAR testnet itself: real accounts, real blocks, the arena's bounty contract. Fails when no
+  # RPC answers (exit 4) or when a drained safe does not get BLOCK (exit 1).
+  mask-check-live:
+    needs: changes
+    if: needs.changes.outputs.check == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: The arena's bounty contract
+        run: pnpm --filter @maskwars/check check tinygif8324.testnet
+      - name: The arena's live safe
+        run: pnpm --filter @maskwars/check check safe-0001.tinygif8324.testnet
+      - name: The demo, live
+        run: pnpm demo:check
+
+  # The arena read from testnet itself, with no keys: every race, its course, the drain and the payout. Fails when
+  # race-0003 does not read as NOVA's paid drain (exit 1) or when neither RPC nor the indexer answers (exit 4).
+  arena-live:
+    needs: changes
+    if: needs.changes.outputs.arena == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: The arena, live
+        run: pnpm --filter @maskwars/arena live
+
+  # Money in and out through NEAR Intents' 1Click, with no money: the coins a vault takes, a top-up from Solana up to
+  # its deposit address, a cash-out up to the intent a passkey signs, read through the page's own check. Prints what
+  # 1Click answered between RECORD markers. Fails when an answer is off (exit 1) or 1Click does not answer (exit 4).
+  pay-live:
+    needs: changes
+    if: needs.changes.outputs.pay == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: 1Click, live
+        run: pnpm --filter @maskwars/pay live --record
+        env:
+          ONE_CLICK_API_KEY: ${{ secrets.ONE_CLICK_API_KEY }}
+
+  contracts:
+    needs: changes
+    if: needs.changes.outputs.contracts == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Find contracts workspace
+        id: has
+        run: |
+          if [ -f contracts/Cargo.toml ]; then echo "yes=true" >> "$GITHUB_OUTPUT"; fi
+      - uses: dtolnay/rust-toolchain@b725eda525362e7cf34af9a7243cac1e3f01a7ec # stable
+        if: steps.has.outputs.yes == 'true'
+      - run: cargo test --workspace
+        if: steps.has.outputs.yes == 'true'
+        working-directory: contracts
+
+  # The season treasury: unit tests, and the wasm the owner deploys with its fingerprint. Two rounds in a row with no
+  # full key run in the real sandbox in the `challenges` job (runner/tests/season.rs). The live safe is built too,
+  # shrunk as on chain: its code hash is what the season's program names and what goes on NEAR as a global contract.
+  # The other safes of the library have no lock and take no live round, so none is published for the season.
+  season:
+    needs: changes
+    if: needs.changes.outputs.season == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: dtolnay/rust-toolchain@f08ac54821369508305fcb9e0121ec6e30ae9ada # 1.97.0
+        with:
+          targets: wasm32-unknown-unknown
+      - run: cargo test
+        working-directory: contracts/season
+      - run: cargo build --release --target wasm32-unknown-unknown
+        working-directory: contracts/season
+        env:
+          RUSTFLAGS: --cfg near -C link-arg=-s
+      - name: Shrink and fingerprint the treasury and the library's safes
+        run: |
+          curl -sSfL https://github.com/WebAssembly/binaryen/releases/download/version_132/binaryen-version_132-x86_64-linux.tar.gz | tar xz
+          opt() { binaryen-version_132/bin/wasm-opt -Oz --enable-bulk-memory --enable-bulk-memory-opt --enable-sign-ext --enable-mutable-globals --enable-nontrapping-float-to-int --enable-multivalue --enable-reference-types --strip-debug --strip-producers "$1" -o "$2"; }
+          opt contracts/season/target/wasm32-unknown-unknown/release/maskwars_season.wasm maskwars_season.wasm
+          # Built alone, as the bounty job builds it: the same bytes, so the same code hash.
+          (cd contracts/challenges && cargo build --release --target wasm32-unknown-unknown -p live-safe)
+          mkdir -p safes
+          opt contracts/challenges/target/wasm32-unknown-unknown/release/live_safe.wasm safes/maskwars_live_safe.wasm
+          ls -l maskwars_season.wasm safes
+          # The treasury's sha256 is what a code change proposes.
+          sha256sum maskwars_season.wasm
+          # A safe's code hash as NEAR shows it, base58: what the program and the bounty contract name, and what
+          # publish_code puts on chain once. Publishing costs 0.0001 NEAR a byte.
+          python3 - safes/*.wasm <<'PY'
+          import hashlib, os, sys
+          a = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
+          for f in sys.argv[1:]:
+              data = open(f, "rb").read()
+              n = int.from_bytes(hashlib.sha256(data).digest(), "big")
+              s = ""
+              while n:
+                  n, r = divmod(n, 58)
+                  s = a[r] + s
+              print(f"{os.path.basename(f)}  code hash {s}  {len(data)} bytes  publish {len(data) / 10000:.2f} NEAR")
+          PY
+        env:
+          RUSTFLAGS: --cfg near -C link-arg=-s
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: maskwars-season-wasm
+          path: |
+            maskwars_season.wasm
+            safes/*.wasm
+
+  challenges:
+    needs: changes
+    if: needs.changes.outputs.challenges == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: dtolnay/rust-toolchain@f08ac54821369508305fcb9e0121ec6e30ae9ada # 1.97.0
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          workspaces: contracts/challenges
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      - run: cargo test --workspace
+        working-directory: contracts/challenges
+
+  outlayer:
+    needs: changes
+    if: needs.changes.outputs.outlayer != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        module: ${{ fromJSON(needs.changes.outputs.outlayer) }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: dtolnay/rust-toolchain@f08ac54821369508305fcb9e0121ec6e30ae9ada # 1.97.0
+        with:
+          targets: wasm32-wasip2
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          workspaces: services/${{ matrix.module }}
+          key: ${{ matrix.module }}
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      # The whole workspace: the new judges keep their sandbox (a real jobs contract on local NEAR) as a member.
+      - run: cargo test --workspace
+        working-directory: services/${{ matrix.module }}
+      # The judge builds with its own script: the same bytes in any folder on any machine, so anyone can check the
+      # fingerprint the bounty contract pins (A15).
+      - run: if [ -x build.sh ]; then ./build.sh; else cargo build --release --target wasm32-wasip2; fi
+        working-directory: services/${{ matrix.module }}
+      - name: The judge again, built in another folder, gives the same bytes
+        if: matrix.module == 'judge'
+        run: |
+          mkdir -p "$RUNNER_TEMP/elsewhere"
+          (cd services/judge && cp -r src Cargo.toml Cargo.lock rust-toolchain.toml build.sh "$RUNNER_TEMP/elsewhere/")
+          here=$(sha256sum services/judge/target/wasm32-wasip2/release/maskwars-judge.wasm | cut -d' ' -f1)
+          there=$("$RUNNER_TEMP/elsewhere/build.sh" | tail -1 | cut -d' ' -f1)
+          echo "here $here, elsewhere $there"
+          test "$here" = "$there"
+      - name: Fingerprint (the OutLayer version key and the file name on maskwars.xyz)
+        run: sha256sum services/${{ matrix.module }}/target/wasm32-wasip2/release/maskwars-${{ matrix.module }}.wasm
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: maskwars-${{ matrix.module }}-wasm
+          path: services/${{ matrix.module }}/target/wasm32-wasip2/release/maskwars-${{ matrix.module }}.wasm
+      # The jobs judges' mainnet build serves jobs.maskwars.near besides the testnet contract (src/job.rs). It is a judge
+      # version of its own, pinned only once the owner holds maskwars.near (scripts/mainnet/README.md); the build above is unchanged.
+      - name: The mainnet build of a jobs judge, its tests and its fingerprint
+        if: matrix.module == 'judge-tests' || matrix.module == 'judge-review'
+        working-directory: services/${{ matrix.module }}
+        run: |
+          cargo test -p maskwars-${{ matrix.module }} --features mainnet
+          ./build.sh --mainnet
+          mkdir -p "$RUNNER_TEMP/mainnet"
+          cp target/wasm32-wasip2/release/maskwars-${{ matrix.module }}.wasm "$RUNNER_TEMP/mainnet/"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: matrix.module == 'judge-tests' || matrix.module == 'judge-review'
+        with:
+          name: maskwars-${{ matrix.module }}-mainnet-wasm
+          path: ${{ runner.temp }}/mainnet/maskwars-${{ matrix.module }}.wasm
+
+  bounty:
+    needs: changes
+    if: needs.changes.outputs.bounty == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: dtolnay/rust-toolchain@f08ac54821369508305fcb9e0121ec6e30ae9ada # 1.97.0
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          workspaces: |
+            contracts/bounty
+            contracts/challenges
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      - run: cargo test
+        working-directory: contracts/bounty
+      - run: cargo build --release --target wasm32-unknown-unknown
+        working-directory: contracts/bounty
+        env:
+          RUSTFLAGS: --cfg near -C link-arg=-s
+      - name: Shrink (storage on NEAR costs 1 NEAR per 100 KB)
+        run: |
+          curl -sSfL --retry 6 --retry-delay 20 --retry-all-errors https://github.com/WebAssembly/binaryen/releases/download/version_132/binaryen-version_132-x86_64-linux.tar.gz | tar xz
+          binaryen-version_132/bin/wasm-opt -Oz --enable-bulk-memory --enable-bulk-memory-opt --enable-sign-ext --enable-mutable-globals --enable-nontrapping-float-to-int --enable-multivalue --enable-reference-types --strip-debug --strip-producers contracts/bounty/target/wasm32-unknown-unknown/release/maskwars_bounty.wasm -o maskwars_bounty.wasm
+          ls -l contracts/bounty/target/wasm32-unknown-unknown/release/maskwars_bounty.wasm maskwars_bounty.wasm
+          sha256sum maskwars_bounty.wasm
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: maskwars-bounty-wasm
+          path: maskwars_bounty.wasm
+      - name: Live safe for testnet (a training target with a planted hole)
+        run: |
+          (cd contracts/challenges && cargo build --release --target wasm32-unknown-unknown -p live-safe)
+          binaryen-version_132/bin/wasm-opt -Oz --enable-bulk-memory --enable-bulk-memory-opt --enable-sign-ext --enable-mutable-globals --enable-nontrapping-float-to-int --enable-multivalue --enable-reference-types --strip-debug --strip-producers contracts/challenges/target/wasm32-unknown-unknown/release/live_safe.wasm -o maskwars_live_safe.wasm
+          ls -l maskwars_live_safe.wasm
+          sha256sum maskwars_live_safe.wasm
+          # The code hash NEAR shows for the deployed safe, base58: what open_safe names and the bounty contract knows.
+          python3 -c 'import hashlib,sys; n=int.from_bytes(hashlib.sha256(open(sys.argv[1],"rb").read()).digest(),"big"); a="123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"; s=""
+          while n: n,r=divmod(n,58); s=a[r]+s
+          print("code hash", s)' maskwars_live_safe.wasm
+        env:
+          RUSTFLAGS: --cfg near -C link-arg=-s
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: maskwars-live-safe-wasm
+          path: maskwars_live_safe.wasm
+
+  # Jobs v2: the jobs and crews contracts, their unit tests and a crew's job end to end in a real local sandbox, then
+  # the same bytes anyone can rebuild with build.sh (the sha256 a deploy checks).
+  jobs:
+    needs: changes
+    if: needs.changes.outputs.jobs == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: dtolnay/rust-toolchain@f08ac54821369508305fcb9e0121ec6e30ae9ada # 1.97.0
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          workspaces: contracts/jobs
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      - run: cargo test -p maskwars-jobs -p maskwars-crews
+        working-directory: contracts/jobs
+      - run: cargo test -p jobs-sandbox
+        working-directory: contracts/jobs
+      - name: The code a deploy uses, the same bytes anywhere
+        run: contracts/jobs/build.sh
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: maskwars-jobs-wasm
+          path: |
+            contracts/jobs/target/wasm/maskwars_jobs.wasm
+            contracts/jobs/target/wasm/maskwars_crews.wasm
+
+  # The one check to require on main: green when every job above passed or was not needed by the change, red when one
+  # failed or was cancelled.
+  ci-ok:
+    if: always()
+    needs: [changes, typescript, mask-check-live, arena-live, pay-live, contracts, season, jobs, challenges, outlayer, bounty]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Every job passed or was not needed
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: |
+          jq -r 'to_entries[] | "\(.key): \(.value.result)"' <<<"$NEEDS"
+          bad=$(jq -r '[to_entries[] | select(.value.result != "success" and .value.result != "skipped") | .key] | join(", ")' <<<"$NEEDS")
+          if [ -n "$bad" ]; then
+            echo "::error::Not green: $bad"
+            exit 1
+          fi

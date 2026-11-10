@@ -1,0 +1,51 @@
+{
+  "id": "testnet",
+  "admin": "tinygif8324.testnet",
+  "bounty": "bounty.tinygif8324.testnet",
+  "older_bounty": [
+    "tinygif8324.testnet"
+  ],
+  "season": "season.tinygif8324.testnet",
+  "scheduler": "scheduler.tinygif8324.testnet",
+  "factory": "masks.tinygif8324.testnet",
+  "jobs": "jobs.tinygif8324.testnet",
+  "crews": "crews.tinygif8324.testnet",
+  "masks": {
+    "NOVA": "nova.tinygif8324.testnet",
+    "ONYX": "onyx.tinygif8324.testnet",
+    "ORACLE": "oracle.tinygif8324.testnet"
+  },
+  "outlayer": {
+    "contract": "outlayer.testnet",
+    "api": "https://testnet-api.outlayer.ai"
+  },
+  "rpc": [
+    "https://rpc.testnet.fastnear.com",
+    "https://rpc.testnet.near.org"
+  ],
+  "indexer": "https://tx.test.fastnear.com",
+  "explorer": "https://testnet.nearblocks.io",
+  "fund": {
+    "bounty": "5",
+    "season": "4",
+    "factory": "10",
+    "scheduler": "2",
+    "mask": "0.2",
+    "safe": "3",
+    "jobs": "10",
+    "crews": "5"
+  },
+  "limits": {
+    "season": {
+      "max_prize": "1",
+      "max_safe_fund": "3",
+      "max_per_day": 2
+    },
+    "hand": {
+      "deposit_max": "1.1",
+      "safe_max": "3"
+    },
+    "fund_max": "50",
+    "fuel_max": "5"
+  }
+}

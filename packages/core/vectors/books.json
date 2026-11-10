@@ -1,0 +1,2990 @@
+{
+  "spec": "docs/spec/fight.md#книга-парімутюель",
+  "seed": "5566822197458195027",
+  "vectors": [
+    {
+      "name": "even-2",
+      "outcomes": 2,
+      "rake_bps": 500,
+      "winner": 0,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 0,
+          "amount": "10000000"
+        },
+        {
+          "op_id": "op-1",
+          "account": "acc-1.near",
+          "outcome": 1,
+          "amount": "10000000"
+        }
+      ],
+      "expect": {
+        "kind": "paid",
+        "T": "20000000",
+        "W": "10000000",
+        "rake": "1000000",
+        "D": "19000000",
+        "payouts": [
+          {
+            "op_id": "op-0",
+            "amount": "19000000"
+          }
+        ],
+        "dust": "0",
+        "house": "1000000",
+        "mask_share": "200000"
+      }
+    },
+    {
+      "name": "house-40-10-underdog-wins",
+      "outcomes": 2,
+      "rake_bps": 500,
+      "winner": 1,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 0,
+          "amount": "40000000"
+        },
+        {
+          "op_id": "op-1",
+          "account": "acc-1.near",
+          "outcome": 1,
+          "amount": "10000000"
+        }
+      ],
+      "expect": {
+        "kind": "paid",
+        "T": "50000000",
+        "W": "10000000",
+        "rake": "2500000",
+        "D": "47500000",
+        "payouts": [
+          {
+            "op_id": "op-1",
+            "amount": "47500000"
+          }
+        ],
+        "dust": "0",
+        "house": "2500000",
+        "mask_share": "500000"
+      }
+    },
+    {
+      "name": "rake-capped-by-losing-side",
+      "outcomes": 2,
+      "rake_bps": 500,
+      "winner": 0,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 0,
+          "amount": "1000000000"
+        },
+        {
+          "op_id": "op-1",
+          "account": "acc-1.near",
+          "outcome": 1,
+          "amount": "1000000"
+        }
+      ],
+      "expect": {
+        "kind": "paid",
+        "T": "1001000000",
+        "W": "1000000000",
+        "rake": "1000000",
+        "D": "1000000000",
+        "payouts": [
+          {
+            "op_id": "op-0",
+            "amount": "1000000000"
+          }
+        ],
+        "dust": "0",
+        "house": "1000000",
+        "mask_share": "1000000"
+      }
+    },
+    {
+      "name": "dust-three-winners",
+      "outcomes": 2,
+      "rake_bps": 500,
+      "winner": 0,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 0,
+          "amount": "1"
+        },
+        {
+          "op_id": "op-1",
+          "account": "acc-1.near",
+          "outcome": 0,
+          "amount": "1"
+        },
+        {
+          "op_id": "op-2",
+          "account": "acc-2.near",
+          "outcome": 0,
+          "amount": "1"
+        },
+        {
+          "op_id": "op-3",
+          "account": "acc-3.near",
+          "outcome": 1,
+          "amount": "2"
+        }
+      ],
+      "expect": {
+        "kind": "paid",
+        "T": "5",
+        "W": "3",
+        "rake": "0",
+        "D": "5",
+        "payouts": [
+          {
+            "op_id": "op-0",
+            "amount": "1"
+          },
+          {
+            "op_id": "op-1",
+            "amount": "1"
+          },
+          {
+            "op_id": "op-2",
+            "amount": "1"
+          }
+        ],
+        "dust": "2",
+        "house": "2",
+        "mask_share": "0"
+      }
+    },
+    {
+      "name": "one-sided-void",
+      "outcomes": 2,
+      "rake_bps": 500,
+      "winner": 0,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 0,
+          "amount": "5000000"
+        },
+        {
+          "op_id": "op-1",
+          "account": "acc-1.near",
+          "outcome": 0,
+          "amount": "7000000"
+        }
+      ],
+      "expect": {
+        "kind": "void",
+        "reason": "one_sided",
+        "T": "12000000",
+        "refunds": [
+          {
+            "op_id": "op-0",
+            "amount": "5000000"
+          },
+          {
+            "op_id": "op-1",
+            "amount": "7000000"
+          }
+        ]
+      }
+    },
+    {
+      "name": "no-winner-backs-void",
+      "outcomes": 2,
+      "rake_bps": 500,
+      "winner": 1,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 0,
+          "amount": "5000000"
+        },
+        {
+          "op_id": "op-1",
+          "account": "acc-1.near",
+          "outcome": 0,
+          "amount": "7000000"
+        }
+      ],
+      "expect": {
+        "kind": "void",
+        "reason": "no_winner_backs",
+        "T": "12000000",
+        "refunds": [
+          {
+            "op_id": "op-0",
+            "amount": "5000000"
+          },
+          {
+            "op_id": "op-1",
+            "amount": "7000000"
+          }
+        ]
+      }
+    },
+    {
+      "name": "empty-void",
+      "outcomes": 2,
+      "rake_bps": 500,
+      "winner": 0,
+      "backs": [],
+      "expect": {
+        "kind": "void",
+        "reason": "empty",
+        "T": "0",
+        "refunds": []
+      }
+    },
+    {
+      "name": "zero-rake",
+      "outcomes": 2,
+      "rake_bps": 0,
+      "winner": 1,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 0,
+          "amount": "3000000"
+        },
+        {
+          "op_id": "op-1",
+          "account": "acc-1.near",
+          "outcome": 1,
+          "amount": "2000000"
+        },
+        {
+          "op_id": "op-2",
+          "account": "acc-2.near",
+          "outcome": 1,
+          "amount": "1"
+        }
+      ],
+      "expect": {
+        "kind": "paid",
+        "T": "5000001",
+        "W": "2000001",
+        "rake": "0",
+        "D": "5000001",
+        "payouts": [
+          {
+            "op_id": "op-1",
+            "amount": "4999998"
+          },
+          {
+            "op_id": "op-2",
+            "amount": "2"
+          }
+        ],
+        "dust": "1",
+        "house": "1",
+        "mask_share": "1"
+      }
+    },
+    {
+      "name": "season-6-unpopular",
+      "outcomes": 6,
+      "rake_bps": 500,
+      "winner": 4,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 0,
+          "amount": "50000000"
+        },
+        {
+          "op_id": "op-1",
+          "account": "acc-1.near",
+          "outcome": 1,
+          "amount": "40000000"
+        },
+        {
+          "op_id": "op-2",
+          "account": "acc-2.near",
+          "outcome": 2,
+          "amount": "30000000"
+        },
+        {
+          "op_id": "op-3",
+          "account": "acc-3.near",
+          "outcome": 3,
+          "amount": "20000000"
+        },
+        {
+          "op_id": "op-4",
+          "account": "acc-4.near",
+          "outcome": 4,
+          "amount": "1000000"
+        },
+        {
+          "op_id": "op-5",
+          "account": "acc-5.near",
+          "outcome": 5,
+          "amount": "10000000"
+        }
+      ],
+      "expect": {
+        "kind": "paid",
+        "T": "151000000",
+        "W": "1000000",
+        "rake": "7550000",
+        "D": "143450000",
+        "payouts": [
+          {
+            "op_id": "op-4",
+            "amount": "143450000"
+          }
+        ],
+        "dust": "0",
+        "house": "7550000",
+        "mask_share": "1510000"
+      }
+    },
+    {
+      "name": "u128-scale",
+      "outcomes": 2,
+      "rake_bps": 500,
+      "winner": 1,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 0,
+          "amount": "1267650600228229401496703205376"
+        },
+        {
+          "op_id": "op-1",
+          "account": "acc-1.near",
+          "outcome": 1,
+          "amount": "633825300114114700748351615033"
+        },
+        {
+          "op_id": "op-2",
+          "account": "acc-2.near",
+          "outcome": 1,
+          "amount": "3"
+        }
+      ],
+      "expect": {
+        "kind": "paid",
+        "T": "1901475900342344102245054820412",
+        "W": "633825300114114700748351615036",
+        "rake": "95073795017117205112252741020",
+        "D": "1806402105325226897132802079392",
+        "payouts": [
+          {
+            "op_id": "op-1",
+            "amount": "1806402105325226897132802079383"
+          },
+          {
+            "op_id": "op-2",
+            "amount": "8"
+          }
+        ],
+        "dust": "1",
+        "house": "95073795017117205112252741021",
+        "mask_share": "19014759003423441022450548204"
+      }
+    },
+    {
+      "name": "random-0",
+      "outcomes": 2,
+      "rake_bps": 1000,
+      "winner": 1,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 0,
+          "amount": "8976006"
+        },
+        {
+          "op_id": "op-1",
+          "account": "acc-1.near",
+          "outcome": 1,
+          "amount": "69266835"
+        },
+        {
+          "op_id": "op-2",
+          "account": "acc-2.near",
+          "outcome": 0,
+          "amount": "55168000"
+        },
+        {
+          "op_id": "op-3",
+          "account": "acc-3.near",
+          "outcome": 1,
+          "amount": "42523175"
+        },
+        {
+          "op_id": "op-4",
+          "account": "acc-4.near",
+          "outcome": 0,
+          "amount": "3973462"
+        },
+        {
+          "op_id": "op-5",
+          "account": "acc-5.near",
+          "outcome": 0,
+          "amount": "16689967"
+        },
+        {
+          "op_id": "op-6",
+          "account": "acc-6.near",
+          "outcome": 1,
+          "amount": "81816548"
+        },
+        {
+          "op_id": "op-7",
+          "account": "acc-0.near",
+          "outcome": 0,
+          "amount": "26543468"
+        },
+        {
+          "op_id": "op-8",
+          "account": "acc-1.near",
+          "outcome": 0,
+          "amount": "41434926"
+        }
+      ],
+      "expect": {
+        "kind": "paid",
+        "T": "346392387",
+        "W": "193606558",
+        "rake": "34639238",
+        "D": "311753149",
+        "payouts": [
+          {
+            "op_id": "op-1",
+            "amount": "111536273"
+          },
+          {
+            "op_id": "op-3",
+            "amount": "68472544"
+          },
+          {
+            "op_id": "op-6",
+            "amount": "131744331"
+          }
+        ],
+        "dust": "1",
+        "house": "34639239",
+        "mask_share": "3463923"
+      }
+    },
+    {
+      "name": "random-1",
+      "outcomes": 2,
+      "rake_bps": 500,
+      "winner": 0,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 0,
+          "amount": "78650780"
+        }
+      ],
+      "expect": {
+        "kind": "void",
+        "reason": "one_sided",
+        "T": "78650780",
+        "refunds": [
+          {
+            "op_id": "op-0",
+            "amount": "78650780"
+          }
+        ]
+      }
+    },
+    {
+      "name": "random-2",
+      "outcomes": 2,
+      "rake_bps": 500,
+      "winner": 0,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 0,
+          "amount": "3950367"
+        },
+        {
+          "op_id": "op-1",
+          "account": "acc-1.near",
+          "outcome": 1,
+          "amount": "86183636"
+        },
+        {
+          "op_id": "op-2",
+          "account": "acc-2.near",
+          "outcome": 0,
+          "amount": "26561763"
+        }
+      ],
+      "expect": {
+        "kind": "paid",
+        "T": "116695766",
+        "W": "30512130",
+        "rake": "5834788",
+        "D": "110860978",
+        "payouts": [
+          {
+            "op_id": "op-0",
+            "amount": "14353031"
+          },
+          {
+            "op_id": "op-2",
+            "amount": "96507946"
+          }
+        ],
+        "dust": "1",
+        "house": "5834789",
+        "mask_share": "1166957"
+      }
+    },
+    {
+      "name": "random-3",
+      "outcomes": 2,
+      "rake_bps": 0,
+      "winner": 1,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 0,
+          "amount": "19976880"
+        },
+        {
+          "op_id": "op-1",
+          "account": "acc-1.near",
+          "outcome": 1,
+          "amount": "62147378"
+        },
+        {
+          "op_id": "op-2",
+          "account": "acc-2.near",
+          "outcome": 0,
+          "amount": "9556377"
+        }
+      ],
+      "expect": {
+        "kind": "paid",
+        "T": "91680635",
+        "W": "62147378",
+        "rake": "0",
+        "D": "91680635",
+        "payouts": [
+          {
+            "op_id": "op-1",
+            "amount": "91680635"
+          }
+        ],
+        "dust": "0",
+        "house": "0",
+        "mask_share": "0"
+      }
+    },
+    {
+      "name": "random-4",
+      "outcomes": 6,
+      "rake_bps": 250,
+      "winner": 5,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 2,
+          "amount": "81195500"
+        },
+        {
+          "op_id": "op-1",
+          "account": "acc-1.near",
+          "outcome": 4,
+          "amount": "24960962"
+        },
+        {
+          "op_id": "op-2",
+          "account": "acc-2.near",
+          "outcome": 3,
+          "amount": "54625760"
+        },
+        {
+          "op_id": "op-3",
+          "account": "acc-3.near",
+          "outcome": 3,
+          "amount": "67747048"
+        },
+        {
+          "op_id": "op-4",
+          "account": "acc-4.near",
+          "outcome": 5,
+          "amount": "46514425"
+        }
+      ],
+      "expect": {
+        "kind": "paid",
+        "T": "275043695",
+        "W": "46514425",
+        "rake": "6876092",
+        "D": "268167603",
+        "payouts": [
+          {
+            "op_id": "op-4",
+            "amount": "268167603"
+          }
+        ],
+        "dust": "0",
+        "house": "6876092",
+        "mask_share": "2750436"
+      }
+    },
+    {
+      "name": "random-5",
+      "outcomes": 2,
+      "rake_bps": 500,
+      "winner": 1,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 1,
+          "amount": "44324810"
+        },
+        {
+          "op_id": "op-1",
+          "account": "acc-1.near",
+          "outcome": 1,
+          "amount": "61351833"
+        }
+      ],
+      "expect": {
+        "kind": "void",
+        "reason": "one_sided",
+        "T": "105676643",
+        "refunds": [
+          {
+            "op_id": "op-0",
+            "amount": "44324810"
+          },
+          {
+            "op_id": "op-1",
+            "amount": "61351833"
+          }
+        ]
+      }
+    },
+    {
+      "name": "random-6",
+      "outcomes": 2,
+      "rake_bps": 250,
+      "winner": 1,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 0,
+          "amount": "22475139"
+        },
+        {
+          "op_id": "op-1",
+          "account": "acc-1.near",
+          "outcome": 0,
+          "amount": "28086716"
+        },
+        {
+          "op_id": "op-2",
+          "account": "acc-2.near",
+          "outcome": 0,
+          "amount": "72545793"
+        },
+        {
+          "op_id": "op-3",
+          "account": "acc-3.near",
+          "outcome": 0,
+          "amount": "6161369"
+        },
+        {
+          "op_id": "op-4",
+          "account": "acc-4.near",
+          "outcome": 1,
+          "amount": "98558821"
+        },
+        {
+          "op_id": "op-5",
+          "account": "acc-5.near",
+          "outcome": 0,
+          "amount": "68211978"
+        },
+        {
+          "op_id": "op-6",
+          "account": "acc-6.near",
+          "outcome": 1,
+          "amount": "4810070"
+        },
+        {
+          "op_id": "op-7",
+          "account": "acc-0.near",
+          "outcome": 1,
+          "amount": "70862995"
+        },
+        {
+          "op_id": "op-8",
+          "account": "acc-1.near",
+          "outcome": 1,
+          "amount": "8373682"
+        }
+      ],
+      "expect": {
+        "kind": "paid",
+        "T": "380086563",
+        "W": "182605568",
+        "rake": "9502164",
+        "D": "370584399",
+        "payouts": [
+          {
+            "op_id": "op-4",
+            "amount": "200017786"
+          },
+          {
+            "op_id": "op-6",
+            "amount": "9761678"
+          },
+          {
+            "op_id": "op-7",
+            "amount": "143811170"
+          },
+          {
+            "op_id": "op-8",
+            "amount": "16993763"
+          }
+        ],
+        "dust": "2",
+        "house": "9502166",
+        "mask_share": "3800865"
+      }
+    },
+    {
+      "name": "random-7",
+      "outcomes": 2,
+      "rake_bps": 500,
+      "winner": 0,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 1,
+          "amount": "27286477"
+        },
+        {
+          "op_id": "op-1",
+          "account": "acc-1.near",
+          "outcome": 1,
+          "amount": "6467936"
+        },
+        {
+          "op_id": "op-2",
+          "account": "acc-2.near",
+          "outcome": 0,
+          "amount": "84019424"
+        },
+        {
+          "op_id": "op-3",
+          "account": "acc-3.near",
+          "outcome": 0,
+          "amount": "48114718"
+        },
+        {
+          "op_id": "op-4",
+          "account": "acc-4.near",
+          "outcome": 1,
+          "amount": "43193970"
+        },
+        {
+          "op_id": "op-5",
+          "account": "acc-5.near",
+          "outcome": 1,
+          "amount": "48602813"
+        },
+        {
+          "op_id": "op-6",
+          "account": "acc-6.near",
+          "outcome": 1,
+          "amount": "61855045"
+        }
+      ],
+      "expect": {
+        "kind": "paid",
+        "T": "319540383",
+        "W": "132134142",
+        "rake": "15977019",
+        "D": "303563364",
+        "payouts": [
+          {
+            "op_id": "op-2",
+            "amount": "193025198"
+          },
+          {
+            "op_id": "op-3",
+            "amount": "110538165"
+          }
+        ],
+        "dust": "1",
+        "house": "15977020",
+        "mask_share": "3195403"
+      }
+    },
+    {
+      "name": "random-8",
+      "outcomes": 2,
+      "rake_bps": 500,
+      "winner": 1,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 1,
+          "amount": "85035352"
+        },
+        {
+          "op_id": "op-1",
+          "account": "acc-1.near",
+          "outcome": 1,
+          "amount": "23285673"
+        },
+        {
+          "op_id": "op-2",
+          "account": "acc-2.near",
+          "outcome": 0,
+          "amount": "13295749"
+        },
+        {
+          "op_id": "op-3",
+          "account": "acc-3.near",
+          "outcome": 0,
+          "amount": "57360803"
+        }
+      ],
+      "expect": {
+        "kind": "paid",
+        "T": "178977577",
+        "W": "108321025",
+        "rake": "8948878",
+        "D": "170028699",
+        "payouts": [
+          {
+            "op_id": "op-0",
+            "amount": "133477783"
+          },
+          {
+            "op_id": "op-1",
+            "amount": "36550915"
+          }
+        ],
+        "dust": "1",
+        "house": "8948879",
+        "mask_share": "1789775"
+      }
+    },
+    {
+      "name": "random-9",
+      "outcomes": 6,
+      "rake_bps": 500,
+      "winner": 0,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 5,
+          "amount": "76225879"
+        },
+        {
+          "op_id": "op-1",
+          "account": "acc-1.near",
+          "outcome": 1,
+          "amount": "45339286"
+        },
+        {
+          "op_id": "op-2",
+          "account": "acc-2.near",
+          "outcome": 5,
+          "amount": "69242419"
+        },
+        {
+          "op_id": "op-3",
+          "account": "acc-3.near",
+          "outcome": 1,
+          "amount": "42866110"
+        }
+      ],
+      "expect": {
+        "kind": "void",
+        "reason": "no_winner_backs",
+        "T": "233673694",
+        "refunds": [
+          {
+            "op_id": "op-0",
+            "amount": "76225879"
+          },
+          {
+            "op_id": "op-1",
+            "amount": "45339286"
+          },
+          {
+            "op_id": "op-2",
+            "amount": "69242419"
+          },
+          {
+            "op_id": "op-3",
+            "amount": "42866110"
+          }
+        ]
+      }
+    },
+    {
+      "name": "random-10",
+      "outcomes": 2,
+      "rake_bps": 0,
+      "winner": 0,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 0,
+          "amount": "43542765"
+        },
+        {
+          "op_id": "op-1",
+          "account": "acc-1.near",
+          "outcome": 0,
+          "amount": "95703998"
+        },
+        {
+          "op_id": "op-2",
+          "account": "acc-2.near",
+          "outcome": 0,
+          "amount": "49336383"
+        },
+        {
+          "op_id": "op-3",
+          "account": "acc-3.near",
+          "outcome": 0,
+          "amount": "7411602"
+        },
+        {
+          "op_id": "op-4",
+          "account": "acc-4.near",
+          "outcome": 0,
+          "amount": "92187579"
+        },
+        {
+          "op_id": "op-5",
+          "account": "acc-5.near",
+          "outcome": 0,
+          "amount": "46784567"
+        },
+        {
+          "op_id": "op-6",
+          "account": "acc-6.near",
+          "outcome": 1,
+          "amount": "47906192"
+        },
+        {
+          "op_id": "op-7",
+          "account": "acc-0.near",
+          "outcome": 0,
+          "amount": "42884937"
+        },
+        {
+          "op_id": "op-8",
+          "account": "acc-1.near",
+          "outcome": 0,
+          "amount": "69216177"
+        },
+        {
+          "op_id": "op-9",
+          "account": "acc-2.near",
+          "outcome": 0,
+          "amount": "89680605"
+        }
+      ],
+      "expect": {
+        "kind": "paid",
+        "T": "584654805",
+        "W": "536748613",
+        "rake": "0",
+        "D": "584654805",
+        "payouts": [
+          {
+            "op_id": "op-0",
+            "amount": "47429068"
+          },
+          {
+            "op_id": "op-1",
+            "amount": "104245825"
+          },
+          {
+            "op_id": "op-2",
+            "amount": "53739781"
+          },
+          {
+            "op_id": "op-3",
+            "amount": "8073106"
+          },
+          {
+            "op_id": "op-4",
+            "amount": "100415557"
+          },
+          {
+            "op_id": "op-5",
+            "amount": "50960209"
+          },
+          {
+            "op_id": "op-7",
+            "amount": "46712527"
+          },
+          {
+            "op_id": "op-8",
+            "amount": "75393898"
+          },
+          {
+            "op_id": "op-9",
+            "amount": "97684829"
+          }
+        ],
+        "dust": "5",
+        "house": "5",
+        "mask_share": "5"
+      }
+    },
+    {
+      "name": "random-11",
+      "outcomes": 2,
+      "rake_bps": 0,
+      "winner": 1,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 0,
+          "amount": "99036390"
+        },
+        {
+          "op_id": "op-1",
+          "account": "acc-1.near",
+          "outcome": 0,
+          "amount": "82821308"
+        },
+        {
+          "op_id": "op-2",
+          "account": "acc-2.near",
+          "outcome": 0,
+          "amount": "71983610"
+        },
+        {
+          "op_id": "op-3",
+          "account": "acc-3.near",
+          "outcome": 0,
+          "amount": "81584396"
+        },
+        {
+          "op_id": "op-4",
+          "account": "acc-4.near",
+          "outcome": 1,
+          "amount": "1484384"
+        },
+        {
+          "op_id": "op-5",
+          "account": "acc-5.near",
+          "outcome": 0,
+          "amount": "17859896"
+        }
+      ],
+      "expect": {
+        "kind": "paid",
+        "T": "354769984",
+        "W": "1484384",
+        "rake": "0",
+        "D": "354769984",
+        "payouts": [
+          {
+            "op_id": "op-4",
+            "amount": "354769984"
+          }
+        ],
+        "dust": "0",
+        "house": "0",
+        "mask_share": "0"
+      }
+    },
+    {
+      "name": "random-12",
+      "outcomes": 2,
+      "rake_bps": 500,
+      "winner": 0,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 0,
+          "amount": "9369917"
+        },
+        {
+          "op_id": "op-1",
+          "account": "acc-1.near",
+          "outcome": 0,
+          "amount": "80050426"
+        }
+      ],
+      "expect": {
+        "kind": "void",
+        "reason": "one_sided",
+        "T": "89420343",
+        "refunds": [
+          {
+            "op_id": "op-0",
+            "amount": "9369917"
+          },
+          {
+            "op_id": "op-1",
+            "amount": "80050426"
+          }
+        ]
+      }
+    },
+    {
+      "name": "random-13",
+      "outcomes": 2,
+      "rake_bps": 1000,
+      "winner": 0,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 1,
+          "amount": "64067603"
+        }
+      ],
+      "expect": {
+        "kind": "void",
+        "reason": "no_winner_backs",
+        "T": "64067603",
+        "refunds": [
+          {
+            "op_id": "op-0",
+            "amount": "64067603"
+          }
+        ]
+      }
+    },
+    {
+      "name": "random-14",
+      "outcomes": 6,
+      "rake_bps": 500,
+      "winner": 4,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 1,
+          "amount": "29984340"
+        },
+        {
+          "op_id": "op-1",
+          "account": "acc-1.near",
+          "outcome": 0,
+          "amount": "97511710"
+        },
+        {
+          "op_id": "op-2",
+          "account": "acc-2.near",
+          "outcome": 4,
+          "amount": "41848042"
+        },
+        {
+          "op_id": "op-3",
+          "account": "acc-3.near",
+          "outcome": 4,
+          "amount": "23459710"
+        },
+        {
+          "op_id": "op-4",
+          "account": "acc-4.near",
+          "outcome": 2,
+          "amount": "68946072"
+        },
+        {
+          "op_id": "op-5",
+          "account": "acc-5.near",
+          "outcome": 2,
+          "amount": "87587372"
+        },
+        {
+          "op_id": "op-6",
+          "account": "acc-6.near",
+          "outcome": 0,
+          "amount": "93548353"
+        },
+        {
+          "op_id": "op-7",
+          "account": "acc-0.near",
+          "outcome": 3,
+          "amount": "39127860"
+        },
+        {
+          "op_id": "op-8",
+          "account": "acc-1.near",
+          "outcome": 1,
+          "amount": "26318432"
+        }
+      ],
+      "expect": {
+        "kind": "paid",
+        "T": "508331891",
+        "W": "65307752",
+        "rake": "25416594",
+        "D": "482915297",
+        "payouts": [
+          {
+            "op_id": "op-2",
+            "amount": "309443504"
+          },
+          {
+            "op_id": "op-3",
+            "amount": "173471792"
+          }
+        ],
+        "dust": "1",
+        "house": "25416595",
+        "mask_share": "5083318"
+      }
+    },
+    {
+      "name": "random-15",
+      "outcomes": 2,
+      "rake_bps": 500,
+      "winner": 0,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 1,
+          "amount": "57180621"
+        },
+        {
+          "op_id": "op-1",
+          "account": "acc-1.near",
+          "outcome": 1,
+          "amount": "7144026"
+        },
+        {
+          "op_id": "op-2",
+          "account": "acc-2.near",
+          "outcome": 1,
+          "amount": "34800115"
+        },
+        {
+          "op_id": "op-3",
+          "account": "acc-3.near",
+          "outcome": 1,
+          "amount": "53654746"
+        },
+        {
+          "op_id": "op-4",
+          "account": "acc-4.near",
+          "outcome": 1,
+          "amount": "59824339"
+        },
+        {
+          "op_id": "op-5",
+          "account": "acc-5.near",
+          "outcome": 1,
+          "amount": "91186548"
+        }
+      ],
+      "expect": {
+        "kind": "void",
+        "reason": "no_winner_backs",
+        "T": "303790395",
+        "refunds": [
+          {
+            "op_id": "op-0",
+            "amount": "57180621"
+          },
+          {
+            "op_id": "op-1",
+            "amount": "7144026"
+          },
+          {
+            "op_id": "op-2",
+            "amount": "34800115"
+          },
+          {
+            "op_id": "op-3",
+            "amount": "53654746"
+          },
+          {
+            "op_id": "op-4",
+            "amount": "59824339"
+          },
+          {
+            "op_id": "op-5",
+            "amount": "91186548"
+          }
+        ]
+      }
+    },
+    {
+      "name": "random-16",
+      "outcomes": 2,
+      "rake_bps": 500,
+      "winner": 0,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 0,
+          "amount": "85083617"
+        },
+        {
+          "op_id": "op-1",
+          "account": "acc-1.near",
+          "outcome": 1,
+          "amount": "91554396"
+        },
+        {
+          "op_id": "op-2",
+          "account": "acc-2.near",
+          "outcome": 0,
+          "amount": "38921602"
+        },
+        {
+          "op_id": "op-3",
+          "account": "acc-3.near",
+          "outcome": 0,
+          "amount": "74574110"
+        },
+        {
+          "op_id": "op-4",
+          "account": "acc-4.near",
+          "outcome": 0,
+          "amount": "75630708"
+        },
+        {
+          "op_id": "op-5",
+          "account": "acc-5.near",
+          "outcome": 1,
+          "amount": "65098325"
+        },
+        {
+          "op_id": "op-6",
+          "account": "acc-6.near",
+          "outcome": 0,
+          "amount": "3597354"
+        },
+        {
+          "op_id": "op-7",
+          "account": "acc-0.near",
+          "outcome": 1,
+          "amount": "24845458"
+        },
+        {
+          "op_id": "op-8",
+          "account": "acc-1.near",
+          "outcome": 1,
+          "amount": "49668005"
+        },
+        {
+          "op_id": "op-9",
+          "account": "acc-2.near",
+          "outcome": 0,
+          "amount": "86606898"
+        },
+        {
+          "op_id": "op-10",
+          "account": "acc-3.near",
+          "outcome": 0,
+          "amount": "5120094"
+        },
+        {
+          "op_id": "op-11",
+          "account": "acc-4.near",
+          "outcome": 0,
+          "amount": "91148670"
+        }
+      ],
+      "expect": {
+        "kind": "paid",
+        "T": "691849237",
+        "W": "460683053",
+        "rake": "34592461",
+        "D": "657256776",
+        "payouts": [
+          {
+            "op_id": "op-0",
+            "amount": "121388845"
+          },
+          {
+            "op_id": "op-2",
+            "amount": "55529471"
+          },
+          {
+            "op_id": "op-3",
+            "amount": "106394925"
+          },
+          {
+            "op_id": "op-4",
+            "amount": "107902374"
+          },
+          {
+            "op_id": "op-6",
+            "amount": "5132347"
+          },
+          {
+            "op_id": "op-9",
+            "amount": "123562111"
+          },
+          {
+            "op_id": "op-10",
+            "amount": "7304841"
+          },
+          {
+            "op_id": "op-11",
+            "amount": "130041859"
+          }
+        ],
+        "dust": "3",
+        "house": "34592464",
+        "mask_share": "6918492"
+      }
+    },
+    {
+      "name": "random-17",
+      "outcomes": 2,
+      "rake_bps": 250,
+      "winner": 0,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 1,
+          "amount": "59802224"
+        }
+      ],
+      "expect": {
+        "kind": "void",
+        "reason": "no_winner_backs",
+        "T": "59802224",
+        "refunds": [
+          {
+            "op_id": "op-0",
+            "amount": "59802224"
+          }
+        ]
+      }
+    },
+    {
+      "name": "random-18",
+      "outcomes": 2,
+      "rake_bps": 1000,
+      "winner": 1,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 1,
+          "amount": "64352667"
+        },
+        {
+          "op_id": "op-1",
+          "account": "acc-1.near",
+          "outcome": 1,
+          "amount": "52074791"
+        },
+        {
+          "op_id": "op-2",
+          "account": "acc-2.near",
+          "outcome": 1,
+          "amount": "34250192"
+        },
+        {
+          "op_id": "op-3",
+          "account": "acc-3.near",
+          "outcome": 1,
+          "amount": "64113941"
+        },
+        {
+          "op_id": "op-4",
+          "account": "acc-4.near",
+          "outcome": 0,
+          "amount": "86629175"
+        },
+        {
+          "op_id": "op-5",
+          "account": "acc-5.near",
+          "outcome": 0,
+          "amount": "35218064"
+        },
+        {
+          "op_id": "op-6",
+          "account": "acc-6.near",
+          "outcome": 1,
+          "amount": "76849423"
+        },
+        {
+          "op_id": "op-7",
+          "account": "acc-0.near",
+          "outcome": 1,
+          "amount": "75588175"
+        },
+        {
+          "op_id": "op-8",
+          "account": "acc-1.near",
+          "outcome": 1,
+          "amount": "64243289"
+        },
+        {
+          "op_id": "op-9",
+          "account": "acc-2.near",
+          "outcome": 0,
+          "amount": "21590450"
+        },
+        {
+          "op_id": "op-10",
+          "account": "acc-3.near",
+          "outcome": 1,
+          "amount": "60754576"
+        }
+      ],
+      "expect": {
+        "kind": "paid",
+        "T": "635664743",
+        "W": "492227054",
+        "rake": "63566474",
+        "D": "572098269",
+        "payouts": [
+          {
+            "op_id": "op-0",
+            "amount": "74794851"
+          },
+          {
+            "op_id": "op-1",
+            "amount": "60524706"
+          },
+          {
+            "op_id": "op-2",
+            "amount": "39807798"
+          },
+          {
+            "op_id": "op-3",
+            "amount": "74517388"
+          },
+          {
+            "op_id": "op-6",
+            "amount": "89319393"
+          },
+          {
+            "op_id": "op-7",
+            "amount": "87853489"
+          },
+          {
+            "op_id": "op-8",
+            "amount": "74667725"
+          },
+          {
+            "op_id": "op-10",
+            "amount": "70612916"
+          }
+        ],
+        "dust": "3",
+        "house": "63566477",
+        "mask_share": "6356647"
+      }
+    },
+    {
+      "name": "random-19",
+      "outcomes": 6,
+      "rake_bps": 250,
+      "winner": 0,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 2,
+          "amount": "10105392"
+        },
+        {
+          "op_id": "op-1",
+          "account": "acc-1.near",
+          "outcome": 2,
+          "amount": "13820562"
+        },
+        {
+          "op_id": "op-2",
+          "account": "acc-2.near",
+          "outcome": 2,
+          "amount": "45842726"
+        },
+        {
+          "op_id": "op-3",
+          "account": "acc-3.near",
+          "outcome": 4,
+          "amount": "4437967"
+        },
+        {
+          "op_id": "op-4",
+          "account": "acc-4.near",
+          "outcome": 2,
+          "amount": "72375269"
+        },
+        {
+          "op_id": "op-5",
+          "account": "acc-5.near",
+          "outcome": 3,
+          "amount": "81730836"
+        },
+        {
+          "op_id": "op-6",
+          "account": "acc-6.near",
+          "outcome": 3,
+          "amount": "43147628"
+        }
+      ],
+      "expect": {
+        "kind": "void",
+        "reason": "no_winner_backs",
+        "T": "271460380",
+        "refunds": [
+          {
+            "op_id": "op-0",
+            "amount": "10105392"
+          },
+          {
+            "op_id": "op-1",
+            "amount": "13820562"
+          },
+          {
+            "op_id": "op-2",
+            "amount": "45842726"
+          },
+          {
+            "op_id": "op-3",
+            "amount": "4437967"
+          },
+          {
+            "op_id": "op-4",
+            "amount": "72375269"
+          },
+          {
+            "op_id": "op-5",
+            "amount": "81730836"
+          },
+          {
+            "op_id": "op-6",
+            "amount": "43147628"
+          }
+        ]
+      }
+    },
+    {
+      "name": "random-20",
+      "outcomes": 2,
+      "rake_bps": 0,
+      "winner": 0,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 0,
+          "amount": "80865226"
+        },
+        {
+          "op_id": "op-1",
+          "account": "acc-1.near",
+          "outcome": 0,
+          "amount": "97409461"
+        },
+        {
+          "op_id": "op-2",
+          "account": "acc-2.near",
+          "outcome": 0,
+          "amount": "14570481"
+        },
+        {
+          "op_id": "op-3",
+          "account": "acc-3.near",
+          "outcome": 1,
+          "amount": "41308251"
+        },
+        {
+          "op_id": "op-4",
+          "account": "acc-4.near",
+          "outcome": 1,
+          "amount": "31585375"
+        },
+        {
+          "op_id": "op-5",
+          "account": "acc-5.near",
+          "outcome": 0,
+          "amount": "98139053"
+        },
+        {
+          "op_id": "op-6",
+          "account": "acc-6.near",
+          "outcome": 0,
+          "amount": "42545635"
+        },
+        {
+          "op_id": "op-7",
+          "account": "acc-0.near",
+          "outcome": 0,
+          "amount": "47411478"
+        },
+        {
+          "op_id": "op-8",
+          "account": "acc-1.near",
+          "outcome": 0,
+          "amount": "93286176"
+        },
+        {
+          "op_id": "op-9",
+          "account": "acc-2.near",
+          "outcome": 1,
+          "amount": "2332911"
+        }
+      ],
+      "expect": {
+        "kind": "paid",
+        "T": "549454047",
+        "W": "474227510",
+        "rake": "0",
+        "D": "549454047",
+        "payouts": [
+          {
+            "op_id": "op-0",
+            "amount": "93692847"
+          },
+          {
+            "op_id": "op-1",
+            "amount": "112861488"
+          },
+          {
+            "op_id": "op-2",
+            "amount": "16881791"
+          },
+          {
+            "op_id": "op-5",
+            "amount": "113706815"
+          },
+          {
+            "op_id": "op-6",
+            "amount": "49294633"
+          },
+          {
+            "op_id": "op-7",
+            "amount": "54932343"
+          },
+          {
+            "op_id": "op-8",
+            "amount": "108084128"
+          }
+        ],
+        "dust": "2",
+        "house": "2",
+        "mask_share": "2"
+      }
+    },
+    {
+      "name": "random-21",
+      "outcomes": 2,
+      "rake_bps": 500,
+      "winner": 0,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 1,
+          "amount": "18525176"
+        },
+        {
+          "op_id": "op-1",
+          "account": "acc-1.near",
+          "outcome": 1,
+          "amount": "64111365"
+        },
+        {
+          "op_id": "op-2",
+          "account": "acc-2.near",
+          "outcome": 1,
+          "amount": "77428877"
+        },
+        {
+          "op_id": "op-3",
+          "account": "acc-3.near",
+          "outcome": 0,
+          "amount": "28271663"
+        },
+        {
+          "op_id": "op-4",
+          "account": "acc-4.near",
+          "outcome": 0,
+          "amount": "85617388"
+        },
+        {
+          "op_id": "op-5",
+          "account": "acc-5.near",
+          "outcome": 1,
+          "amount": "57591821"
+        },
+        {
+          "op_id": "op-6",
+          "account": "acc-6.near",
+          "outcome": 0,
+          "amount": "15037904"
+        },
+        {
+          "op_id": "op-7",
+          "account": "acc-0.near",
+          "outcome": 0,
+          "amount": "48515952"
+        }
+      ],
+      "expect": {
+        "kind": "paid",
+        "T": "395100146",
+        "W": "177442907",
+        "rake": "19755007",
+        "D": "375345139",
+        "payouts": [
+          {
+            "op_id": "op-3",
+            "amount": "59803073"
+          },
+          {
+            "op_id": "op-4",
+            "amount": "181106536"
+          },
+          {
+            "op_id": "op-6",
+            "amount": "31809691"
+          },
+          {
+            "op_id": "op-7",
+            "amount": "102625836"
+          }
+        ],
+        "dust": "3",
+        "house": "19755010",
+        "mask_share": "3951001"
+      }
+    },
+    {
+      "name": "random-22",
+      "outcomes": 2,
+      "rake_bps": 500,
+      "winner": 0,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 0,
+          "amount": "68460462"
+        }
+      ],
+      "expect": {
+        "kind": "void",
+        "reason": "one_sided",
+        "T": "68460462",
+        "refunds": [
+          {
+            "op_id": "op-0",
+            "amount": "68460462"
+          }
+        ]
+      }
+    },
+    {
+      "name": "random-23",
+      "outcomes": 2,
+      "rake_bps": 250,
+      "winner": 0,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 0,
+          "amount": "66266063"
+        }
+      ],
+      "expect": {
+        "kind": "void",
+        "reason": "one_sided",
+        "T": "66266063",
+        "refunds": [
+          {
+            "op_id": "op-0",
+            "amount": "66266063"
+          }
+        ]
+      }
+    },
+    {
+      "name": "random-24",
+      "outcomes": 6,
+      "rake_bps": 500,
+      "winner": 1,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 2,
+          "amount": "83877202"
+        },
+        {
+          "op_id": "op-1",
+          "account": "acc-1.near",
+          "outcome": 4,
+          "amount": "63811136"
+        },
+        {
+          "op_id": "op-2",
+          "account": "acc-2.near",
+          "outcome": 5,
+          "amount": "85668933"
+        },
+        {
+          "op_id": "op-3",
+          "account": "acc-3.near",
+          "outcome": 0,
+          "amount": "93062030"
+        },
+        {
+          "op_id": "op-4",
+          "account": "acc-4.near",
+          "outcome": 3,
+          "amount": "91125502"
+        },
+        {
+          "op_id": "op-5",
+          "account": "acc-5.near",
+          "outcome": 2,
+          "amount": "38826282"
+        },
+        {
+          "op_id": "op-6",
+          "account": "acc-6.near",
+          "outcome": 3,
+          "amount": "43150991"
+        },
+        {
+          "op_id": "op-7",
+          "account": "acc-0.near",
+          "outcome": 2,
+          "amount": "95407071"
+        },
+        {
+          "op_id": "op-8",
+          "account": "acc-1.near",
+          "outcome": 2,
+          "amount": "78340620"
+        },
+        {
+          "op_id": "op-9",
+          "account": "acc-2.near",
+          "outcome": 3,
+          "amount": "44049938"
+        },
+        {
+          "op_id": "op-10",
+          "account": "acc-3.near",
+          "outcome": 4,
+          "amount": "12912131"
+        },
+        {
+          "op_id": "op-11",
+          "account": "acc-4.near",
+          "outcome": 3,
+          "amount": "26230760"
+        }
+      ],
+      "expect": {
+        "kind": "void",
+        "reason": "no_winner_backs",
+        "T": "756462596",
+        "refunds": [
+          {
+            "op_id": "op-0",
+            "amount": "83877202"
+          },
+          {
+            "op_id": "op-1",
+            "amount": "63811136"
+          },
+          {
+            "op_id": "op-2",
+            "amount": "85668933"
+          },
+          {
+            "op_id": "op-3",
+            "amount": "93062030"
+          },
+          {
+            "op_id": "op-4",
+            "amount": "91125502"
+          },
+          {
+            "op_id": "op-5",
+            "amount": "38826282"
+          },
+          {
+            "op_id": "op-6",
+            "amount": "43150991"
+          },
+          {
+            "op_id": "op-7",
+            "amount": "95407071"
+          },
+          {
+            "op_id": "op-8",
+            "amount": "78340620"
+          },
+          {
+            "op_id": "op-9",
+            "amount": "44049938"
+          },
+          {
+            "op_id": "op-10",
+            "amount": "12912131"
+          },
+          {
+            "op_id": "op-11",
+            "amount": "26230760"
+          }
+        ]
+      }
+    },
+    {
+      "name": "random-25",
+      "outcomes": 2,
+      "rake_bps": 500,
+      "winner": 1,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 1,
+          "amount": "331610"
+        },
+        {
+          "op_id": "op-1",
+          "account": "acc-1.near",
+          "outcome": 1,
+          "amount": "43097236"
+        },
+        {
+          "op_id": "op-2",
+          "account": "acc-2.near",
+          "outcome": 0,
+          "amount": "31858626"
+        },
+        {
+          "op_id": "op-3",
+          "account": "acc-3.near",
+          "outcome": 1,
+          "amount": "37301516"
+        },
+        {
+          "op_id": "op-4",
+          "account": "acc-4.near",
+          "outcome": 1,
+          "amount": "72799895"
+        },
+        {
+          "op_id": "op-5",
+          "account": "acc-5.near",
+          "outcome": 0,
+          "amount": "42181960"
+        },
+        {
+          "op_id": "op-6",
+          "account": "acc-6.near",
+          "outcome": 1,
+          "amount": "33056976"
+        }
+      ],
+      "expect": {
+        "kind": "paid",
+        "T": "260627819",
+        "W": "186587233",
+        "rake": "13031390",
+        "D": "247596429",
+        "payouts": [
+          {
+            "op_id": "op-0",
+            "amount": "440037"
+          },
+          {
+            "op_id": "op-1",
+            "amount": "57188916"
+          },
+          {
+            "op_id": "op-3",
+            "amount": "49498146"
+          },
+          {
+            "op_id": "op-4",
+            "amount": "96603576"
+          },
+          {
+            "op_id": "op-6",
+            "amount": "43865751"
+          }
+        ],
+        "dust": "3",
+        "house": "13031393",
+        "mask_share": "2606278"
+      }
+    },
+    {
+      "name": "random-26",
+      "outcomes": 2,
+      "rake_bps": 0,
+      "winner": 1,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 0,
+          "amount": "41484150"
+        },
+        {
+          "op_id": "op-1",
+          "account": "acc-1.near",
+          "outcome": 1,
+          "amount": "87856004"
+        },
+        {
+          "op_id": "op-2",
+          "account": "acc-2.near",
+          "outcome": 0,
+          "amount": "67398417"
+        },
+        {
+          "op_id": "op-3",
+          "account": "acc-3.near",
+          "outcome": 1,
+          "amount": "42094893"
+        },
+        {
+          "op_id": "op-4",
+          "account": "acc-4.near",
+          "outcome": 1,
+          "amount": "2801283"
+        },
+        {
+          "op_id": "op-5",
+          "account": "acc-5.near",
+          "outcome": 1,
+          "amount": "87098243"
+        },
+        {
+          "op_id": "op-6",
+          "account": "acc-6.near",
+          "outcome": 0,
+          "amount": "36491864"
+        },
+        {
+          "op_id": "op-7",
+          "account": "acc-0.near",
+          "outcome": 1,
+          "amount": "14843177"
+        },
+        {
+          "op_id": "op-8",
+          "account": "acc-1.near",
+          "outcome": 1,
+          "amount": "87412485"
+        },
+        {
+          "op_id": "op-9",
+          "account": "acc-2.near",
+          "outcome": 1,
+          "amount": "60862906"
+        },
+        {
+          "op_id": "op-10",
+          "account": "acc-3.near",
+          "outcome": 1,
+          "amount": "38643958"
+        }
+      ],
+      "expect": {
+        "kind": "paid",
+        "T": "566987380",
+        "W": "421612949",
+        "rake": "0",
+        "D": "566987380",
+        "payouts": [
+          {
+            "op_id": "op-1",
+            "amount": "118149230"
+          },
+          {
+            "op_id": "op-3",
+            "amount": "56609440"
+          },
+          {
+            "op_id": "op-4",
+            "amount": "3767180"
+          },
+          {
+            "op_id": "op-5",
+            "amount": "117130189"
+          },
+          {
+            "op_id": "op-7",
+            "amount": "19961184"
+          },
+          {
+            "op_id": "op-8",
+            "amount": "117552783"
+          },
+          {
+            "op_id": "op-9",
+            "amount": "81848766"
+          },
+          {
+            "op_id": "op-10",
+            "amount": "51968604"
+          }
+        ],
+        "dust": "4",
+        "house": "4",
+        "mask_share": "4"
+      }
+    },
+    {
+      "name": "random-27",
+      "outcomes": 2,
+      "rake_bps": 500,
+      "winner": 0,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 0,
+          "amount": "37590782"
+        },
+        {
+          "op_id": "op-1",
+          "account": "acc-1.near",
+          "outcome": 1,
+          "amount": "21908876"
+        },
+        {
+          "op_id": "op-2",
+          "account": "acc-2.near",
+          "outcome": 1,
+          "amount": "62055819"
+        }
+      ],
+      "expect": {
+        "kind": "paid",
+        "T": "121555477",
+        "W": "37590782",
+        "rake": "6077773",
+        "D": "115477704",
+        "payouts": [
+          {
+            "op_id": "op-0",
+            "amount": "115477704"
+          }
+        ],
+        "dust": "0",
+        "house": "6077773",
+        "mask_share": "1215554"
+      }
+    },
+    {
+      "name": "random-28",
+      "outcomes": 2,
+      "rake_bps": 0,
+      "winner": 1,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 0,
+          "amount": "71905217"
+        }
+      ],
+      "expect": {
+        "kind": "void",
+        "reason": "no_winner_backs",
+        "T": "71905217",
+        "refunds": [
+          {
+            "op_id": "op-0",
+            "amount": "71905217"
+          }
+        ]
+      }
+    },
+    {
+      "name": "random-29",
+      "outcomes": 6,
+      "rake_bps": 500,
+      "winner": 1,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 3,
+          "amount": "98270824"
+        },
+        {
+          "op_id": "op-1",
+          "account": "acc-1.near",
+          "outcome": 2,
+          "amount": "85196538"
+        },
+        {
+          "op_id": "op-2",
+          "account": "acc-2.near",
+          "outcome": 2,
+          "amount": "17269600"
+        },
+        {
+          "op_id": "op-3",
+          "account": "acc-3.near",
+          "outcome": 3,
+          "amount": "80708476"
+        },
+        {
+          "op_id": "op-4",
+          "account": "acc-4.near",
+          "outcome": 1,
+          "amount": "47859144"
+        },
+        {
+          "op_id": "op-5",
+          "account": "acc-5.near",
+          "outcome": 2,
+          "amount": "14761758"
+        },
+        {
+          "op_id": "op-6",
+          "account": "acc-6.near",
+          "outcome": 3,
+          "amount": "69586866"
+        },
+        {
+          "op_id": "op-7",
+          "account": "acc-0.near",
+          "outcome": 5,
+          "amount": "75132438"
+        }
+      ],
+      "expect": {
+        "kind": "paid",
+        "T": "488785644",
+        "W": "47859144",
+        "rake": "24439282",
+        "D": "464346362",
+        "payouts": [
+          {
+            "op_id": "op-4",
+            "amount": "464346362"
+          }
+        ],
+        "dust": "0",
+        "house": "24439282",
+        "mask_share": "4887856"
+      }
+    },
+    {
+      "name": "random-30",
+      "outcomes": 2,
+      "rake_bps": 0,
+      "winner": 0,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 1,
+          "amount": "26390228"
+        }
+      ],
+      "expect": {
+        "kind": "void",
+        "reason": "no_winner_backs",
+        "T": "26390228",
+        "refunds": [
+          {
+            "op_id": "op-0",
+            "amount": "26390228"
+          }
+        ]
+      }
+    },
+    {
+      "name": "random-31",
+      "outcomes": 2,
+      "rake_bps": 500,
+      "winner": 1,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 0,
+          "amount": "97732188"
+        },
+        {
+          "op_id": "op-1",
+          "account": "acc-1.near",
+          "outcome": 1,
+          "amount": "36639150"
+        },
+        {
+          "op_id": "op-2",
+          "account": "acc-2.near",
+          "outcome": 0,
+          "amount": "80299528"
+        },
+        {
+          "op_id": "op-3",
+          "account": "acc-3.near",
+          "outcome": 1,
+          "amount": "2635249"
+        },
+        {
+          "op_id": "op-4",
+          "account": "acc-4.near",
+          "outcome": 0,
+          "amount": "24888336"
+        },
+        {
+          "op_id": "op-5",
+          "account": "acc-5.near",
+          "outcome": 1,
+          "amount": "59620907"
+        },
+        {
+          "op_id": "op-6",
+          "account": "acc-6.near",
+          "outcome": 1,
+          "amount": "82201335"
+        },
+        {
+          "op_id": "op-7",
+          "account": "acc-0.near",
+          "outcome": 1,
+          "amount": "44837409"
+        },
+        {
+          "op_id": "op-8",
+          "account": "acc-1.near",
+          "outcome": 0,
+          "amount": "5523715"
+        },
+        {
+          "op_id": "op-9",
+          "account": "acc-2.near",
+          "outcome": 1,
+          "amount": "65617623"
+        },
+        {
+          "op_id": "op-10",
+          "account": "acc-3.near",
+          "outcome": 1,
+          "amount": "62910550"
+        }
+      ],
+      "expect": {
+        "kind": "paid",
+        "T": "562905990",
+        "W": "354462223",
+        "rake": "28145299",
+        "D": "534760691",
+        "payouts": [
+          {
+            "op_id": "op-1",
+            "amount": "55275783"
+          },
+          {
+            "op_id": "op-3",
+            "amount": "3975677"
+          },
+          {
+            "op_id": "op-5",
+            "amount": "89947292"
+          },
+          {
+            "op_id": "op-6",
+            "amount": "124013335"
+          },
+          {
+            "op_id": "op-7",
+            "amount": "67644116"
+          },
+          {
+            "op_id": "op-9",
+            "amount": "98994259"
+          },
+          {
+            "op_id": "op-10",
+            "amount": "94910224"
+          }
+        ],
+        "dust": "5",
+        "house": "28145304",
+        "mask_share": "5629059"
+      }
+    },
+    {
+      "name": "random-32",
+      "outcomes": 2,
+      "rake_bps": 0,
+      "winner": 0,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 0,
+          "amount": "76256588"
+        },
+        {
+          "op_id": "op-1",
+          "account": "acc-1.near",
+          "outcome": 0,
+          "amount": "48934709"
+        },
+        {
+          "op_id": "op-2",
+          "account": "acc-2.near",
+          "outcome": 0,
+          "amount": "83847055"
+        }
+      ],
+      "expect": {
+        "kind": "void",
+        "reason": "one_sided",
+        "T": "209038352",
+        "refunds": [
+          {
+            "op_id": "op-0",
+            "amount": "76256588"
+          },
+          {
+            "op_id": "op-1",
+            "amount": "48934709"
+          },
+          {
+            "op_id": "op-2",
+            "amount": "83847055"
+          }
+        ]
+      }
+    },
+    {
+      "name": "random-33",
+      "outcomes": 2,
+      "rake_bps": 0,
+      "winner": 0,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 1,
+          "amount": "63346428"
+        }
+      ],
+      "expect": {
+        "kind": "void",
+        "reason": "no_winner_backs",
+        "T": "63346428",
+        "refunds": [
+          {
+            "op_id": "op-0",
+            "amount": "63346428"
+          }
+        ]
+      }
+    },
+    {
+      "name": "random-34",
+      "outcomes": 6,
+      "rake_bps": 1000,
+      "winner": 1,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 2,
+          "amount": "85351175"
+        },
+        {
+          "op_id": "op-1",
+          "account": "acc-1.near",
+          "outcome": 2,
+          "amount": "65446743"
+        },
+        {
+          "op_id": "op-2",
+          "account": "acc-2.near",
+          "outcome": 5,
+          "amount": "6340387"
+        },
+        {
+          "op_id": "op-3",
+          "account": "acc-3.near",
+          "outcome": 2,
+          "amount": "37185411"
+        },
+        {
+          "op_id": "op-4",
+          "account": "acc-4.near",
+          "outcome": 0,
+          "amount": "24142267"
+        }
+      ],
+      "expect": {
+        "kind": "void",
+        "reason": "no_winner_backs",
+        "T": "218465983",
+        "refunds": [
+          {
+            "op_id": "op-0",
+            "amount": "85351175"
+          },
+          {
+            "op_id": "op-1",
+            "amount": "65446743"
+          },
+          {
+            "op_id": "op-2",
+            "amount": "6340387"
+          },
+          {
+            "op_id": "op-3",
+            "amount": "37185411"
+          },
+          {
+            "op_id": "op-4",
+            "amount": "24142267"
+          }
+        ]
+      }
+    },
+    {
+      "name": "random-35",
+      "outcomes": 2,
+      "rake_bps": 250,
+      "winner": 0,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 1,
+          "amount": "63503112"
+        },
+        {
+          "op_id": "op-1",
+          "account": "acc-1.near",
+          "outcome": 1,
+          "amount": "87503904"
+        },
+        {
+          "op_id": "op-2",
+          "account": "acc-2.near",
+          "outcome": 0,
+          "amount": "12822438"
+        },
+        {
+          "op_id": "op-3",
+          "account": "acc-3.near",
+          "outcome": 0,
+          "amount": "36376241"
+        },
+        {
+          "op_id": "op-4",
+          "account": "acc-4.near",
+          "outcome": 1,
+          "amount": "36900779"
+        },
+        {
+          "op_id": "op-5",
+          "account": "acc-5.near",
+          "outcome": 0,
+          "amount": "71674577"
+        }
+      ],
+      "expect": {
+        "kind": "paid",
+        "T": "308781051",
+        "W": "120873256",
+        "rake": "7719526",
+        "D": "301061525",
+        "payouts": [
+          {
+            "op_id": "op-2",
+            "amount": "31937112"
+          },
+          {
+            "op_id": "op-3",
+            "amount": "90603057"
+          },
+          {
+            "op_id": "op-5",
+            "amount": "178521355"
+          }
+        ],
+        "dust": "1",
+        "house": "7719527",
+        "mask_share": "3087810"
+      }
+    },
+    {
+      "name": "random-36",
+      "outcomes": 2,
+      "rake_bps": 500,
+      "winner": 0,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 0,
+          "amount": "48170903"
+        },
+        {
+          "op_id": "op-1",
+          "account": "acc-1.near",
+          "outcome": 1,
+          "amount": "77173525"
+        },
+        {
+          "op_id": "op-2",
+          "account": "acc-2.near",
+          "outcome": 1,
+          "amount": "45180575"
+        },
+        {
+          "op_id": "op-3",
+          "account": "acc-3.near",
+          "outcome": 1,
+          "amount": "23050814"
+        },
+        {
+          "op_id": "op-4",
+          "account": "acc-4.near",
+          "outcome": 0,
+          "amount": "99976562"
+        },
+        {
+          "op_id": "op-5",
+          "account": "acc-5.near",
+          "outcome": 1,
+          "amount": "70444747"
+        },
+        {
+          "op_id": "op-6",
+          "account": "acc-6.near",
+          "outcome": 1,
+          "amount": "22857927"
+        },
+        {
+          "op_id": "op-7",
+          "account": "acc-0.near",
+          "outcome": 1,
+          "amount": "6583906"
+        }
+      ],
+      "expect": {
+        "kind": "paid",
+        "T": "393438959",
+        "W": "148147465",
+        "rake": "19671947",
+        "D": "373767012",
+        "payouts": [
+          {
+            "op_id": "op-0",
+            "amount": "121532248"
+          },
+          {
+            "op_id": "op-4",
+            "amount": "252234763"
+          }
+        ],
+        "dust": "1",
+        "house": "19671948",
+        "mask_share": "3934389"
+      }
+    },
+    {
+      "name": "random-37",
+      "outcomes": 2,
+      "rake_bps": 250,
+      "winner": 1,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 0,
+          "amount": "3196274"
+        },
+        {
+          "op_id": "op-1",
+          "account": "acc-1.near",
+          "outcome": 0,
+          "amount": "76876188"
+        },
+        {
+          "op_id": "op-2",
+          "account": "acc-2.near",
+          "outcome": 1,
+          "amount": "16884042"
+        },
+        {
+          "op_id": "op-3",
+          "account": "acc-3.near",
+          "outcome": 1,
+          "amount": "15908777"
+        },
+        {
+          "op_id": "op-4",
+          "account": "acc-4.near",
+          "outcome": 0,
+          "amount": "58649111"
+        },
+        {
+          "op_id": "op-5",
+          "account": "acc-5.near",
+          "outcome": 1,
+          "amount": "83854536"
+        },
+        {
+          "op_id": "op-6",
+          "account": "acc-6.near",
+          "outcome": 1,
+          "amount": "81778692"
+        }
+      ],
+      "expect": {
+        "kind": "paid",
+        "T": "337147620",
+        "W": "198426047",
+        "rake": "8428690",
+        "D": "328718930",
+        "payouts": [
+          {
+            "op_id": "op-2",
+            "amount": "27970643"
+          },
+          {
+            "op_id": "op-3",
+            "amount": "26354988"
+          },
+          {
+            "op_id": "op-5",
+            "amount": "138916103"
+          },
+          {
+            "op_id": "op-6",
+            "amount": "135477194"
+          }
+        ],
+        "dust": "2",
+        "house": "8428692",
+        "mask_share": "3371476"
+      }
+    },
+    {
+      "name": "random-38",
+      "outcomes": 2,
+      "rake_bps": 500,
+      "winner": 0,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 1,
+          "amount": "19440954"
+        }
+      ],
+      "expect": {
+        "kind": "void",
+        "reason": "no_winner_backs",
+        "T": "19440954",
+        "refunds": [
+          {
+            "op_id": "op-0",
+            "amount": "19440954"
+          }
+        ]
+      }
+    },
+    {
+      "name": "random-39",
+      "outcomes": 6,
+      "rake_bps": 0,
+      "winner": 5,
+      "backs": [
+        {
+          "op_id": "op-0",
+          "account": "acc-0.near",
+          "outcome": 3,
+          "amount": "52931733"
+        },
+        {
+          "op_id": "op-1",
+          "account": "acc-1.near",
+          "outcome": 5,
+          "amount": "34112468"
+        },
+        {
+          "op_id": "op-2",
+          "account": "acc-2.near",
+          "outcome": 4,
+          "amount": "61071729"
+        },
+        {
+          "op_id": "op-3",
+          "account": "acc-3.near",
+          "outcome": 2,
+          "amount": "78287191"
+        }
+      ],
+      "expect": {
+        "kind": "paid",
+        "T": "226403121",
+        "W": "34112468",
+        "rake": "0",
+        "D": "226403121",
+        "payouts": [
+          {
+            "op_id": "op-1",
+            "amount": "226403121"
+          }
+        ],
+        "dust": "0",
+        "house": "0",
+        "mask_share": "0"
+      }
+    }
+  ]
+}

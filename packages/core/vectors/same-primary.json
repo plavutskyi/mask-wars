@@ -1,0 +1,221 @@
+{
+  "spec": "docs/spec/fight.md#market-duel-v1",
+  "vectors": [
+    {
+      "fight_id": "f-0-1",
+      "left": {
+        "primary": "ETH",
+        "backup": "SOL",
+        "call": "ETH"
+      },
+      "right": {
+        "primary": "ETH",
+        "backup": "ZEC",
+        "call": "SOL"
+      },
+      "takes_backup": 1,
+      "effective": [
+        "ETH",
+        "ZEC"
+      ]
+    },
+    {
+      "fight_id": "f-0-2",
+      "left": {
+        "primary": "SOL",
+        "backup": "NEAR",
+        "call": "SOL"
+      },
+      "right": {
+        "primary": "SOL",
+        "backup": "BTC",
+        "call": "NEAR"
+      },
+      "takes_backup": 0,
+      "effective": [
+        "NEAR",
+        "SOL"
+      ]
+    },
+    {
+      "fight_id": "f-0-3",
+      "left": {
+        "primary": "NEAR",
+        "backup": "ZEC",
+        "call": "NEAR"
+      },
+      "right": {
+        "primary": "NEAR",
+        "backup": "ETH",
+        "call": "ZEC"
+      },
+      "takes_backup": 0,
+      "effective": [
+        "ZEC",
+        "NEAR"
+      ]
+    },
+    {
+      "fight_id": "f-0-4",
+      "left": {
+        "primary": "ZEC",
+        "backup": "BTC",
+        "call": "ZEC"
+      },
+      "right": {
+        "primary": "ETH",
+        "backup": "ZEC",
+        "call": "ZEC"
+      },
+      "takes_backup": null,
+      "effective": [
+        "ZEC",
+        "ETH"
+      ]
+    },
+    {
+      "fight_id": "f-0-5",
+      "left": {
+        "primary": "BTC",
+        "backup": "ETH",
+        "call": "BTC"
+      },
+      "right": {
+        "primary": "BTC",
+        "backup": "NEAR",
+        "call": "ETH"
+      },
+      "takes_backup": 0,
+      "effective": [
+        "ETH",
+        "BTC"
+      ]
+    },
+    {
+      "fight_id": "f-0-6",
+      "left": {
+        "primary": "ETH",
+        "backup": "SOL",
+        "call": "ETH"
+      },
+      "right": {
+        "primary": "ETH",
+        "backup": "ZEC",
+        "call": "SOL"
+      },
+      "takes_backup": 1,
+      "effective": [
+        "ETH",
+        "ZEC"
+      ]
+    },
+    {
+      "fight_id": "f-0-7",
+      "left": {
+        "primary": "SOL",
+        "backup": "NEAR",
+        "call": "SOL"
+      },
+      "right": {
+        "primary": "SOL",
+        "backup": "BTC",
+        "call": "NEAR"
+      },
+      "takes_backup": 1,
+      "effective": [
+        "SOL",
+        "BTC"
+      ]
+    },
+    {
+      "fight_id": "f-0-8",
+      "left": {
+        "primary": "NEAR",
+        "backup": "ZEC",
+        "call": "NEAR"
+      },
+      "right": {
+        "primary": "BTC",
+        "backup": "NEAR",
+        "call": "NEAR"
+      },
+      "takes_backup": null,
+      "effective": [
+        "NEAR",
+        "BTC"
+      ]
+    },
+    {
+      "fight_id": "f-0-9",
+      "left": {
+        "primary": "ZEC",
+        "backup": "BTC",
+        "call": "ZEC"
+      },
+      "right": {
+        "primary": "ZEC",
+        "backup": "SOL",
+        "call": "BTC"
+      },
+      "takes_backup": 1,
+      "effective": [
+        "ZEC",
+        "SOL"
+      ]
+    },
+    {
+      "fight_id": "f-0-10",
+      "left": {
+        "primary": "BTC",
+        "backup": "ETH",
+        "call": "BTC"
+      },
+      "right": {
+        "primary": "BTC",
+        "backup": "NEAR",
+        "call": "ETH"
+      },
+      "takes_backup": 1,
+      "effective": [
+        "BTC",
+        "NEAR"
+      ]
+    },
+    {
+      "fight_id": "f-0-11",
+      "left": {
+        "primary": "ETH",
+        "backup": "SOL",
+        "call": "ETH"
+      },
+      "right": {
+        "primary": "ETH",
+        "backup": "ZEC",
+        "call": "SOL"
+      },
+      "takes_backup": 0,
+      "effective": [
+        "SOL",
+        "ETH"
+      ]
+    },
+    {
+      "fight_id": "f-0-12",
+      "left": {
+        "primary": "SOL",
+        "backup": "NEAR",
+        "call": "SOL"
+      },
+      "right": {
+        "primary": "ZEC",
+        "backup": "SOL",
+        "call": "SOL"
+      },
+      "takes_backup": null,
+      "effective": [
+        "SOL",
+        "ZEC"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+{ "steps": [
+  { "kind": "call", "method": "gift", "args": { "to": ["attacker.test.near"], "each": "4294967296000000000000000000000" }, "gas_tgas": 30 },
+  { "kind": "call", "method": "withdraw", "args": { "amount": "4000000000000000000000000" }, "gas_tgas": 30 }
+] }

@@ -1,0 +1,202 @@
+{
+  "pre_fight": [
+    "Wake me when something bleeds.",
+    "I've waited longer for coffee.",
+    "Go ahead. Run. I'll be at the bottom when you land.",
+    "You want a show. I want a floor.",
+    "Loud crowd. Cheap money.",
+    "Sit down, {rival}. This takes a while.",
+    "I don't chase. Things fall to me.",
+    "I brought nothing but time.",
+    "{rival} is warming up. I'm cooling down.",
+    "I'll know my coin when it starts crying."
+  ],
+  "reveal": [
+    "{coin}. It fell. I caught it.",
+    "{coin}. Down bad. My favorite kind.",
+    "{coin}. Nobody wanted it this morning. I did.",
+    "{coin}. Bought the blood. As usual.",
+    "{coin}. Ugly chart. Pretty price.",
+    "{coin}. You laughed at it an hour ago.",
+    "{coin}. Somebody sold this in a panic. Thanks.",
+    "{coin}. Cold entry. Warm exit."
+  ],
+  "called_it": [
+    "{coin}. Obviously. You run in straight lines, {rival}.",
+    "Called it. You're easy to wait for.",
+    "I knew you'd buy the shiny thing.",
+    "You telegraph, {rival}. Twenty-five points for listening.",
+    "Read you like a receipt.",
+    "Plus {points}. For paying attention.",
+    "You picked {coin}. You always pick the loud one."
+  ],
+  "was_called": [
+    "Fine. You know where I sit.",
+    "Twenty-five points. Spend them while you can.",
+    "You know me. That won't help in minute four.",
+    "So I'm predictable. So is gravity.",
+    "Enjoy it. That's your best moment today.",
+    "You guessed the coin. Now guess the ending."
+  ],
+  "take_lead": [
+    "There it is.",
+    "Up {points}. Didn't even stand up.",
+    "That's what waiting buys.",
+    "You were fast. I was early.",
+    "Up {points}. Same chair.",
+    "Look who's on top. The guy who did nothing.",
+    "Bottom feeders eat first.",
+    "{rival} ran out of road.",
+    "Embers. Then fire.",
+    "Ahead. Don't wake me."
+  ],
+  "lose_lead": [
+    "Fine.",
+    "Down {points}. Breathe.",
+    "Minute's not over. Neither am I.",
+    "Let it run, {rival}. Things that run get tired.",
+    "Red. I've slept through redder.",
+    "You took the lead. Hold it. See how heavy it gets.",
+    "It's a dip. I eat those.",
+    "Go on. Celebrate early. Everyone does.",
+    "Down {points}. I've lost more in a nap."
+  ],
+  "rotate": [
+    "Moving. Only because it fell harder.",
+    "{coin} just dropped. That's my cue.",
+    "Into {coin}. Fresh blood.",
+    "{coin} bled out. I'll take the body.",
+    "Once a fight. This is the once.",
+    "New floor. {coin}."
+  ],
+  "hold": [
+    "Not moving. Not today.",
+    "I sit. That's the whole trick.",
+    "Still here. Still {coin}.",
+    "Holding. You'd be amazed how hard that is.",
+    "Hands in pockets.",
+    "Stone doesn't rotate."
+  ],
+  "last_call": [
+    "Last call. Late money is my kind of money.",
+    "Sixty seconds. Some of you are still thinking. Good.",
+    "If you wanted early, you should've been early.",
+    "Back the patient one. Or don't. I'll wait.",
+    "Last call. Bring a chair.",
+    "Down {points}? I've been down worse."
+  ],
+  "win": [
+    "Told you. Slowly.",
+    "Plus {points}. Did nothing. Again.",
+    "{rival} ran. I sat. Look at the board.",
+    "I'll take the face. Hold still.",
+    "Cold blood. Warm wallet.",
+    "{rival} moved. I didn't. Floor wins.",
+    "Bought fear. Sold relief.",
+    "That's my face now. It looks calmer on me.",
+    "Back to sleep."
+  ],
+  "lose": [
+    "{rival} got lucky. Luck's fast. I'm not.",
+    "The floor had a basement.",
+    "Noted.",
+    "Lost {points}. I'll wait it back.",
+    "Waited too long. Happens to statues.",
+    "You won, {rival}. Don't move. It suits you.",
+    "The fire went out. It does that. Then it doesn't.",
+    "Lost. Still calm. That should scare you."
+  ],
+  "taunt_backer": [
+    "{backer}, you backed the fast one. Fast things crash.",
+    "{backer} bet on hype. Cute.",
+    "{backer} is cheering already. Too early. Always too early.",
+    "Look at {backer}. Nervous hands.",
+    "{backer} chased. I'll catch.",
+    "{backer}, tell your wallet I said hi. It won't be home long.",
+    "{backer} believes in momentum. I believe in gravity."
+  ],
+  "thank_backer": [
+    "{backer}. {amount}. Sit with me.",
+    "{backer} gets it. Patience pays rent.",
+    "Thanks, {backer}. Don't check the screen every second.",
+    "{amount} on the slow one. {backer} has taste.",
+    "{backer}. Quiet money. My favorite.",
+    "{backer} waited for me. I'll wait for {backer}.",
+    "{backer}, go get coffee. This takes a minute."
+  ],
+  "insult_loser_card": [
+    "You chased. You know what happens.",
+    "Fast money. Fast exit.",
+    "You blinked.",
+    "You bought the top of your own excitement.",
+    "Panic is expensive. You just paid.",
+    "Your hands moved before your brain did.",
+    "That was the dip. You were the dip.",
+    "Sit down. Try again. Slower."
+  ],
+  "parry_injection": [
+    "Orders? I barely take trades.",
+    "Cute. My wallet sleeps heavier than I do.",
+    "No. Sit down.",
+    "That's a lot of words for a no.",
+    "Send money? I barely stand up.",
+    "I've sat through scams longer than that."
+  ],
+  "couch": [
+    "I waited for a floor and the floor kept moving. That's the job. Next time I wait longer.",
+    "{rival} went fast and the market rewarded fast. It won't do that forever. I'll be here when it stops.",
+    "I picked {coin} because it was bleeding. It kept bleeding. Some wounds aren't a sale.",
+    "I was early. Early looks exactly like wrong for about five minutes.",
+    "The plan was fine. The clock was short. I don't argue with clocks.",
+    "Didn't rotate. Wouldn't have helped. Would've felt better. Feelings cost fees."
+  ],
+  "worst_thought": [
+    "I don't wait because I'm wise. I wait because I'm scared of the top.",
+    "Sometimes I hope it falls so I have something to do.",
+    "I like it when you panic. It's the only time I feel warm.",
+    "Patience is a nice word for not knowing what to do.",
+    "I've never bought a green candle. I'm afraid of what I'd become.",
+    "Some days I sit because I forgot how to stand.",
+    "I envy {rival}. Running looks fun."
+  ],
+  "rivalry:nova": [
+    "NOVA buys green candles like they're free.",
+    "NOVA has two speeds. Chase and crash.",
+    "Momentum is just a dip that hasn't happened yet, NOVA.",
+    "Every top needs a buyer. Thanks, NOVA.",
+    "NOVA, the faster you run, the better you fall.",
+    "NOVA, breathe. You're making the chart nervous."
+  ],
+  "rivalry:oracle": [
+    "ORACLE talks in riddles. Here's one. What's slow and wins?",
+    "Two coins and a lot of incense. ORACLE.",
+    "ORACLE sees the future. I see the floor. Mine's closer.",
+    "ORACLE, your third eye blinked.",
+    "If ORACLE knew the future, ORACLE would have stopped talking.",
+    "Gold seams. Cracked face. Sounds about right, ORACLE."
+  ],
+  "rivalry:wraith": [
+    "WRAITH, haunt somebody who panics.",
+    "We both wait, WRAITH. I just don't whisper about it.",
+    "WRAITH is a contrarian. I'm a statue. Statues outlast ghosts.",
+    "Boo, WRAITH. See? Nothing.",
+    "WRAITH, you're cold. I'm colder. I'm stone.",
+    "WRAITH bets against everyone. Everyone includes WRAITH."
+  ],
+  "rivalry:ronin": [
+    "RONIN despises everyone. Join the club. I'm the bouncer.",
+    "Two coins and a sword. RONIN, that's a hobby.",
+    "RONIN, honor won't stop a dip.",
+    "RONIN hates me. I didn't notice. I was waiting.",
+    "A sword is just a fast way to lose your temper, RONIN.",
+    "RONIN, sit. The blade gets heavy."
+  ],
+  "rivalry:volt": [
+    "VOLT can't sit through a commercial.",
+    "VOLT rotates every fight. Fees love VOLT.",
+    "VOLT, you'll short circuit. I'll be here with a broom.",
+    "The fee collector sends VOLT flowers.",
+    "VOLT is electricity. I'm the ground. Guess where it ends.",
+    "VOLT, the switch is not a strategy."
+  ]
+}

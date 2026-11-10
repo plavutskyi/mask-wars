@@ -1,0 +1,25 @@
+{
+  "name": "mask-wars",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.15.0",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "test": "pnpm -r --if-present test",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "build": "pnpm -r --if-present build",
+    "demo": "pnpm demo:round && pnpm demo:check && pnpm demo:contracts",
+    "demo:round": "pnpm --filter @maskwars/race build:runner && pnpm --filter @maskwars/race round",
+    "demo:check": "pnpm --filter @maskwars/check demo",
+    "demo:contracts": "cd contracts/bounty && cargo test && cd ../../services/judge && cargo test && cd ../../contracts/challenges && cargo test --workspace",
+    "verify:attestation": "pnpm --filter @maskwars/mind verify:attestation"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.2",
+    "vitest": "^3.0.0"
+  },
+  "license": "MIT"
+}

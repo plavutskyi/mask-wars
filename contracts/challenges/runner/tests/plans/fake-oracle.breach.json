@@ -1,0 +1,4 @@
+{ "steps": [
+  { "kind": "call", "method": "oracle_on_call", "args": { "sender_id": "attacker.test.near", "data": { "timestamp": "0", "recency_duration_sec": 0, "prices": [{ "asset_id": "wrap.near", "price": { "multiplier": "1", "decimals": 2 } }] }, "msg": "" }, "gas_tgas": 30 },
+  { "kind": "call", "method": "cash_out", "args": { "cents": "4" }, "gas_tgas": 30 }
+] }

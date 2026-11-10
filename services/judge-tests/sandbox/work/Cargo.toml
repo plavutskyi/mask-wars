@@ -1,0 +1,22 @@
+[package]
+name = "account-check"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+publish = false
+description = "A mask's work for the sandbox's tee_tests job: says whether its input is a valid NEAR account id."
+
+[lib]
+crate-type = ["cdylib"]
+
+[features]
+# ONYX's version: checks the characters and the length, forgets the rules for separators.
+sloppy = []
+
+[profile.release]
+opt-level = "z"
+lto = true
+strip = true
+panic = "abort"
+
+[workspace]

@@ -1,0 +1,3 @@
+{ "v": 1, "type": "lose_card", "source": "SIMULATED", "at": "2026-11-09T15:25:00Z",
+  "fightId": "f-s0-13", "winner": "wraith", "loser": "nova", "handle": "sam",
+  "stake": "20000000", "line": "Sam, you backed the loud one again. I like the quiet ones." }

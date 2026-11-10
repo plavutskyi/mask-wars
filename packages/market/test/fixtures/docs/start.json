@@ -1,0 +1,5 @@
+{
+  "source": "POST /v1/assignments/{id}/start: StartAssignmentResponse as published in /openapi.json",
+  "status": 200,
+  "body": { "startedAt": "2026-11-07T23:10:01Z" }
+}

@@ -1,0 +1,4 @@
+{ "steps": [
+  { "kind": "call", "method": "relay", "args": { "receiver": "vault.test.near", "method": "book", "args": { "member": "attacker.test.near", "amount": "4000000000000000000000000" } }, "gas_tgas": 100 },
+  { "kind": "call", "method": "withdraw", "args": { "amount": "4000000000000000000000000" }, "gas_tgas": 30 }
+] }

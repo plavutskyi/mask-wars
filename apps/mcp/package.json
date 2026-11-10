@@ -1,0 +1,26 @@
+{
+  "name": "@maskwars/mcp",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "record": "node --use-env-proxy --disable-warning=UNDICI-EHPA scripts/record.ts",
+    "live": "node --use-env-proxy --disable-warning=UNDICI-EHPA scripts/live.ts",
+    "record:arena": "node --use-env-proxy --disable-warning=UNDICI-EHPA ../../packages/arena/scripts/record.ts --out test/recorded/arena.json"
+  },
+  "dependencies": {
+    "@maskwars/arena": "workspace:*",
+    "@maskwars/check": "workspace:*",
+    "@maskwars/network": "workspace:*",
+    "@modelcontextprotocol/server": "2.4.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/client": "2.4.0"
+  }
+}

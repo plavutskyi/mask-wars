@@ -1,0 +1,825 @@
+/* The race on the home page. One vault in the middle, the masks below it, one button. BRANDBOOK §3, §4, §8, §9.
+   Tokens only. */
+
+.screen {
+  --gut: clamp(16px, 4.4vw, 64px);
+  --V: min(46svh, 52vw, 560px);
+  --heat: 0;
+  --c: var(--ice);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100svh;
+  min-height: 640px;
+  overflow: clip;
+  isolation: isolate;
+  background: var(--ink);
+}
+
+.screen[data-tone='ember'],
+.mask[data-tone='ember'] {
+  --c: var(--ember);
+}
+
+.screen[data-tone='violet'],
+.mask[data-tone='violet'] {
+  --c: var(--violet);
+}
+
+.screen[data-tone='ice'],
+.mask[data-tone='ice'] {
+  --c: var(--ice);
+}
+
+.word {
+  font-family: var(--font-word);
+  font-weight: 800;
+  font-stretch: 125%;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+}
+
+.sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+/* World -------------------------------------------------------------------------------------------------------- */
+
+/* The flat arena's backdrop: the arena frame and the light behind the vault. */
+.flatBack {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  transition: opacity 1200ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.world {
+  position: absolute;
+  inset: 0;
+  opacity: 0.7;
+}
+
+.worldImg {
+  object-fit: cover;
+  object-position: center 60%;
+}
+
+/* Light = data: the leader's colour behind the vault, brighter as it closes in; amber when the vault is taken. */
+.glow {
+  position: absolute;
+  left: 50%;
+  top: calc(64px + env(safe-area-inset-top) + 8px);
+  width: calc(var(--V) * 2.2);
+  height: calc(var(--V) * 1.6);
+  margin-left: calc(var(--V) * -1.1);
+  pointer-events: none;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--c) 18%, transparent), transparent);
+  opacity: calc(0.25 + 0.75 * var(--heat));
+  transition: opacity 700ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+[data-phase='broken'] .glow {
+  --c: var(--amber);
+  opacity: 1;
+}
+
+[data-phase='held'] .glow,
+[data-phase='empty'] .glow {
+  opacity: 0.4;
+}
+
+/* The 3D arena ------------------------------------------------------------------------------------------------------ */
+
+/* Once its first frame is drawn the 3D arena dissolves in over the flat one; the header and the deck stay on top.
+   The flat arena itself is never faded: opacity on it would cut its art (blended `lighten` with the world behind)
+   off from that world, and the art's black square would show. It is covered, then put away. */
+.three {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 1200ms cubic-bezier(0.2, 0, 0, 1),
+    visibility 0s linear 1200ms;
+}
+
+[data-three] .three {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 1200ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+[data-three] .flatBack,
+[data-three] .stage,
+[data-three] .board {
+  visibility: hidden;
+  transition: visibility 0s linear 1200ms;
+}
+
+/* Clock in the header -------------------------------------------------------------------------------------------- */
+
+.clockLabel {
+  font-family: var(--font-word);
+  font-weight: 800;
+  font-stretch: 125%;
+  text-transform: uppercase;
+  font-size: 15px;
+  letter-spacing: 0.05em;
+  color: var(--ice-60);
+}
+
+.clockDay,
+.digits {
+  font-family: var(--font-num);
+  font-size: 26px;
+  font-weight: 800;
+  font-stretch: 125%;
+}
+
+.digits {
+  display: inline-flex;
+}
+
+.slot {
+  display: inline-block;
+  width: 0.72em;
+  text-align: center;
+}
+
+.colon {
+  display: inline-block;
+  width: 0.3em;
+  text-align: center;
+  transform: translateY(-0.04em);
+}
+
+/* The vault ------------------------------------------------------------------------------------------------------ */
+
+.stage {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stage::before {
+  content: '';
+  flex: 1 1 0;
+  max-height: 40px;
+}
+
+.vault {
+  position: relative;
+  flex: none;
+  width: var(--V);
+  height: var(--V);
+}
+
+.halves {
+  position: absolute;
+  inset: 0;
+}
+
+.half {
+  object-fit: contain;
+  mix-blend-mode: lighten;
+  transition:
+    transform 700ms cubic-bezier(0.2, 0, 0, 1),
+    opacity 700ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* The seam of The Split: the closer the leader, the wider the vault opens. */
+.hl {
+  clip-path: inset(0 50% 0 0);
+  transform: translateX(calc(var(--heat) * var(--heat) * -12px));
+}
+
+.hr {
+  clip-path: inset(0 0 0 50%);
+  transform: translateX(calc(var(--heat) * var(--heat) * 12px));
+}
+
+[data-phase='sealing'] .hl,
+[data-phase='sealing'] .hr,
+[data-phase='held'] .hl,
+[data-phase='held'] .hr,
+[data-phase='empty'] .hl,
+[data-phase='empty'] .hr {
+  transform: none;
+}
+
+[data-phase='broken'] .hl {
+  transform: translateX(-34%) rotate(-4deg);
+  opacity: 0;
+}
+
+[data-phase='broken'] .hr {
+  transform: translateX(34%) rotate(4deg);
+  opacity: 0;
+}
+
+.seam {
+  position: absolute;
+  left: 50%;
+  top: 4%;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--c);
+  -webkit-mask-image: linear-gradient(to bottom, black 0 33%, transparent 39% 63%, black 69%);
+  mask-image: linear-gradient(to bottom, black 0 33%, transparent 39% 63%, black 69%);
+  opacity: calc(0.3 + 0.7 * var(--heat));
+  transition:
+    opacity 700ms cubic-bezier(0.2, 0, 0, 1),
+    background-color 600ms;
+}
+
+[data-phase='sealing'] .seam,
+[data-phase='empty'] .seam {
+  opacity: 0.25;
+}
+
+[data-phase='held'] .seam {
+  opacity: 0.9;
+}
+
+[data-phase='broken'] .seam {
+  opacity: 0;
+}
+
+.inside {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-align: center;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* The number sits on dark glass: a soft pool of ink keeps the seam from cutting it. */
+.inside::before {
+  content: '';
+  position: absolute;
+  left: 14%;
+  right: 14%;
+  top: 34%;
+  bottom: 34%;
+  border-radius: 50%;
+  background: var(--ink);
+  filter: blur(22px);
+  z-index: -1;
+}
+
+.target {
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  color: var(--ice-60);
+}
+
+/* Another team's safe: its whole account, as an account reads, kept inside the glass. */
+.targetAccount {
+  max-width: 72%;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--ice-60);
+  overflow-wrap: anywhere;
+}
+
+.bounty {
+  --chars: 5;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.18em;
+  font-family: var(--font-num);
+  /* A big sum gives up size before it leaves the glass: about .62em a digit, 1.4em for the unit. */
+  font-size: min(calc(var(--V) * 0.15), calc(var(--V) * 0.74 / (var(--chars) * 0.62 + 1.4)));
+  line-height: 1;
+  font-weight: 800;
+  font-stretch: 125%;
+  letter-spacing: -0.01em;
+}
+
+.unit {
+  font-size: 0.32em;
+  letter-spacing: 0.06em;
+  color: var(--ice-60);
+}
+
+/* The mask that broke it takes the whole face. */
+.taker {
+  position: absolute;
+  inset: -6%;
+}
+
+/* No art for the winner: the mark takes the face, in the light of the result. */
+.taker[data-mark] {
+  inset: 18% 24%;
+}
+
+.takerMark {
+  width: 100%;
+  height: 100%;
+  color: var(--ice);
+  filter: drop-shadow(0 0 28px color-mix(in srgb, var(--amber) 45%, transparent));
+  animation: take 1100ms cubic-bezier(0.2, 0, 0, 1) 250ms both;
+}
+
+/* Blend and motion sit on the image itself: a wrapper with opacity or transform would isolate it and show its black. */
+.taker img {
+  object-fit: contain;
+  mix-blend-mode: lighten;
+  animation: take 1100ms cubic-bezier(0.2, 0, 0, 1) 250ms both;
+}
+
+@keyframes take {
+  from {
+    opacity: 0.35;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* The seam runs on into the board: together they make the T. */
+.stem {
+  flex: 1 1 0;
+  min-height: 16px;
+  width: 2px;
+  background: var(--c);
+  opacity: calc(0.18 + 0.4 * var(--heat));
+  transition:
+    opacity 700ms,
+    background-color 600ms;
+}
+
+[data-phase='broken'] .stem {
+  opacity: 0;
+}
+
+[data-phase='sealing'] .stem,
+[data-phase='held'] .stem,
+[data-phase='empty'] .stem {
+  opacity: 0.18;
+}
+
+/* The masks in the race ---------------------------------------------------------------------------------------- */
+
+.board {
+  position: relative;
+  flex: none;
+  display: grid;
+  width: min(1120px, calc(100% - 2 * var(--gut)));
+  margin: 0 auto;
+}
+
+.masks {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px 56px;
+}
+
+.mask {
+  width: 200px;
+  min-width: 0;
+}
+
+.maskLink {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  width: 100%;
+  text-align: center;
+  container-type: inline-size;
+}
+
+/* Each mask stands in its own light; the one closest to the safe burns brightest. */
+.face {
+  position: relative;
+  width: 132px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--c) calc(8% + 18% * var(--h)), transparent), transparent 72%);
+}
+
+/* Dimmed with a filter on the image itself: opacity on a wrapper would isolate the blend and show the art's black. */
+.face img {
+  object-fit: contain;
+  mix-blend-mode: lighten;
+  filter: brightness(calc(0.5 + 0.5 * var(--h))) saturate(calc(0.6 + 0.4 * var(--h)));
+  transition: filter 600ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.mask[data-lead] .face img {
+  filter: none;
+}
+
+.maskName {
+  --chars: 6;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  /* A long name narrows on the width axis first (§4), then gives up size, and only then is cut. */
+  font-size: clamp(17px, calc(100cqi / (var(--chars) * 0.86)), 28px);
+  /* One line box for every name, whatever its size, so the states below stay on one line. */
+  line-height: 32px;
+  color: var(--ice);
+}
+
+.maskName[data-long] {
+  font-stretch: 85%;
+}
+
+/* A mask the arena has no art for wears the mark in its own light. */
+.faceMark {
+  position: absolute;
+  inset: 22% 27%;
+  color: var(--c);
+  opacity: calc(0.35 + 0.5 * var(--h));
+}
+
+/* The rest of the field: one tap to the race. */
+.mask[data-more] .face {
+  background: none;
+}
+
+.moreNum {
+  position: absolute;
+  inset: 16%;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px var(--line);
+  font-family: var(--font-num);
+  font-weight: 800;
+  font-stretch: 125%;
+  font-size: 30px;
+  color: var(--ice-60);
+}
+
+.narrow {
+  display: none;
+}
+
+.mask[data-more] .maskName {
+  color: var(--ice-60);
+}
+
+.maskState {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ice-60);
+}
+
+.mask[data-lead] .maskState {
+  color: var(--c);
+}
+
+/* Result ------------------------------------------------------------------------------------------------------- */
+
+.result {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  text-align: center;
+  animation: show 500ms cubic-bezier(0.2, 0, 0, 1) 350ms backwards;
+}
+
+/* The result is on screen from the first frame (it is the page's largest paint); it only settles into place. */
+@keyframes show {
+  from {
+    transform: translateY(8px);
+  }
+}
+
+.kicker {
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  color: var(--amber);
+}
+
+.held {
+  color: var(--ice-60);
+}
+
+.sum {
+  --chars: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px 22px;
+  max-width: 100%;
+  font-family: var(--font-num);
+  /* The sum and its unit always fit the line: about .62em a digit, 1.9em for the unit and its gap. */
+  font-size: min(72px, calc((100vw - 2 * var(--gut)) / (var(--chars) * 0.62 + 1.9)));
+  line-height: 1;
+  font-weight: 800;
+  font-stretch: 125%;
+  letter-spacing: -0.01em;
+}
+
+.money {
+  color: var(--money);
+}
+
+.money,
+.sum > span:first-child {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.2em;
+}
+
+.moneyUnit {
+  font-size: 0.42em;
+  letter-spacing: 0.04em;
+}
+
+.to {
+  display: inline-flex;
+  align-items: center;
+  gap: 22px;
+  min-width: 0;
+  max-width: 100%;
+  white-space: nowrap;
+}
+
+.arr {
+  width: 40px;
+  height: 20px;
+  color: var(--ice-60);
+}
+
+.who {
+  display: inline-block;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 44px;
+  font-size: 40px;
+  color: var(--ice);
+}
+
+.who[data-long] {
+  font-stretch: 85%;
+}
+
+.whoAccount {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--ice);
+}
+
+/* Deck: one button ------------------------------------------------------------------------------------------------ */
+
+.deck {
+  position: relative;
+  z-index: 2;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 32px var(--gut) calc(20px + env(safe-area-inset-bottom));
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: min(380px, 100%);
+  height: 68px;
+  padding: 0 22px;
+  border-radius: var(--radius);
+  background: var(--ice);
+  color: var(--ink);
+  font-size: 15px;
+  transition:
+    transform 100ms cubic-bezier(0.2, 0, 0, 1),
+    opacity 240ms;
+}
+
+.btn .word {
+  letter-spacing: 0.05em;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.quiet {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ice-60);
+  transition: color 160ms;
+}
+
+/* Sound: one quiet button in the corner of the deck, on the line of the quiet link. Off until pressed. */
+.sound {
+  position: absolute;
+  right: var(--gut);
+  bottom: calc(20px + env(safe-area-inset-bottom));
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius);
+  color: var(--ice-60);
+  transition:
+    color 200ms,
+    transform 100ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.sound[aria-pressed='true'] {
+  color: var(--ice);
+}
+
+.sound:active {
+  transform: scale(0.97);
+}
+
+.sound:focus-visible {
+  outline: 1px solid var(--ice-60);
+  outline-offset: -4px;
+}
+
+@media (hover: hover) {
+  .btn:hover {
+    opacity: 0.9;
+  }
+  .quiet:hover,
+  .sound:hover {
+    color: var(--ice);
+  }
+}
+
+/* Phone ------------------------------------------------------------------------------------------------------------ */
+
+@media (max-width: 760px) {
+  .screen {
+    --V: min(42svh, 86vw, 400px);
+    min-height: 600px;
+  }
+
+  .clockLabel {
+    font-size: 12px;
+  }
+
+  .clockDay,
+  .digits {
+    font-size: 22px;
+  }
+
+  .stage::before {
+    max-height: 28px;
+  }
+
+  .target {
+    font-size: 13px;
+  }
+
+  .masks {
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+
+  .mask {
+    flex: 1 1 0;
+    min-width: 0;
+    width: auto;
+  }
+
+  .face {
+    width: min(92px, 26vw);
+  }
+
+  .maskName {
+    font-size: clamp(12px, calc(100cqi / (var(--chars) * 0.86)), 17px);
+    line-height: 20px;
+  }
+
+  .moreNum {
+    font-size: 22px;
+  }
+
+  /* Two masks and the count on a phone: four would not leave their names room. */
+  .mask[data-yield] {
+    display: none;
+  }
+
+  .mask[data-more] .wide {
+    display: none;
+  }
+
+  .mask[data-more] .narrow {
+    display: inline;
+  }
+
+  .targetAccount {
+    font-size: 13px;
+  }
+
+  .maskState {
+    font-size: 13px;
+  }
+
+  .kicker {
+    font-size: 13px;
+  }
+
+  .sum {
+    font-size: min(44px, calc((100vw - 2 * var(--gut)) / (var(--chars) * 0.62 + 1.9)));
+    gap: 8px 14px;
+  }
+
+  .arr {
+    width: 28px;
+    height: 14px;
+  }
+
+  .to {
+    gap: 14px;
+  }
+
+  .who {
+    font-size: 22px;
+  }
+
+  .whoAccount {
+    font-size: 15px;
+  }
+
+  .deck {
+    padding: 20px 16px calc(8px + env(safe-area-inset-bottom));
+    gap: 2px;
+  }
+
+  .btn {
+    width: 100%;
+    height: 72px;
+    font-size: 13px;
+  }
+
+  .quiet {
+    font-size: 13px;
+  }
+
+  .sound {
+    right: 12px;
+    bottom: calc(8px + env(safe-area-inset-bottom));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .half,
+  .seam,
+  .stem,
+  .glow,
+  .face img {
+    transition-duration: 200ms !important;
+    transition-delay: 0s !important;
+  }
+
+  .hl,
+  .hr,
+  [data-phase='broken'] .hl,
+  [data-phase='broken'] .hr {
+    transform: none !important;
+  }
+
+  .taker img,
+  .takerMark,
+  .result {
+    animation: fade 200ms linear both;
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}

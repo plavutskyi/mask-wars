@@ -1,0 +1,33 @@
+[workspace]
+resolver = "2"
+members = [
+    "open-admin",
+    "proof-replay",
+    "over-withdraw",
+    "live-safe",
+    "pause-bypass",
+    "fake-oracle",
+    "share-rounding",
+    "batch-overflow",
+    "blind-callback",
+    "relay-trust",
+    "prefix-clash",
+    "outlayer-stub",
+    "runner",
+]
+
+[workspace.package]
+edition = "2021"
+license = "MIT"
+publish = false
+
+[workspace.dependencies]
+near-sdk = "5.30"
+
+[profile.release]
+codegen-units = 1
+opt-level = "z"
+lto = true
+debug = false
+panic = "abort"
+overflow-checks = true

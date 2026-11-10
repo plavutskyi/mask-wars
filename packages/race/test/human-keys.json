@@ -1,0 +1,13 @@
+{
+  "seed": "07121d28333e49545f6a75808b96a1acb7c2cdd8e3eef9040f1a25303b46515c",
+  "mask": "kira.masks.tinygif8324.testnet",
+  "round": "human-0001",
+  "keys": {
+    "bounty.tinygif8324.testnet": "ed25519:AacNNbnJC8uMjXGAgNRwzkdPfCf9Pb2dotHn7cHRQi6w",
+    "h0001.tinygif8324.testnet": "ed25519:41SKhzQW3ScyWwdnPRZyKiGfXxvB6JFX8thuqc4djwCw"
+  },
+  "keeper": {
+    "factory": "masks.tinygif8324.testnet",
+    "key": "ed25519:DaAJfdeZDdJk8q29u4q4uSPziYAR2qEHxRK12HSAVH5t"
+  }
+}

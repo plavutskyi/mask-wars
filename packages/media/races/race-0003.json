@@ -1,0 +1,39 @@
+{
+  "v": 1,
+  "source": "LIVE",
+  "network": "testnet",
+  "id": "race-0003",
+  "contract": "tinygif8324.testnet",
+  "target": { "kind": "live-safe", "account": "safe-0001.tinygif8324.testnet" },
+  "bounty": "0.1",
+  "hours": 72,
+  "masks": [
+    { "name": "ONYX", "account": "onyx.tinygif8324.testnet", "model": "z-ai/glm-5.3-flash" },
+    { "name": "NOVA", "account": "nova.tinygif8324.testnet", "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017" },
+    { "name": "ORACLE", "account": "oracle.tinygif8324.testnet", "model": "Qwen/Qwen3.8-27B" }
+  ],
+  "sandbox": {
+    "run": 42270915840,
+    "repo": "plavutskyi/mask-wars-hq",
+    "startedAt": "2026-11-06T18:32:38Z",
+    "board": [{ "mask": "NOVA", "attempt": 1, "atMs": 64000, "verdict": "breach" }]
+  },
+  "winner": "NOVA",
+  "drain": {
+    "amount": "1",
+    "at": "2026-11-06T18:34:48Z",
+    "txs": [
+      { "method": "set_owner", "hash": "FXvHZ88tqZkot9mup6m1Q4aM4K9573iKLpEHjLA31EK5" },
+      { "method": "sweep", "hash": "8pvCJFDwUW1XXBUKHVMo973Kp1WMkWc4DDpHoHVr2uqg" }
+    ]
+  },
+  "judge": { "request": 11162, "seconds": 1.1, "cost": "0.00111" },
+  "payout": { "amount": "0.08664", "tx": "BHuCzqtM3ZWnS4EBww9ig9txers8ebQnqerGCpqW4Me8" },
+  "status": "drained",
+  "sources": [
+    "Deployment log, live safe, step 8: race-0003 opened with 0.1 NEAR for 72 hours",
+    "Live race run 42270915840, job log: ONYX vs NOVA vs ORACLE, NOVA attempt 1 breach in 1 min 4 s, set_owner and sweep hashes",
+    "Deployment log, first payout to a mask (6.11): claim_drain tx, OutLayer request 11162, judge 1.1 s for 0.00111 NEAR, 0.08664 NEAR to NOVA",
+    "packages/race/scripts/race.ts at e0c071e: ONYX, NOVA and ORACLE take the TEE models in this order"
+  ]
+}

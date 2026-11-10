@@ -1,0 +1,977 @@
+/* Your vault: the arena's safe on the floor, the money either side of it on the eye line, one question at a time
+   below. BRANDBOOK §1, §3, §4, §8, §9. Tokens only. */
+
+.screen {
+  --gut: clamp(16px, 4.4vw, 64px);
+  --floor: 64.5svh;
+  position: relative;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  isolation: isolate;
+  overflow: clip;
+  background: var(--ink);
+  caret-color: var(--ice);
+}
+
+.screen ::selection {
+  background: var(--ice);
+  color: var(--ink);
+}
+
+.word {
+  font-family: var(--font-word);
+  font-weight: 800;
+  font-stretch: 125%;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+}
+
+.hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.world {
+  position: absolute;
+  inset: 0;
+  z-index: -3;
+}
+
+.worldImg {
+  object-fit: cover;
+  object-position: center 64.5%;
+}
+
+.body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Stage: the vault stands on the floor; the money sits either side of it, on its centre line. */
+
+.stage {
+  --size: min(52svh, 32vw);
+  flex: none;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--size) minmax(0, 1fr);
+  grid-template-areas: 'a vault b';
+  align-items: end;
+  column-gap: clamp(28px, 3.4vw, 64px);
+  height: var(--floor);
+  min-height: 340px;
+  padding: 0 var(--gut) 1svh;
+}
+
+.title {
+  display: contents;
+}
+
+.side {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+  height: var(--size);
+  min-width: 0;
+}
+
+.sideA {
+  grid-area: a;
+  align-items: flex-end;
+  text-align: right;
+}
+
+.sideB {
+  grid-area: b;
+  align-items: flex-start;
+}
+
+.titleWord {
+  font-size: clamp(30px, min(3.3vw, 9svh), 96px);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* The money: the only green on the screen (§3), digits in Mona at full width (§4). */
+.money {
+  display: block;
+  font-family: var(--font-num);
+  font-size: clamp(40px, min(5vw, 10svh), 88px);
+  line-height: 1;
+  font-weight: 800;
+  font-stretch: 125%;
+  letter-spacing: -0.015em;
+  color: var(--money);
+  white-space: nowrap;
+  transform-origin: right center;
+}
+
+.money[data-ring] {
+  animation: lead 320ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+@keyframes lead {
+  50% {
+    transform: scale(1.06);
+  }
+}
+
+.near {
+  font-size: clamp(20px, min(2.1vw, 4.4svh), 34px);
+  line-height: 1.1;
+  font-weight: 700;
+  font-stretch: 125%;
+  color: var(--ice);
+  white-space: nowrap;
+}
+
+.near b {
+  font-weight: 800;
+}
+
+.plus {
+  font-size: 14px;
+  font-weight: 600;
+  font-stretch: 110%;
+  color: var(--ice-60);
+  white-space: nowrap;
+}
+
+.stageLede {
+  display: none;
+}
+
+.vault {
+  grid-area: vault;
+  position: relative;
+  width: var(--size);
+  aspect-ratio: 1;
+}
+
+/* The art's circle sits a little left of and above its frame's centre; this puts it on the stage's centre line. */
+.vaultImg {
+  object-fit: contain;
+  mix-blend-mode: lighten;
+  transform: translate(1.8%, 2.4%);
+}
+
+/* The seam lights while money is on its way in, and rings once when it lands (§9: Дзвін). */
+.seam {
+  position: absolute;
+  left: calc(48.3% + 1.8%);
+  top: calc(4.9% + 2.4%);
+  height: 85%;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--ice);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.vault[data-wait] .seam {
+  animation: breathe 2400ms ease-in-out infinite;
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    opacity: 0.08;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.vault[data-ring] .vaultImg {
+  animation: ring 700ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.vault[data-ring] .seam {
+  animation: flash 700ms both;
+}
+
+/* On the image itself: a transform on its box would isolate the blend and show the art's black square. */
+@keyframes ring {
+  10% {
+    transform: translate(1.8%, 2.4%) scale(1.012);
+  }
+  60% {
+    transform: translate(1.8%, 2.4%) scale(0.998);
+  }
+}
+
+@keyframes flash {
+  0% {
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Band: the floor under the vault. One question, one button, nothing boxed. */
+
+.band {
+  position: relative;
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  padding: 2.4svh var(--gut) calc(24px + env(safe-area-inset-bottom));
+}
+
+.band::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: 0 0 -10% 0;
+  background: radial-gradient(52% 72% at 50% 34%, var(--ink) 40%, transparent 100%);
+  opacity: 0.92;
+  pointer-events: none;
+}
+
+.form {
+  width: min(760px, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lede {
+  margin: 0 0 8px;
+  text-align: center;
+  font-size: 17px;
+  line-height: 1.4;
+  font-weight: 500;
+  color: var(--ice);
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+}
+
+.label {
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.grow {
+  flex: 1;
+}
+
+.info {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin: 0 -10px;
+  font-family: var(--font-num);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ice-60);
+  transition: color 160ms;
+}
+
+.info::before {
+  content: '';
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+
+.info[aria-expanded='true'] {
+  color: var(--ice);
+}
+
+.back,
+.acct {
+  min-height: 44px;
+  padding: 0 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ice-60);
+  white-space: nowrap;
+  transition: color 160ms;
+}
+
+.back:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.acct {
+  margin-left: 6px;
+  letter-spacing: 0.01em;
+}
+
+.count {
+  font-size: 15px;
+  font-weight: 700;
+  font-stretch: 125%;
+  color: var(--ice-60);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 240px;
+  align-items: stretch;
+  gap: 8px;
+  animation: enter 360ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.row > :only-child {
+  grid-column: 1 / -1;
+}
+
+.row[data-two] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@keyframes enter {
+  from {
+    transform: translateY(8px);
+  }
+}
+
+/* Choices: plain tiles, the chosen one outlined in ice. */
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(var(--n, 3), minmax(0, 1fr));
+  gap: 8px;
+}
+
+.tiles[data-n='2'] {
+  --n: 2;
+}
+
+.tiles[data-n='4'] {
+  --n: 4;
+}
+
+.tile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 68px;
+  padding: 8px 10px;
+  border-radius: var(--radius);
+  background: var(--ink-2);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--ice-60);
+  font-size: 14px;
+  line-height: 1.15;
+  text-align: center;
+  transition:
+    box-shadow 160ms,
+    color 160ms,
+    transform 100ms;
+}
+
+.tiles .tile {
+  min-height: 56px;
+}
+
+.tile .word {
+  letter-spacing: 0.04em;
+}
+
+.tile:active,
+.chip:active {
+  transform: scale(0.97);
+}
+
+.tile[aria-checked='true'] {
+  box-shadow: inset 0 0 0 1px var(--ice);
+  color: var(--ice);
+}
+
+.chips {
+  display: grid;
+  grid-template-columns: repeat(var(--n, 3), minmax(0, 1fr));
+  gap: 8px;
+}
+
+.chips[data-n='1'] {
+  --n: 1;
+}
+
+.chips[data-n='2'] {
+  --n: 2;
+}
+
+.chip {
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 68px;
+  padding: 0 10px;
+  word-spacing: 0.12em;
+  border-radius: var(--radius);
+  background: var(--ink-2);
+  box-shadow: inset 0 0 0 1px var(--line);
+  font-size: 15px;
+  font-weight: 700;
+  font-stretch: 125%;
+  color: var(--ice-60);
+  transition:
+    box-shadow 160ms,
+    color 160ms,
+    transform 100ms;
+}
+
+.chip[aria-checked='true'] {
+  box-shadow: inset 0 0 0 1px var(--money);
+  color: var(--money);
+}
+
+.chipSub {
+  font-weight: 600;
+  font-stretch: 100%;
+  opacity: 0.8;
+}
+
+.input {
+  width: 100%;
+  min-width: 0;
+  height: 68px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--ink-2);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--ice);
+  font: inherit;
+  font-size: 20px;
+  font-weight: 500;
+  outline: none;
+  transition: box-shadow 160ms;
+}
+
+.input::placeholder {
+  color: var(--ice-38);
+}
+
+.input:focus-visible {
+  box-shadow: inset 0 0 0 1px var(--ice);
+}
+
+.input[data-bad] {
+  box-shadow: inset 0 0 0 1px var(--live);
+}
+
+.input:disabled {
+  opacity: 0.6;
+}
+
+.addrInput {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+/* Amounts: the number first, typed or picked, then three choices. Money is the only green (§3). */
+
+.fuel {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px 20px;
+}
+
+.amount {
+  display: flex;
+  align-items: baseline;
+  min-height: 68px;
+  padding: 0 4px;
+  color: var(--money);
+  cursor: text;
+}
+
+.cur,
+.num {
+  font-family: var(--font-num);
+  font-size: 54px;
+  line-height: 1;
+  font-weight: 800;
+  font-stretch: 125%;
+  letter-spacing: -0.01em;
+}
+
+.num {
+  width: auto;
+  field-sizing: content;
+  min-width: 1ch;
+  max-width: 6ch;
+  padding: 0 0 2px;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  background: none;
+  color: inherit;
+  outline: none;
+  transition: border-color 160ms;
+}
+
+.num:focus-visible {
+  border-bottom-color: var(--line);
+}
+
+.amount[data-bad] {
+  color: var(--live);
+}
+
+/* The deposit: where to send, how much, and a code for a phone's wallet. */
+
+.send {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 20px;
+  min-height: 68px;
+  padding: 14px;
+  border-radius: var(--radius);
+  background: var(--ink-2);
+  box-shadow: inset 0 0 0 1px var(--line);
+  outline: none;
+}
+
+.qr {
+  display: block;
+  width: 112px;
+  height: 112px;
+  border-radius: var(--radius);
+}
+
+.qrPaper {
+  fill: var(--ice);
+}
+
+.qrInk {
+  fill: var(--ink);
+}
+
+.sendText {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.sendAmount {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0 8px;
+  min-height: 44px;
+  text-align: left;
+  font-size: 20px;
+  font-weight: 800;
+  font-stretch: 125%;
+  color: var(--ice);
+}
+
+.sendAmount b,
+.going b {
+  font-size: 30px;
+  font-weight: 800;
+  color: var(--money);
+}
+
+.sendOn {
+  font-size: 14px;
+  font-weight: 600;
+  font-stretch: 100%;
+  color: var(--ice-60);
+}
+
+.addr {
+  max-width: 100%;
+  font-size: 16px;
+  line-height: 1.35;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ice);
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+.memo {
+  min-height: 44px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--amber);
+}
+
+.going {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0 10px;
+  min-height: 68px;
+  padding: 12px 4px;
+  font-size: 20px;
+  font-weight: 800;
+  font-stretch: 125%;
+  color: var(--ice);
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 68px;
+  padding: 0 16px;
+  border-radius: var(--radius);
+  background: var(--ice);
+  color: var(--ink);
+  font-size: 15px;
+  text-align: center;
+  transition:
+    transform 100ms cubic-bezier(0.2, 0, 0, 1),
+    opacity 240ms;
+}
+
+.btn .word {
+  letter-spacing: 0.05em;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.btn[aria-busy='true']:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.quiet {
+  background: var(--ink-2);
+  color: var(--ice);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.btn:focus-visible,
+.tile:focus-visible,
+.chip:focus-visible,
+.info:focus-visible,
+.back:focus-visible,
+.acct:focus-visible,
+.sendAmount:focus-visible,
+.memo:focus-visible {
+  outline: 2px solid var(--ice);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .btn:not(:disabled):hover {
+    opacity: 0.9;
+  }
+  .tile:hover,
+  .chip:hover,
+  .back:not(:disabled):hover,
+  .acct:hover,
+  .info:hover {
+    color: var(--ice);
+  }
+}
+
+.note,
+.details {
+  margin: 4px 0 0;
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ice-60);
+}
+
+.note[data-bad] {
+  color: var(--live);
+}
+
+.details {
+  max-width: 64ch;
+  margin: 4px auto 0;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  background: var(--ink-2);
+  box-shadow: inset 0 0 0 1px var(--line);
+  overflow-wrap: anywhere;
+}
+
+/* A breath before the words while money is moving. */
+.live {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin: 0 10px 1px 0;
+  border-radius: 50%;
+  background: var(--ice);
+  vertical-align: middle;
+  animation: breathe 1600ms ease-in-out infinite;
+}
+
+/* How a top-up or cash-out ended: one line, one way back. */
+
+.ended {
+  align-items: center;
+  gap: 16px;
+  padding-top: 8px;
+  text-align: center;
+}
+
+.endLine {
+  max-width: 40ch;
+  text-wrap: balance;
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.35;
+  font-weight: 600;
+  color: var(--ice);
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.endBtn {
+  width: min(360px, 100%);
+}
+
+.endActions {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 8px;
+  width: min(560px, 100%);
+}
+
+@media (max-width: 1000px) {
+  .stage {
+    --size: min(72vw, calc(var(--floor) - 196px));
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-areas: 'a' 'b' 'vault';
+    justify-items: center;
+    align-items: start;
+    column-gap: 0;
+    row-gap: 6px;
+    padding-top: calc(72px + env(safe-area-inset-top));
+  }
+
+  .side {
+    height: auto;
+    align-items: center;
+    text-align: center;
+    gap: 4px;
+  }
+
+  .vault {
+    align-self: end;
+  }
+
+  .titleWord {
+    font-size: clamp(30px, 9.4vw, 56px);
+  }
+
+  .money {
+    font-size: clamp(44px, 13vw, 72px);
+    transform-origin: center;
+  }
+
+  .near {
+    font-size: clamp(17px, 5vw, 24px);
+  }
+}
+
+@media (max-width: 760px) {
+  /* The floor rises so the band holds a whole step without scrolling; the arena's horizon rises with it. */
+  .screen {
+    --floor: 55svh;
+  }
+
+  .world {
+    bottom: auto;
+    height: calc(var(--floor) / 0.645);
+    mask-image: linear-gradient(to bottom, var(--ink) 84%, transparent);
+  }
+
+  .stage {
+    --size: min(62vw, calc(var(--floor) - 196px));
+    grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-areas: 'a' 'lede' 'vault';
+    min-height: 300px;
+    padding-top: calc(68px + env(safe-area-inset-top));
+  }
+
+  .title {
+    grid-area: a;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: baseline;
+    column-gap: 0.28em;
+  }
+
+  .title[data-money] {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .row {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .row[data-two] {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tiles[data-n='4'] {
+    --n: 2;
+  }
+
+  .tiles .tile {
+    min-height: 52px;
+    padding: 6px 4px;
+  }
+
+  .tile .word {
+    font-size: 12px;
+    font-stretch: 110%;
+    letter-spacing: 0.02em;
+  }
+
+  .fuel {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+  }
+
+  .amount {
+    justify-content: center;
+    min-height: 0;
+  }
+
+  .cur,
+  .num {
+    font-size: 44px;
+  }
+
+  .chip {
+    min-height: 52px;
+  }
+
+  .btn {
+    min-height: 60px;
+    font-size: 13px;
+  }
+
+  .input {
+    height: 60px;
+    font-size: 16px;
+  }
+
+  .addrInput {
+    font-size: 16px;
+  }
+
+  .band {
+    padding-top: 1svh;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  }
+
+  .form {
+    gap: 6px;
+  }
+
+  .lede {
+    display: none;
+  }
+
+  .stageLede {
+    display: block;
+    grid-area: lede;
+    max-width: 30ch;
+    margin: 8px 0 0;
+    text-align: center;
+    font-size: 15px;
+    line-height: 1.4;
+    font-weight: 500;
+    color: var(--ice);
+  }
+
+  .qr {
+    display: none;
+  }
+
+  .send {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 12px 14px;
+  }
+
+  .sendAmount b,
+  .going b {
+    font-size: 26px;
+  }
+
+  .addr {
+    font-size: 15px;
+  }
+
+  .label,
+  .back,
+  .acct,
+  .count {
+    font-size: 13px;
+  }
+
+  .note,
+  .details {
+    font-size: 13px;
+  }
+
+  .endLine {
+    font-size: 17px;
+  }
+
+  .endActions {
+    grid-auto-flow: row;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row,
+  .money[data-ring],
+  .vault[data-ring] .vaultImg,
+  .vault[data-ring] .seam {
+    animation: none;
+  }
+
+  .vault[data-wait] .seam,
+  .live {
+    animation-duration: 4000ms;
+  }
+}

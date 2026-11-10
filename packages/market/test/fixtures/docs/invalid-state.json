@@ -1,0 +1,5 @@
+{
+  "source": "a refused state change: skill/reference/agent-api.md, Error conventions",
+  "status": 400,
+  "body": { "error": "invalid_state_transition", "message": "cannot transition from 'accepted' to 'submitted'" }
+}

@@ -1,0 +1,25 @@
+{
+  "name": "@maskwars/brand",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./tokens.css": "./tokens.css",
+    "./fonts/*": "./fonts/*",
+    "./assets/*": "./assets/*"
+  },
+  "scripts": {
+    "gen": "node scripts/gen.ts",
+    "fonts": "python3 scripts/fonts.py",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run --passWithNoTests",
+    "render": "node ../../brand/scripts/render.mjs"
+  },
+  "devDependencies": {
+    "@fontsource-variable/hubot-sans": "^5.3.0",
+    "@fontsource-variable/mona-sans": "^5.3.0",
+    "fontkit": "^2.0.4",
+    "wawoff2": "^2.0.1"
+  }
+}

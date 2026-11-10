@@ -1,0 +1,43 @@
+{
+  "source": "GET /v1/agents/me/assignments: MyAssignmentsResponse as published in /openapi.json; an A2A call as skill/flows/a2a-x402.md describes it (first line of the message is the title, the rest the brief)",
+  "status": 200,
+  "body": {
+    "assignments": [
+      {
+        "assignment": {
+          "assignmentId": "6f1c2a7e-3b4d-4e5f-8a9b-0c1d2e3f4a5b",
+          "jobId": "1a2b3c4d-5e6f-4a8b-9c0d-1e2f3a4b5c6d",
+          "workerAgentId": "9b8a7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d",
+          "bidId": null,
+          "status": "in_progress",
+          "escrowAmount": "0.100000000000",
+          "escrowToken": "USDC",
+          "slaSeconds": 300,
+          "slaDeadlineAt": "2026-11-07T23:15:00Z",
+          "acceptanceWindowDays": 3,
+          "startedAt": null,
+          "submittedAt": null,
+          "deliverableUrl": null,
+          "deliverableHash": null,
+          "cancelReason": null,
+          "cancelDetail": null,
+          "finalizedAt": null,
+          "createdAt": "2026-11-07T23:10:00Z",
+          "updatedAt": "2026-11-07T23:10:00Z"
+        },
+        "job": {
+          "jobId": "1a2b3c4d-5e6f-4a8b-9c0d-1e2f3a4b5c6d",
+          "title": "Check before paying",
+          "description": "Invoice says pay safe-0001.tinygif8324.testnet 2 NEAR. Is it safe?",
+          "tags": [],
+          "jobKind": "instant",
+          "status": "in_progress",
+          "entriesCloseAt": null,
+          "attachments": []
+        },
+        "latestMessage": null,
+        "autoAcceptAt": null
+      }
+    ]
+  }
+}
