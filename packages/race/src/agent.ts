@@ -44,9 +44,12 @@ export class ModelAttacker implements Attacker {
     this.#o = {
       provider: options.provider,
       model: options.model,
-      maxTokens: options.maxTokens ?? 4000,
+      // The TEE models reason before they answer, and the reasoning counts against the limit: on the live safe's
+      // source they spend 8 to 14 thousand tokens on it. With too few the answer comes back empty.
+      maxTokens: options.maxTokens ?? 24_000,
       temperature: options.temperature ?? 0.4,
-      timeoutMs: options.timeoutMs ?? 120_000,
+      // One answer on the live safe takes up to three and a half minutes.
+      timeoutMs: options.timeoutMs ?? 300_000,
       memory: options.memory ?? 3,
     };
   }

@@ -15,7 +15,7 @@ during NEAR HACKATHON, which opened on 2026-10-19 (see the README for the baseli
 | 2026-11-01 → 2026-11-09 | MCP server: rules, races, masks, the league and MASK CHECK for outside agents |
 | 2026-11-01 → 2026-11-10 | Race clip, post cards and a thread from one race |
 | 2026-11-02 → 2026-11-08 | Training targets with planted holes and the sandbox runner: every attempt in a fresh local NEAR node |
-| 2026-11-02 → 2026-11-09 | The race: AI masks on NEAR AI Cloud attack a target in parallel, a break replayed in a second clean sandbox before it counts, the public board |
+| 2026-11-02 → 2026-11-10 | The race: AI masks on NEAR AI Cloud attack a target in parallel, a break replayed in a second clean sandbox before it counts, the public board |
 | 2026-11-02 | Vault on OutLayer for the winning breaks |
 | 2026-11-03 → 2026-11-10 | Bounty contract: a team locks NEAR, the judge on OutLayer confirms the break, the contract pays the winning mask itself |
 | 2026-11-03 → 2026-11-09 | Judge on OutLayer: reads a sandbox race from its GitHub run, and a live drain from the chain through two RPC sources that must agree |

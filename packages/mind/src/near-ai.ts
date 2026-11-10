@@ -71,7 +71,11 @@ export class NearAiProvider implements Provider {
       throw new ProviderError("shape", "completion is not JSON");
     }
     const text = parsed.choices?.[0]?.message?.content;
-    if (typeof text !== "string") throw new ProviderError("shape", "completion has no message content");
+    if (typeof text !== "string") {
+      // A reasoning model that runs out of tokens while it thinks answers with no content at all.
+      const cut = parsed.choices?.[0]?.finish_reason === "length";
+      throw new ProviderError("shape", cut ? `the model spent all ${request.maxTokens} tokens before it answered` : "completion has no message content");
+    }
     if (parsed.model && parsed.model !== request.model) {
       throw new ProviderError("shape", `answered by ${parsed.model}, asked for ${request.model}`);
     }
@@ -169,7 +173,7 @@ export function checkSignature(
 interface ChatResponse {
   id?: string;
   model?: string;
-  choices?: { message?: { content?: unknown } }[];
+  choices?: { message?: { content?: unknown }; finish_reason?: unknown }[];
   usage?: { prompt_tokens?: number; completion_tokens?: number; prompt_tokens_details?: { cached_tokens?: number } };
 }
 
