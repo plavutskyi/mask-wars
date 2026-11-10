@@ -5,8 +5,8 @@
 # attaches NEAR, so none moves the mask's own money; the race derives the private half it needs from the seed. The
 # masks' full keys stay in the keychain and never race.
 #
-# near.exe builds a transaction of at most 4 actions, so the keys go in groups of 4: "send" 4 times per mask for the
-# default 14 safes. The seeds land in mask-seeds.json in .scratch (.scratch\near-mainnet on mainnet: never the
+# near.exe 0.30 takes at most 3 actions of a transaction on its command line (a fourth is refused as an unexpected
+# argument), so the keys go in groups of 3: "send" 5 times per mask for the default 14 safes. The seeds land in mask-seeds.json in .scratch (.scratch\near-mainnet on mainnet: never the
 # testnet seeds), in the shape of the secret MASK_KEYS of the
 # `live-race` environment: {"NOVA":{"seed":"…"},…}. The owner pastes it there and KEEPS the file: the keys for later
 # safes come from the same seeds. Next to it, mask-seeds.public.json holds each mask's key on the bounty contract, in
@@ -45,10 +45,10 @@ foreach ($m in $Masks) {
   foreach ($s in $public.$m.safes) {
     $keys += [pscustomobject]@{ to = $s.safe; allowance = '0.5 NEAR'; methods = $methods; key = $s.key }
   }
-  for ($i = 0; $i -lt $keys.Count; $i += 4) {
+  for ($i = 0; $i -lt $keys.Count; $i += 3) {
     $cmd = @('transaction', 'construct-transaction', $account, $account)
     $names = @()
-    for ($j = $i; $j -lt [Math]::Min($i + 4, $keys.Count); $j++) {
+    for ($j = $i; $j -lt [Math]::Min($i + 3, $keys.Count); $j++) {
       $k = $keys[$j]
       $cmd += @('add-action', 'add-key', 'grant-function-call-access', '--allowance', $k.allowance, '--contract-account-id', $k.to, '--function-names', $k.methods, 'use-manually-provided-public-key', $k.key)
       $names += $k.to

@@ -126,9 +126,16 @@ function Get-Sha256Hex([string]$Wasm) {
 
 # Every call to near.exe. With -DryRun it prints the call and the files it reads instead, and reports success, so the
 # script shows its whole sequence.
+#
+# On testnet a run may answer near.exe's last question itself: with $env:MASKWARS_SEND = '1' every transaction signed
+# from the keychain is sent without the question. Test NEAR only. On mainnet the variable does nothing: the owner reads
+# each transaction and chooses "send" by hand, always.
 function Invoke-Near {
   $cli = @($args | ForEach-Object { [string]$_ })
   if (-not $DryRun) {
+    if ($Network -eq 'testnet' -and $env:MASKWARS_SEND -eq '1' -and $cli[-1] -in @('sign-with-keychain', 'sign-with-legacy-keychain')) {
+      $cli += 'send'
+    }
     & $NearCli @cli
     return
   }
