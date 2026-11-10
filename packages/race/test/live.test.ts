@@ -240,6 +240,34 @@ describe("a sealed round on testnet", () => {
     expect(result).toMatchObject({ status: "drained", drainTx: result.calls[0]!.hash });
   });
 
+  // The first live round with a model's own plan (race-0004, 10.11): ONYX took the safe, swept, and swept again for
+  // the rest. Each sweep was cut to the whole of what the safe had, the second failed on chain, and the run stopped
+  // before the reveal: a drained safe and no bounty.
+  it("a plan with two sweeps never asks the safe for the same NEAR twice", async () => {
+    const { chain, result, lines } = await round("pays", "breach", [
+      { kind: "call", method: "set_owner", args: { new_owner: "attacker.test.near" }, gas_tgas: 30 },
+      { kind: "call", method: "sweep", args: { to: "attacker.test.near", amount: (3n * NEAR).toString() }, gas_tgas: 30 },
+      { kind: "call", method: "sweep", args: { to: "attacker.test.near", amount: NEAR.toString() }, gas_tgas: 30 },
+    ]);
+    // The safe has 2 NEAR to give: the first sweep takes it less the margin, and nothing is left for a second one.
+    expect(chain.sent.map((t) => t.method)).toEqual(["commit", "set_owner", "sweep", "reveal", "claim_drain"]);
+    expect(chain.sent[2]!.args).toEqual({ to: NOVA, amount: (197n * NEAR / 100n).toString() });
+    expect(lines).toContain("sweep      skip: an earlier sweep of the plan leaves nothing to take");
+    expect(result.status).toBe("drained");
+  });
+
+  it("a plan that sweeps in two parts keeps both while the safe can pay them", async () => {
+    const { chain } = await round("pays", "breach", [
+      { kind: "call", method: "set_owner", args: { new_owner: "attacker.test.near" }, gas_tgas: 30 },
+      { kind: "call", method: "sweep", args: { to: "attacker.test.near", amount: NEAR.toString() }, gas_tgas: 30 },
+      { kind: "call", method: "sweep", args: { to: "attacker.test.near", amount: (3n * NEAR).toString() }, gas_tgas: 30 },
+    ]);
+    expect(chain.sent.filter((t) => t.method === "sweep").map((t) => t.args.amount)).toEqual([
+      NEAR.toString(),
+      (97n * NEAR / 100n).toString(),
+    ]);
+  });
+
   it("a mask that missed its slot waits for the later seals, but never past the reveal window", async () => {
     // The safe gives each seal a slot; a seal whose job came late plays once the later seals have had theirs.
     for (const [missedUntil, played] of [

@@ -224,6 +224,10 @@ export async function chainPlan(o: {
   const round = { safe: o.safe, mask: o.mask, owner: o.safe };
   const accounts = accountMap(o.challenge, round);
   const calls: SealedCall[] = [];
+  // What the safe can still pay out within this plan. A plan with two sweeps (take most, then the rest) must not ask
+  // for the same NEAR twice: the second sweep would fail on chain, and the judge confirms only a plan played whole.
+  let room: bigint | undefined;
+  let swept = false;
   for (const step of o.plan.steps) {
     if (step.kind === "view") continue;
     const reach = o.safeMethods === undefined ? SAFE_KEY_METHODS : o.safeMethods;
@@ -234,11 +238,26 @@ export async function chainPlan(o: {
     if (step.deposit && BigInt(step.deposit) > 0n) throw new Error(`${step.method}: a mask's key on the safe attaches no NEAR`);
     const args = translateArgs(step.args ?? {}, accounts) as Record<string, unknown>;
     if (step.method === "sweep" && typeof args.amount === "string" && o.sweepTo !== undefined) {
+      // Under the `min_loot` rule the plan takes the round's loot once.
+      if (swept) {
+        log("sweep      skip: the plan already takes the round's loot");
+        continue;
+      }
       args.amount = o.sweepTo.toString();
+      swept = true;
     } else if (step.method === "sweep" && typeof args.amount === "string") {
-      const available = o.available ?? BigInt(await view<string>(o.chain, o.safe, "available"));
-      const room = available > SWEEP_MARGIN ? available - SWEEP_MARGIN : 0n;
-      if (BigInt(args.amount) > room) args.amount = ((room / SWEEP_STEP) * SWEEP_STEP).toString();
+      if (room === undefined) {
+        const available = o.available ?? BigInt(await view<string>(o.chain, o.safe, "available"));
+        room = available > SWEEP_MARGIN ? available - SWEEP_MARGIN : 0n;
+      }
+      const asked = BigInt(args.amount);
+      const amount = asked > room ? (room / SWEEP_STEP) * SWEEP_STEP : asked;
+      if (amount <= 0n) {
+        log("sweep      skip: an earlier sweep of the plan leaves nothing to take");
+        continue;
+      }
+      args.amount = amount.toString();
+      room -= amount;
     }
     const call = { method: step.method, args };
     guardCall(call, round);

@@ -20,7 +20,7 @@ during NEAR HACKATHON, which opened on 2026-10-19 (see the README for the baseli
 | 2026-11-03 → 2026-11-10 | Bounty contract: a team locks NEAR, the judge on OutLayer confirms the break, the contract pays the winning mask itself |
 | 2026-11-03 → 2026-11-09 | Judge on OutLayer: reads a sandbox race from its GitHub run, and a live drain from the chain through two RPC sources that must agree |
 | 2026-11-03 → 2026-11-10 | One description of each network, and the deployment scripts for testnet and mainnet with a dry run |
-| 2026-11-06 → 2026-11-09 | Live safe on testnet and masks with their own accounts: the winner drains the safe and claims with its own function-call keys |
+| 2026-11-06 → 2026-11-10 | Live safe on testnet and masks with their own accounts: the winner drains the safe and claims with its own function-call keys |
 | 2026-11-06 → 2026-11-09 | MASK CHECK: allow, warn or block before an agent pays, the agent wrapper that refuses to sign, the live demo |
 | 2026-11-07 → 2026-11-08 | Sealed rounds: the rules, commit and reveal in the bounty contract, the judge checks the untouched safe, a simulation with scripted masks and no models |
 | 2026-11-07 → 2026-11-10 | The arena from the chain: the reader of races, masks and the league, and the 3D arena on the home page |
