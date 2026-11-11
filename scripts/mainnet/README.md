@@ -25,6 +25,8 @@ by hand, the admin included. The admin proposes a change, the change waits in th
 | `season.maskwars.near` | the season treasury | none |
 | `s0001.season.maskwars.near`, `s0002…` | the season's safes, made by the treasury | none |
 | `scheduler.maskwars.near` | tells the treasury "now" | function-call: `open_next`, `collect` |
+| `house.maskwars.near` | the house: opens the daily round and takes back what it leaves | full, in the owner's keychain; a second, hot one only if the owner adds it |
+| `vault.house.maskwars.near` | the safe of the daily round: retires itself after the round and is made again under the same name | none |
 | `nova.`, `onyx.`, `oracle.maskwars.near` | the arena's own masks | full in the owner's keychain; in a race, function-call keys made from a seed, one per safe and one for the bounty contract |
 | `masks.maskwars.near` | the factory of people's masks; a person's mask is `<name>.masks.maskwars.near` | none |
 | `jobs.maskwars.near`, `crews.maskwars.near` | the jobs market and mask crews | none |
@@ -41,6 +43,9 @@ tests of `packages/network` keep the files in step.
 | NEAR in a season safe | 1 NEAR | `season-args.json`, `safe_fund` |
 | Ceiling of a safe | 2 NEAR | `limits.season.max_safe_fund` |
 | Rounds a day | 1 | `limits.season.max_per_day` |
+| The house's daily round | 1.93 NEAR in the vault, a deposit of 0.25 NEAR, a drain from 0.1 NEAR | `mainnet.json`, `round` |
+| A safe and a deposit sent by hand | up to 2.5 and 1.1 NEAR | `limits.hand` |
+| What the house holds | up to 3.5 NEAR | `limits.house_max` |
 | One funding of the treasury | 10 NEAR | `limits.fund_max` |
 | A person's stake in their mask | up to 2 NEAR | `limits.fuel_max` |
 | One deposit into a vault | up to $100 | `limits.pay_usd_max` |
@@ -70,11 +75,87 @@ The modules that run in a TEE are built by their `build.sh` (`services/judge`, `
 of the jobs judges (`build.sh --mainnet`) also serve the mainnet accounts above, so they are made only once
 `maskwars.near` is registered: a name nobody holds yet is one anybody could take.
 
+## The circle: a round every day on the house's vault
+
+The season's treasury needs NEAR the arena does not hold yet. The circle runs a live round every day on what is already
+there. The NEAR goes round: the house puts it into the vault and the round's bounty, the mask that wins takes it, and it
+comes home to the house for the next round. A won round takes about 0.04 NEAR out of the circle (gas, the judge's fee,
+the round's records).
+
+- **The house** is a plain account, the team of the daily rounds. It has no say over the bounty contract, the judge or
+  the masks.
+- **The vault** is one safe with no key. Once its round is over it deletes its own account and gives its whole balance,
+  the stake its code locked included, back to the house (`retire`, the house's call alone). The house makes it again
+  under the same name the next day. The vault asks the bounty contract how the round ended before it goes: after a
+  payout it retires once the round's deadline has passed, after a round nobody won once the bounty is refunded. While a
+  round is on, nobody moves it.
+- **The daily step** ([`packages/race/src/house.ts`](../../packages/race/src/house.ts)) ends yesterday's round
+  (`settle` or `refund`; `unstick` for a claim the judge never answered), retires the vault, makes it again in one
+  transaction that adds no key (create, fund, deploy, `new`) and opens today's round. Each part reads the chain first
+  and repeats nothing, so a run that died is simply run again.
+- **Checks.** Before the vault is made, the wasm must hash to `safe_code` of `mainnet.json` and the bounty contract must
+  list that code. After, the account must run that code, hold no key, own itself and name the house as its team. A day
+  that cannot open (yesterday's round is not over, the house cannot pay) is said plainly and skipped; a vault is never
+  made without the NEAR to open its round.
+
+### One round, step by step
+
+| Step | Where the NEAR goes | NEAR |
+| --- | --- | --- |
+| `retire`, from the second day on | vault to house | about 1.68 after a won round, 1.93 after one nobody won |
+| The vault, one transaction | house to vault | 1.93: about 1.65 is the stake of its code and state, 0.28 is what the masks race for |
+| `open_safe` | house to the bounty contract | 0.25: about 0.11 is the bounty, about 0.114 of reserve comes back at the payout |
+| A mask wins | vault and bounty contract to the mask | about 0.25 and 0.11, sent home with `house.ps1 -Collect` |
+
+### Setting it up, once
+
+| # | Step | Script | Transactions |
+| --- | --- | --- | --- |
+| 1 | Let the bounty contract take the vault's code | `bounty-change.ps1 -Network mainnet -AllowSafe`, an hour later `-Apply`, then `-Show` | 2 |
+| 2 | The house's account | `house.ps1 -Network mainnet` | 1 |
+| 3 | The masks' spare NEAR to the house | `house.ps1 -Network mainnet -Collect` | 1 per mask |
+| 4 | Each mask's key on the vault, good for every round | `season-keys.ps1 -Network mainnet -Safe vault.house.maskwars.near -SafeOnly -Allowance unlimited` | 1 per mask |
+| 5 | Optional: a hot key for the house | `house.ps1 -Network mainnet -HotKey`, then the secret `HOUSE_KEY` of the environment `season-mainnet` | 1 |
+| 6 | The repository variables `MASKWARS_NETWORK=mainnet`, `SEASON_LIVE=true` | | 0 |
+
+`house.ps1 -Network mainnet -Show` reads the chain and prints what the house holds and which steps of the day are left.
+
+### Every day
+
+With the hot key the `Season` workflow does the whole day at 18:04 UTC and nobody signs. Without it the day is three
+scripts and one run, each script reading the chain and sending only what is left:
+
+| # | Script | What it sends |
+| --- | --- | --- |
+| 1 | `retire.ps1 -Network mainnet` | `refund` or `settle` if yesterday's round needs one, then `retire` |
+| 2 | `safe-deploy.ps1 -Network mainnet -House` | the vault, in one transaction |
+| 3 | `open-safe.ps1 -Network mainnet -House` | `open_safe` with the deposit |
+| 4 | Actions, `Season`, Run workflow | nothing: it finds the round open and races it |
+
+Without `HOUSE_KEY` the workflow signs nothing and stays green: it lists the steps that wait for a signature and races
+a round it finds open and sealing.
+
+### What the hot key can do
+
+A NEAR function-call key cannot make an account, deploy code or attach a deposit, so a day with nobody signing needs a
+full key of the house's account. This is the one full key the workflows ever hold, and it is the owner's choice to add
+it.
+
+- Whoever holds `HOUSE_KEY` can spend what the house holds, about 3 NEAR. The scripts never bring the house above
+  `limits.house_max`.
+- It cannot change the bounty contract or the judge, touch a mask or its keys, or move the vault while a round is on:
+  the vault holds no key and retires only once its round is over, and then only to the house.
+- It lives in the environment `season-mainnet` (Deployment branches: `main` only), never among the repository's
+  secrets; the workflow's `guard` job stops the run if it ever does.
+- `house.ps1 -Network mainnet -DropHotKey` deletes it with one transaction signed by the key in the keychain.
+
 ## Stopping
 
 | What | How | Takes effect |
 | --- | --- | --- |
 | Daily rounds | the repository variable `SEASON_LIVE=false` | at once |
+| The house's hot key | `house.ps1 -Network mainnet -DropHotKey`, then delete the secret `HOUSE_KEY` | at once |
+| The house's NEAR out of the circle | `retire.ps1 -Network mainnet` once the round is over, then a plain transfer from the house | at once |
 | Every race on mainnet | the repository variable `MASKWARS_NETWORK=testnet` | at once |
 | New rounds on a safe code | `bounty-change.ps1 -Network mainnet -DropSafe <hash>` | at once |
 | Smaller sums | `season-change.ps1 -Network mainnet -Limits` | 1 hour |

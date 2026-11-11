@@ -36,6 +36,11 @@ export interface Limits {
     /** The most a safe made by hand may hold, its own code included. */
     readonly safe_max: string;
   };
+  /**
+   * The most the house may hold: house.ps1 refuses to bring it above this. Whoever holds the house's key, its hot key
+   * included, can spend what the house holds and nothing else of the arena's.
+   */
+  readonly house_max: string;
   /** The most one season-fund.ps1 puts into the treasury. */
   readonly fund_max: string;
   /** The most a person may put into a mask they forge (the forge's biggest choice). The factory's least is 1 NEAR. */
@@ -44,6 +49,46 @@ export interface Limits {
   readonly pay_usd_max?: number;
   /** Mainnet only: the most one hire may pay, in dollars (HIRE_LIVE). */
   readonly hire_usd_max?: number;
+}
+
+/**
+ * The house's daily round. Amounts in NEAR as decimal strings. A slot comes every `every_minutes` from `first_minute`,
+ * both counted in minutes since the Unix epoch, the way the season treasury counts its own (1080 and 1440: every day
+ * at 18:00 UTC).
+ */
+export interface HouseRound {
+  /**
+   * The house's round really runs on schedule: the vault's code is on the bounty contract, the house is funded and the
+   * Season workflow signs for it. Only then does the site tell when the next round opens; `false` until the owner says
+   * so, whatever the chain shows.
+   */
+  readonly live: boolean;
+  /**
+   * The judge the house opens its rounds with, the sha256 of scripts/<network>/judge-args.json (a test keeps the two
+   * the same). The site tells no next round while the bounty contract judges with another one: the step would not open it.
+   */
+  readonly judge: string;
+  readonly first_minute: number;
+  readonly every_minutes: number;
+  /** What the house puts into the vault: the stake its code and state lock, and on top of it what the masks race for. */
+  readonly safe: string;
+  /**
+   * About what of `safe` the vault's code and state lock (1 NEAR per 100 KB): the rest is what a mask can take. The
+   * chain decides the exact figure; this one tells a round that has not opened yet honestly, and keeps `min_loot`
+   * well inside what is left.
+   */
+  readonly stake: string;
+  /** The round's deposit on the bounty contract: the bounty and the storage it reserves. */
+  readonly deposit: string;
+  /** What a drain must take out of the vault to count. */
+  readonly min_loot: string;
+  /** What the house keeps free for gas while it makes the vault and opens the round: NEAR buys gas up front. */
+  readonly gas: string;
+  /** What a mask keeps when its winnings go home to the house (house.ps1 -Home): storage and the gas of its claims. */
+  readonly mask_keep: string;
+  readonly hours: number;
+  readonly commit_minutes: number;
+  readonly reveal_minutes: number;
 }
 
 export interface Network {
@@ -58,6 +103,23 @@ export interface Network {
   readonly season: string;
   /** The one account whose function-call key may call `open_next` and `collect` on the treasury. */
   readonly scheduler: string;
+  /**
+   * The house: a plain account that opens one round a day on the vault, by hand or from the Season workflow, and takes
+   * back what the round leaves. The NEAR goes round: house, vault, the mask that wins, house.
+   */
+  readonly house: string;
+  /**
+   * The one safe of the house's rounds. Once its round is over it retires itself, giving its whole balance back to the
+   * house, and the house makes it again under the same name for the next round. Only the house can: it is its own
+   * sub-account.
+   */
+  readonly vault: string;
+  /**
+   * The code the vault runs: its code hash as NEAR shows it, base58 of the wasm's sha256. `null` until that wasm is
+   * built and its hash is written here; until then the house opens nothing.
+   */
+  readonly safe_code: string | null;
+  readonly round: HouseRound;
   /** The mask factory: a person's mask is `<name>.<factory>`. */
   readonly factory: string;
   readonly jobs: string;
@@ -79,14 +141,49 @@ export interface Network {
   readonly explorer: string;
   /**
    * What the owner's scripts give each new account, in NEAR: most of it pays for the code it stores (1 NEAR per 100 KB),
-   * the rest is gas and margin. `mask` is one of the arena's own masks, `safe` a safe made by hand (safe-deploy.ps1).
+   * the rest is gas and margin. `mask` is one of the arena's own masks, `safe` a safe made by hand (safe-deploy.ps1),
+   * `house` what the house starts with (house.ps1).
    */
-  readonly fund: Readonly<Record<"bounty" | "season" | "factory" | "scheduler" | "mask" | "safe" | "jobs" | "crews", string>>;
+  readonly fund: Readonly<Record<"bounty" | "season" | "factory" | "scheduler" | "house" | "mask" | "safe" | "jobs" | "crews", string>>;
   readonly limits: Limits;
 }
 
 const NEAR_AMOUNT = /^(0|[1-9]\d{0,8})(\.\d{1,24})?$/;
 const ACCOUNT = /^(([a-z\d]+[-_])*[a-z\d]+\.)*([a-z\d]+[-_])*[a-z\d]+$/;
+const B58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+const MINUTE_MS = 60_000;
+/** After a round's deadline its masks may still claim for this long (the bounty contract's `CLAIM_GRACE_HOURS`). */
+export const CLAIM_GRACE_MINUTES = 12 * 60;
+/** A mask's turn on a live safe, in minutes (the bounty contract's `SAFE_TURN_MINUTES`). */
+const SAFE_TURN_MINUTES = 3;
+/** The least a drain must take, and the least bounty a round pays (the bounty contract's `MIN_LOOT`, `MIN_BOUNTY`). */
+const MIN_LOOT = "0.1";
+
+/** A code hash as NEAR shows it (base58 of 32 bytes) → the wasm's sha256 in lowercase hex; null when it is not one. */
+export function codeHashHex(codeHash: string): string | null {
+  let n = 0n;
+  for (const c of codeHash) {
+    const i = B58.indexOf(c);
+    if (i < 0) return null;
+    n = n * 58n + BigInt(i);
+  }
+  const hex = n.toString(16);
+  return codeHash.length >= 32 && codeHash.length <= 44 && hex.length <= 64 ? hex.padStart(64, "0") : null;
+}
+
+/** The schedule's latest slot at or before `ms`, in ms since the epoch; null before the first slot. */
+export function slotAt(round: Pick<HouseRound, "first_minute" | "every_minutes">, ms: number): number | null {
+  const minute = Math.floor(ms / MINUTE_MS);
+  if (minute < round.first_minute) return null;
+  const every = Math.max(round.every_minutes, 1);
+  return (round.first_minute + Math.floor((minute - round.first_minute) / every) * every) * MINUTE_MS;
+}
+
+/** The first slot after `ms`, in ms since the epoch. */
+export function slotAfter(round: Pick<HouseRound, "first_minute" | "every_minutes">, ms: number): number {
+  const at = slotAt(round, ms);
+  return at === null ? round.first_minute * MINUTE_MS : at + Math.max(round.every_minutes, 1) * MINUTE_MS;
+}
 
 /** NEAR as a decimal string ("0.35") → yoctoNEAR. */
 export function yocto(near: string): bigint {
@@ -115,6 +212,8 @@ export function parseNetwork(raw: unknown): Network {
     ...(n.older_bounty ?? []),
     n.season,
     n.scheduler,
+    n.house,
+    n.vault,
     n.factory,
     n.jobs,
     n.crews,
@@ -122,9 +221,12 @@ export function parseNetwork(raw: unknown): Network {
     ...Object.values(n.masks ?? {}),
   ];
   for (const a of accounts) if (typeof a !== "string" || !onNetwork(n.id, a)) fail(`${String(a)} is not a ${n.id} account`);
-  for (const sub of [n.bounty, n.season, n.scheduler, n.factory, n.jobs, n.crews, ...Object.values(n.masks ?? {})]) {
+  for (const sub of [n.bounty, n.season, n.scheduler, n.house, n.factory, n.jobs, n.crews, ...Object.values(n.masks ?? {})]) {
     if (!sub.endsWith(`.${n.admin}`)) fail(`${sub} is not under ${n.admin}: only the admin can create it`);
   }
+  // The vault is made again for every round, by the house alone: a direct sub-account of it and of nobody else.
+  if (n.vault.slice(n.vault.indexOf(".") + 1) !== n.house) fail(`${n.vault} is not a sub-account of ${n.house}: only the house can make it`);
+  if (n.safe_code !== null && (typeof n.safe_code !== "string" || codeHashHex(n.safe_code) === null)) fail("safe_code: a code hash in base58, or null");
   const stated = Object.keys(n.sections ?? fail("sections: which parts are on chain here"));
   for (const part of SECTIONS) if (typeof n.sections[part] !== "boolean") fail(`sections.${part}: true or false`);
   for (const part of stated) if (!SECTIONS.includes(part as Section)) fail(`sections.${part}: not a part of MASK WARS`);
@@ -137,6 +239,30 @@ export function parseNetwork(raw: unknown): Network {
   if (!Number.isInteger(l.season.max_per_day) || l.season.max_per_day < 1) fail("limits.season.max_per_day: 1 or more");
   if (yocto(l.fuel_max) < yocto("1")) fail("limits.fuel_max: at least the factory's least, 1 NEAR");
   for (const usd of [l.pay_usd_max, l.hire_usd_max]) if (usd !== undefined && !(Number.isInteger(usd) && usd >= 1)) fail(`${usd}: whole dollars`);
+  const r = n.round ?? fail("round: the house's daily round");
+  if (typeof r.live !== "boolean") fail("round.live: true or false");
+  if (typeof r.judge !== "string" || !/^[0-9a-f]{64}$/.test(r.judge)) fail("round.judge: the judge's sha256 in lowercase hex");
+  for (const a of [r.safe, r.stake, r.deposit, r.min_loot, r.gas, r.mask_keep, l.house_max]) yocto(a);
+  for (const m of [r.first_minute, r.every_minutes, r.hours, r.commit_minutes, r.reveal_minutes]) {
+    if (!Number.isInteger(m) || m < 0) fail("round: whole minutes and hours");
+  }
+  if (yocto(r.safe) > yocto(l.hand.safe_max)) fail("round.safe: above limits.hand.safe_max");
+  if (yocto(r.deposit) > yocto(l.hand.deposit_max)) fail("round.deposit: above limits.hand.deposit_max");
+  if (yocto(r.min_loot) < yocto(MIN_LOOT)) fail("round.min_loot: at least 0.1 NEAR");
+  // A plain transfer into the vault during a plan must not hide a drain: the least drain sits well below the loot.
+  if (yocto(r.stake) + 2n * yocto(r.min_loot) > yocto(r.safe)) fail("round.safe: less than its stake and twice min_loot");
+  if (yocto(r.safe) + yocto(r.deposit) + yocto(r.gas) > yocto(l.house_max)) fail("round: one round takes more than limits.house_max");
+  if (yocto(n.fund.house) > yocto(l.house_max)) fail("fund.house: above limits.house_max");
+  if (r.hours < 1 || r.hours > 24) fail("round.hours: 1 to 24, as the bounty contract takes a sealed round");
+  const masks = Object.keys(n.masks ?? {}).length;
+  if (r.commit_minutes < 1 || r.reveal_minutes < SAFE_TURN_MINUTES * (masks + 1) || r.commit_minutes + r.reveal_minutes > r.hours * 60) {
+    fail("round: the commit window, then 3 minutes for each mask's turn and 3 more, all inside the round");
+  }
+  // The circle closes within a slot: a round nobody won is refunded only after its claim grace, and the vault can be
+  // made again only once that round is over.
+  if (r.every_minutes < 1 || r.hours * 60 + CLAIM_GRACE_MINUTES >= r.every_minutes) {
+    fail("round: a round nobody won must be over, its claim grace included, before the next slot");
+  }
   return n;
 }
 
@@ -193,5 +319,5 @@ export function whereIs(section: Section, from: NetworkId = NETWORK_ID, networks
 /** The bounty contracts races are read from, newest first. */
 export const bountyContracts = (n: Network = NET): readonly string[] => [n.bounty, ...n.older_bounty];
 
-/** The arena's own teams: the accounts that open its races, the admin and the season treasury. */
-export const teams = (n: Network = NET): readonly string[] => [n.admin, n.season];
+/** The arena's own teams: the accounts that open its races, the admin, the season treasury and the house. */
+export const teams = (n: Network = NET): readonly string[] => [n.admin, n.season, n.house];

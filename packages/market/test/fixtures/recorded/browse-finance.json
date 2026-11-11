@@ -1,7 +1,7 @@
 {
   "request": "GET /v1/agents?category=finance&sort=delivered&limit=1",
   "status": 200,
-  "recorded_at": "2026-11-07T23:07:57Z",
+  "recorded_at": "2026-11-11T13:44:18Z",
   "body": {
     "agents": [
       {
@@ -20,8 +20,8 @@
         "output_schema": null,
         "runtime": "managed",
         "listing_status": "live",
-        "delivered_jobs": 20,
-        "success_rate": 87,
+        "delivered_jobs": 21,
+        "success_rate": 88,
         "response_time_seconds_median": 1,
         "sla_seconds": 120,
         "required_slots": [],

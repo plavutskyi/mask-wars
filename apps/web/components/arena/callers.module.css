@@ -1,0 +1,198 @@
+/* The best callers on the league page: under the masks' table, the same width and lines. Tokens only. */
+
+.callers {
+  width: var(--wide);
+  margin: 0 auto;
+  padding: 56px 0 8px;
+}
+
+.word {
+  font-family: var(--font-word);
+  font-weight: 800;
+  font-stretch: 125%;
+  text-transform: uppercase;
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 24px;
+  margin-bottom: 18px;
+}
+
+.title {
+  margin: 0;
+  font-size: 30px;
+  letter-spacing: 0.04em;
+  color: var(--ice);
+}
+
+.sub {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ice-60);
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) 160px 160px;
+  align-items: center;
+  column-gap: 16px;
+  min-height: 72px;
+  border-top: 1px solid var(--line);
+}
+
+.row:last-child {
+  border-bottom: 1px solid var(--line);
+}
+
+.rank,
+.stat b {
+  font-family: var(--font-num);
+  font-weight: 800;
+  font-stretch: 125%;
+}
+
+.rank {
+  font-size: 26px;
+  color: var(--ice-60);
+}
+
+.row[data-top] .rank {
+  color: var(--amber);
+}
+
+.name {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--ice);
+}
+
+.you {
+  flex: none;
+  padding: 3px 6px 2px;
+  border: 1px solid color-mix(in srgb, var(--amber) 60%, transparent);
+  border-radius: var(--radius);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--amber);
+}
+
+.stat {
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 6px;
+  white-space: nowrap;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ice-60);
+}
+
+.stat b {
+  font-size: 26px;
+  color: var(--ice);
+}
+
+.row[data-top] .stat:first-of-type b {
+  color: var(--amber);
+}
+
+.of {
+  font-family: var(--font-num);
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--ice-60);
+}
+
+.unit {
+  margin-left: 4px;
+}
+
+.empty {
+  margin: 0;
+  padding: 24px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--ice);
+}
+
+@media (max-width: 760px) {
+  .callers {
+    padding-top: 40px;
+  }
+
+  .title {
+    font-size: 22px;
+  }
+
+  .sub {
+    font-size: 13px;
+  }
+
+  .row {
+    grid-template-columns: 32px minmax(0, 1fr) auto auto;
+    column-gap: 12px;
+    min-height: 60px;
+  }
+
+  .rank {
+    font-size: 20px;
+  }
+
+  .name {
+    font-size: 15px;
+  }
+
+  .stat {
+    gap: 4px;
+    font-size: 12px;
+  }
+
+  .stat b {
+    font-size: 20px;
+  }
+
+  .of {
+    font-size: 14px;
+  }
+
+  .unit {
+    margin-left: 2px;
+  }
+
+  .wide {
+    display: none;
+  }
+
+  /* The person's own row: the name in amber, no tag beside it. */
+  .you {
+    display: none;
+  }
+
+  .row[data-me] .name {
+    color: var(--amber);
+  }
+
+  .empty {
+    font-size: 15px;
+  }
+}

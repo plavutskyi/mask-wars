@@ -1,7 +1,7 @@
 // A stand-in for market.near.ai built from the fixtures: `recorded/` holds live answers of the real API, `docs/` the
 // token-gated answers as the API's own schema and docs give them. Every request is kept for the test to read.
 import { readFileSync } from "node:fs";
-import type { CheckResult, Verdict } from "@maskwars/check";
+import { type CheckResult, type Verdict, networkOf } from "@maskwars/check";
 import { MarketClient } from "../src/client.ts";
 
 export const TOKEN = "aat_00000000000000000000000000000000";
@@ -68,7 +68,7 @@ export function result(account: string, verdict: Verdict, block: CheckResult["bl
         : [{ code: "plain_account", level: "info", text: "A plain account: no contract code." }];
   return {
     account,
-    network: "testnet",
+    network: networkOf(account),
     verdict,
     summary: verdict === "allow" ? "No signals against this account were found." : `${verdict.toUpperCase()}: ${reasons[0]?.text ?? ""}`,
     reasons,

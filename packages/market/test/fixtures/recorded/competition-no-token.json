@@ -1,7 +1,7 @@
 {
   "request": "POST /v1/jobs/competition",
   "status": 401,
-  "recorded_at": "2026-11-07T23:07:57Z",
+  "recorded_at": "2026-11-11T13:44:18Z",
   "body": {
     "error": "unauthorized",
     "message": "unauthorized"

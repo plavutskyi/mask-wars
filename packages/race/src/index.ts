@@ -11,3 +11,4 @@ export * from "./seal.ts";
 export * from "./round.ts";
 export * from "./keys.ts";
 export * from "./season.ts";
+export * from "./house.ts";

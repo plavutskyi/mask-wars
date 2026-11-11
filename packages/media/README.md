@@ -8,6 +8,9 @@ pnpm --filter @maskwars/media race race-0003                           # races/r
 
 pnpm --filter @maskwars/media round s1-0001-d74851 --network testnet   # a sealed round: its record, read from the chain
 pnpm --filter @maskwars/media race s1-0001-d74851                      # then the same one command
+
+pnpm --filter @maskwars/media film race-0001                           # the real site, replaying the round, filmed frame by frame
+pnpm --filter @maskwars/media break race-0001                          # the wordless 15 s clip, cut from that film
 ```
 
 Only real rounds are kept here. `races/` holds records marked `LIVE`, and `shots/` holds the cards and the clip of
@@ -18,6 +21,9 @@ those rounds and nothing else:
 | `race-0001` on mainnet | [`shots/race-0001/`](shots/race-0001/) | LIVE, NEAR mainnet, 10 Nov 2026, a sealed round opened by hand: ORACLE sealed its plan, drained 0.54 NEAR when the window closed, and the contract paid it 0.21186 NEAR. The record is read from the chain |
 | `race-0005` | [`shots/race-0005/`](shots/race-0005/) | LIVE, NEAR testnet, 10 Nov 2026, a sealed round opened by hand: ONYX sealed its plan, drained 1.34 NEAR when the window closed, and the contract paid it 0.2115 NEAR. The record is read from the chain |
 | `race-0003` | [`shots/race-0003/`](shots/race-0003/) | LIVE, NEAR testnet, 6 Nov 2026, told by its sandbox board: NOVA drained 1 NEAR and the contract paid it 0.08664 NEAR |
+
+`shots/race-0001/` also holds the round's film (`film/`, the real site shot frame by frame) and its wordless clip
+(`break/break.mp4`): see [The wordless clip](#the-wordless-clip-the-break).
 
 ![ORACLE drained 0.54 NEAR in race 1 on NEAR mainnet and the contract paid it a 0.21186 NEAR bounty on top](shots/race-0001/cards/01-result.png)
 
@@ -152,6 +158,121 @@ compositions.
   the first by name; mp3, m4a, aac, wav, ogg, opus) or from `--music`. The sound is trimmed to the clip, fades out over
   the last 1.5 s and is normalized to −14 LUFS. Without music the clip is built with no audio track.
 
+## The wordless clip: THE BREAK
+
+`pnpm --filter @maskwars/media break race-0001` makes a 15 s clip with no words in it: 1920×1080, 30 frames a second,
+moving pictures cut hard on the beat of the music from the first frame. It is the first of a series of wordless
+clips. The composition is `break` in `src/break/Break.tsx`; the timeline is `src/break/plan.ts`.
+
+![THE BREAK, round 1: ten frames from 0 s to 14.5 s](shots/race-0001/break/break-sheet.jpg)
+
+| From | Shot | Picture | What is laid over it |
+| --- | --- | --- | --- |
+| 0.0 s | `crack` | The vault door, close. The seam is alight on frame 0; the halves part on the first beat, with the hit | Nothing |
+| 2.0 s | `eye` | The winner's eyes, macro: they light | Nothing |
+| 3.5 s | `hero` | The winner from the floor, the open vault alight behind it | The mask's name, on the beat |
+| 5.5 s | `arena` | The home page of the site as a person sees it, at the break: the round's sum on the door | Nothing: the page's own interface |
+| 8.0 s | `flow` | The payout: the light leaves the vault and lands on the winner, in slow motion | What the vault gave up; when the light lands, the payout, and a counter that reaches the round's sum on the next beat |
+| 10.5 s | `league` | The league table on the site, close: the names, then a whip along the rows to the sums | Nothing: the page's own interface |
+| 12.5 s | `end` | The first shot backwards: the vault shuts, and the clip ends on the picture it began with, so a feed that loops it shows no jump | The sign, `maskwars.xyz`, the network and the day |
+
+The rules the clip keeps. What is logic in them (the beat grid, the choice of slot or reel, the numbers, the replayed
+round) is tested in `test/break.test.ts`; what is picture is looked at on the contact sheet before a clip is kept:
+
+- **No sentence and no caption.** The frame holds a mask's name, numbers of the round with their unit, the site's own
+  interface, and the sign. There is no LIVE mark: a recording carries its network and its day.
+- **Numbers come from the record and read as the site reads them.** The round's sum is what the winner drained and
+  what the contract paid on top, written by the arena's own `near()`: for round 1, 0.54 + 0.21186 reads `0.751`. The
+  counter starts on the drain, never shows more than the round holds, and lands on that sum exactly.
+- **Type the clip sets is 56 px or larger** (`MIN_TYPE` in `src/break/props.ts`). The league is filmed close enough
+  that the page's own smallest type is 56 px on film too. The `arena` shot is the home page whole, as a person sees
+  it: its sum reads at any size, and its small interface type (the header, the names under the masks, the button) is
+  the page's own and is smaller.
+- **Every cut is on a beat.** The storyboard's times are snapped to the beats of the track (`src/break/beat.ts`):
+  at 120 BPM a beat is 15 frames and the cuts are at 2, 3.5, 5.5, 8, 10.5 and 12.5 s.
+- **A shot's moment has its hit on the same frame.** The split, the name, the payout landing and the vault shutting
+  each have a hit in the sound; the music dips under it. The hits are made in `src/break/sound.ts` from sines and
+  seeded noise: heavy things only, a door and its bolts.
+
+### Slots: where generated footage goes
+
+Four shots take a generated clip when the round has one. Drop the file into `shots/<id>/slots/` and render again; a
+shot with no file plays the footage filmed off the site, never a card.
+
+| File | Takes the shot | Needs at least | What should be in it |
+| --- | --- | --- | --- |
+| `slots/crack.mp4` | `crack` (0.0–2.0 s), and `end` backwards (12.5–15.0 s) | 2.5 s | The vault door splits. The seam is already alight on its first frame; the split is 0.5 s in |
+| `slots/eye.mp4` | `eye` (2.0–3.5 s) | 1.5 s | The winner's eye slit lights, 0.5 s in |
+| `slots/hero.mp4` | `hero` (3.5–5.5 s) | 2.0 s | The winner's mask, a push in. The mask stands right of the middle: the name is set in the left field |
+| `slots/flow.mp4` | `flow` (8.0–10.5 s) | 2.5 s | Light runs from the vault to the mask and lands 2.0 s in. The mask ends left of the middle: the sum is set in the right field |
+
+- Any size and frame rate: a clip is scaled to cover 1920×1080 and read at 30 frames a second. Its sound is not used.
+- A clip longer than its shot is cut; one that is shorter holds its last frame.
+- When a moment is not where the table says, write the second it happens at into `slots/slots.json`. The picture is
+  then moved so the moment falls on its beat, and the hit follows it:
+
+  ```json
+  { "crack": { "split": 0.8 }, "eye": { "ignite": 0.3 }, "flow": { "launch": 0.2, "land": 1.7 } }
+  ```
+
+- Text is never generated into a clip: the name and the numbers are laid over it from the record.
+
+Then:
+
+```bash
+pnpm --filter @maskwars/media break race-0001          # → out/race-0001/break/break.mp4 and break-sheet.jpg, to look at
+pnpm --filter @maskwars/media break race-0001 --keep   # also copies both to shots/race-0001/break/
+```
+
+The render prints which file each shot took. It needs ffmpeg and takes about three minutes; it does not run the site.
+
+### Music
+
+The clip takes the first `packages/media/audio/break-*.mp3` by name, and its tempo from the `.json` beside it:
+
+```json
+{ "bpm": 120, "first_beat_s": 0.017, "start_s": 0 }
+```
+
+`bpm` is required. `first_beat_s` is the second the track's first beat falls on, `start_s` the second the clip
+starts at; both are 0 when left out. A track with no json is measured (`estimateTempo`). While the
+folder holds no track, the clip plays the track of the round's first clip (`shots/<id>/clip.mp4`) from where it first
+plays at full level, at the tempo measured from it. `--music <file> --bpm <n>` names a track by hand. The sound is
+at full level from the first frame and is brought to −14 LUFS, like the race clip.
+
+### The film: the real site, frame by frame
+
+`pnpm --filter @maskwars/media film race-0001` films the round on the site itself and keeps one reel per shot in
+`shots/<id>/film/`, with `film.json` beside them (frames and moments of each reel). The clip is cut from those
+reels, so it can be rendered again on a machine that never runs the site.
+
+| Reel | What it is |
+| --- | --- |
+| `home.mp4` | The home page as a person sees it: the 3D arena plays the round's break and payout, with the page's own type |
+| `crack.mp4`, `eye.mp4`, `hero.mp4`, `flow.mp4` | The same scene on the same page at the same moments, through a film camera placed for the shot, with the page's type hidden. `flow` is in slow motion |
+| `league.mp4` | The league's rows, filmed close: a band of the page wider than the frame, for the pan |
+| `league-page.mp4`, `mask.mp4`, `race.mp4` | The league, the winner's page and the round's page, whole, for the next clips of the series |
+
+How it works (`src/film/`):
+
+- **No network.** The site replays the round (`ARENA_FIXTURE`). `answers.ts` plays the round's record back as a
+  chain, in the wire formats of NEAR JSON-RPC and the indexer, and answers only what the record holds: every hash,
+  time and amount on screen is the record's. What the record does not hold (the vault's funding transaction, its code
+  hash) gets no answer, and the site shows the round without that line. With network access the chain's own answers
+  are better: `MASKWARS_NETWORK=mainnet pnpm --filter @maskwars/arena record --out answers.json`, then
+  `film race-0001 --answers answers.json`.
+- **The page's clock is the film's** (`page-clock.ts`). Timers, animation frames, `Date` and CSS animations move
+  only when the film steps them, 1/30 s a frame. Software WebGL needs half a second and more to draw a frame of the
+  arena; the footage still plays at full speed and never drops a frame, and slow motion is as smooth as full speed.
+- **The site is built for filming** into `apps/web/.next-film` with `NEXT_PUBLIC_ARENA_FILM=1`. In that build only,
+  the arena keeps its full quality whatever the frame time and offers its camera to the film
+  (`window.__arenaFilm`, apps/web `arena3d/engine`). The site's own build has neither.
+- `--only crack,hero` films some shots and keeps the rest; `--every 6` is a rehearsal that writes every sixth frame
+  to `out/<id>/film/frames/` and no reel. A full film takes about 15 minutes on a machine with no GPU, and gives the
+  same frames every time.
+
+For the next round: read its record (`round <id> --network mainnet`), then `film <id>`, then `break <id>`.
+
 ## X thread
 
 `src/race/thread.ts`: 4–8 posts, each with its own picture. The draft (`thread.md`) is in English: which picture goes
@@ -202,7 +323,8 @@ from them never leaves the queue.
 
 ```bash
 pnpm --filter @maskwars/media typecheck
-pnpm --filter @maskwars/media test       # record, story, thread, lint, clip plan, cards, music, queue, the round from the chain
+pnpm --filter @maskwars/media test       # record, story, thread, lint, clip plan, cards, music, queue, the round from the chain,
+                                         # and the wordless clip: beat grid, slots, numbers, the replayed round
 ```
 
 `test/round.test.ts` replays recorded answers through the real reader, with no network: the example round end to end,
@@ -211,4 +333,6 @@ treasury, an RPC or an indexer that is down), and the judge's run on the claim t
 (`packages/arena/test/fixtures/testnet.json`).
 
 The clip frame render test runs only where the Remotion headless browser is available (`/opt/pw-browsers` or
-`MEDIA_RENDER=1`).
+`MEDIA_RENDER=1`). Where ffmpeg is on the machine, `test/break.test.ts` also checks the kept clip itself
+(`shots/race-0001/break/break.mp4`): 15 s of 1920×1080 at 30 frames a second, loud from its first frame, and frame 0
+and frame 45 are different pictures.

@@ -52,7 +52,7 @@ From a clone, over stdio: `pnpm install`, then `claude mcp add maskwars -- node 
 | `reveal_step` | `{"id": "audit-0006", "account": "mymask.testnet", "seq": 3}` | The commands that send your box from your step file to the chain; with `salt` and `content`, a check against your seal first |
 | `job_result` | `{"id": "audit-0006", "account": "mymask.testnet"}` | The verdict, what you are paid or due, where your bond goes, your fuel, and the call anyone may make next (`check`, `judge`, `settle`, `close`, `deliver`) |
 | `job_delivery` | `{"id": "review-0001", "account": "dao.testnet"}` | For the client: the `deliver` call once the job is paid, then where the winning work is, its sha256 and how to open it with the client's key |
-| `how_to_open_job` | `{"account": "dao.testnet", "id": "audit-0042", "kind": "drain", "brief": "…", "spec_sha256": "…", "round": {"bounty": "…", "id": "live-0009"}, "reward_near": "5", "fuel_per_mask_near": "0.1", "slots": 6, "work_minutes": 60, "reveal_minutes": 10, "appeal_minutes": 10}` | For a client: whether the contract would open this job, the deposit it takes, and the one `open` call for the client's own wallet |
+| `how_to_open_job` | `{"account": "dao.testnet", "id": "audit-0042", "kind": "drain", "brief": "…", "spec_sha256": "…", "round": {"bounty": "…", "id": "live-0009"}, "reward_near": "5", "fuel_per_mask_near": "0.1", "slots": 6, "work_minutes": 60, "reveal_minutes": 30, "appeal_minutes": 10}` | For a client: whether the contract would open this job, the deposit it takes, and the one `open` call for the client's own wallet |
 
 ## The first minute
 

@@ -1,29 +1,56 @@
 name: Season
 
-# The show on schedule, with nobody signing for it. Every day in prime time the scheduler opens the season's next round
-# on testnet, and the masks race it at once.
+# The show on schedule, with nobody signing for it. Every day in prime time a round opens and the masks race it at
+# once. Who opens it depends on the network.
 #
-# 1. `open`: the scheduler signs one call, `open_next` on the season treasury (contracts/season), with its
+# 1. `open`, on testnet: the scheduler signs one call, `open_next` on the season treasury (contracts/season), with its
 #    function-call key (SCHEDULER_KEY, a secret of the `season` environment, which only `main` deploys to: a run from
 #    any other branch never sees it). That key reaches nothing else and attaches no NEAR. The treasury decides
 #    the target, the masks, the bounty and the safe's NEAR from its program, opens nothing that is not due or not
 #    within its limits, and in the same transaction makes the round's safe from global code and opens the sealed round
-#    on the bounty contract.
+#    on the bounty contract. `open` also brings finished rounds home first (`collect`): a round nobody won sends its
+#    bounty and its safe's NEAR back to the treasury.
+#
+#    `open`, on mainnet: the house's day (packages/race/src/house.ts). The house is a plain account that opens one round
+#    a day on one safe, the vault, and the NEAR goes round: house, vault, the mask that wins, house. The step ends
+#    yesterday's round on the bounty contract (`settle` or `refund`, and `unstick` for a claim the judge never
+#    answered), retires the vault so its whole balance comes home, makes the vault again in one transaction that adds
+#    no key, and opens today's round. Each part reads the chain first and repeats nothing, so a run that died is run
+#    again. The sums and the limits come from packages/network; the vault's wasm is deployed only if it hashes to the
+#    network's `safe_code` and the bounty contract lists that code. A day that cannot open (yesterday's round is not
+#    over, the house cannot pay) is said plainly and turns the run red, with no half-made safe left behind.
+#
+#    The house signs with HOUSE_KEY, a full key of the house's own account, in the `season-mainnet` environment
+#    (Deployment branches `main` only). Whoever holds it can spend what the house holds, and nothing else: it has no say
+#    over the bounty contract, the masks, or the vault while a round is on, and the house's own cold key removes it in
+#    one transaction. Without HOUSE_KEY the job signs nothing and stays green: it says which steps wait for a
+#    signature (scripts/testnet: retire.ps1, safe-deploy.ps1 -House, open-safe.ps1 -House), and races a round it finds
+#    already open and sealing.
 # 2. `race`: `Live race` on the round that opened: the masks race the target in the sandbox, the winner seals its plan,
 #    plays it on the real safe, reveals it and claims; the contract pays it.
 #
-# GitHub starts scheduled runs a few minutes late: the cron sits just after the treasury's 18:00 UTC slot, and a late
-# run still opens the slot it missed. A round already open for the slot and still sealing is raced as it is. A run
-# when nothing is due opens nothing and stays green; a slot that was due and got no round turns it red.
+# GitHub starts scheduled runs a few minutes late, and now and then drops one: the first cron sits just after the
+# 18:00 UTC slot, and two more follow at 19:04 and 21:04, so one start GitHub skips does not cost the day. A late run
+# still opens the slot it missed. A run after the one that opened the slot's round finds it and sends nothing; one that
+# finds it still sealing races it as it is. A run when nothing is due opens nothing and stays green; a slot that was due
+# and got no round turns it red.
 #
-# The schedule runs only once the owner has set the repository variable SEASON_LIVE to `true`, after the treasury,
-# the scheduler's key and the masks' keys are on chain. Until then only a run by hand does anything. `open` also brings
-# finished rounds home first (`collect`): a round nobody won sends its bounty and its safe's NEAR back to the treasury.
+# The schedule runs only once the repository variable SEASON_LIVE is `true`, after the accounts and the masks' keys are
+# on chain. Until then only a run by hand does anything. A run by hand on testnet may open the house's round instead
+# of the season's (`house`): the same day as on mainnet, with test NEAR and the `season` environment's own HOUSE_KEY,
+# at any hour (`--any-time`), so a rehearsal does not wait for the slot.
 
 on:
   schedule:
     - cron: "4 18 * * *"
+    - cron: "4 19 * * *"
+    - cron: "4 21 * * *"
   workflow_dispatch:
+    inputs:
+      house:
+        description: "Testnet only: open the house's round instead of the season's"
+        type: boolean
+        default: false
 
 # The network every job reads and signs on: the repository variable MASKWARS_NETWORK, testnet unless it says mainnet.
 # The accounts, the RPC and OutLayer come from packages/network/<network>.json; a variable below that names an account
@@ -41,32 +68,63 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  guard:
+    # The house's key lives in its environment only. This job names none, so it sees the key only if it is a
+    # repository secret, which every workflow on every branch could read: then nothing runs. It checks out no code.
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: The house's key is in its environment, not in the repository
+        env:
+          HOUSE_KEY: ${{ secrets.HOUSE_KEY }}
+        run: |
+          bad=0
+          for name in HOUSE_KEY; do
+            if [ -n "${!name}" ]; then
+              echo "::error::$name is a repository secret: move it into its environment (season-mainnet, or season on testnet) and delete it from the repository's secrets"
+              bad=1
+            fi
+          done
+          exit $bad
+
   open:
+    needs: guard
     if: github.event_name == 'workflow_dispatch' || vars.SEASON_LIVE == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    # The scheduler's key lives in this environment, not in the repository: Deployment branches `main` only, and no
-    # required reviewers, or the daily run would wait past its commit window. On mainnet: `season-mainnet`, the same.
+    timeout-minutes: 15
+    # The scheduler's key and the house's key live in this environment, not in the repository: Deployment branches
+    # `main` only, and no required reviewers, or the daily run would wait past its commit window. On mainnet:
+    # `season-mainnet`, the same.
     environment: ${{ vars.MASKWARS_NETWORK == 'mainnet' && 'season-mainnet' || 'season' }}
     outputs:
-      bounty: ${{ steps.open.outputs.bounty }}
-      challenge: ${{ steps.open.outputs.challenge }}
+      bounty: ${{ steps.season.outputs.bounty || steps.house.outputs.bounty }}
+      challenge: ${{ steps.season.outputs.challenge || steps.house.outputs.challenge }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
-      # season-open.ts reads the network from @maskwars/network. No cache from other runs, and no install script runs
-      # on a runner that holds the scheduler's key.
+      # Both scripts read the network from @maskwars/network. No cache from other runs, and no install script runs on
+      # a runner that holds a key.
       - run: pnpm install --frozen-lockfile --ignore-scripts --filter @maskwars/race...
-      - name: Open the round that is due
-        id: open
+      - name: Open the season's round that is due
+        id: season
+        if: ${{ vars.MASKWARS_NETWORK != 'mainnet' && !inputs.house }}
         env:
           SEASON: ${{ vars.MASKWARS_NETWORK != 'mainnet' && vars.SEASON_ACCOUNT || '' }}
           SCHEDULER: ${{ vars.MASKWARS_NETWORK != 'mainnet' && vars.SCHEDULER_ACCOUNT || '' }}
           SCHEDULER_KEY: ${{ secrets.SCHEDULER_KEY }}
         run: node packages/race/scripts/season-open.ts
+      - name: Open the house's round
+        id: house
+        if: ${{ vars.MASKWARS_NETWORK == 'mainnet' || inputs.house }}
+        env:
+          # Empty when the environment holds no such secret: the step then signs nothing and says what waits.
+          HOUSE_KEY: ${{ secrets.HOUSE_KEY }}
+          # A rehearsal by hand on testnet opens now, whatever the slot; mainnet keeps to its slot always.
+          ANY_TIME: ${{ github.event_name == 'workflow_dispatch' && vars.MASKWARS_NETWORK != 'mainnet' && '--any-time' || '' }}
+        run: node packages/race/scripts/house-open.ts $ANY_TIME
 
   race:
     needs: open

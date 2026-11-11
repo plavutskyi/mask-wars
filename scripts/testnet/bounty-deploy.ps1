@@ -1,5 +1,5 @@
 # Puts the bounty contract on its own account ($Bounty: bounty.tinygif8324.testnet, bounty.maskwars.near on mainnet) in
-# one transaction signed by $Admin: create the account, fund it (fund.bounty in packages/network: about 1.7 NEAR pays
+# one transaction signed by $Admin: create the account, fund it (fund.bounty in packages/network: about 3.26 NEAR pays
 # for the code, the rest is margin), deploy the code and call new(...). The transaction adds no key, so the account is
 # born with none: nobody, the owner included, can deploy to it or move its NEAR by hand. Its code, judge and admin change
 # only through the contract itself, after a wait anyone can see (bounty-change.ps1).

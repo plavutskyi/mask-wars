@@ -7,7 +7,7 @@
 // held    → held    the bolts slam home; the door says so, the bounty's way back waits behind «i»
 // empty   → idle    a closed vault, no sum: no race yet, or the chain is not answering
 
-import type { Race, Who } from '@maskwars/arena';
+import type { NextRace, Race, Who } from '@maskwars/arena';
 import { MASKS } from '@maskwars/arena/config';
 import { duration, near } from '@maskwars/arena/format';
 import { toneOf } from '../../lib/show';
@@ -135,4 +135,32 @@ export function sceneOf(race: Race | null, error = false): Scene | null {
       };
     }
   }
+}
+
+/** The next round's masks on the stage: before anyone has tried, a field of more than three stands its first three. */
+export const nextCast = (next: Pick<NextRace, 'masks'>): Who[] => cast(next.masks.slice(0, 3));
+
+/** When the next round opens, as its line says it: `Opens 18:04 UTC`. */
+export const opensLine = (at: number): string => `Opens ${new Date(at).toISOString().slice(11, 16)} UTC`;
+
+/**
+ * Between rounds, the next one: its vault shut on what it puts on the line, its masks waiting in the dark, the time it
+ * opens under the sum. The clock to it runs in the header.
+ */
+export function nextScene(next: NextRace): Scene | null {
+  if (next.masks.length < 3) return null;
+  const masks = nextCast(next);
+  return {
+    rest: 'idle',
+    intro: ['idle'],
+    masks: masks.map(asMask) as unknown as Scene['masks'],
+    attempts: [0, 0, 0],
+    notes: null,
+    winner: null,
+    vault: money(next.prize),
+    payout: null,
+    lines: { idle: opensLine(next.at) },
+    headlines: {},
+    account: false,
+  };
 }

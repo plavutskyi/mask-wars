@@ -10,6 +10,7 @@ import { Header } from './Header';
 import { Info, type InfoRow } from './Info';
 import { raceName } from './names';
 import { Nums } from './Nums';
+import { titleEm } from './title';
 import { World } from './World';
 import s from './page.module.css';
 
@@ -37,7 +38,7 @@ export function MaskPage({ mask: m, rank, network }: { mask: MaskStats; rank: nu
           <h1
             className={`${s.word} ${s.title} ${s.maskTitle}`}
             data-long={m.who.name.length > 8 ? '' : undefined}
-            style={{ '--chars': m.who.name.length } as CSSProperties}
+            style={{ '--chars': m.who.name.length, '--em': titleEm(m.who.name) } as CSSProperties}
           >
             {m.who.name}
           </h1>

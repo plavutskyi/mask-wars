@@ -7,9 +7,13 @@
   --heat: 0;
   --c: var(--ice);
   /* What the header and the deck keep of the screen: the flat arena composes between them, as the 3D one does
-     between their measured heights. The deck is its padding, the button, the quiet link (see .deck). */
-  --top: calc(64px + env(safe-area-inset-top));
-  --bottom: calc(170px + env(safe-area-inset-bottom));
+     between their measured heights. The top is the header and the line under it; the deck is its padding, the
+     button, the quiet link (see .deck), and the pick when the page has one. */
+  --what: 34px;
+  --deck: 170px;
+  --deck-pick: 0px;
+  --top: calc(64px + var(--what) + env(safe-area-inset-top));
+  --bottom: calc(var(--deck) + var(--deck-pick) + env(safe-area-inset-bottom));
   container: screen / size;
   position: relative;
   display: flex;
@@ -252,6 +256,7 @@
 }
 
 [data-phase='sealing'] .seam,
+[data-phase='next'] .seam,
 [data-phase='empty'] .seam {
   opacity: 0.3;
 }
@@ -685,7 +690,52 @@
   color: var(--ice);
 }
 
+/* What it is: one line under the header, for someone who has never heard of MASK WARS. -------------------------- */
+
+.what {
+  position: relative;
+  z-index: 3;
+  flex: none;
+  display: flex;
+  justify-content: center;
+  height: var(--what);
+  margin: 0;
+  padding: 0 var(--gut);
+  font-family: var(--font-num);
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.3;
+  letter-spacing: 0.01em;
+  text-align: center;
+  text-wrap: balance;
+  color: var(--ice);
+}
+
 /* Deck: one button ------------------------------------------------------------------------------------------------ */
+
+/* With the pick in the deck, the deck is taller by its line, and by the choices while the round takes picks. */
+.screen[data-pick='open'] {
+  --deck-pick: 44px;
+}
+
+.screen[data-pick='row'] {
+  --deck-pick: 42px;
+}
+
+.screen[data-pick='called'] {
+  --deck-pick: 51px;
+}
+
+.deck > :first-child[data-mode] {
+  margin-bottom: 8px;
+}
+
+.quietRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
 
 .deck {
   position: relative;
@@ -867,7 +917,7 @@
    there on the left, when and the way there on the right. The deck is that much taller, and the arena composes above it. */
 @media (max-width: 1099px) {
   .screen[data-across] {
-    --bottom: calc(225px + env(safe-area-inset-bottom));
+    --deck: 225px;
   }
 
   .across {
@@ -889,8 +939,30 @@
 @media (max-width: 760px) {
   .screen {
     --V: min(42svh, 86vw, 400px);
-    --bottom: calc(146px + env(safe-area-inset-bottom));
+    --what: 44px;
+    --deck: 146px;
     min-height: 600px;
+  }
+
+  .what {
+    font-size: 13px;
+    padding: 0 28px;
+  }
+
+  .screen[data-pick='open'] {
+    --deck-pick: 26px;
+  }
+
+  .screen[data-pick='row'] {
+    --deck-pick: 34px;
+  }
+
+  .screen[data-pick='called'] {
+    --deck-pick: 45px;
+  }
+
+  .quietRow {
+    gap: 0;
   }
 
   .clockLabel {
@@ -958,7 +1030,7 @@
 
   /* With the line about the other network under it, the deck is one row taller. */
   .screen[data-across] {
-    --bottom: calc(197px + env(safe-area-inset-bottom));
+    --deck: 197px;
   }
 
   [data-across] .sound {

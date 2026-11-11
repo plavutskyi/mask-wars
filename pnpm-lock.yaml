@@ -218,6 +218,9 @@ importers:
       '@maskwars/hire':
         specifier: workspace:*
         version: link:../../packages/hire
+      '@maskwars/market':
+        specifier: workspace:*
+        version: link:../../packages/market
       '@maskwars/mcp':
         specifier: workspace:*
         version: link:../mcp
@@ -372,6 +375,9 @@ importers:
       '@maskwars/core':
         specifier: workspace:*
         version: link:../core
+      '@maskwars/network':
+        specifier: workspace:*
+        version: link:../network
       '@remotion/bundler':
         specifier: 4.0.539
         version: 4.0.539(@swc/helpers@0.5.23)(postcss@8.5.32)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -429,6 +435,12 @@ importers:
 
   packages/race:
     dependencies:
+      '@maskwars/arena':
+        specifier: workspace:*
+        version: link:../arena
+      '@maskwars/check':
+        specifier: workspace:*
+        version: link:../check
       '@maskwars/mind':
         specifier: workspace:*
         version: link:../mind

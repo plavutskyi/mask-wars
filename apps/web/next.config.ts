@@ -30,9 +30,14 @@ if (sibling) {
   if (own === sibling) throw new Error(`MASKWARS_SIBLING_URL: the other site, not this one. This site is ${own}: set APP_ORIGIN to its own origin`);
 }
 
+// Filming only (packages/media `film`): a build whose 3D arena is stepped frame by frame goes to its own folder, so it
+// never stands in for the site's build.
+const film = process.env.NEXT_PUBLIC_ARENA_FILM === '1';
+
 const config: NextConfig = {
+  ...(film ? { distDir: '.next-film' } : {}),
   env: { MASKWARS_NETWORK: network, MASKWARS_SIBLING_URL: sibling },
-  transpilePackages: ['@maskwars/arena', '@maskwars/brand', '@maskwars/check', '@maskwars/hire', '@maskwars/mind', '@maskwars/network'],
+  transpilePackages: ['@maskwars/arena', '@maskwars/brand', '@maskwars/check', '@maskwars/hire', '@maskwars/market', '@maskwars/mind', '@maskwars/network'],
   outputFileTracingRoot: root,
   turbopack: { root },
   poweredByHeader: false,

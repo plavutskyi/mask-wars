@@ -2,10 +2,15 @@
 // at once and work the hire after the answer: a 2xx on `hire.created` already stamps the start, and an A2A caller is
 // waiting on the line. The event says only that something happened; the assignment is read back before any work.
 //
+// This is also where a payment is told from a claim. The marketplace is the A2A server: it answers 402 with the price,
+// checks the caller's x402 payment and holds it. Nothing the caller sends reaches this handler. A hire exists for us
+// only when the event carries the marketplace's signature and the assignment is there, in progress, when we read it
+// back with the agent's own token.
+//
 // `X-Market-Signature: sha256=<hex HMAC-SHA256(secret, "<X-Market-Timestamp>.<raw body>")>`.
 import { createHmac, timingSafeEqual } from "node:crypto";
-import type { MarketClient } from "./client.ts";
-import { type CheckFn, type Served, serveAssignment } from "./service.ts";
+import { MarketError, type MarketClient } from "./client.ts";
+import { type CheckFn, type Served, type ServiceOptions, serveAssignment } from "./service.ts";
 
 /** How far a delivery's timestamp may be from our clock. */
 export const TOLERANCE_SECONDS = 300;
@@ -49,6 +54,18 @@ export interface OtherEvent {
 
 export type MarketEvent = HireCreatedEvent | HireRefundedEvent | OtherEvent;
 
+/** An event that names an assignment of ours to work. Only the id is taken from it; the rest is read back. */
+export interface WorkEvent {
+  event: string;
+  assignment_id: string;
+}
+
+/**
+ * The events after which an assignment may be ours to work: a new hire, a buyer's change request, and a dispute the
+ * resolver sent back to redo. Whether it is in progress is the API's to say, not the event's.
+ */
+const WORK_EVENTS: ReadonlySet<string> = new Set(["hire.created", "hire.changes_requested", "hire.dispute_resolved"]);
+
 /** The `X-Market-Signature` value for a body: what the market sends, and what a test delivery needs. */
 export function signature(secret: string, timestamp: string, rawBody: string): string {
   return `sha256=${createHmac("sha256", secret).update(`${timestamp}.`).update(rawBody).digest("hex")}`;
@@ -69,9 +86,9 @@ export function verifyDelivery(input: { secret: string; timestamp: string | null
   return { ok: true };
 }
 
-function isHireCreated(e: MarketEvent): e is HireCreatedEvent {
-  const r = e as Record<string, unknown>;
-  return r["event"] === "hire.created" && typeof r["assignment_id"] === "string" && typeof r["title"] === "string" && typeof r["description"] === "string";
+function isWork(e: MarketEvent): e is MarketEvent & WorkEvent {
+  const id = (e as Record<string, unknown>)["assignment_id"];
+  return WORK_EVENTS.has(e.event) && typeof id === "string" && /^[0-9a-f-]{8,64}$/i.test(id);
 }
 
 /** Delivery ids already taken, newest last; at-least-once delivery repeats them. */
@@ -95,29 +112,53 @@ class Seen {
   }
 }
 
-export interface HireDeps {
+export interface HireDeps extends ServiceOptions {
   client: MarketClient;
   check: CheckFn;
   log?: (line: string) => void;
+  /**
+   * How long to wait before each further try when the marketplace fails in a way it calls retryable (5xx, 429, no
+   * answer). Default: 2 s, then 6 s. Nobody polls behind a serverless route, so the hire is retried here.
+   */
+  retryDelaysMs?: readonly number[];
 }
 
-/** Works a `hire.created`: the assignment is read back from the API and worked only if it is still ours to work. */
-export async function serveHire(event: HireCreatedEvent, deps: HireDeps): Promise<Served> {
+async function serveOnce(event: WorkEvent, deps: HireDeps): Promise<Served> {
   const list = await deps.client.assignments({ status: "in_progress", limit: 100 });
   const item = list.assignments.find((a) => a.assignment.assignmentId === event.assignment_id);
   if (!item) {
-    deps.log?.(`skip    ${event.assignment_id}: no longer in progress`);
+    deps.log?.(`skip    ${event.assignment_id}: not in progress`);
     return "skipped";
   }
   return serveAssignment(item, deps);
 }
 
-export interface WebhookOptions {
+/**
+ * Works the assignment an event names. The assignment is read back from the API with the agent's token and worked
+ * only if it is there and in progress: an event about a hire the marketplace does not hold delivers nothing.
+ */
+export async function serveHire(event: WorkEvent, deps: HireDeps): Promise<Served> {
+  const delays = deps.retryDelaysMs ?? [2_000, 6_000];
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await serveOnce(event, deps);
+    } catch (error) {
+      const wait = delays[attempt];
+      if (!(error instanceof MarketError && error.retryable) || wait === undefined) throw error;
+      deps.log?.(`retry   ${event.assignment_id}: ${error.message}`);
+      await new Promise((resolve) => setTimeout(resolve, wait));
+    }
+  }
+}
+
+export interface WebhookOptions extends ServiceOptions {
   secret: string;
-  /** Works a new hire once the 2xx is out. Default: `serveHire` needs `client` and `check` instead. */
-  onHire?: (event: HireCreatedEvent) => Promise<unknown>;
+  /** Works an assignment once the 2xx is out. Default: `serveHire` needs `client` and `check` instead. */
+  onHire?: (event: WorkEvent) => Promise<unknown>;
   client?: MarketClient;
   check?: CheckFn;
+  /** Passed to `serveHire`. */
+  retryDelaysMs?: readonly number[];
   /**
    * Keeps the work alive after the response: `after` in Next.js, `ctx.waitUntil` on a worker runtime. Without it the
    * work runs on in the same process, which suits a long-lived server only.
@@ -125,6 +166,11 @@ export interface WebhookOptions {
   waitUntil?: (task: Promise<unknown>) => void;
   log?: (line: string) => void;
   now?: () => number;
+}
+
+/** A value of an event as one short word of a log line. */
+function word(value: unknown): string {
+  return String(value).replace(/[^\w.:-]/g, "?").slice(0, 48);
 }
 
 function reply(status: number, body: Record<string, unknown>): Response {
@@ -139,7 +185,14 @@ export function createWebhookHandler(options: WebhookOptions): (request: Request
   const onHire =
     options.onHire ??
     (client && check
-      ? (event: HireCreatedEvent) => serveHire(event, { client, check, log })
+      ? (event: WorkEvent) =>
+          serveHire(event, {
+            client,
+            check,
+            log,
+            ...(options.networks ? { networks: options.networks } : {}),
+            ...(options.retryDelaysMs ? { retryDelaysMs: options.retryDelaysMs } : {}),
+          })
       : null);
   if (!onHire) throw new Error("createWebhookHandler needs onHire, or client and check");
   const seen = new Seen(2000);
@@ -175,19 +228,21 @@ export function createWebhookHandler(options: WebhookOptions): (request: Request
     const delivery = request.headers.get("x-market-delivery") ?? "";
     if (delivery && !seen.add(delivery)) return reply(200, { ok: true, duplicate: true });
 
-    if (isHireCreated(event)) {
-      log(`hire    ${event.assignment_id}: ${event.amount} ${event.token}`);
+    if (isWork(event)) {
+      const id = event.assignment_id;
+      const price = event.event === "hire.created" ? `: ${word((event as HireCreatedEvent).amount)} ${word((event as HireCreatedEvent).token)}` : "";
+      log(`${event.event} ${id}${price}`);
       const task = Promise.resolve()
         .then(() => onHire(event))
         .catch((error: unknown) => {
-          log(`hire    ${event.assignment_id} failed: ${error instanceof Error ? error.message : String(error)}; the poll picks it up again`);
+          log(`${event.event} ${id} failed: ${error instanceof Error ? error.message : String(error)}; a poll of the agent's assignments picks it up`);
         });
       if (options.waitUntil) options.waitUntil(task);
     } else if (event.event === "hire.refunded") {
       const r = event as Record<string, unknown>;
-      log(`refund  ${String(r["assignment_id"])}: ${String(r["reason"])}`);
+      log(`refund  ${word(r["assignment_id"])}: ${word(r["reason"])}`);
     } else if (event.event !== "webhook.ping") {
-      log(`event   ${event.event}`);
+      log(`event   ${word(event.event)}`);
     }
     return reply(200, { ok: true });
   };

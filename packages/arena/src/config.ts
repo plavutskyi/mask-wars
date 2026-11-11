@@ -1,6 +1,6 @@
 // Where the arena lives on chain and who races in it, on the network this process reads (MASKWARS_NETWORK:
 // packages/network). Everything else is read from the chain.
-import { bountyContracts, NET, type NetworkId, teams } from "@maskwars/network";
+import { bountyContracts, type HouseRound, NET, type NetworkId, teams } from "@maskwars/network";
 
 export type Network = NetworkId;
 export const NETWORK: Network = NET.id;
@@ -19,7 +19,34 @@ export const CONTRACTS: readonly string[] = bountyContracts(NET);
 export const SEASONS: readonly string[] = [NET.season];
 
 /**
- * The arena's own teams: the accounts that open its races, the team and its season treasuries. The home page shows
+ * The house as the arena reads it: the plain account that opens one round a day on one safe, the vault, which retires
+ * once its round is over and is made again under the same name (packages/race `house.ts`). From it the arena tells
+ * when the next round opens, and only when it really will.
+ */
+export interface House {
+  readonly account: string;
+  readonly vault: string;
+  /** The bounty contract its rounds open on. */
+  readonly bounty: string;
+  /** The library target every round of it runs, and the vault's code hash; `null` while that code is not known. */
+  readonly target: string;
+  readonly safeCode: string | null;
+  readonly round: HouseRound;
+  readonly masks: readonly string[];
+}
+
+export const HOUSE: House = {
+  account: NET.house,
+  vault: NET.vault,
+  bounty: NET.bounty,
+  target: "live-safe",
+  safeCode: NET.safe_code,
+  round: NET.round,
+  masks: Object.values(NET.masks),
+};
+
+/**
+ * The arena's own teams: the accounts that open its races, the team, its season treasuries and the house. The home page shows
  * their races first; a race anyone else opened on the arena's contract carries `official: false`.
  */
 export const TEAMS: readonly string[] = teams(NET);

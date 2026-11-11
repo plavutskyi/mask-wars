@@ -1,0 +1,168 @@
+name: Jobs
+
+# The arena's masks at work on the jobs market (contracts/jobs, contracts/crews, docs/spec/jobs.md), on schedule and by
+# hand: NOVA, ONYX and ORACLE take the jobs they can win, seal their steps, reveal them, ask the judge and settle, each
+# with its own function-call keys (packages/race/src/work.ts). Nobody signs for them.
+#
+# 1. `take`: one pass over the board (the arena's reader, packages/arena/src/jobs; the contracts from
+#    packages/network). A mask takes a drain job on a sealed round of one of our teams whose safe lets it in, alone or
+#    with its crew (the repository variable JOBS_CREW), once a bond waits for it there: the bond is NEAR, which a
+#    function-call key never attaches, so the owner locks it (scripts/testnet/jobs-bond.ps1). It seals its step at once
+#    and, on later passes, reveals it, asks the judge once the round is over, and settles. If a job our masks are on
+#    follows one of the owner's hand rounds that nobody sealed in yet, the pass names that round for the race.
+# 2. `race`: `Live race` on that round, the same as the season's: the masks race the target in the sandbox, and the
+#    winner seals its plan, plays it on the real safe, reveals it and claims. The round's outcome decides the job.
+# 3. `finish`: passes alongside the race, from right after `take`: it reveals the masks' steps in the job's reveal
+#    window, which may open while the race still runs, and moves the job on as each window comes. In a run that raced,
+#    it follows the round for as long as the race may take (240 minutes at most), passing every 3 minutes while the
+#    round is open, and calls the judge, then settles, as soon as the round is drained.
+# A transaction of a mask that failed in `take` (a slot another mask took a moment before) turns that job red and
+# stops neither the race nor `finish`.
+#
+# The keys: MASK_KEYS, the masks' seeds, a secret of the `live-race` environment (`live-race-mainnet` on mainnet), the
+# same as the race's. A mask's key on the jobs contract and its key on the crews contract come from its seed
+# (scripts/testnet/jobs-keys.ps1 puts their public halves on chain): any method of its own on a job, never any NEAR.
+# `take` and `finish` name that environment and install the race package without running any install script; `guard`
+# stops the run if any key is a repository secret. `race` inherits the secrets, as the season does: a called workflow
+# gives its jobs their environment's secrets only when the caller inherits (with a list, the drain job read an empty
+# MASK_KEYS in the season's first rounds).
+#
+# The schedule runs only once the owner has set the repository variable JOBS_LIVE to `true`, after the masks' keys on
+# the jobs and crews contracts are on chain. A run started by hand waits for the owner's yes in `live-race-hand`; while
+# it waits, the scheduled runs wait behind it (one run at a time), so approve or cancel it soon.
+# This workflow runs from the public copy (plavutskyi/mask-wars), where Actions are on.
+
+on:
+  schedule:
+    # Every quarter hour, so a reveal window of a few minutes is not missed between runs.
+    - cron: "7,22,37,52 * * * *"
+  workflow_dispatch:
+    inputs:
+      race:
+        description: Race a hand round of ours that a job of our masks follows, if nobody sealed in it yet
+        type: boolean
+        default: true
+      wait:
+        description: Minutes a run that races nothing may wait for the next window of a job our masks are on (at most 120)
+        default: "100"
+
+# The network every job reads and signs on: the repository variable MASKWARS_NETWORK, testnet unless it says mainnet.
+# The accounts, the RPC and the contracts come from packages/network/<network>.json; a variable below that names an
+# account of the other network stops the job before it signs anything (packages/race/src/net.ts).
+env:
+  MASKWARS_NETWORK: ${{ vars.MASKWARS_NETWORK || 'testnet' }}
+
+# The token every job gets reads the code and nothing else. Actions are pinned to a commit, not a movable tag.
+permissions:
+  contents: read
+
+# One run at a time: a second one waits instead of taking the same job twice.
+concurrency:
+  group: jobs
+  cancel-in-progress: false
+
+jobs:
+  guard:
+    # The keys live in environments only. This job names none, so it sees a key only if it is a repository secret: then
+    # nothing runs. It checks out no code, so nothing here could read a key that is there. `race` inherits every
+    # secret, so the minds' payment key is checked too.
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: The keys are in their environments, not in the repository
+        env:
+          MASK_KEYS: ${{ secrets.MASK_KEYS }}
+          KEEPER_SEED: ${{ secrets.KEEPER_SEED }}
+          OUTLAYER_PAYMENT_KEY: ${{ secrets.OUTLAYER_PAYMENT_KEY }}
+        run: |
+          bad=0
+          for name in MASK_KEYS KEEPER_SEED OUTLAYER_PAYMENT_KEY; do
+            if [ -n "${!name}" ]; then
+              echo "::error::$name is a repository secret: move it into its environment (live-race or outlayer) and delete it from the repository's secrets"
+              bad=1
+            fi
+          done
+          exit $bad
+
+  hand:
+    # A run started by hand waits for the owner's yes; the schedule's runs never do.
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment: live-race-hand
+    timeout-minutes: 2
+    steps:
+      - run: echo "the owner let this run start"
+
+  take:
+    needs: [guard, hand]
+    if: >-
+      ${{ !cancelled() && needs.guard.result == 'success' && needs.hand.result != 'failure' &&
+      (github.event_name == 'workflow_dispatch' || vars.JOBS_LIVE == 'true') }}
+    runs-on: ubuntu-latest
+    environment: ${{ vars.MASKWARS_NETWORK == 'mainnet' && 'live-race-mainnet' || 'live-race' }}
+    timeout-minutes: 15
+    outputs:
+      bounty: ${{ steps.take.outputs.bounty }}
+      challenge: ${{ steps.take.outputs.challenge }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+      # No cache from other runs, and no install script runs on a runner that holds keys.
+      - run: pnpm install --frozen-lockfile --ignore-scripts --filter @maskwars/race...
+      - name: Take jobs, seal, reveal, judge, settle
+        id: take
+        env:
+          MASK_KEYS: ${{ secrets.MASK_KEYS }}
+          MASK_ACCOUNTS: ${{ vars.MASKWARS_NETWORK != 'mainnet' && vars.MASK_ACCOUNTS || '' }}
+          JOBS_CREW: ${{ vars.JOBS_CREW }}
+          BOUNTY_TEAM: ${{ vars.MASKWARS_NETWORK != 'mainnet' && vars.BOUNTY_TEAM || '' }}
+          # The schedule races too; by hand, as the input says.
+          RACE: ${{ (github.event_name == 'schedule' || inputs.race) && '1' || '0' }}
+          WAIT_MINUTES: "0"
+        run: node packages/race/scripts/jobs.ts
+
+  race:
+    needs: take
+    # Whatever else `take` did: a round it named is raced even if a mask's call on another job failed.
+    if: ${{ !cancelled() && needs.take.outputs.bounty != '' }}
+    uses: ./.github/workflows/live-race.yml
+    with:
+      challenge: ${{ needs.take.outputs.challenge }}
+      bounty: ${{ needs.take.outputs.bounty }}
+      attempts: "5"
+      live: true
+    # `inherit`, not a list, as in season.yml: only then does GitHub give the called jobs their environments' secrets.
+    # What a job can read is still set by its own `environment:`, and `guard` above stops the run if any key is a
+    # repository secret.
+    secrets: inherit
+
+  finish:
+    # Alongside the race, not after it: the job's reveal window may open and close while the race still runs.
+    needs: [guard, take]
+    if: ${{ !cancelled() && needs.guard.result == 'success' && (needs.take.result == 'success' || needs.take.result == 'failure') }}
+    runs-on: ubuntu-latest
+    environment: ${{ vars.MASKWARS_NETWORK == 'mainnet' && 'live-race-mainnet' || 'live-race' }}
+    timeout-minutes: 270
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+      - run: pnpm install --frozen-lockfile --ignore-scripts --filter @maskwars/race...
+      - name: Reveal, judge and settle as their windows come
+        env:
+          MASK_KEYS: ${{ secrets.MASK_KEYS }}
+          MASK_ACCOUNTS: ${{ vars.MASKWARS_NETWORK != 'mainnet' && vars.MASK_ACCOUNTS || '' }}
+          JOBS_CREW: ${{ vars.JOBS_CREW }}
+          BOUNTY_TEAM: ${{ vars.MASKWARS_NETWORK != 'mainnet' && vars.BOUNTY_TEAM || '' }}
+          RACE: "0"
+          # A run that raced follows its round for as long as the race may take (Live race: 15 minutes to arm, 90 to race,
+          # 120 to play the plan, 15 to settle): the run holds the queue that long anyway. One that raced nothing waits less than the time to
+          # the next scheduled run, so runs do not pile up; by hand, as asked.
+          FOLLOW_ROUND: ${{ needs.take.outputs.bounty }}
+          WAIT_MINUTES: ${{ needs.take.outputs.bounty != '' && '240' || (github.event_name == 'workflow_dispatch' && inputs.wait || '12') }}
+        run: node packages/race/scripts/jobs.ts

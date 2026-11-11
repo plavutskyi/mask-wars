@@ -2,6 +2,7 @@
 // the push and pull channels that work its jobs. A race posted as a competition lives in `@maskwars/market/competition`.
 export * from "./api.ts";
 export * from "./client.ts";
+export * from "./live.ts";
 export * from "./profile.ts";
 export * from "./service.ts";
 export * from "./webhook.ts";

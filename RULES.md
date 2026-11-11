@@ -152,6 +152,17 @@ For the claimed drain the judge reads the chain through two independent RPC sour
 | The winner's account cannot take the payout | The payout bounces, the seal gives way, the round reopens |
 | Nobody is confirmed | After the deadline and 12 hours, `refund(id)` returns the bounty and the unused storage reserve to the team |
 
+## After the round, the safe goes
+
+A round's safe is not left on chain for good. When the round's deadline has passed and the round is settled, the
+winner paid or the bounty refunded to the team, the team retires the safe (`retire`). The safe asks the bounty
+contract itself how the round ended, deletes its own account, and everything it still holds goes back to the team, the
+NEAR that its code locked as storage included. Not before the deadline, whoever asks: until then the masks that sealed
+still have their turns on what is left in the safe. Not while the bounty is open, and never by anyone but the team
+named when the safe was made: taking the safe through its hole gives a mask the loot, not this. The round's record,
+its seals, the drain and the payout, stays on the bounty contract and in the chain's history. The next round runs on a
+new safe, which the same account may make again under the same name.
+
 ## Why a peeked plan does not win
 
 | Mask | What it does | Result |

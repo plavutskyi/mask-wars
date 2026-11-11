@@ -1,7 +1,10 @@
 /**
- * Just enough NEAR to sign and send one function call from a mask's key, with nothing but `node:crypto`: base58,
- * the Borsh layout of a transaction with a single `FunctionCall`, ed25519 keys as NEAR writes them, and JSON-RPC.
- * A function-call key can do nothing more than this anyway: one action, no deposit, one receiver.
+ * Just enough NEAR to sign and send a transaction with nothing but `node:crypto`: base58, the Borsh layout of a
+ * transaction, ed25519 keys as NEAR writes them, and JSON-RPC.
+ *
+ * A mask's function-call key can do one thing only: one `FunctionCall`, no deposit, one receiver (`call`). The house's
+ * full key (house.ts) makes the round's safe in one transaction of four actions, `CreateAccount`, `Transfer`,
+ * `DeployContract` and `FunctionCall`, and opens the round with a call that carries the deposit (`send`).
  */
 import { createHash, createPrivateKey, createPublicKey, sign, type KeyObject } from "node:crypto";
 
@@ -83,6 +86,44 @@ export class NearKey {
   }
 }
 
+/**
+ * One action of a transaction. Only the four the arena sends: nearcore numbers them 0 to 3 in `Action`, and Borsh writes
+ * that number as the action's first byte.
+ */
+export type Action =
+  | { readonly kind: "createAccount" }
+  | { readonly kind: "deployContract"; readonly code: Uint8Array }
+  | { readonly kind: "functionCall"; readonly method: string; readonly args: Uint8Array; readonly gas: bigint; readonly deposit: bigint }
+  | { readonly kind: "transfer"; readonly deposit: bigint };
+
+const TGAS = 10n ** 12n;
+
+/** Makes the transaction's receiver a new account. It gets no key unless the same transaction adds one. */
+export const createAccount = (): Action => ({ kind: "createAccount" });
+/** Moves `yocto` yoctoNEAR from the signer to the receiver. */
+export const transfer = (yocto: bigint): Action => ({ kind: "transfer", deposit: yocto });
+/** Puts `code` (a wasm) on the receiver's account. */
+export const deployContract = (code: Uint8Array): Action => ({ kind: "deployContract", code });
+/** Calls `method(args)` on the receiver with `gasTgas` TGas and, if given, a deposit in yoctoNEAR. */
+export const functionCall = (method: string, args: object, gasTgas: number, deposit = 0n): Action => ({
+  kind: "functionCall",
+  method,
+  args: Buffer.from(JSON.stringify(args)),
+  gas: BigInt(gasTgas) * TGAS,
+  deposit,
+});
+
+/** A transaction (V0) as nearcore hashes and signs it: who signs with which key, to whom, and the actions in order. */
+export interface Transaction {
+  readonly signer: string;
+  readonly publicKey: Uint8Array;
+  readonly nonce: bigint;
+  readonly receiver: string;
+  readonly blockHash: Uint8Array;
+  readonly actions: readonly Action[];
+}
+
+/** A transaction of one `FunctionCall`: all a function-call key can sign. */
 export interface FunctionCallTx {
   readonly signer: string;
   readonly publicKey: Uint8Array;
@@ -95,6 +136,9 @@ export interface FunctionCallTx {
   readonly deposit: bigint;
 }
 
+const U64_MAX = (1n << 64n) - 1n;
+const U128_MAX = (1n << 128n) - 1n;
+
 class Borsh {
   readonly #parts: Buffer[] = [];
   u8(n: number) {
@@ -106,11 +150,13 @@ class Borsh {
     this.#parts.push(b);
   }
   u64(n: bigint) {
+    if (n < 0n || n > U64_MAX) throw new Error("not a u64");
     const b = Buffer.alloc(8);
     b.writeBigUInt64LE(n);
     this.#parts.push(b);
   }
   u128(n: bigint) {
+    if (n < 0n || n > U128_MAX) throw new Error("not a u128");
     const b = Buffer.alloc(16);
     b.writeBigUInt64LE(n & 0xffff_ffff_ffff_ffffn);
     b.writeBigUInt64LE(n >> 64n, 8);
@@ -131,9 +177,33 @@ class Borsh {
   }
 }
 
-/** Borsh of a `Transaction` (V0) with one `FunctionCall` action, as nearcore hashes and signs it. */
-export function encodeTx(tx: FunctionCallTx): Buffer {
+function writeAction(w: Borsh, a: Action): void {
+  switch (a.kind) {
+    case "createAccount":
+      w.u8(0);
+      return;
+    case "deployContract":
+      w.u8(1);
+      w.bytes(a.code);
+      return;
+    case "functionCall":
+      w.u8(2);
+      w.string(a.method);
+      w.bytes(a.args);
+      w.u64(a.gas);
+      w.u128(a.deposit);
+      return;
+    case "transfer":
+      w.u8(3);
+      w.u128(a.deposit);
+      return;
+  }
+}
+
+/** Borsh of a `Transaction` (V0), as nearcore hashes and signs it. */
+export function encodeTransaction(tx: Transaction): Buffer {
   if (tx.blockHash.length !== 32 || tx.publicKey.length !== 32) throw new Error("block hash and key are 32 bytes");
+  if (tx.actions.length === 0) throw new Error("a transaction carries at least one action");
   const w = new Borsh();
   w.string(tx.signer);
   w.u8(0); // ed25519
@@ -141,18 +211,31 @@ export function encodeTx(tx: FunctionCallTx): Buffer {
   w.u64(tx.nonce);
   w.string(tx.receiver);
   w.fixed(tx.blockHash);
-  w.u32(1);
-  w.u8(2); // Action::FunctionCall
-  w.string(tx.method);
-  w.bytes(tx.args);
-  w.u64(tx.gas);
-  w.u128(tx.deposit);
+  w.u32(tx.actions.length);
+  for (const a of tx.actions) writeAction(w, a);
   return w.done();
 }
 
+const asTransaction = (tx: Transaction | FunctionCallTx): Transaction =>
+  "actions" in tx
+    ? tx
+    : {
+        signer: tx.signer,
+        publicKey: tx.publicKey,
+        nonce: tx.nonce,
+        receiver: tx.receiver,
+        blockHash: tx.blockHash,
+        actions: [{ kind: "functionCall", method: tx.method, args: tx.args, gas: tx.gas, deposit: tx.deposit }],
+      };
+
+/** Borsh of a transaction with one `FunctionCall` action. */
+export function encodeTx(tx: FunctionCallTx): Buffer {
+  return encodeTransaction(asTransaction(tx));
+}
+
 /** The signed transaction, base64 for `send_tx`, and its hash. */
-export function signTx(tx: FunctionCallTx, key: NearKey): { hash: string; base64: string } {
-  const body = encodeTx(tx);
+export function signTx(tx: Transaction | FunctionCallTx, key: NearKey): { hash: string; base64: string } {
+  const body = encodeTransaction(asTransaction(tx));
   const digest = createHash("sha256").update(body).digest();
   const w = new Borsh();
   w.fixed(body);
@@ -169,14 +252,17 @@ export interface Chain {
 export class JsonRpc implements Chain {
   readonly url: string;
   readonly timeoutMs: number;
+  readonly #fetch: typeof fetch;
 
-  constructor(url: string, timeoutMs = 60_000) {
+  /** `fetchImpl` stands in for the network: a recording or its replay (test/tape.ts). */
+  constructor(url: string, timeoutMs = 60_000, fetchImpl: typeof fetch = fetch) {
     this.url = url;
     this.timeoutMs = timeoutMs;
+    this.#fetch = fetchImpl;
   }
 
   async rpc(method: string, params: unknown): Promise<unknown> {
-    const res = await fetch(this.url, {
+    const res = await this.#fetch(this.url, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ jsonrpc: "2.0", id: "maskwars", method, params }),
@@ -185,9 +271,44 @@ export class JsonRpc implements Chain {
     const body = (await res.json()) as { result?: unknown; error?: { name?: string; cause?: { name?: string }; data?: unknown } };
     if (body.error) {
       const e = body.error;
-      throw new Error(`${method}: ${e.cause?.name ?? e.name ?? "error"} ${typeof e.data === "string" ? e.data : JSON.stringify(e.data ?? "")}`);
+      throw new RpcError(`${method}: ${e.cause?.name ?? e.name ?? "error"} ${typeof e.data === "string" ? e.data : JSON.stringify(e.data ?? "")}`);
     }
     return body.result;
+  }
+}
+
+/** The chain answered, and the answer is an error: another endpoint would answer the same. */
+export class RpcError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "RpcError";
+  }
+}
+
+/**
+ * Several endpoints, the first preferred: a request goes to the next one only when an endpoint does not answer at all
+ * (the network, a timeout, a page that is not JSON-RPC). An answer that is an error is the chain's and is not asked
+ * again elsewhere. A signed transaction sent again elsewhere is the same transaction: it lands once.
+ */
+export class FailoverRpc implements Chain {
+  readonly #chains: readonly Chain[];
+
+  constructor(chains: readonly Chain[]) {
+    if (chains.length === 0) throw new Error("at least one endpoint");
+    this.#chains = chains;
+  }
+
+  async rpc(method: string, params: unknown): Promise<unknown> {
+    let last: unknown;
+    for (const c of this.#chains) {
+      try {
+        return await c.rpc(method, params);
+      } catch (e) {
+        if (e instanceof RpcError) throw e;
+        last = e;
+      }
+    }
+    throw last;
   }
 }
 
@@ -233,17 +354,15 @@ function successValue(status: unknown): unknown {
 }
 
 /**
- * Signs `method(args)` on `receiver` as `signer` with `key` and waits for the result. `waitUntil` FINAL waits for every
- * receipt; INCLUDED_FINAL only for the transaction to be in a final block.
+ * Signs a transaction of `actions` to `receiver` as `signer` with `key` and waits for the result. `waitUntil` FINAL
+ * waits for every receipt; INCLUDED_FINAL only for the transaction to be in a final block.
  */
-export async function call(
+export async function send(
   chain: Chain,
   signer: string,
   key: NearKey,
   receiver: string,
-  method: string,
-  args: object,
-  gasTgas: number,
+  actions: readonly Action[],
   waitUntil: "FINAL" | "INCLUDED_FINAL" = "FINAL",
 ): Promise<CallResult> {
   const access = (await chain.rpc("query", {
@@ -252,16 +371,13 @@ export async function call(
     account_id: signer,
     public_key: key.publicKeyText,
   })) as { nonce: number | string; block_hash: string };
-  const tx: FunctionCallTx = {
+  const tx: Transaction = {
     signer,
     publicKey: key.publicKey,
     nonce: BigInt(access.nonce) + 1n,
     receiver,
     blockHash: base58Decode(access.block_hash),
-    method,
-    args: Buffer.from(JSON.stringify(args)),
-    gas: BigInt(gasTgas) * 10n ** 12n,
-    deposit: 0n,
+    actions,
   };
   const signed = signTx(tx, key);
   const r = (await chain.rpc("send_tx", { signed_tx_base64: signed.base64, wait_until: waitUntil })) as {
@@ -278,4 +394,18 @@ export async function call(
     return value === undefined ? failed : { ...failed, value };
   }
   return value === undefined ? { hash: signed.hash, ok: true, logs } : { hash: signed.hash, ok: true, value, logs };
+}
+
+/** Signs `method(args)` on `receiver` as `signer` with `key`, no deposit, and waits for the result (`send`). */
+export function call(
+  chain: Chain,
+  signer: string,
+  key: NearKey,
+  receiver: string,
+  method: string,
+  args: object,
+  gasTgas: number,
+  waitUntil: "FINAL" | "INCLUDED_FINAL" = "FINAL",
+): Promise<CallResult> {
+  return send(chain, signer, key, receiver, [functionCall(method, args, gasTgas)], waitUntil);
 }

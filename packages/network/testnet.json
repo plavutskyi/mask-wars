@@ -7,6 +7,24 @@
   ],
   "season": "season.tinygif8324.testnet",
   "scheduler": "scheduler.tinygif8324.testnet",
+  "house": "house.tinygif8324.testnet",
+  "vault": "vault.house.tinygif8324.testnet",
+  "safe_code": null,
+  "round": {
+    "live": false,
+    "judge": "1f8e1aca123fa63b5b54447e9c722ea78f73322a53efe0ed15a5528b827f86f7",
+    "first_minute": 1080,
+    "every_minutes": 1440,
+    "safe": "1.93",
+    "stake": "1.65",
+    "deposit": "0.25",
+    "min_loot": "0.1",
+    "gas": "0.1",
+    "mask_keep": "0.4",
+    "hours": 4,
+    "commit_minutes": 45,
+    "reveal_minutes": 60
+  },
   "factory": "masks.tinygif8324.testnet",
   "jobs": "jobs.tinygif8324.testnet",
   "crews": "crews.tinygif8324.testnet",
@@ -36,6 +54,7 @@
     "season": "4",
     "factory": "10",
     "scheduler": "2",
+    "house": "2.5",
     "mask": "0.2",
     "safe": "3",
     "jobs": "10",
@@ -51,6 +70,7 @@
       "deposit_max": "1.1",
       "safe_max": "3"
     },
+    "house_max": "6",
     "fund_max": "50",
     "fuel_max": "5"
   }

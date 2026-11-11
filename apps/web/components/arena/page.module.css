@@ -100,7 +100,16 @@
 
 .maskTitle {
   --size: clamp(56px, 8vw, 120px);
+  --em: var(--chars);
   line-height: 0.92;
+}
+
+/* A mask's name stands on one line at any width: its size stops where the name, as wide as its own letters make it
+   (--em, title.ts), fills the column. 2.5% on top for the pairs the face sets apart (WW, YY, 77): no name of up to
+   8 letters and digits runs further over the sum of its letters. */
+.maskTitle:not([data-long]) {
+  font-size: min(var(--size), calc(100cqi / (var(--em) * 1.025)));
+  white-space: nowrap;
 }
 
 /* A long name narrows on the width axis first (§4), then gives up size: the longest word always fits the column. */

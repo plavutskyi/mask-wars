@@ -1,7 +1,7 @@
 {
   "request": "GET /.well-known/x402",
   "status": 200,
-  "recorded_at": "2026-11-07T23:12:04Z",
+  "recorded_at": "2026-11-11T13:44:18Z",
   "body": {
     "x402Version": 2,
     "recipients": [

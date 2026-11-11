@@ -2,9 +2,13 @@
 // seen, and when the chain was read. Text in an answer may be written by others (a report's reason): it is shown as
 // text, never followed.
 import type { CheckResult, Reason } from '@maskwars/check';
+import { NET } from '@maskwars/network';
 
-/** The arena's first live safe: a mask drained it in race-0003, so the page opens on a real BLOCK. */
-export const EXAMPLE = 'safe-0001.tinygif8324.testnet';
+/**
+ * The arena's first live safe on the network this site reads, named from its settings (packages/network): the team
+ * opened it as `safe-0001.<team>` on both networks and a mask drained it there, so the page opens on a real BLOCK.
+ */
+export const EXAMPLE = `safe-0001.${NET.admin}`;
 
 /** The strongest reason's own words: the line under the verdict. */
 export function lineOf(check: Pick<CheckResult, 'verdict' | 'summary' | 'reasons'>): string {

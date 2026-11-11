@@ -35,6 +35,15 @@
 //! does only after the deadline and the claim grace, with no claim left with the judge and no drain confirmed. The
 //! safe asks that contract itself; the team's word is not enough. A reclaim is no move: it changes neither the round
 //! the safe is armed for, nor the seals, nor the count of moves the judge reads.
+//!
+//! A safe does not stay on chain for good. Once its round is over the team retires it (`retire`): the safe deletes
+//! its own account, and all it holds, the NEAR its code and state locked included, goes to the team. Only then: the
+//! safe asks the bounty contract that armed it, and goes only when the round's deadline has passed and its bounty is
+//! paid to the winner or refunded. Until the deadline the sealed masks still have their turns, so nobody retires the
+//! safe, the team included. A safe that took no round locks nobody's turn and is retired at once. The account that
+//! made the safe may make it again under the same name for the next round: nothing of the old one is left, and an
+//! answer still on its way to the old safe moves nothing in the new one (`on_retire` and `on_bounty` take only the
+//! answer asked for by the safe as it was armed).
 
 use near_sdk::json_types::{U128, U64};
 use near_sdk::serde::Deserialize;
@@ -51,13 +60,15 @@ pub const MAX_MASKS: usize = 16;
 pub const TURN_NS: u64 = 3 * 60 * 1_000_000_000;
 /// What the safe logs its events under.
 pub const STANDARD: &str = "maskwars_safe";
-const VERSION: &str = "1.4.0";
+const VERSION: &str = "1.5.0";
 /// The bounty contract lets masks claim for 12 hours after the deadline (`CLAIM_GRACE_HOURS` there): the team takes
 /// nothing back before that is over.
 pub const CLAIM_GRACE_NS: u64 = 12 * 60 * 60 * 1_000_000_000;
 /// The bounty contract's `get` of the round, and the safe's answer to it.
 const VIEW_GAS: Gas = Gas::from_tgas(10);
 const ON_BOUNTY_GAS: Gas = Gas::from_tgas(10);
+/// The safe's answer to the bounty contract's word when it retires: the event and the deletion of its own account.
+const ON_RETIRE_GAS: Gas = Gas::from_tgas(10);
 /// A mask whose seal has not reached the safe.
 const NO_SEAL: u32 = u32::MAX;
 /// Why a mask may not move the safe right now, but will be let in later in the round.
@@ -65,6 +76,12 @@ pub const OTHERS_TURN: &str = "another mask has its turn on the safe";
 pub const EARLIER_SEAL: &str = "an earlier seal goes first";
 /// A seal that missed its slot: it plays once no later seal can still play in its own.
 pub const SLOT_MISSED: &str = "this seal missed its slot: the later seals play first";
+/// The team asked to retire the safe before its round's deadline.
+pub const BEFORE_DEADLINE: &str = "the round's deadline has not come: the sealed masks still have their turns";
+/// The safe has already sent the deletion of its own account.
+pub const RETIRING: &str = "the safe is retiring already";
+/// An answer about a round the safe is not armed for: it was on its way to an earlier safe of the same name.
+pub const ANOTHER_ROUND: &str = "the answer is about another round than the one the safe is armed for";
 
 #[near(contract_state)]
 #[derive(PanicOnDefault)]
@@ -91,6 +108,9 @@ pub struct Safe {
     /// Each mask's seal number in the round, by its place in `masks`; `NO_SEAL` until the bounty contract tells the
     /// safe the mask sealed. A fixed array, written in full by `new`, so seals never grow the safe's storage.
     seals: [u32; MAX_MASKS],
+    /// The safe has sent the deletion of its own account (`retire`): it sends it once. A byte the safe pays for
+    /// from `new` on, so a safe with nothing left to pay for storage still retires. New fields go last.
+    retiring: bool,
 }
 
 /// The round the safe is armed for.
@@ -201,13 +221,16 @@ impl Safe {
             turn: None,
             turns: 0,
             seals: [NO_SEAL; MAX_MASKS],
+            retiring: false,
         }
     }
 
     /// The bounty contract named at deployment arms the safe for one round, when the round opens: `bounty` is its id,
     /// `opens_ns` the end of its commit window, `masks` its masks, which must be exactly the safe's, and `team` who
     /// opened it, which must be the safe's team. Once, and only a safe that is its own owner and that nobody has moved.
+    /// A safe that sent its own deletion takes no round: the round would stand on an account about to be gone.
     pub fn arm(&mut self, bounty: String, opens_ns: U64, masks: Vec<AccountId>, team: AccountId) {
+        require!(!self.retiring, RETIRING);
         let by = env::predecessor_account_id();
         require!(self.arbiter.as_ref() == Some(&by), "only the bounty contract named at deployment arms the safe");
         require!(self.team.as_ref() == Some(&team), "only a round the safe's own team opens arms the safe");
@@ -271,14 +294,21 @@ impl Safe {
         ext_arbiter::ext(round.arbiter)
             .with_static_gas(VIEW_GAS)
             .get(round.bounty)
-            .then(Self::ext(env::current_account_id()).with_static_gas(ON_BOUNTY_GAS).on_bounty())
+            .then(Self::ext(env::current_account_id()).with_static_gas(ON_BOUNTY_GAS).on_bounty(round.armed_ns.0))
     }
 
     /// The bounty contract's word on the round the safe is armed for. Refunded, with the claim grace over: what the
     /// safe can pay out goes to the team, and the answer comes once it is there. Anything else takes nothing.
+    /// `armed_ns` is when the safe that asked was armed: an answer on its way to a safe that has since retired tells
+    /// a new safe of the same name, armed at another moment, nothing about its own round.
     #[private]
-    pub fn on_bounty(&mut self, #[callback_result] bounty: Result<Option<Bounty>, PromiseError>) -> PromiseOrValue<()> {
+    pub fn on_bounty(
+        &mut self,
+        #[serializer(borsh)] armed_ns: u64,
+        #[callback_result] bounty: Result<Option<Bounty>, PromiseError>,
+    ) -> PromiseOrValue<()> {
         let round = self.round.clone().unwrap_or_else(|| env::panic_str("the safe took no round"));
+        require!(round.armed_ns.0 == armed_ns, ANOTHER_ROUND);
         let team = self.team.clone().unwrap_or_else(|| env::panic_str("a practice safe has no team"));
         let bounty = bounty.ok().flatten().unwrap_or_else(|| env::panic_str("the bounty contract did not answer"));
         match bounty.status.state.as_str() {
@@ -295,6 +325,45 @@ impl Safe {
             return PromiseOrValue::Value(());
         }
         PromiseOrValue::Promise(Promise::new(team).transfer(NearToken::from_yoctonear(amount)))
+    }
+
+    /// The safe's team retires the safe: the safe deletes its own account, and its whole balance, the NEAR its code
+    /// and state locked included, goes to the team. Only the team named at deployment, and never while the safe's
+    /// round can still be played. A safe that took no round goes at once: nobody could move it, and no bounty stands
+    /// on it. A safe armed for a round asks the bounty contract that armed it how the round ended (`on_retire`); the
+    /// team's word is not enough. Nothing changes in the safe until that answer lets it go.
+    pub fn retire(&mut self) -> Promise {
+        let team = self.team.clone().unwrap_or_else(|| env::panic_str("a practice safe has no team"));
+        require!(env::predecessor_account_id() == team, "only the safe's team retires it");
+        let Some(round) = self.round.clone() else { return self.leave("", team) };
+        ext_arbiter::ext(round.arbiter)
+            .with_static_gas(VIEW_GAS)
+            .get(round.bounty)
+            .then(Self::ext(env::current_account_id()).with_static_gas(ON_RETIRE_GAS).on_retire(round.armed_ns.0))
+    }
+
+    /// The bounty contract's word on the round the safe is armed for, when the team retires the safe. The round is
+    /// over, its bounty paid to the winner (`drained`, `paid`) or refunded to the team, and its deadline has passed:
+    /// the safe goes, and all it holds goes to the team. Until the deadline the sealed masks still have their turns,
+    /// whoever was paid, so the safe stays. An open round, no answer, or an answer the safe cannot read: the safe
+    /// stays as it was. `armed_ns` is when the safe that asked was armed, as in `on_bounty`.
+    #[private]
+    pub fn on_retire(
+        &mut self,
+        #[serializer(borsh)] armed_ns: u64,
+        #[callback_result] bounty: Result<Option<Bounty>, PromiseError>,
+    ) -> Promise {
+        let round = self.round.clone().unwrap_or_else(|| env::panic_str("the safe took no round"));
+        require!(round.armed_ns.0 == armed_ns, ANOTHER_ROUND);
+        let team = self.team.clone().unwrap_or_else(|| env::panic_str("a practice safe has no team"));
+        let bounty = bounty.ok().flatten().unwrap_or_else(|| env::panic_str("the bounty contract did not answer"));
+        match bounty.status.state.as_str() {
+            "refunded" | "drained" | "paid" => {}
+            "open" | "judging" => env::panic_str("the round is not over: its bounty is still open"),
+            _ => env::panic_str("the bounty contract does not say how the round ended"),
+        }
+        require!(env::block_timestamp() >= bounty.deadline_ns.0, BEFORE_DEADLINE);
+        self.leave(&round.bounty, team)
     }
 
     /// NEAR the safe can pay out: its balance minus what its own storage locks.
@@ -440,6 +509,18 @@ impl Safe {
             .filter(|&j| !self.first.contains_key(&self.masks[j]) && now < self.slot_closes(j))
             .map(|j| opens + TURN_NS * self.rank(j))
             .min()
+    }
+
+    /// The safe deletes its own account and leaves everything to its team. Only the account itself can delete it, so
+    /// the deletion is the safe's own promise to itself, and the safe sends it once: a second one could reach a new
+    /// safe made under the same name. In the event `bounty` is the round's id, empty for a safe that took none, and
+    /// `amount` the safe's balance as it goes.
+    fn leave(&mut self, bounty: &str, team: AccountId) -> Promise {
+        require!(!self.retiring, RETIRING);
+        self.retiring = true;
+        let amount = env::account_balance().as_yoctonear();
+        event("retired", format!(r#"{{"bounty":"{}","to":"{}","amount":"{}"}}"#, bounty, team, amount));
+        Promise::new(env::current_account_id()).delete_account(team)
     }
 
     fn place(&self, who: &AccountId) -> Option<usize> {
@@ -984,99 +1065,8 @@ mod tests {
         }
     }
 
-    // A round nobody won (final review, finding 2): its NEAR stayed in a safe nobody holds a key to, for good.
-
-    /// The round's deadline: an hour after the commit window.
-    const DEADLINE: u64 = OPENS + 3600 * S;
-
-    /// What the bounty contract's `get` answers for the round.
-    fn bounty_is(state: &str) -> Result<Option<Bounty>, PromiseError> {
-        let answer = serde_json::json!({ "owner": TEAM, "amount": "1", "target": SAFE,
-                                         "deadline_ns": DEADLINE.to_string(), "status": { "state": state } });
-        Ok(Some(serde_json::from_value(answer).unwrap()))
-    }
-
-    /// The receipts the call made, readable: receiver, then each call with its arguments, or the action.
-    fn receipts() -> String {
-        let mut out = String::new();
-        for r in near_sdk::test_utils::get_created_receipts() {
-            out.push_str(&format!("-> {}:", r.receiver_id));
-            for a in r.actions {
-                match a {
-                    near_sdk::mock::MockAction::FunctionCallWeight { method_name, args, .. } => out.push_str(&format!(
-                        " call {}({})",
-                        String::from_utf8_lossy(&method_name),
-                        String::from_utf8_lossy(&args)
-                    )),
-                    other => out.push_str(&format!(" {other:?}")),
-                }
-            }
-            out.push('\n');
-        }
-        out
-    }
-
-    #[test]
-    fn only_the_team_of_an_armed_safe_asks_to_take_back_what_its_round_left() {
-        let mut s = armed();
-        for who in [NOVA, "stranger.testnet", BOUNTY, SAFE] {
-            as_at(who, DEADLINE + CLAIM_GRACE_NS);
-            assert_eq!(panics(|| drop(s.reclaim())), "only the safe's team takes back what its round left", "{who}");
-        }
-        as_at(TEAM, DEADLINE + CLAIM_GRACE_NS);
-        drop(s.reclaim());
-        // The safe asks the bounty contract that armed it how its round ended; the team's word is not enough.
-        let text = receipts();
-        assert!(text.contains(&format!("-> {BOUNTY}: call get({{\"id\":\"race-0004\"}})")), "{text}");
-        assert!(text.contains(&format!("-> {SAFE}: call on_bounty()")), "{text}");
-        let mut p = practice();
-        as_at(TEAM, DEADLINE + CLAIM_GRACE_NS);
-        assert_eq!(panics(|| drop(p.reclaim())), "a practice safe has no team");
-        let mut f = fresh(&[NOVA, ONYX]);
-        as_at(TEAM, DEADLINE + CLAIM_GRACE_NS);
-        assert_eq!(panics(|| drop(f.reclaim())), "the safe took no round");
-    }
-
-    #[test]
-    fn the_team_takes_back_a_round_nobody_won_only_once_its_bounty_is_refunded_and_the_grace_is_over() {
-        let mut s = armed();
-        as_at(SAFE, DEADLINE + CLAIM_GRACE_NS);
-        assert_eq!(panics(|| drop(s.on_bounty(bounty_is("open")))), "the round is not over: its bounty is still open");
-        assert_eq!(panics(|| drop(s.on_bounty(Err(PromiseError::Failed)))), "the bounty contract did not answer");
-        as_at(SAFE, DEADLINE + CLAIM_GRACE_NS - 1);
-        assert_eq!(panics(|| drop(s.on_bounty(bounty_is("refunded")))), "the masks can still claim");
-        assert!(receipts().is_empty(), "nothing left the safe");
-        as_at(SAFE, DEADLINE + CLAIM_GRACE_NS);
-        let back = s.on_bounty(bounty_is("refunded"));
-        assert!(matches!(back, PromiseOrValue::Promise(_)), "the answer comes once the NEAR is with the team");
-        drop(back);
-        // 5 NEAR, 1 of them locked by the safe's storage: 4 go to the team.
-        let text = receipts();
-        assert!(text.contains(TEAM) && text.contains(&NearToken::from_near(4).as_yoctonear().to_string()), "{text}");
-        let e = events();
-        assert_eq!(e[0]["event"], "reclaimed");
-        let four = NearToken::from_near(4).as_yoctonear().to_string();
-        assert_eq!(e[0]["data"], serde_json::json!({ "bounty": "race-0004", "to": TEAM, "amount": four }));
-        // A reclaim is no move: the round the judge checks and the count of moves are as they were.
-        assert_eq!(s.get_round().unwrap().bounty, "race-0004");
-        assert_eq!(s.touches(acc(TEAM)), Touches { moves: U64(0), last_ns: None, first_ns: None });
-    }
-
-    #[test]
-    fn after_a_mask_won_the_round_the_team_takes_nothing() {
-        let mut s = armed();
-        as_at(NOVA, OPENS);
-        s.set_owner(acc(NOVA));
-        sweep_all(&mut s, NOVA, OPENS + S);
-        as_at(SAFE, DEADLINE + CLAIM_GRACE_NS);
-        for state in ["drained", "paid"] {
-            assert_eq!(
-                panics(|| drop(s.on_bounty(bounty_is(state)))),
-                "a mask won the round: what it left in the safe stays"
-            );
-        }
-        assert!(receipts().is_empty(), "nothing left the safe");
-    }
+    // What happens to the safe after its round (`reclaim`, `retire`) is tested in tests/after_round.rs.
+    mod after_round;
 
     #[test]
     fn a_mask_has_one_turn() {

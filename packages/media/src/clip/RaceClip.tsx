@@ -9,8 +9,9 @@
 
 import { color } from "@maskwars/brand";
 import type { CSSProperties, ReactNode } from "react";
-import { AbsoluteFill, continueRender, delayRender, Easing, Html5Audio, Img, interpolate, Sequence, spring, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
+import { AbsoluteFill, Easing, Html5Audio, Img, interpolate, Sequence, spring, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import { MARK } from "../cards/mark.ts";
+import { FONT } from "./fonts.ts";
 import { SimulatedBand } from "./SimulatedBand.tsx";
 import { near, nearShort } from "../race/near.ts";
 import type { RaceRecord } from "../race/record.ts";
@@ -21,26 +22,10 @@ import { countUp, planRaceClip, RACE_CLIP, raceClock } from "./race-plan.ts";
 
 const W = RACE_CLIP.width;
 const H = RACE_CLIP.height;
-const FONT = { word: "'Hubot Sans', system-ui, sans-serif", num: "'Mona Sans', system-ui, sans-serif" } as const;
 const ease = Easing.bezier(0.16, 1, 0.3, 1);
 const clamp = { extrapolateLeft: "clamp", extrapolateRight: "clamp" } as const;
 /** Left field of the frame: 64 px at 1440 wide, scaled to 1920. */
 const FIELD = 115;
-
-// Fonts: the render waits for both faces before the first frame.
-if (typeof document !== "undefined") {
-  const handle = delayRender("fonts");
-  Promise.all(
-    [
-      ["Hubot Sans", "fonts/hubot-sans.woff2"],
-      ["Mona Sans", "fonts/mona-sans.woff2"],
-    ].map(([family, file]) => {
-      const f = new FontFace(family!, `url(${staticFile(file!)})`, { weight: "200 900", stretch: "75% 125%" });
-      (document.fonts as unknown as Set<FontFace>).add(f);
-      return f.load();
-    }),
-  ).then(() => continueRender(handle));
-}
 
 const word = (size: number, extra: CSSProperties = {}): CSSProperties => ({
   fontFamily: FONT.word,

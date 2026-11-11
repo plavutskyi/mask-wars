@@ -71,6 +71,24 @@ function flash(s: Spring, peak: number, rest: number) {
 const ICE = new Color(color.ice);
 const AMBER = new Color(color.amber);
 
+/**
+ * Filming only. A build with NEXT_PUBLIC_ARENA_FILM=1 (packages/media `film`) is stepped frame by frame by the film
+ * script: the scene stays at full quality whatever the frame time, and the script may place the camera for a shot
+ * through `window.__arenaFilm`. The site's own build has neither: the flag is a build-time constant and is not set.
+ */
+const FILM = process.env.NEXT_PUBLIC_ARENA_FILM === '1';
+
+/** What a film shot gets every frame, after the arena's own camera is placed: the camera to move, and where things are. */
+export interface FilmFrame {
+  camera: PerspectiveCamera;
+  /** Scene time, seconds. */
+  t: number;
+  /** The arena's own camera at rest, the vault's centre, and each mask as it stands now. */
+  home: { x: number; y: number; z: number };
+  vault: { x: number; y: number; z: number };
+  masks: readonly { x: number; y: number; z: number }[];
+}
+
 const OPEN: ReadonlySet<ArenaState> = new Set(['breach', 'paid']);
 const OUT: ReadonlySet<ArenaState> = new Set(['live', 'breach', 'paid']);
 
@@ -157,8 +175,8 @@ export class ArenaEngine {
   constructor(canvas: HTMLCanvasElement, events: EngineEvents, quality: ArenaQuality) {
     this.canvas = canvas;
     this.events = events;
-    this.forced = quality !== 'auto';
-    this.tier = quality === 'auto' ? guessTier() : quality;
+    this.forced = FILM || quality !== 'auto';
+    this.tier = FILM ? 'high' : quality === 'auto' ? guessTier() : quality;
     this.renderer = new WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance', stencil: false });
     this.renderer.outputColorSpace = SRGBColorSpace;
     this.renderer.toneMapping = ACESFilmicToneMapping;
@@ -821,6 +839,10 @@ export class ArenaEngine {
     this.camera.rotation.set(0, Math.atan2(dx, d) * 0.8, 0);
     // A kick on the zoom spring is the punch of a bell: 1 → 1.012 in ~60 ms and back on a spring (BRANDBOOK §9).
     this.camera.zoom = Math.max(0.95, this.zoom.value);
+    if (FILM) {
+      const shot = (window as Window & { __arenaFilm?: (f: FilmFrame) => void }).__arenaFilm;
+      shot?.({ camera: this.camera, t, home: c.camera, vault: c.vault, masks: this.masks.map((m) => m.rig.group.position) });
+    }
     this.camera.updateProjectionMatrix();
     this.camera.updateMatrixWorld();
   }

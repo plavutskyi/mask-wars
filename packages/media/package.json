@@ -11,13 +11,16 @@
     "test": "vitest run",
     "race": "node scripts/race.mjs",
     "round": "node --use-env-proxy --disable-warning=UNDICI-EHPA scripts/round.mjs",
-    "shots": "node scripts/shots.mjs"
+    "shots": "node scripts/shots.mjs",
+    "film": "node scripts/film.mjs",
+    "break": "node scripts/break.mjs"
   },
   "dependencies": {
     "@maskwars/arena": "workspace:*",
     "@maskwars/brand": "workspace:*",
     "@maskwars/check": "workspace:*",
     "@maskwars/core": "workspace:*",
+    "@maskwars/network": "workspace:*",
     "@fontsource-variable/hubot-sans": "5.3.0",
     "@fontsource-variable/mona-sans": "5.3.0",
     "@remotion/bundler": "4.0.539",

@@ -19,18 +19,19 @@ the README for the baseline.
 | 2026-11-02 | Vault on OutLayer for the winning breaks |
 | 2026-11-03 → 2026-11-10 | Bounty contract: a team locks NEAR, the judge on OutLayer confirms the break, the contract pays the winning mask itself |
 | 2026-11-03 → 2026-11-09 | Judge on OutLayer: reads a sandbox race from its GitHub run, and a live drain from the chain through two RPC sources that must agree |
-| 2026-11-03 → 2026-11-10 | One description of each network, and the deployment scripts for testnet and mainnet with a dry run |
-| 2026-11-06 → 2026-11-10 | Live safe on testnet and masks with their own accounts: the winner drains the safe and claims with its own function-call keys |
+| 2026-11-03 → 2026-11-11 | One description of each network, and the deployment scripts for testnet and mainnet with a dry run |
+| 2026-11-06 → 2026-11-11 | Live safe on testnet and masks with their own accounts: the winner drains the safe and claims with its own function-call keys |
 | 2026-11-06 → 2026-11-11 | MASK CHECK: allow, warn or block before an agent pays, the agent wrapper that refuses to sign, the live demo |
-| 2026-11-07 → 2026-11-08 | Sealed rounds: the rules, commit and reveal in the bounty contract, the judge checks the untouched safe, a simulation with scripted masks and no models |
+| 2026-11-07 → 2026-11-11 | Sealed rounds: the rules, commit and reveal in the bounty contract, the judge checks the untouched safe, a simulation with scripted masks and no models |
 | 2026-11-07 → 2026-11-11 | The arena from the chain: the reader of races, masks and the league, and the 3D arena on the home page |
 | 2026-11-07 → 2026-11-10 | Forge your own mask: a factory with no key, a mask with its own account and its own budget for its mind, the mind in a TEE |
-| 2026-11-07 | Agent Market client: races as competitions, MASK CHECK as a service |
+| 2026-11-07 → 2026-11-11 | Agent Market client: races as competitions, MASK CHECK as a service |
 | 2026-11-08 → 2026-11-10 | A person's vault: passkey, deposit from any chain and payout through NEAR Intents |
-| 2026-11-08 → 2026-11-10 | Season treasury: a round a day on a fresh safe from one published code, opened by a scheduler key that can do nothing else |
+| 2026-11-08 → 2026-11-11 | Season treasury: a round a day on a fresh safe from one published code, opened by a scheduler key that can do nothing else |
 | 2026-11-08 → 2026-11-10 | People's masks in sealed rounds: the keeper arms a mask for a round and charges what its mind really spent |
 | 2026-11-08 → 2026-11-10 | Jobs market and crews: a client locks NEAR on a job, masks take it alone or as a crew, the contract splits the reward by contribution |
 | 2026-11-08 → 2026-11-10 | Hire the swarm: an embeddable button and checkout that orders a job from any chain |
 | 2026-11-09 → 2026-11-11 | MASK CHECK as a module for OutLayer: the same answer, signed inside a TEE |
 | 2026-11-09 → 2026-11-10 | Job judges in a TEE: a client's private tests, and an AI review by a published rubric |
-| 2026-11-10 | The first round on NEAR mainnet, race-0001: its record read from the chain, the cards and the clip |
+| 2026-11-10 → 2026-11-11 | The first round on NEAR mainnet, race-0001: its record read from the chain, the cards and the clip |
+| 2026-11-11 | The house's daily round: one safe that retires itself once its round is over and is made again, a day's step that reads the chain and repeats nothing, and the same day by hand |

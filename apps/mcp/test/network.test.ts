@@ -7,7 +7,8 @@ describe("the MCP server on the network MASKWARS_NETWORK names", () => {
     const m = configFromEnv({ MASKWARS_NETWORK: "mainnet" });
     expect(m).toEqual(MAINNET);
     expect(m.contracts).toEqual(["bounty.maskwars.near"]);
-    expect(m.teams).toEqual(["maskwars.near", "season.maskwars.near"]);
+    // The admin, the season treasury and the house, which opens the daily round on mainnet.
+    expect(m.teams).toEqual(["maskwars.near", "season.maskwars.near", "house.maskwars.near"]);
     expect(m.rpc).toEqual(["https://rpc.mainnet.fastnear.com", "https://near.drpc.org"]);
     expect(() => configFromEnv({ MASKWARS_NETWORK: "Mainnet" })).toThrow("testnet or mainnet");
   });

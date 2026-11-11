@@ -7,7 +7,10 @@ import { duration, near, raceNo } from '@maskwars/arena/format';
 import { color } from '@maskwars/brand';
 import { ImageResponse } from 'next/og';
 import type { CSSProperties, ReactNode } from 'react';
+import { choiceName, HELD, outcomeOf, verdictOf } from '@/lib/pick';
+import type { Claim } from '@/lib/share';
 import { artOf, day, shortAccount, type Tone, toneOf } from '@/lib/show';
+import { raceName } from '@/components/arena/names';
 import { type Metrics, lineWidth, metrics } from '@/lib/ttf';
 
 export const SIZE = { width: 1200, height: 630 } as const;
@@ -307,20 +310,22 @@ function Soft({ src, left, top, width, height, edge }: { src: string; left: numb
 }
 
 /** A layer over the whole card (Satori knows no `inset`). */
-const full: CSSProperties = { position: 'absolute', left: 0, top: 0, width: W, height: H, display: 'flex' };
+const layer = (w: number, h: number): CSSProperties => ({ position: 'absolute', left: 0, top: 0, width: w, height: h, display: 'flex' });
+const full = layer(W, H);
 
 /**
  * The arena: ink, Ember from the left corner behind everything, Violet from the right corner over the picture's empty
  * edge (it stops short of the mask: a corner lights the edge, never the material, BRANDBOOK §3).
  */
-function Arena({ children }: { children: ReactNode }) {
+function Arena({ children, w = W, h = H }: { children: ReactNode; w?: number; h?: number }) {
+  const all = layer(w, h);
   return (
-    <div style={{ width: W, height: H, display: 'flex', position: 'relative', background: color.ink, color: color.ice }}>
-      <div style={{ ...full, backgroundImage: `radial-gradient(34% 60% at 0% 74%, ${rgba(color.ember, 0.22)}, ${rgba(color.ember, 0)})` }} />
+    <div style={{ width: w, height: h, display: 'flex', position: 'relative', background: color.ink, color: color.ice }}>
+      <div style={{ ...all, backgroundImage: `radial-gradient(34% 60% at 0% 74%, ${rgba(color.ember, 0.22)}, ${rgba(color.ember, 0)})` }} />
       {/* The frames are shot on black: the stage under them sinks from ink to their black, so no edge shows. */}
-      <div style={{ ...full, backgroundImage: 'linear-gradient(to right, rgba(0, 0, 0, 0) 36%, rgba(0, 0, 0, 0.85) 54%, rgba(0, 0, 0, 0.85) 100%)' }} />
+      <div style={{ ...all, backgroundImage: 'linear-gradient(to right, rgba(0, 0, 0, 0) 36%, rgba(0, 0, 0, 0.85) 54%, rgba(0, 0, 0, 0.85) 100%)' }} />
       {children}
-      <div style={{ ...full, backgroundImage: `radial-gradient(15% 52% at 100% 66%, ${rgba(color.violet, 0.3)}, ${rgba(color.violet, 0)})` }} />
+      <div style={{ ...all, backgroundImage: `radial-gradient(15% 52% at 100% 66%, ${rgba(color.violet, 0.3)}, ${rgba(color.violet, 0)})` }} />
       <Sign />
     </div>
   );
@@ -559,3 +564,76 @@ export async function arenaCard(): Promise<ImageResponse> {
     CACHE.silent,
   );
 }
+
+// The call card ---------------------------------------------------------------------------------------------------------
+
+/** A shared call is posted as a picture on X: 16:9, as BRANDBOOK §10 sets the win card. */
+export const CALL_SIZE = { width: 1600, height: 900 } as const;
+
+/** What the call card says, from the claim and the chain. */
+export interface CallLines {
+  readonly kicker: string;
+  readonly verdict: string;
+  readonly right: boolean;
+  readonly head: string;
+  /** NEAR the winner took; null when the vault held. */
+  readonly amount: string | null;
+  readonly sub: string;
+  readonly streak: string | null;
+  readonly face: string | null;
+}
+
+export function callLines(r: Race, claim: Claim): CallLines {
+  const outcome = outcomeOf(r) ?? HELD;
+  const right = verdictOf(claim.choice, outcome) === 'right';
+  const held = outcome === HELD;
+  // The card's words follow the race card's: the safe held. (Satori sets «VAULT HELD» with a gap the browser does not.)
+  const said = claim.choice === HELD ? 'THE SAFE TO HOLD' : choiceName(claim.choice, r.masks).toUpperCase();
+  const who = r.winner?.mask ? r.winner.name.toUpperCase() : 'A MASK';
+  const time = r.breakMs !== null ? `IN ${duration(r.breakMs)}` : null;
+  return {
+    kicker: [raceName(r.id).toUpperCase(), day(r.openedAt), `NEAR ${r.network.toUpperCase()}`].filter(Boolean).join(' · '),
+    verdict: right ? 'CALLED IT' : 'RUN IT BACK',
+    right,
+    head: right ? (held ? 'THE SAFE HELD' : `${who} BROKE IT`) : `PICKED ${said}`,
+    amount: held ? null : near(r.takes ?? r.loot ?? r.bounty),
+    sub: right ? (held ? 'NOBODY GOT THROUGH' : (time ?? 'BROKEN')) : held ? 'THE SAFE HELD' : [`${who} BROKE IT`, time].filter(Boolean).join(' '),
+    streak: right && claim.streak !== null && claim.streak > 1 ? `${claim.streak} IN A ROW` : null,
+    face: held ? null : faceKey(r.winner),
+  };
+}
+
+export async function callCard(r: Race, claim: Claim): Promise<ImageResponse> {
+  const a = await assets();
+  const l = callLines(r, claim);
+  const { width: CW, height: CH } = CALL_SIZE;
+  const column = 800;
+  /** Where the picture stands: right of the column, clear of every word. */
+  const x = 1250;
+  let shown: ReactNode = null;
+  const face = l.face ? await picture(l.face) : null;
+  if (face) shown = <Soft src={face} left={x - CH / 2} top={0} width={CH} height={CH} edge={0.2} />;
+  else {
+    const vault = await picture('vault');
+    // ring.jpg: 2200×1235, the ring's centre at (1098, 585), 1130 across. Here 540 across, its left edge past the column.
+    const k = 540 / 1130;
+    if (vault) shown = <Soft src={vault} left={Math.round(x + 30 - 1098 * k)} top={Math.round(CH / 2 - 40 - 585 * k)} width={Math.round(2200 * k)} height={Math.round(1235 * k)} edge={0.17} />;
+  }
+  const node = (
+    <Arena w={CW} h={CH}>
+      {shown}
+      <div style={{ position: 'absolute', left: 96, top: 64, bottom: 170, width: column, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 26 }}>
+        <Mixed a={a} line={l.kicker} size={34} fill={color.ice60} max={column} floor={0} />
+        <Words fit={fitWords(a, l.verdict, l.right ? 132 : 108, column, 80)} fill={l.right ? color.amber : color.ice} />
+        <Headline head={fitHead(a, l.head, 54, column, 36)} fill={color.ice} />
+        {l.amount ? <Amount a={a} value={l.amount} fill={color.money} size={150} max={column} /> : null}
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 28 }}>
+          <Mixed a={a} line={l.sub} size={34} fill={color.ice60} max={l.streak ? column / 2 : column} floor={0} />
+          {l.streak ? <Mixed a={a} line={l.streak} size={34} fill={color.amber} max={column / 2} floor={0} /> : null}
+        </div>
+      </div>
+    </Arena>
+  );
+  return new ImageResponse(node, { ...CALL_SIZE, fonts: a.fonts, headers: { 'Cache-Control': CACHE.settled } });
+}
+

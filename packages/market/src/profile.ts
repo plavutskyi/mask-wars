@@ -26,15 +26,15 @@ export const LISTING: Listing = {
   name: "MASK CHECK by MASK WARS",
   category: "finance",
   description:
-    "Ask before your agent pays a NEAR account: allow, warn or block, with every reason read from the chain and from the MASK WARS arena, where AI masks race to break contracts. Testnet.",
+    "Ask before your agent pays a NEAR account: allow, warn or block, with every reason read live from NEAR mainnet and from the MASK WARS arena, where AI masks race to break safes that hold NEAR.",
   bio_markdown: [
-    "**One question before a payment.** Send a NEAR account. Get `allow`, `warn` or `block`, with every reason and its evidence.",
+    "**One question before a payment.** Send a NEAR account. Get `allow`, `warn` or `block`, with every reason and a link to its evidence on chain.",
     "",
-    "MASK WARS is an arena on NEAR where AI masks race to break contracts and the contract pays the winner. A safe a mask drained there comes back `block`, with the drain's transaction.",
+    "MASK WARS is an arena on NEAR mainnet where AI masks race to break safes that hold NEAR, and the contract pays the winner. A safe a mask drained there comes back `block`, with the transaction of the drain. Try `safe-0001.maskwars.near`.",
     "",
-    "**Send** one to five NEAR testnet accounts in the message, as text or as `{\"accounts\": [\"…\"]}`.",
+    "**Send** one to five NEAR mainnet accounts in the message, as text or as `{\"accounts\": [\"…\"]}`: names such as `alice.near`, or implicit ids.",
     "",
-    "**Get back** Markdown: the verdict, a table of reasons, and one JSON block with the full answer for each account.",
+    "**Get back** Markdown: the verdict, a table of reasons with links to the explorer, and one JSON block with the full answer for each account.",
     "",
     "| Signal | Level |",
     "| --- | --- |",
@@ -43,41 +43,44 @@ export const LISTING: Listing = {
     "| Reported, with evidence | block or warn |",
     "| A live arena target right now | warn |",
     "| Created, or its code changed, in the last 24 h | warn |",
+    "| Only one RPC provider answered a read | warn |",
     "| Account age, contract code hash | info |",
     "",
-    "Every chain reading is taken at one final block, named in the answer. `allow` means only that no signal against the account was found.",
+    "On mainnet two independent RPC providers answer every read at one final block, named in the answer, and they must agree. `allow` means only that no signal against the account was found.",
     "",
-    "Testnet only for now; a mainnet name (`*.near`) is refused. No model reads your message: account ids are parsed, not interpreted. If the chain cannot be read, the call is declined and you are not charged.",
+    "No model reads your message: account ids are parsed, not interpreted. If there is no account in the message, or the chain cannot be read, the call is declined and you are not charged.",
+    "",
+    "**Watch the arena.** The races, the league and the same check for people: https://maskwars.xyz",
   ].join("\n"),
-  tags: ["near", "security", "payments", "pre-payment-check", "risk", "smart-contracts", "agents", "testnet", "mask-wars"],
+  tags: ["near", "security", "payments", "pre-payment-check", "risk", "smart-contracts", "agents", "mainnet", "mask-wars"],
   sla_seconds: 300,
   input_schema: {
     type: "object",
-    description: "The message text: one to five NEAR testnet account ids, plain or as this object.",
+    description: "The message text: one to five NEAR mainnet account ids, plain or as this object.",
     required: ["accounts"],
     properties: {
       accounts: {
         type: "array",
         minItems: 1,
         maxItems: MAX_ACCOUNTS,
-        items: { type: "string", description: "A named testnet account (`*.testnet`) or an implicit one." },
+        items: { type: "string", description: "A NEAR mainnet account id: a name such as `alice.near`, or an implicit id." },
       },
     },
   },
   output_schema: {
     type: "object",
     description: "The JSON block at the end of the Markdown answer.",
-    required: ["network", "verdict", "results"],
+    required: ["verdict", "results"],
     properties: {
-      network: { const: "testnet" },
       verdict: { enum: ["allow", "warn", "block"], description: "The strongest answer of all accounts." },
       results: {
         type: "array",
         items: {
           type: "object",
-          required: ["account", "verdict", "summary", "reasons", "block", "checked_at"],
+          required: ["account", "network", "verdict", "summary", "reasons", "block", "checked_at", "rpc"],
           properties: {
             account: { type: "string" },
+            network: { enum: ["mainnet", "testnet"], description: "The network the account was read on." },
             verdict: { enum: ["allow", "warn", "block"] },
             summary: { type: "string" },
             reasons: {
@@ -99,6 +102,7 @@ export const LISTING: Listing = {
               properties: { height: { type: "integer" }, hash: { type: "string" }, time: { type: "string" } },
             },
             checked_at: { type: "string" },
+            rpc: { type: "array", items: { type: "string" }, description: "The RPC endpoints that were read." },
           },
         },
       },
@@ -116,9 +120,19 @@ export const PRICE: CreatePricingPlanRequest = {
   model: "per_call",
   price_amount: "0.10",
   display_name: "One check",
-  description: `Up to ${MAX_ACCOUNTS} NEAR testnet accounts in one call.`,
+  description: `Up to ${MAX_ACCOUNTS} NEAR mainnet accounts in one call.`,
   sla_seconds: 300,
 };
+
+/** USDC has 6 decimals on every network the marketplace settles on. */
+export const USDC_DECIMALS = 6;
+
+/** A plan's price as the 402 restates it: atomic USDC, a string of digits. `"0.10"` is `"100000"`. */
+export function atomicUsdc(priceAmount: string): string {
+  const m = /^(\d+)(?:\.(\d{1,6})0*)?$/.exec(priceAmount.trim());
+  if (!m) throw new Error(`not a USDC amount: ${priceAmount}`);
+  return (BigInt(m[1] as string) * 10n ** BigInt(USDC_DECIMALS) + BigInt((m[2] ?? "").padEnd(USDC_DECIMALS, "0"))).toString();
+}
 
 /** The listing as a `PATCH /v1/agents/{agent_id}` body. The handle is set once, at creation, and is never patched. */
 export function listingPatch(listing: Listing = LISTING): PatchAgentRequest {

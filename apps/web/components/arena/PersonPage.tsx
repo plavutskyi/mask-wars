@@ -12,6 +12,7 @@ import { Info, type InfoRow } from './Info';
 import { raceName } from './names';
 import { Nums } from './Nums';
 import { TakeOut } from './TakeOut';
+import { titleEm } from './title';
 import { World } from './World';
 import s from './page.module.css';
 import p from './person.module.css';
@@ -53,7 +54,7 @@ export function PersonPage({ person }: { person: Person }) {
           <h1
             className={`${s.word} ${s.title} ${s.maskTitle}`}
             data-long={name.length > 8 ? '' : undefined}
-            style={{ '--chars': name.length } as CSSProperties}
+            style={{ '--chars': name.length, '--em': titleEm(name) } as CSSProperties}
           >
             {name}
           </h1>

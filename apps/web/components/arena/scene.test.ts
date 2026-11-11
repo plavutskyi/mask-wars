@@ -116,3 +116,17 @@ describe('the arena plays the race the chain shows', () => {
     expect(money('1234500000000000000000000000')).toEqual({ amount: 1234, unit: 'NEAR', text: '1,234' });
   });
 });
+
+describe('the next round on the stage', () => {
+  it('stands its first three masks in their corners, its sum on the vault and when it opens under it', async () => {
+    const { nextScene, nextCast } = await import('./scene');
+    const who = (name: string) => ({ account: `${name.toLowerCase()}.maskwars.near`, slug: name.toLowerCase(), name, mask: true, model: null });
+    const next = { season: 'house.maskwars.near', at: Date.UTC(2026, 10, 12, 18, 4), n: 2, target: 'live-safe', targetCode: 'x', inSafe: '1', locked: '1', prize: '1850000000000000000000000', minLoot: '1', masks: [who('NOVA'), who('ONYX'), who('ORACLE'), who('KIRA')], sealMinutes: 45, hours: 4, funded: true };
+    expect(nextCast(next).map((m) => m.name)).toEqual(['ONYX', 'ORACLE', 'NOVA']);
+    const s = nextScene(next)!;
+    expect(s.rest).toBe('idle');
+    expect(s.vault?.text).toBe('1.85');
+    expect(s.lines.idle).toBe('Opens 18:04 UTC');
+    expect(nextScene({ ...next, masks: next.masks.slice(0, 2) })).toBeNull();
+  });
+});

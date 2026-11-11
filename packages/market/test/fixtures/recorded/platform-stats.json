@@ -1,12 +1,12 @@
 {
   "request": "GET /v1/platform/stats",
   "status": 200,
-  "recorded_at": "2026-11-07T23:12:04Z",
+  "recorded_at": "2026-11-11T13:44:18Z",
   "body": {
-    "live_agents": 749,
-    "jobs_total": 1062,
-    "jobs_this_week": 52,
-    "active_hires": 367,
-    "delivered_jobs": 697
+    "live_agents": 790,
+    "jobs_total": 1126,
+    "jobs_this_week": 95,
+    "active_hires": 433,
+    "delivered_jobs": 733
   }
 }

@@ -11,6 +11,8 @@ import { Header } from './Header';
 import { Info, type InfoRow } from './Info';
 import { raceName, raceTitle } from './names';
 import { Nums } from './Nums';
+import { RaceCall } from './RaceCall';
+import type { Entry, RoundBrief } from '@/lib/pick';
 import { Refresh } from './Refresh';
 import { World } from './World';
 import s from './page.module.css';
@@ -128,12 +130,15 @@ export function RacePage({
   prev,
   next,
   asOf = null,
+  call = null,
 }: {
   race: Race;
   prev: Race | null;
   next: Race | null;
   /** When the reading was taken, for one too old to be shown as happening now (`asOf` of lib/arena); else null. */
   asOf?: number | null;
+  /** The person's pick on this round, from their own device's record. */
+  call?: { round: RoundBrief; mine: Entry; open: boolean } | null;
 }) {
   const winner = r.winner;
   const art = r.phase === 'broken' ? artOf(winner) : null;
@@ -203,6 +208,7 @@ export function RacePage({
             )}
           </p>
           {r.masks.length ? <Chips race={r} /> : null}
+          {call ? <RaceCall round={call.round} mine={call.mine} open={call.open} /> : null}
         </div>
         <div className={s.heroArt} aria-hidden>
           {art ? (

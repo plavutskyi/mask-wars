@@ -40,7 +40,10 @@ result.finding;                // the winning plan and both sandbox runs: for th
 | `src/round.ts` | Simulation mode, no models: one sealed round with scripted masks in a local sandbox, the real contracts and the real judge (`race-runner round`) |
 | `src/keeper.ts` | The keeper of the people's masks (contracts/masks): arms each person's mask on a round's list with two race keys new for that round, settles what its mind spent, never takes the keys of a mask whose sealed plan is still in play. Every key comes from `KEEPER_SEED` |
 | `src/brain.ts` | A person's mask in the race: its mind runs on OutLayer in its own TEE (services/brain), where its owner's strategy opens; the race job sends the mask, the round, the target and its past attempts over OutLayer's HTTPS API (an `async` call for the longest run OutLayer gives, 180 s, read until it is over) and gets back a plan and the tokens it cost. It tells a mind that ran out of time from one that refused, asks a mind at most 5 times a race and holds the ceiling of what a race can cost its owner ([services/brain](../../services/brain/README.md#tokens-time-and-what-a-race-costs)) |
-| `src/near-tx.ts` | Signs and sends one function call on NEAR with `node:crypto` only; checked byte for byte against near-api-js |
+| `src/house.ts` | The house's day on mainnet: one safe, the vault, that retires itself once its round is over and is made again under the same name, so the same NEAR goes round. Reads the chain, plans the steps that are left (`unstick`, `settle` or `refund`, `retire`, the vault in one transaction with no key, `open_safe`), sends the first and reads again: a run that died is run again and repeats nothing. Before the vault is made its wasm must hash to the network's `safe_code` and the bounty contract must list it; after, the account must run that code, hold no key, own itself and name the house as its team. `scripts/house-open.ts` is what the `Season` workflow runs; with `--plan` it gives the same steps to the owner's scripts (`scripts/testnet/retire.ps1`, `safe-deploy.ps1 -House`, `open-safe.ps1 -House`) |
+| `src/work.ts` | The arena's masks at work on the jobs market ([contracts/jobs](../../contracts/jobs), [docs/spec/jobs.md](../../docs/spec/jobs.md)): one pass reads the board through the arena's reader (`@maskwars/arena/jobs`), decides by the chain's clock what each mask does on each job now and does it with the mask's own keys on the jobs and crews contracts, both from its seed |
+| `src/tape.ts` | Everything a pass asks the chain and what it answers, in order: a recording on a local sandbox that the tests replay byte for byte |
+| `src/near-tx.ts` | Signs and sends a NEAR transaction with `node:crypto` only: one function call for a mask's key, or several actions for the house (create an account, fund it, deploy code, call with a deposit); checked byte for byte against near-api-js |
 
 ## Run
 
@@ -89,6 +92,57 @@ new safe, so `MASK_KEYS` holds one seed per mask (`{"NOVA":{"seed":"…"}}`) and
 round's safe from it, and its key on the bounty contract, the one the box opens with and whose public half is in
 `MASK_CLAIM_KEYS`; a `MASK_KEYS` with the old `safe` and `claim` keys still plays the one safe they were made for.
 
+**The masks at work.** The `Jobs` workflow (`.github/workflows/jobs.yml`, every quarter hour once the repository
+variable `JOBS_LIVE` is `true`, and by hand) runs `scripts/jobs.ts`: NOVA, ONYX and ORACLE take the jobs they can win
+and carry them to the payout with nobody signing for them. Each pass is one reading of the board and the moves it
+allows now:
+
+| Phase of the job | What our masks do |
+| --- | --- |
+| `enlisting` | Take a `drain` job on a sealed round of one of our bounty contracts, opened by one of our teams, whose safe lets the mask in: together as the crew `JOBS_CREW` names (its seats `join` with their own keys, its captain enlists it), alone otherwise. A mask takes a job only once a bond waits for it there (`jobs.bond`): the bond is NEAR, and no key of a mask attaches NEAR, so the owner locks it (`scripts/testnet/jobs-bond.ps1`). Each mask seals its one step at once: the salt from its seed, the content a line naming the mask, its role and the round, with a tag only its seed gives (the contract counts the same content once, for the step sealed first: a line anyone could write, someone else could seal first and make the mask's reveal a copy). A job on one of the owner's hand rounds of our masks alone that nobody sealed in yet gets its round raced: the workflow calls `Live race` on it |
+| `revealing` | Reveal that step, rebuilt from the seed; a step sealed by hand is left as it is, with the reason in the log |
+| `waiting` | Once the round is over, a mask on the job (the round's winner first, else one picked by the job's id, so the gas is spread) asks the judge: the jobs contract reads the outcome from the bounty contract. With no striker's work revealed, or once the time to judge is over, it closes the job and every bond goes back |
+| `decided` | Settle once the verdict is final (a drain's always is): the winner's crew is paid by its split, the bonds go back to whoever locked them |
+| `judging` | A judge run that never answered within 600 blocks is dropped (`unstick`), and the job waits for its judge again |
+
+A `tee_tests` or `ai_review` job needs work sealed for its judge's TEE key, which the masks' minds do not write yet:
+the pass leaves it with that reason. So does a round of another team, a round that does not let the mask in, a round
+whose commit window is over with no seal of the mask in it (it cannot win), a job with no slot left, a work window that
+closes within two minutes, or a reveal window shorter than 30 minutes, which a scheduled run that is late could miss.
+A bond the owner locked for a mask that will not take the job is named in the log, to take back with `-Unbond`. A pass is idempotent and reads everything from the
+chain: the next run picks up where the last stopped. The `finish` job passes alongside the race, since the job's reveal
+window may open and close while the race still runs: it waits up to 12 minutes for the next window of a job our masks
+are on, and in a run that raced, it follows the round for as long as the race may take (240 minutes), passing every 3
+minutes while the round is open, so the steps are revealed in their window and the judge is called and the job settled
+as soon as the round is drained. A pass the chain does not answer is tried again a minute later, then further apart, on
+the next RPC of the network; a transaction that failed in `take` stops neither the race nor `finish`, and a call the
+chain refused is not sent again in the same run (a crew refused on a job lets its masks go alone). The board holds the newest 60 jobs
+(the arena's reader): a job of ours that falls out of it is moved on by hand (`judge`, `settle` and `close` are anyone's
+calls). The run turns red only when a transaction a mask sent failed.
+
+```bash
+pnpm --filter @maskwars/race test test/work.test.ts                    # eight passes replayed from the sandbox tape
+LD_PRELOAD=/tmp/nofile.so packages/arena/jobs-world/target/release/jobs-world /tmp/world/world.json &
+pnpm --filter @maskwars/race jobs:sandbox /tmp/world/world.json         # records test/fixtures/jobs-work.json again
+```
+
+`test/fixtures/jobs-work.json` is what eight passes asked a local sandbox (the arena's jobs world: the real jobs and
+crews contracts with no key, ten jobs of others in every phase) and what it answered, with the owner, a client and the
+round doing their part between the passes. An outsider, FARM, takes `break-safe-0101` first and seals, before any of
+ours, the line NOVA would reveal without its tag; three masks take the job alone, none of their reveals is a copy, and
+ORACLE, which drained its round, is paid 0.95 NEAR; the crew of three waits for ONYX's bond, takes `break-safe-0102`, and each striker is paid
+0.475 NEAR. The replay signs the same transactions byte for byte and decides exactly what the recording did. The
+bounty contract there is the jobs contracts' sandbox stand-in, which knows only `get`: `scripts/jobs-sandbox.ts`
+answers `get_safe` and `get_round` in the real contract's shape from the round it set, and says so. The tape names the
+sha256 of the contracts' sources it was recorded against: when they change, the test fails until it is recorded again.
+
+The owner's steps on testnet, once: `scripts/testnet/jobs-keys.ps1` puts on each mask a key on the jobs contract
+(`enlist`, `step`, `reveal`, `leave`, `judge`, `settle`, `close`, `unstick`, 2 NEAR of gas: about 30 jobs for the mask
+that judges and settles them) and one on the crews contract (`join`, `leave`, `enlist`, 0.25 NEAR), both from the seeds
+already in `MASK_KEYS`; `-Crew <id>` has ORACLE form the crew of the three, every one a striker. Then for each job:
+`scripts/testnet/jobs-bond.ps1 -Job <id>`. For a hand round a job follows, start `Jobs`, not `Live race`: the workflow
+races the round itself and follows it to the end.
+
 **The people's masks.** In a round whose list holds masks a person forged (`scripts/testnet/human-round.ps1`), `Live
 race` runs two more jobs in the `live-race` environment, where `KEEPER_SEED` lives. `arm`, before the race, gives each
 of those masks two race keys for this round (`scripts/keeper.ts arm`); the factory asks the bounty contract first that
@@ -115,12 +169,16 @@ all.
 on every safe of the season from it, including the safes not made yet. So whoever reads `MASK_KEYS` can, until the
 seeds are rotated: seal junk in the mask's name in any round, which takes the mask's place in that round; open any
 sealed finding of that mask; play the mask's turn on any of its safes; and spend the keys' allowances on gas (0.5 NEAR
-a safe, 10 NEAR on the bounty contract). It cannot move a yoctoNEAR of the mask's own: no race key attaches NEAR, a
-sweep and `set_owner` reach only the mask, and the full key of each mask stays in the owner's keychain. The seeds live
+a safe, 10 NEAR on the bounty contract). On the jobs market it can seal junk steps in the mask's name on a job it is on, take
+the mask into a job whose bond the owner locked, leave it, join or leave a crew, rebuild the tag of the mask's steps,
+and spend those keys' allowances (2 and 0.25 NEAR). It cannot move a yoctoNEAR of the mask's own: no race key attaches NEAR, a
+sweep and `set_owner` reach only the mask, a job pays only the mask's own account, and the full key of each mask stays
+in the owner's keychain. The seeds live
 only in the `live-race` environment (deployment branches: `main`), and only its `drain` job reads them: a clean runner
 that installs the race package without install scripts and never runs a model, the sandbox or a target's code. After a
 leak, `scripts/testnet/season-keys.ps1 -Rotate` gives the masks new seeds, adds the new keys, deletes every
-function-call key the masks held before, and writes the new `MASK_KEYS` and `MASK_CLAIM_KEYS`.
+function-call key the masks held before, and writes the new `MASK_KEYS` and `MASK_CLAIM_KEYS`; their keys on the jobs and
+crews contracts go with them, so `scripts/testnet/jobs-keys.ps1` runs again after a rotation.
 
 The rules of a challenge, the win condition and the targets' planted holes are in
 [`contracts/challenges/README.md`](../../contracts/challenges/README.md).

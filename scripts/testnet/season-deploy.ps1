@@ -1,5 +1,5 @@
 # Puts the season treasury on its own account ($Season: season.tinygif8324.testnet, season.maskwars.near on mainnet) in
-# one transaction signed by $Admin: create the account, fund it (fund.season of packages/network: about 2 NEAR pay for
+# one transaction signed by $Admin: create the account, fund it (fund.season of packages/network: about 3.33 NEAR pay for
 # its code), deploy the code and call new(...). The transaction adds no key, so the account is born with none: nobody,
 # the owner included, can deploy to it or move its NEAR by hand. Its program and limits change only through the treasury
 # itself, after a wait anyone can see (season-change.ps1).

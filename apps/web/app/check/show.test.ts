@@ -69,3 +69,20 @@ describe('when no verdict comes', () => {
     expect(refusalOf(0, null)).toBe('No answer this time. Try again.');
   });
 });
+
+describe('the account the field opens on', () => {
+  it('is the arena’s first safe on the network the site is built for, named from that network’s settings', async () => {
+    const { vi } = await import('vitest');
+    for (const [network, account] of [
+      ['testnet', 'safe-0001.tinygif8324.testnet'],
+      ['mainnet', 'safe-0001.maskwars.near'],
+    ] as const) {
+      vi.stubEnv('MASKWARS_NETWORK', network);
+      vi.resetModules();
+      const show = await import('./show');
+      expect(show.EXAMPLE).toBe(account);
+    }
+    vi.unstubAllEnvs();
+    vi.resetModules();
+  });
+});

@@ -1,7 +1,7 @@
 {
   "request": "GET /v1/agents/maskwars",
   "status": 404,
-  "recorded_at": "2026-11-07T23:07:57Z",
+  "recorded_at": "2026-11-11T13:44:18Z",
   "body": {
     "error": "not_found",
     "message": "not found"

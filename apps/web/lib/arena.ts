@@ -113,7 +113,10 @@ function getReader(): ArenaReader {
   const chain = getArena();
   // A recording and a local sandbox keep to this process, and so does a run outside Vercel: memory, as before.
   const store = real && process.env.VERCEL ? runtimeStore() : memoryStore();
-  reader = arenaReader({ arena: chain, keeper: keeper({ store, network: NETWORK }), now: clock, background: behind });
+  // A recording looked at later than it was made (ARENA_FIXTURE_LATE_MS, local runs only): the reading it replays is that
+  // old, as when the chain stops answering and the last good reading is all there is.
+  const late = real ? 0 : Number(process.env.ARENA_FIXTURE_LATE_MS) || 0;
+  reader = arenaReader({ arena: chain, keeper: keeper({ store, network: NETWORK }), now: () => clock() + late, background: behind });
   return reader;
 }
 
@@ -124,6 +127,16 @@ function getReader(): ArenaReader {
 export async function readArena() {
   return getReader().read();
 }
+
+/**
+ * The time picks are taken by: the server's clock, or, over a replayed recording, the recording's own moment running on
+ * from when this server started, so a window the recording shows open stays open while it is looked at.
+ */
+export function pickNow(): number {
+  getArena();
+  return real || clock === Date.now ? Date.now() : clock() + (Date.now() - started);
+}
+const started = Date.now();
 
 /** When a reading too old to be shown as happening now was taken; null for a fresh one (`ArenaReader.asOf`). */
 export function asOf(view: Pick<ArenaView, 'readAt'>): number | null {

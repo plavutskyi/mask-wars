@@ -11,6 +11,18 @@ describe('createLimiter', () => {
     expect(l.take('a', 60_000)).toBeNull();
   });
 
+  it('says whether a caller is over the limit without taking a call', () => {
+    const l = createLimiter({ perWindow: 2, windowMs: 60_000 });
+    expect(l.wait('a', 0)).toBeNull();
+    l.take('a', 0);
+    expect(l.wait('a', 1_000)).toBeNull();
+    l.take('a', 1_000);
+    expect(l.wait('a', 2_000)).toBe(58);
+    expect(l.wait('a', 2_000)).toBe(58);
+    expect(l.wait('a', 60_000)).toBeNull();
+    expect(l.take('a', 60_000)).toBeNull();
+  });
+
   it('keeps its memory bounded', () => {
     const l = createLimiter({ perWindow: 1, windowMs: 60_000, maxKeys: 2 });
     l.take('a', 0);

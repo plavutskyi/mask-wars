@@ -30,6 +30,11 @@ $Admin = $Net.admin
 $Bounty = $Net.bounty
 $Season = $Net.season
 $Scheduler = $Net.scheduler
+# The house opens the daily round on the vault and takes back what the round leaves (house.ps1, retire.ps1,
+# safe-deploy.ps1 -House, open-safe.ps1 -House). Not $House: PowerShell names are case-blind, and a script's -House
+# switch would be overwritten by it.
+$HouseAccount = $Net.house
+$Vault = $Net.vault
 $Factory = $Net.factory
 $Jobs = $Net.jobs
 $Crews = $Net.crews
@@ -187,4 +192,54 @@ function Get-SeasonProgram {
 function Get-SeasonLimits {
   $l = $Net.limits.season
   [ordered]@{ max_prize = (ConvertTo-Yocto $l.max_prize); max_safe_fund = (ConvertTo-Yocto $l.max_safe_fund); max_per_day = $l.max_per_day }
+}
+
+# The vault's wasm the repository carries: the file in apps/web/public/contracts whose code hash is the network's
+# safe_code, the same file the Season workflow deploys. $null when there is none, or while safe_code is not set.
+function Get-VaultWasm {
+  if (-not $Net.safe_code) { return $null }
+  $dir = Join-Path $PSScriptRoot '..\..\apps\web\public\contracts'
+  Get-ChildItem -Path $dir -Filter '*.wasm' -File -ErrorAction SilentlyContinue |
+    Where-Object { (Get-CodeHash $_.FullName) -ceq $Net.safe_code } | Select-Object -First 1 -ExpandProperty FullName
+}
+
+# The house's day as packages/race plans it from the chain (packages/race/scripts/house-open.ts --plan): the steps that
+# are left, in order, each with what near.exe needs to send it, or why nothing can be sent. It signs nothing. The live
+# safe's wasm is the file in apps/web/public/contracts that hashes to the network's safe_code (Get-VaultWasm); the CI
+# artifact in this network's .scratch folder only when the repository has no such file. Either way the plan refuses a
+# wasm that does not hash to safe_code or cannot retire, and safe-deploy.ps1 checks the hash again before it deploys.
+# With -DryRun nothing is read from the chain: the plan is the three steps of an ordinary day.
+function Get-HousePlan {
+  $dir = Split-Path (Get-ScratchFile 'house-plan.json')
+  $more = @()
+  if ($DryRun) { $more += '--sample' }
+  $repoWasm = Get-VaultWasm
+  $artifact = Join-Path $scratch 'maskwars_live_safe.wasm'
+  if ($repoWasm) { $more += @('--wasm', $repoWasm) } elseif (Test-Path $artifact) { $more += @('--wasm', $artifact) }
+  $json = Invoke-Node (Join-Path $PSScriptRoot '..\..\packages\race\scripts\house-open.ts') '--plan' '--args-dir' $dir @more
+  if ($LASTEXITCODE -ne 0 -or -not $json) {
+    Write-Error "the house's plan could not be read from $Network (the lines above say why): nothing was sent"
+    exit 1
+  }
+  $json | ConvertFrom-Json
+}
+
+# The plan once the chain shows the step just sent: asked again every few seconds while that same step is still the
+# next one (a node may answer a moment behind the block the transaction is final in). If it stays the next one, the
+# transaction was cancelled or failed, and the script stops there.
+function Wait-HouseStep($Step) {
+  for ($n = 0; $n -lt 12; $n++) {
+    $plan = Get-HousePlan
+    if (-not ($plan.kind -eq 'steps' -and @($plan.steps)[0].text -eq $Step.text)) { return $plan }
+    Start-Sleep -Seconds 3
+  }
+  Write-Error "the chain still asks for the same step ($($Step.text)): the transaction above did not go through, nothing more was sent"
+  exit 1
+}
+
+# Deletes the argument files Get-HousePlan wrote.
+function Remove-HousePlan {
+  $dir = Split-Path (Get-ScratchFile 'house-plan.json')
+  Get-ChildItem -Path $dir -Filter 'house-*-args.json' -ErrorAction SilentlyContinue | Remove-Item -Force
+  Remove-Scratch
 }

@@ -1,24 +1,85 @@
-# Puts a live safe on chain by hand: creates the account with fund.safe of packages/network (3 NEAR on testnet, 2.2 on
-# mainnet: about 1.55 NEAR pays for its 154 KB of code, the rest is what masks race for, above the min_loot of
-# open-safe-args.json), then deploys the safe and calls new(...) with safe-init-args.json, where the safe owns itself,
-# names the bounty contract as the one that locks it to its round (`arbiter`) and the admin as the one team whose round it
-# takes (`team`): a round anyone else opens on it does not lock it. Until open-safe.ps1 opens the round, nobody moves the
-# safe; then nobody moves it before the commit window closes, and after that each mask that sealed a plan has it to itself
-# for one turn, in the order of the seals. A drained safe holds less than min_loot, so every round gets a fresh one:
-# safe-0001 was race-0003. The safe is a training target and its hole is planted on purpose. Only the masks listed
-# there can reach it. The safe drops the key that deployed it, so after this nobody, the team included, moves its NEAR
-# by hand. The season makes its own safes from global code (season-publish.ps1): this script is for a round by hand. The
-# wasm is the CI artifact `maskwars-live-safe-wasm`, put next to near.exe. The owner chooses "send" twice.
+# Puts a live safe on chain in one transaction that adds no key: create the account, fund it, deploy the code, call
+# new(...). The account is born with no key at all, so nobody, the team included, ever moves its NEAR by hand; the same
+# way the bounty contract was made (bounty-deploy.ps1). The safe is a training target and its hole is planted on
+# purpose; only the masks listed in it can reach it. The wasm is the CI artifact `maskwars-live-safe-wasm`, put next
+# to near.exe. The owner chooses "send" once.
+#
+# -House: the house's vault ($Vault of packages/network), the second of the three scripts of a day by hand (retire.ps1,
+# safe-deploy.ps1 -House, open-safe.ps1 -House). The house signs, and the vault gets round.safe of packages/network
+# (1.93 NEAR: about 1.65 is the stake its code and state lock, the rest is what the masks race for; all of it comes back
+# when the vault retires). It owns itself, names the bounty contract as the one that locks it to its round and the house
+# as the one team whose round it takes. The wasm is the file in apps/web/public/contracts named by the network's
+# safe_code, the CI artifact in .scratch only when that file is not there. Before anything is sent the chain is read
+# (Get-HousePlan in config.ps1): the wasm must hash to the network's safe_code (checked once more right before the
+# deploy) and export retire, the bounty contract must list that code and name the judge of
+# judge-args.json, yesterday's vault must be gone, and the house must hold enough for the vault and the round's deposit
+# together, so a vault is never made without its round. After, the chain is read again: the account must run that code,
+# hold no key, own itself and name the house as its team.
+#
+# Without -House: a safe for a round the admin opens by hand, safe-init-args.json, with fund.safe of packages/network
+# (3 NEAR on testnet, 2.2 on mainnet: about 1.55 NEAR pays for its code, the rest is what masks race for, above the
+# min_loot of open-safe-args.json). It owns itself, names the bounty contract as its arbiter and the admin as its team: a
+# round anyone else opens on it does not lock it. Such a safe keeps the stake of its code for good, and a drained one
+# holds less than min_loot, so every round by hand needs a fresh one. The season makes its own safes from global code
+# (season-publish.ps1).
 #   .\safe-deploy.ps1                                # the safe safe-init-args.json names
+#   .\safe-deploy.ps1 -House -Network mainnet        # the house's vault
 #   .\safe-deploy.ps1 -Network mainnet -DryRun
-param([string]$Safe, [string]$Network, [switch]$DryRun)
+param([string]$Safe, [switch]$House, [string]$Network, [switch]$DryRun)
 . (Join-Path $PSScriptRoot 'config.ps1')
+if ($House) {
+  if ($Safe) { Write-Error "-House makes the house's vault, $Vault; -Safe names a safe of the admin's"; exit 1 }
+  $plan = Get-HousePlan
+  $steps = @($plan.steps)
+  if ($plan.kind -eq 'race') { Write-Host "$($plan.why). The vault is on chain and its round is on."; Remove-HousePlan; exit 0 }
+  if ($plan.kind -ne 'steps') { Write-Host "Nothing was sent: $($plan.why)" -ForegroundColor Yellow; Remove-HousePlan; exit 1 }
+  # A dry run shows this script's own step of an ordinary day.
+  $step = if ($DryRun) { $steps | Where-Object { $_.kind -eq 'create' } | Select-Object -First 1 } else { $steps[0] }
+  if ($step.kind -eq 'open') { Write-Host "$Vault is already on chain, right and without a round. Next: open-safe.ps1 -House."; Remove-HousePlan; exit 0 }
+  if ($step.kind -ne 'create') {
+    Write-Host "Nothing was sent: yesterday's round still stands on $Vault. First: retire.ps1 ($($step.text))." -ForegroundColor Yellow
+    Remove-HousePlan
+    exit 1
+  }
+  $wasm = if ($step.wasm) { $step.wasm } else { Get-Artifact 'maskwars_live_safe.wasm' }
+  # The file near.exe deploys, hashed again right before it goes: only the network's safe_code is ever deployed.
+  $code = Get-CodeHash $wasm
+  if ($code -cne $Net.safe_code) {
+    if (-not $DryRun) {
+      Write-Error "$wasm has code hash $code, not the network's safe_code $($Net.safe_code): nothing was sent"
+      Remove-HousePlan
+      exit 1
+    }
+    $named = if ($Net.safe_code) { $Net.safe_code } else { 'not set yet' }
+    Write-Host "A real run deploys only a wasm whose code hash is the network's safe_code ($named); this one: $code." -ForegroundColor Yellow
+  }
+  Assert-Limit "the vault's $($step.near)" (ConvertTo-Yocto ($step.near -replace ' NEAR$', '')) $Net.limits.hand.safe_max
+  if ($plan.note) { Write-Host $plan.note -ForegroundColor Yellow }
+  Write-Host $step.text
+  Write-Host "safe code sha256 $(Get-Sha256Hex $wasm), code hash $code"
+  Invoke-Near transaction construct-transaction $HouseAccount $Vault add-action create-account add-action transfer $step.near add-action deploy-contract use-file $wasm with-init-call new file-args $step.args_file prepaid-gas $step.gas attached-deposit '0 NEAR' skip network-config $Network sign-with-keychain
+  if ($LASTEXITCODE -ne 0) { Write-Host 'Not sent: nothing changed.'; Remove-HousePlan; exit 1 }
+  if (-not $DryRun) {
+    $after = Wait-HouseStep $step
+    if ($after.kind -eq 'steps' -and @($after.steps)[0].kind -eq 'open') {
+      Write-Host "$Vault is on chain and right: it runs the network's safe_code, holds no key, owns itself and its team is $HouseAccount."
+      Write-Host 'Next: open-safe.ps1 -House.'
+    } else {
+      Write-Error "$Vault is not as it should be, and no round opens on it: $($after.note) $($after.stop) $($after.why)"
+      Remove-HousePlan
+      exit 1
+    }
+  }
+  Remove-HousePlan
+  exit 0
+}
 $wasm = Get-Artifact 'maskwars_live_safe.wasm'
 $init = Read-Input 'safe-init-args.json'
 if (-not $Safe) { $Safe = $init.owner }
 if ($init.owner -ne $Safe) { Write-Error "safe-init-args.json: the owner must be the safe itself, $Safe"; exit 1 }
 if ($init.arbiter -ne $Bounty) { Write-Error "safe-init-args.json: the arbiter must be the bounty contract, $Bounty"; exit 1 }
 if ($init.team -ne $Admin) { Write-Error "safe-init-args.json: the team must be the account that opens the round, $Admin"; exit 1 }
+if (-not $Safe.EndsWith(".$Admin")) { Write-Error "$Safe is not an account under $Admin`: only its parent can make it in one transaction"; exit 1 }
 Assert-Limit "the safe's $($Net.fund.safe) NEAR" (ConvertTo-Yocto $Net.fund.safe) $Net.limits.hand.safe_max
-Invoke-Near account create-account fund-myself $Safe "$($Net.fund.safe) NEAR" autogenerate-new-keypair save-to-keychain sign-as $Admin network-config $Network sign-with-keychain
-Invoke-Near contract deploy $Safe use-file $wasm with-init-call new file-args (Get-Input 'safe-init-args.json') prepaid-gas '30.0 Tgas' attached-deposit '0 NEAR' network-config $Network sign-with-keychain
+Write-Host "safe code sha256 $(Get-Sha256Hex $wasm), code hash $(Get-CodeHash $wasm)"
+Invoke-Near transaction construct-transaction $Admin $Safe add-action create-account add-action transfer "$($Net.fund.safe) NEAR" add-action deploy-contract use-file $wasm with-init-call new file-args (Get-Input 'safe-init-args.json') prepaid-gas '30.0 Tgas' attached-deposit '0 NEAR' skip network-config $Network sign-with-keychain

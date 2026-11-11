@@ -138,18 +138,22 @@ export interface MaskStats {
   readonly history: readonly MaskRace[];
 }
 
-/** The season's next race, as the treasury plans it: the home page's "next race at …". */
+/**
+ * The next race that opens on schedule: the home page's "next race at …". A season's, as its treasury plans it; or the
+ * house's daily round, which is told only when it will really open (the house is on chain and can pay for it, and the
+ * round before it will be over by then).
+ */
 export interface NextRace {
-  /** The treasury that opens it. */
+  /** Who opens it: a season's treasury, or the house. */
   readonly season: string;
-  /** When it is due. In the past for the few minutes until the scheduler opens it. */
+  /** When it is due. In the past for the few minutes until it is opened. */
   readonly at: number;
-  /** Its number in the season: its safe is `s<nnnn>.<season>`. */
+  /** Its number: in a season its safe is `s<nnnn>.<season>`; a round of the house is `race-<nnnn>`. */
   readonly n: number;
   /** The library target it runs on (`live-safe`) and that safe's code hash. */
   readonly target: string;
   readonly targetCode: string;
-  /** NEAR the safe will hold, and the bounty the treasury locks for the round. */
+  /** NEAR a mask will be able to take out of the safe, and the bounty locked for the round. */
   readonly inSafe: string;
   readonly locked: string;
   /** Both together: what the round puts on the line. The bounty contract keeps a little of the bounty for storage. */
@@ -160,7 +164,7 @@ export interface NextRace {
   /** Minutes the masks seal their plans, and the whole round in hours. */
   readonly sealMinutes: number;
   readonly hours: number;
-  /** The treasury holds enough to open it. */
+  /** Whoever opens it holds enough to open it. */
   readonly funded: boolean;
 }
 
@@ -171,7 +175,7 @@ export interface ArenaView {
   /** The race the home page shows: one of the arena's own teams' running now, else another team's running now
    * (`official: false`), else the arena's latest, else the latest. */
   readonly now: Race | null;
-  /** The next race a season opens on schedule; null when no season runs. */
+  /** The next race that opens on schedule, a season's or the house's; null when none will. */
   readonly next: NextRace | null;
   /** League order: earned, then breaks, then the fastest break. */
   readonly league: readonly MaskStats[];

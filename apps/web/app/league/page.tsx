@@ -1,10 +1,13 @@
 import type { Metadata } from 'next';
+import { cookies } from 'next/headers';
 import { LeaguePage } from '@/components/arena/LeaguePage';
 import { Unreachable } from '@/components/arena/Unreachable';
 import { readArena } from '@/lib/arena';
 import { pageMeta } from '@/lib/meta';
+import { topCallers } from '@/lib/pick';
+import { readBoard, WHO_COOKIE, whoOf } from '@/lib/picks';
 
-// The league, read from the chain: every mask by what it took.
+// The league, read from the chain: every mask by what it took. Under it, the people who called the breaker best.
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = pageMeta({
@@ -20,5 +23,8 @@ export default async function LeagueRoute() {
   } catch {
     return <Unreachable />;
   }
-  return <LeaguePage league={view.league} races={view.races.length} network={view.network} />;
+  // The callers' table, as the record holds it: read, never settled here (the pages that ask for a call settle it).
+  const [board, jar] = await Promise.all([readBoard().catch(() => null), cookies()]);
+  const callers = board ? { list: topCallers(board, 10), rounds: board.rounds.length, me: whoOf(jar.get(WHO_COOKIE)?.value) } : null;
+  return <LeaguePage league={view.league} races={view.races.length} network={view.network} callers={callers} />;
 }

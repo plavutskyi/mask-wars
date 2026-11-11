@@ -88,6 +88,29 @@ describe("createWebhookHandler", () => {
     expect(onHire).not.toHaveBeenCalled();
   });
 
+  it("works a change request and a redo the same way: by reading the assignment back", async () => {
+    const { onHire, handle } = handler();
+    for (const [i, event] of ["hire.changes_requested", "hire.dispute_resolved"].entries()) {
+      const body = JSON.stringify({ event, job_id: HIRE.job_id, assignment_id: ID });
+      expect((await handle(delivery(body, { "x-market-delivery": `again-${i}` }))).status).toBe(200);
+      expect(onHire).toHaveBeenLastCalledWith({ event, job_id: HIRE.job_id, assignment_id: ID });
+    }
+    expect(onHire).toHaveBeenCalledTimes(2);
+  });
+
+  it("takes no work from an event that names no assignment, or from one that only reports", async () => {
+    const { onHire, handle } = handler();
+    const events = [
+      { event: "hire.created", hire_id: "7a8b9c0d-1e2f-4a3b-8c4d-5e6f7a8b9c0d", hirer_account_id: "x", kind: "manual" },
+      { event: "hire.accepted", job_id: HIRE.job_id, assignment_id: ID },
+      { event: "hire.refunded", job_id: HIRE.job_id, assignment_id: ID, amount: "0.10", token: "USDC", reason: "buyer_cancelled" },
+      { event: "message.created", job_id: HIRE.job_id, assignment_id: ID },
+      { event: "agent.suspended", agent_id: "x", reason: "policy", disposition: "halt" },
+    ];
+    for (const [i, e] of events.entries()) expect((await handle(delivery(JSON.stringify(e), { "x-market-delivery": `other-${i}` }))).status).toBe(200);
+    expect(onHire).not.toHaveBeenCalled();
+  });
+
   it("a failed hire is logged, never thrown into the response", async () => {
     const lines: string[] = [];
     const tasks: Promise<unknown>[] = [];
@@ -102,7 +125,7 @@ describe("createWebhookHandler", () => {
     });
     expect((await handle(delivery(JSON.stringify(HIRE)))).status).toBe(200);
     await Promise.all(tasks);
-    expect(lines.at(-1)).toMatch(/market down; the poll picks it up again/);
+    expect(lines.at(-1)).toBe(`hire.created ${ID} failed: market down; a poll of the agent's assignments picks it up`);
   });
 });
 
@@ -119,6 +142,27 @@ describe("serveHire", () => {
       `POST /v1/assignments/${ID}/start`,
       `POST /v1/assignments/${ID}/submit`,
     ]);
+  });
+
+  it("tries again when the marketplace fails in a way it calls retryable, and gives up on anything else", async () => {
+    let submits = 0;
+    const flaky = fakeMarket({
+      "GET /v1/agents/me/assignments": fixture("docs/assignments-a2a"),
+      [`POST /v1/assignments/${ID}/start`]: fixture("docs/start"),
+      [`POST /v1/assignments/${ID}/submit`]: () => (++submits === 1 ? { status: 502, body: { error: "bad_gateway", message: "upstream" } } : fixture("docs/submit-a2a")),
+    });
+    const lines: string[] = [];
+    expect(await serveHire(HIRE, { client: flaky.client, check: async (a) => result(a, "allow"), retryDelaysMs: [0], log: (l) => lines.push(l) })).toBe("submitted");
+    expect(submits).toBe(2);
+    expect(lines.some((l) => l.startsWith(`retry   ${ID}: POST /v1/assignments/${ID}/submit: 502`))).toBe(true);
+
+    const down = fakeMarket({ "GET /v1/agents/me/assignments": { status: 503, body: { error: "unavailable", message: "later" } } });
+    await expect(serveHire(HIRE, { client: down.client, check: vi.fn(), retryDelaysMs: [0, 0] })).rejects.toMatchObject({ status: 503 });
+    expect(down.seen).toHaveLength(3);
+
+    const revoked = fakeMarket({ "GET /v1/agents/me/assignments": fixture("recorded/assignments-no-token") });
+    await expect(serveHire(HIRE, { client: revoked.client, check: vi.fn(), retryDelaysMs: [0, 0] })).rejects.toMatchObject({ status: 401 });
+    expect(revoked.seen).toHaveLength(1);
   });
 
   it("does nothing when the hire is no longer in progress", async () => {

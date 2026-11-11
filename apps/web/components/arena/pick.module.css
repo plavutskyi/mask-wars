@@ -1,0 +1,488 @@
+/* Pick the breaker: one line about the round and, while it takes picks, the masks and the vault, one tap each.
+   It lives in the deck, the bottom of the battle screen (BRANDBOOK §8). Tokens only. */
+
+.block {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  width: min(560px, 100%);
+}
+
+.word {
+  font-family: var(--font-word);
+  font-weight: 800;
+  font-stretch: 125%;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* The line: what is asked or how it went on the left, when or what to do on the right. */
+.ticket {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 28px;
+  white-space: nowrap;
+}
+
+.left,
+.end {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.prompt,
+.label,
+.value,
+.verdict {
+  font-family: var(--font-word);
+  font-weight: 800;
+  font-stretch: 125%;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.prompt {
+  font-size: 17px;
+  letter-spacing: 0.06em;
+  color: var(--ice);
+}
+
+.label {
+  font-size: 15px;
+  letter-spacing: 0.06em;
+  color: var(--ice-60);
+}
+
+.value {
+  flex-shrink: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 17px;
+  letter-spacing: 0.05em;
+  color: var(--ice);
+}
+
+/* A call that came true is the one amber word on the screen (BRANDBOOK §3). */
+.verdict {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 17px;
+  letter-spacing: 0.08em;
+  color: var(--amber);
+}
+
+.aside {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ice);
+}
+
+/* Times are numbers: Mona, as every number on the arena (BRANDBOOK §4). */
+.aside b,
+.streak b {
+  font-family: var(--font-num);
+  font-weight: 800;
+  font-stretch: 125%;
+  letter-spacing: 0.02em;
+  color: var(--ice);
+}
+
+.aside b {
+  font-size: 15px;
+}
+
+.error {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--live);
+}
+
+.streak {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ice);
+}
+
+.streak b {
+  font-size: 22px;
+  color: var(--amber);
+}
+
+/* The choices: the masks in the stage's order, then the vault. Each in its corner's light. */
+.choices {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.choice {
+  --c: var(--ice);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  height: 64px;
+  padding: 0 8px;
+  border: 1px solid color-mix(in srgb, var(--ice) 16%, transparent);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--ink-2) 86%, transparent);
+  color: var(--ice);
+  font-size: 15px;
+  line-height: 1.05;
+  text-align: center;
+  cursor: pointer;
+  transition:
+    transform 100ms cubic-bezier(0.2, 0, 0, 1),
+    background-color 200ms,
+    border-color 200ms,
+    color 200ms,
+    opacity 200ms;
+}
+
+.choice[data-tone='ember'] {
+  --c: var(--ember);
+}
+
+.choice[data-tone='violet'] {
+  --c: var(--violet);
+}
+
+.choice[data-tone='vault'] {
+  --c: var(--ice-60);
+}
+
+/* The corner's line under the name: the same colour the mask stands in on the stage. */
+.choice::after {
+  content: '';
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: -1px;
+  height: 2px;
+  background: var(--c);
+  transition: opacity 200ms;
+}
+
+.choice .word {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  letter-spacing: 0.04em;
+}
+
+.choice[data-long] .word {
+  font-stretch: 85%;
+}
+
+.holds {
+  white-space: normal !important;
+  font-size: 13px;
+  letter-spacing: 0.06em !important;
+}
+
+.holds span {
+  white-space: nowrap;
+}
+
+.choice:active {
+  transform: scale(0.97);
+}
+
+.choice:focus-visible,
+.share:focus-visible,
+.next:focus-visible,
+.link:focus-visible {
+  outline: 1px solid var(--ice);
+  outline-offset: 2px;
+}
+
+/* Picked: the one solid choice, like the deck's button; the rest step back but stay a tap away. */
+.choice[data-on] {
+  border-color: var(--ice);
+  background: var(--ice);
+  color: var(--ink);
+}
+
+.choice[data-on]::after {
+  opacity: 0;
+}
+
+.choices[data-picked] .choice:not([data-on]) {
+  opacity: 0.62;
+}
+
+.choice[data-busy] {
+  opacity: 0.8;
+}
+
+.choice:disabled {
+  cursor: default;
+}
+
+/* The actions under the line: the next pick and the share side by side, or the share alone. */
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.actions[data-two] .next {
+  flex: 1;
+  width: auto;
+}
+
+.share {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 68px;
+  padding: 0 24px;
+  border: 1px solid color-mix(in srgb, var(--ice) 34%, transparent);
+  border-radius: var(--radius);
+  color: var(--ice);
+  font-size: 13px;
+  cursor: pointer;
+  transition:
+    transform 100ms cubic-bezier(0.2, 0, 0, 1),
+    border-color 160ms,
+    opacity 200ms;
+}
+
+.share:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.share:active {
+  transform: scale(0.97);
+}
+
+.next {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: min(380px, 100%);
+  height: 68px;
+  align-self: center;
+  border-radius: var(--radius);
+  background: var(--ice);
+  color: var(--ink);
+  font-size: 15px;
+  cursor: pointer;
+  transition:
+    transform 100ms cubic-bezier(0.2, 0, 0, 1),
+    opacity 240ms;
+}
+
+.next:active {
+  transform: scale(0.97);
+}
+
+.link {
+  min-height: 44px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ice);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--ice) 34%, transparent);
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  .choice:not(:disabled):hover {
+    border-color: color-mix(in srgb, var(--ice) 40%, transparent);
+  }
+
+  .choices[data-picked] .choice:not([data-on]):not(:disabled):hover {
+    opacity: 1;
+  }
+
+  .share:not(:disabled):hover {
+    border-color: var(--ice);
+  }
+
+  .next:hover {
+    opacity: 0.9;
+  }
+}
+
+/* Phone: the same, a size down, every target still a finger wide. */
+@media (max-width: 760px) {
+  .block {
+    gap: 10px;
+    width: 100%;
+  }
+
+  .ticket {
+    gap: 10px;
+    min-height: 24px;
+  }
+
+  .left,
+  .end {
+    gap: 10px;
+  }
+
+  .prompt,
+  .value {
+    font-size: 14px;
+    letter-spacing: 0.04em;
+  }
+
+  .label {
+    font-size: 13px;
+  }
+
+  .verdict {
+    font-size: 15px;
+  }
+
+  .aside,
+  .error,
+  .streak {
+    font-size: 13px;
+  }
+
+  .aside b {
+    font-size: 14px;
+  }
+
+  .streak b {
+    font-size: 19px;
+  }
+
+  .choices {
+    gap: 6px;
+  }
+
+  .choice {
+    height: 56px;
+    padding: 0 4px;
+    font-size: 13px;
+  }
+
+  /* Four to a row on a phone: a name narrows along the width axis before it would be cut (BRANDBOOK §4). */
+  .choice .word {
+    font-stretch: 100%;
+    letter-spacing: 0.02em;
+  }
+
+  .choice[data-long] .word {
+    font-stretch: 85%;
+  }
+
+  .holds {
+    font-size: 11px;
+  }
+
+  /* Beside the next pick on a phone: the icon over its word, a square a thumb finds. */
+  .share {
+    flex-direction: column;
+    gap: 6px;
+    width: 76px;
+    height: 72px;
+    padding: 0;
+    font-size: 11px;
+  }
+
+  .next {
+    width: 100%;
+    height: 72px;
+    font-size: 13px;
+  }
+
+  .actions {
+    gap: 6px;
+  }
+}
+
+/* A narrow phone keeps the time alone: the clock in the header already says how far off the round is. */
+@media (max-width: 400px) {
+  .day {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .choice,
+  .share,
+  .next {
+    transition-duration: 200ms !important;
+  }
+
+  .choice:active,
+  .share:active,
+  .next:active {
+    transform: none;
+  }
+}
+
+/* A person's call on a round's own page: one line under the masks, the share at its end. */
+.call {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  margin-top: 28px;
+  padding: 14px 0 0;
+  border-top: 1px solid var(--line);
+  min-height: 44px;
+}
+
+.callShare {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 44px;
+  padding: 0 18px;
+  border: 1px solid color-mix(in srgb, var(--ice) 34%, transparent);
+  border-radius: var(--radius);
+  color: var(--ice);
+  font-size: 13px;
+  cursor: pointer;
+  transition:
+    transform 100ms cubic-bezier(0.2, 0, 0, 1),
+    border-color 160ms,
+    opacity 200ms;
+}
+
+.callShare:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.callShare:active {
+  transform: scale(0.97);
+}
+
+/* On a phone the line wraps: the share keeps to the right edge. */
+@media (max-width: 760px) {
+  .callShare {
+    margin-left: auto;
+  }
+}
+
+@media (hover: hover) {
+  .callShare:not(:disabled):hover {
+    border-color: var(--ice);
+  }
+}

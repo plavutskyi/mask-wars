@@ -18,6 +18,7 @@
     "@maskwars/check": "workspace:*",
     "@maskwars/forge": "workspace:*",
     "@maskwars/hire": "workspace:*",
+    "@maskwars/market": "workspace:*",
     "@maskwars/mcp": "workspace:*",
     "@maskwars/mind": "workspace:*",
     "@maskwars/network": "workspace:*",

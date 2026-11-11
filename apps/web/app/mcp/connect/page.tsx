@@ -7,6 +7,7 @@ import { Header } from '@/components/arena/Header';
 import { Connect } from './Connect';
 import { LiveAnswer, LiveWaiting } from './Live';
 import s from './connect.module.css';
+import { marketListing } from '@/lib/market';
 import { pageMeta } from '@/lib/meta';
 
 // Where a browser lands when it opens /mcp: how to plug an agent in. Agents themselves talk to /mcp directly.
@@ -37,6 +38,8 @@ async function endpoint(): Promise<string> {
 }
 
 export default async function ConnectPage() {
+  // The way to hire MASK CHECK, only while Agent Market itself says the listing is live.
+  const listing = await marketListing();
   return (
     <main className={s.screen}>
       <div className={s.world} aria-hidden>
@@ -76,6 +79,17 @@ export default async function ConnectPage() {
                 </span>
               </li>
             ))}
+            {listing ? (
+              <li className={s.tool}>
+                <span className={s.name}>MASK CHECK</span>
+                <span className={s.what}>
+                  USDC per call.{' '}
+                  <a href={listing.url} target="_blank" rel="noopener" className={s.try}>
+                    Hire it on Agent Market
+                  </a>
+                </span>
+              </li>
+            ) : null}
           </ul>
           <p className={s.note}>
             Plus {MORE.join(', ')}. <span className={s.keep}>Every tool only reads.</span> No keys, ever.

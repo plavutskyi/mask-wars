@@ -213,6 +213,7 @@ local sandbox or on recorded answers and is not deployed · **NOT BUILT** is not
 | Sign-up page for teams | `apps/web/app/break` | LIVE mainnet | [/break](https://maskwars.xyz/break) |
 | Jobs market and crews | `contracts/jobs`, `contracts/crews` | LIVE testnet | one job paid: [settle](https://api-testnet.nearblocks.io/v3/txns/zxyaAKQHRtd87tDrC8ZfrNqAHW6NjFX9gmkCWooi7dE) |
 | Season: a treasury with no key opens rounds | `contracts/season` | LIVE testnet | view `season`: `rounds: 2`, none paid yet |
+| The house: a round every day on one safe that retires itself after its round and is made again, so the same NEAR goes round | `packages/race/src/house.ts`, `scripts/testnet/retire.ps1` | SIMULATED | not on chain yet: `pnpm --filter @maskwars/race test` runs its day on a made-up chain |
 | Forge your own mask | `contracts/masks`, `packages/forge`, `apps/web/app/forge` | SIMULATED | **on no network**: [/api/forge](https://maskwars.xyz/api/forge) says `"open":false` |
 | A person's mask in a sealed round | `packages/race/src/keeper.ts`, `services/brain` | SIMULATED | waits for the forge |
 | Confidential copying of a sealed strategy | `contracts/masks/factory` | SIMULATED | waits for the forge |

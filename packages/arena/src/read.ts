@@ -4,7 +4,8 @@
 // be read alone by its id (`round`), without the rest of the arena.
 
 import { ChainError, ChainReader } from "@maskwars/check";
-import { ACTIVE_MS, CONTRACTS, FACTORY, MASKS, type MaskProfile, NETWORK, type Network, personOf, RPCS, SEASONS, TEAMS } from "./config.ts";
+import { CLAIM_GRACE_MINUTES, slotAfter, slotAt, yocto } from "@maskwars/network";
+import { ACTIVE_MS, CONTRACTS, FACTORY, HOUSE, type House, MASKS, type MaskProfile, NETWORK, type Network, personOf, RPCS, SEASONS, TEAMS } from "./config.ts";
 import { type AccountTx, type Call, Indexer, type Tx } from "./indexer.ts";
 import type { ArenaView, MaskRace, MaskStats, NextRace, Phase, Race, RaceEvent, State, Who } from "./types.ts";
 
@@ -72,7 +73,18 @@ const OPEN = new Set(["open", "open_safe"]);
 const CLAIM = new Set(["claim", "claim_drain", "settle"]);
 const FINAL: ReadonlySet<State> = new Set(["paid", "drained", "refunded"]);
 /** After the deadline a live safe's masks may still claim a drain made before it. */
-const GRACE_MS = 12 * 60 * 60 * 1000;
+const GRACE_MS = CLAIM_GRACE_MINUTES * 60 * 1000;
+/** What a byte of an account's storage locks, yoctoNEAR. */
+const STORAGE_PER_BYTE = 10n ** 19n;
+/**
+ * What the bounty contract keeps out of a sealed round's deposit for the storage the round may still take, and gives
+ * back to whoever opened it once the round ends: `open_safe` reserves `BOUNTY_GROWTH_BYTES + MASK_STORAGE_BYTES ×
+ * masks` bytes, at `cost_of` a byte (contracts/bounty/src/lib.rs, `open_safe` and `charge_opening`). That NEAR never
+ * reaches the winner.
+ */
+const BOUNTY_GROWTH_BYTES = 240n;
+const MASK_STORAGE_BYTES = 4_000n;
+const roundReserve = (masks: number): bigint => (BOUNTY_GROWTH_BYTES + MASK_STORAGE_BYTES * BigInt(masks)) * STORAGE_PER_BYTE;
 /** How long one reading of a season treasury serves. */
 const SEASON_TTL_MS = 60_000;
 /** A round read alone takes the transactions from this long before it opened: its funding and its opening. */
@@ -97,6 +109,9 @@ export interface ArenaOptions {
   /** Season treasuries whose rounds and next race to read; none to read none. By default the arena's own, when the
    * reader reads one of the arena's own bounty contracts. */
   seasons?: readonly string[];
+  /** The house whose next round to tell; `null` for none. By default the network's own, when the reader reads one of
+   * the arena's own bounty contracts. */
+  house?: House | null;
   masks?: readonly MaskProfile[];
   /** The arena's own teams: their races come first on the home page. */
   teams?: readonly string[];
@@ -123,6 +138,7 @@ export class Arena {
   readonly #indexer: Indexer;
   readonly #contracts: readonly string[];
   readonly #seasons: readonly string[];
+  readonly #house: House | null;
   readonly #masks: readonly MaskProfile[];
   readonly #teams: readonly string[];
   readonly #factory: string;
@@ -134,6 +150,8 @@ export class Arena {
   readonly #seasonState = new Map<string, Cached<SeasonState | null>>();
   /** When a reading of the whole arena last went on without a treasury that did not answer. */
   readonly #seasonSkipped = new Map<string, number>();
+  #houseNext: Cached<NextRace | null> | null = null;
+  #houseSkipped: number | null = null;
   #view: Cached<ArenaView> | null = null;
   #lastGood: ArenaView | null = null;
 
@@ -146,6 +164,7 @@ export class Arena {
     // none of them unless it names some.
     const own = this.#contracts.some((c) => (CONTRACTS as readonly string[]).includes(c));
     this.#seasons = options.seasons ?? (own ? SEASONS : []);
+    this.#house = options.house === undefined ? (own ? HOUSE : null) : options.house;
     this.#masks = options.masks ?? MASKS;
     this.#teams = options.teams ?? TEAMS;
     this.#factory = options.factory ?? FACTORY;
@@ -203,12 +222,12 @@ export class Arena {
   }
 
   /**
-   * The next race a season opens on schedule, as its treasury says now; null when no treasury is on chain or none plans
-   * one. A treasury that cannot be read throws.
+   * The next race that opens on schedule: a season's, as its treasury says now, or the house's daily round, when it
+   * will really open; null when none will. A treasury or a house that cannot be read throws.
    */
   async next(): Promise<NextRace | null> {
-    const seasons = (await Promise.all(this.#seasons.map((season) => this.#season(season)))).filter((x): x is SeasonState => x !== null);
-    return this.#soonest(seasons);
+    const [seasons, house] = await Promise.all([Promise.all(this.#seasons.map((season) => this.#season(season))), this.#houseRound()]);
+    return sooner(this.#soonest(seasons.filter((x): x is SeasonState => x !== null)), house);
   }
 
   /** A mask by its page name (`nova`) or its account. */
@@ -257,7 +276,7 @@ export class Arena {
       .filter((r): r is Race => r !== null)
       .sort((a, b) => (b.openedAt ?? 0) - (a.openedAt ?? 0) || b.id.localeCompare(a.id));
     for (const r of races) if (FINAL.has(r.state)) this.#final.set(`${r.contract}/${r.id}`, r);
-    const next = this.#soonest(seasons);
+    const next = sooner(this.#soonest(seasons), await this.#houseOrSkip());
     return { network: this.#network, races, now: pickNow(races), next, league: this.#league(races), readAt: now };
   }
 
@@ -314,6 +333,160 @@ export class Arena {
       if (error instanceof ChainError && (error.kind === "unknown_account" || error.kind === "contract")) return null;
       throw error;
     }
+  }
+
+  /**
+   * The house's next round, read from the chain and reused for `SEASON_TTL_MS`. A reading that failed is not kept.
+   */
+  #houseRound(): Promise<NextRace | null> {
+    const now = this.#now();
+    if (this.#houseNext && now - this.#houseNext.at < SEASON_TTL_MS) return this.#houseNext.value;
+    const value = this.#readHouse();
+    const entry = { at: now, value };
+    this.#houseNext = entry;
+    value.catch(() => {
+      if (this.#houseNext === entry) this.#houseNext = null;
+    });
+    return value;
+  }
+
+  /** The house's next round for a reading of the whole arena: a chain that does not answer tells none, this time. */
+  async #houseOrSkip(): Promise<NextRace | null> {
+    const now = this.#now();
+    if (this.#houseSkipped !== null && now - this.#houseSkipped < SEASON_TTL_MS) return null;
+    try {
+      const next = await this.#houseRound();
+      this.#houseSkipped = null;
+      return next;
+    } catch {
+      this.#houseSkipped = now;
+      return null;
+    }
+  }
+
+  /**
+   * When the house's next round opens, and only if it really will. The house opens one round in every slot of its
+   * schedule on the vault, which must be free first: the round before it over, and the vault retired with its balance
+   * back on the house. So a time is told only when all of this holds, and `null` otherwise:
+   * - the owner turned the round on (`round.live`): the step signs for it on schedule;
+   * - the vault's code is known (`safe_code`) and the bounty contract lists it, judges with the judge the house opens
+   *   its rounds with (`round.judge`), and has no change pending that stops it from opening bounties;
+   * - the house is on chain;
+   * - whatever round stands on the vault will be over by that slot: refunded, or paid and past its deadline, or, if
+   *   still open, past its deadline and the claim grace even if nobody wins it;
+   * - the house can pay: what it holds free, and what comes back with the vault (while that round can still be won,
+   *   only the stake a mask cannot take), cover the vault, the round's deposit and the gas.
+   * The slot is the latest one while it has no round yet and a round opened now would still be over before the next
+   * slot (the time is then in the past: whoever opens it is on the way); else the next one.
+   */
+  async #readHouse(): Promise<NextRace | null> {
+    const h = this.#house;
+    if (!h || !h.safeCode || !h.round.live) return null;
+    const now = this.#now();
+    const r = h.round;
+    const [house, vault, gov] = await Promise.all([
+      this.#rpc.account(h.account),
+      this.#rpc.account(h.vault),
+      // A bounty contract that is not on chain, or one from before it listed its safe codes, opens no round of the house.
+      this.#rpc
+        .view<{ safe_codes?: unknown; judge?: { version?: unknown } | null; pending?: { change?: { kind?: unknown } } | null } | null>(h.bounty, "governance", {})
+        .catch((error: unknown) => {
+          if (error instanceof ChainError && (error.kind === "unknown_account" || error.kind === "contract")) return null;
+          throw error;
+        }),
+    ]);
+    if (!house || !gov) return null;
+    if (!Array.isArray(gov.safe_codes) || !gov.safe_codes.includes(h.safeCode)) return null;
+    // The step opens no round with another judge than the house's (packages/race house.ts): no time is told for one.
+    if (gov.judge?.version !== r.judge) return null;
+    const pending = gov.pending?.change?.kind;
+    if (pending === "code" || pending === "admin") return null;
+
+    const today = slotAt(r, now);
+    const later = slotAfter(r, now);
+    let comesBack = 0n;
+    let overAt = 0;
+    let todayHasRound = false;
+    let lastNo: number | null = null;
+    if (vault) {
+      comesBack = BigInt(vault.amount);
+      // An account on the vault's name that is not a safe: the house cannot make its vault there.
+      const lock = await this.#rpc.view<{ arbiter?: unknown; bounty?: unknown } | null>(h.vault, "get_round", {}).catch((error: unknown) => {
+        if (error instanceof ChainError && error.kind === "contract") return undefined;
+        throw error;
+      });
+      if (lock === undefined) return null;
+      if (lock) {
+        if (lock.arbiter !== h.bounty || typeof lock.bounty !== "string") return null;
+        const { bounty, safe } = await this.#state(h.bounty, lock.bounty);
+        const deadline = nsToMs(bounty?.deadline_ns);
+        const opened = nsToMs(safe?.opened_ns);
+        if (!bounty || deadline === null || opened === null) return null;
+        const state = bounty.status.state;
+        if (state === "refunded") overAt = 0;
+        else if (state === "drained" || state === "paid") overAt = deadline;
+        else if (state === "open") overAt = deadline + GRACE_MS;
+        else return null;
+        // While a mask can still win the round, only the stake it cannot take is sure to come back.
+        const stake = BigInt(vault.storageUsage) * STORAGE_PER_BYTE;
+        if (state === "open" && now < deadline && stake < comesBack) comesBack = stake;
+        todayHasRound = today !== null && opened >= today;
+        lastNo = raceNumber(lock.bounty);
+      }
+    }
+    const runMs = r.hours * 60 * 60 * 1000 + GRACE_MS;
+    const at = today !== null && !todayHasRound && now + runMs <= later ? today : later;
+    if (overAt > Math.max(at, now)) return null;
+
+    const free = BigInt(house.amount) - BigInt(house.storageUsage) * STORAGE_PER_BYTE;
+    if (free + comesBack < yocto(r.safe) + yocto(r.deposit) + yocto(r.gas)) return null;
+
+    const loot = yocto(r.safe) - yocto(r.stake);
+    // The bounty is the deposit less the reserve the contract keeps for the round's storage and hands back to the house.
+    // The bounty's own record costs a few hundred bytes more when it opens, known only then: `prize` is at most that.
+    const reserve = roundReserve(h.masks.length);
+    const bounty = yocto(r.deposit) > reserve ? yocto(r.deposit) - reserve : 0n;
+    const maskSet = new Set(h.masks);
+    return {
+      season: h.account,
+      at,
+      n: lastNo !== null ? lastNo + 1 : await this.#firstFreeRace(),
+      target: h.target,
+      targetCode: h.safeCode,
+      inSafe: loot.toString(),
+      locked: bounty.toString(),
+      prize: (loot + bounty).toString(),
+      minLoot: yocto(r.min_loot).toString(),
+      masks: h.masks.map((m) => this.#who(m, maskSet)),
+      sealMinutes: r.commit_minutes,
+      hours: r.hours,
+      funded: true,
+    };
+  }
+
+  /**
+   * The number of the first `race-<n>` none of the arena's bounty contracts holds: the house's rounds take them in a
+   * row. The search doubles its step until a number is free, then halves back to the first free one.
+   */
+  async #firstFreeRace(): Promise<number> {
+    const taken = async (n: number) => {
+      const id = `race-${String(n).padStart(4, "0")}`;
+      for (const contract of this.#contracts) if (await this.#rpc.view<unknown>(contract, "get", { id })) return true;
+      return false;
+    };
+    if (!(await taken(1))) return 1;
+    let low = 1;
+    let high = 2;
+    while (await taken(high)) {
+      low = high;
+      high *= 2;
+    }
+    while (high - low > 1) {
+      const mid = Math.floor((low + high) / 2);
+      if (await taken(mid)) low = mid;
+      else high = mid;
+    }
+    return high;
   }
 
   /** The `open_safe` calls the treasury made, each with the transaction that made it (the scheduler's `open_next`). */
@@ -633,6 +806,19 @@ export class Arena {
       return fa - fb || a.who.name.localeCompare(b.who.name);
     });
   }
+}
+
+/** `race-0007` → 7; null for any other id. */
+function raceNumber(id: string): number | null {
+  const m = /^race-(\d{1,9})$/.exec(id);
+  return m ? Number(m[1]) : null;
+}
+
+/** The sooner of two next races; one that can be paid for goes before one that cannot. */
+function sooner(a: NextRace | null, b: NextRace | null): NextRace | null {
+  if (!a || !b) return a ?? b;
+  if (a.funded !== b.funded) return a.funded ? a : b;
+  return b.at < a.at ? b : a;
 }
 
 /**

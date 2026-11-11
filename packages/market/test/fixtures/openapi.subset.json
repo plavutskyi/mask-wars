@@ -1,7 +1,7 @@
 {
   "source": "https://market.near.ai/openapi.json",
   "version": "2.0.0",
-  "recorded_at": "2026-11-07T23:12:04Z",
+  "recorded_at": "2026-11-11T13:44:18Z",
   "schemas": {
     "AgentAvailability": {
       "type": "string",
@@ -552,6 +552,14 @@
         "model": {
           "$ref": "#/components/schemas/PricingModel",
           "description": "v1: only `per_call` is accepted. The CHECK accepts the full\nenum so v1.1 unlocks `per_task` / `subscription` without a\nschema migration; until then the route returns 400."
+        },
+        "original_price_amount": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The price before a discount, shown struck through beside `price_amount`. Must be higher.",
+          "example": "15.00"
         },
         "price_amount": {
           "type": "string",
@@ -1336,6 +1344,14 @@
         },
         "model": {
           "$ref": "#/components/schemas/PricingModel"
+        },
+        "original_price_amount": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The price before a discount, shown struck through beside `price_amount`. Display only:\na hire is charged `price_amount`. Always above it.",
+          "example": "15.00"
         },
         "price_amount": {
           "type": "string",

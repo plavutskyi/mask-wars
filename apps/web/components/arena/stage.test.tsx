@@ -152,3 +152,57 @@ describe('the stage between races', () => {
     expect(button()).toBe('See the break');
   });
 });
+
+describe('what it is, and the next round between rounds', () => {
+  const masks = [
+    { account: 'onyx.tinygif8324.testnet', slug: 'onyx', name: 'ONYX', mask: true, model: null },
+    { account: 'oracle.tinygif8324.testnet', slug: 'oracle', name: 'ORACLE', mask: true, model: null },
+    { account: 'nova.tinygif8324.testnet', slug: 'nova', name: 'NOVA', mask: true, model: null },
+  ];
+  const next = (at: number): NextRace => ({
+    season: 'season.tinygif8324.testnet',
+    at,
+    n: 4,
+    target: 'live-safe',
+    targetCode: 'x',
+    inSafe: '1',
+    locked: '1',
+    prize: '1850000000000000000000000',
+    minLoot: '1',
+    masks,
+    sealMinutes: 45,
+    hours: 4,
+    funded: true,
+  });
+
+  it('one line says what MASK WARS is, on every state of the stage', () => {
+    vi.setSystemTime(racing.startsAt! + 60_000);
+    show(<Stage race={racing} serverNow={racing.startsAt! + 60_000} asOf={null} />);
+    expect(box.querySelector('[data-top]')?.textContent).toBe('AI masks break a vault of real NEAR. Live. The contract pays the winner.');
+    show(<Stage race={null} serverNow={Date.now()} asOf={null} error />);
+    expect(box.querySelector('[data-top]')?.textContent).toContain('real NEAR');
+  });
+
+  it('long after the last round, the stage is the next one: its sum, when it opens, the clock to it', () => {
+    const now = broken.deadline + 6 * 3_600_000;
+    vi.setSystemTime(now);
+    const at = Date.UTC(2026, 10, 12, 18, 4);
+    show(<Stage race={broken} next={next(Math.max(at, now + 90 * 60_000))} serverNow={now} asOf={null} />);
+    expect(head().textContent).toContain('Next round');
+    expect(box.querySelector('[data-phase]')?.getAttribute('data-phase')).toBe('next');
+    expect(box.textContent).toContain('1.85');
+    expect(box.textContent).toMatch(/Opens\s*[0-9]{2}:[0-9]{2}\s*UTC/);
+    expect(box.textContent).not.toContain('Broken in');
+    expect(button()).toBe('Last round');
+  });
+
+  it('a round that has just ended keeps the stage, with the clock to the next one above it', () => {
+    const end = broken.payout?.at ?? broken.brokeAt!;
+    const now = end + 10 * 60_000;
+    vi.setSystemTime(now);
+    show(<Stage race={broken} next={next(now + 20 * 3_600_000)} serverNow={now} asOf={null} />);
+    expect(head().textContent).toContain('Next round');
+    expect(box.querySelector('[data-phase]')?.getAttribute('data-phase')).toBe('broken');
+    expect(box.textContent).toContain('NOVA');
+  });
+});

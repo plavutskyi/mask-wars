@@ -79,6 +79,16 @@ The surface a sealed round and the judge need, as `live-safe` has it. A safe get
   anyone but its team. It is no move: the round the safe is armed for, the seals and the count of moves stay as the
   judge reads them. The season treasury calls it from `collect`, so a safe nobody broke does not keep its NEAR for
   good.
+- `retire()` — the safe's `team` retires the safe once its round is over: the safe deletes its own account, and its
+  whole balance goes to the team, the NEAR its code and state locked included. A safe that took no round goes at once.
+  A safe armed for a round asks the contract that armed it (`get` of its round) and goes only when that round is
+  `drained`, `paid` or `refunded` and its deadline has passed: never while the bounty is open, never before the
+  deadline, while the sealed masks still have their turns, never for anyone but its team. It logs a `retired` event
+  (`bounty`, empty for a safe that took no round, `to`, `amount`). 30 TGas is enough for the biggest safe. The
+  account that made the safe may make it again under the same name for the next round: nothing of the old one is
+  left, and an answer of the bounty contract still on its way to the old safe moves nothing in the new one
+  (`on_retire` and `on_bounty` take only the answer the safe asked for as it was armed). A practice safe names no
+  team and is never retired.
 
 The arena library above still has the older surface (moves, no lock, no turns). Each needs the lock, the team, the seal
 order and turns, with its own state put back at the start of every turn, before its code goes on the list of the
@@ -107,6 +117,13 @@ team. Two are drained by a mask holding function-call keys only, confirmed by th
 bounty contract; the third nobody plays, and `collect` brings its bounty and its safe's NEAR back to the treasury
 (`reclaim`). A crew's own safe beside it shows what `reclaim` refuses: while the round is open, for anyone but the
 team, after a mask won. Not one full key takes part.
+
+`cargo test -p race-runner --test retire` retires the safe: a won round keeps its safe until the deadline, then the
+team has all it held, the storage's NEAR included, and the account is gone; a round nobody won keeps its safe until
+the bounty is refunded; a safe that took no round goes at once; the biggest safe there can be (16 masks, the longest
+names, everyone played) still fits what NEAR lets an account delete; and the safe made again under the same name by
+the same parent takes a second round, which the same mask wins with the keys it was given once and the real judge
+confirms.
 
 ## The only win
 

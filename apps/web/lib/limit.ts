@@ -4,6 +4,8 @@
 export interface Limiter {
   /** `null` when the call may go ahead, otherwise how many seconds until the caller's window opens again. */
   take(key: string, now?: number): number | null;
+  /** The same answer without taking anything: `null` while the caller still has calls left in its window. */
+  wait(key: string, now?: number): number | null;
 }
 
 export function createLimiter({ perWindow, windowMs, maxKeys = 10_000 }: { perWindow: number; windowMs: number; maxKeys?: number }): Limiter {
@@ -22,6 +24,11 @@ export function createLimiter({ perWindow, windowMs, maxKeys = 10_000 }: { perWi
       if (w.used >= perWindow) return Math.max(1, Math.ceil((w.start + windowMs - now) / 1000));
       w.used += 1;
       return null;
+    },
+    wait(key, now = Date.now()) {
+      const w = windows.get(key);
+      if (!w || now - w.start >= windowMs || w.used < perWindow) return null;
+      return Math.max(1, Math.ceil((w.start + windowMs - now) / 1000));
     },
   };
 }

@@ -105,3 +105,22 @@ describe('share tags', () => {
     for (const p of ['/', '/league', '/break', '/race', '/mask/nova/extra']) expect(cardOf(p, 'x').url).toBe('/og.jpg');
   });
 });
+
+describe('the call card', () => {
+  it('a call shared on X is a 16:9 picture: the verdict, how the round ended, every number from the chain', async () => {
+    const { callCard, callLines, CALL_SIZE } = await import('./card');
+    const r = race('race-0003');
+    const nova = r.winner!.account;
+    const right = callLines(r, { race: r.id, choice: nova, streak: 3 });
+    expect(right).toMatchObject({ verdict: 'CALLED IT', right: true, head: 'NOVA BROKE IT', amount: '1.086', sub: 'IN 8:13', streak: '3 IN A ROW' });
+    const wrong = callLines(r, { race: r.id, choice: 'held', streak: null });
+    expect(wrong).toMatchObject({ verdict: 'RUN IT BACK', right: false, head: 'PICKED THE SAFE TO HOLD', amount: '1.086', sub: 'NOVA BROKE IT IN 8:13', streak: null });
+    const res = await callCard(r, { race: r.id, choice: nova, streak: 3 });
+    expect(res.headers.get('content-type')).toBe('image/png');
+    const png = Buffer.from(await res.arrayBuffer());
+    expect(png.readUInt32BE(16)).toBe(CALL_SIZE.width);
+    expect(png.readUInt32BE(20)).toBe(CALL_SIZE.height);
+    expect(CALL_SIZE.width / CALL_SIZE.height).toBeCloseTo(16 / 9);
+    if (process.env.CARD_SHOTS) writeFileSync(join(process.env.CARD_SHOTS, 'call-right.png'), png);
+  });
+});

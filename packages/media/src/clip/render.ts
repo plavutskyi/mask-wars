@@ -139,8 +139,8 @@ export async function renderRaceClip(input: unknown, job: ClipJob): Promise<Clip
 }
 
 /** ffmpeg's loudnorm measurement of a file, or an error that says which file could not be measured. */
-function measure(file: string): Record<string, string> {
-  const r = spawnSync("ffmpeg", ["-nostats", "-i", file, "-af", "loudnorm=I=-14:TP=-1.5:LRA=11:print_format=json", "-f", "null", "-"], { encoding: "utf8" });
+function measure(file: string, before = ""): Record<string, string> {
+  const r = spawnSync("ffmpeg", ["-nostats", "-i", file, "-af", `${before ? `${before},` : ""}loudnorm=I=-14:TP=-1.5:LRA=11:print_format=json`, "-f", "null", "-"], { encoding: "utf8" });
   const at = r.stderr?.lastIndexOf("{") ?? -1;
   if (r.status !== 0 || at < 0) throw new Error(`ffmpeg could not measure the loudness of ${file}: ${r.stderr?.trim().split("\n").pop() ?? r.error?.message}`);
   return JSON.parse(r.stderr.slice(at, r.stderr.lastIndexOf("}") + 1)) as Record<string, string>;
@@ -154,8 +154,11 @@ export function loudness(file: string): { lufs: number; truePeak: number } {
 const hasAudio = (file: string): boolean =>
   execFileSync("ffprobe", ["-v", "error", "-select_streams", "a", "-show_entries", "stream=index", "-of", "csv=p=0", file], { encoding: "utf8" }).trim() !== "";
 
-/** H.264 High, yuv420p, faststart; sound (when there is any) at −14 LUFS. */
-export function finish(raw: string, output: string): { audio: boolean; lufs: number | null } {
+/**
+ * H.264 High, yuv420p, faststart; sound (when there is any) at −14 LUFS. `limit` holds the peaks of a track with hard
+ * hits in it under the true-peak ceiling after it is brought to that level; a track of music alone needs none.
+ */
+export function finish(raw: string, output: string, limit = false): { audio: boolean; lufs: number | null } {
   const audio = hasAudio(raw);
   const tmp = `${output}.tmp.mp4`;
   const video = ["-c:v", "libx264", "-profile:v", "high", "-pix_fmt", "yuv420p", "-crf", "18", "-preset", "medium"];
@@ -164,7 +167,13 @@ export function finish(raw: string, output: string): { audio: boolean; lufs: num
     execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-i", raw, "-map", "0:v:0", ...video, "-an", "-movflags", "+faststart", tmp]);
   } else {
     const m = measure(raw);
-    const af = `loudnorm=I=-14:TP=-1.5:LRA=11:measured_I=${m.input_i}:measured_TP=${m.input_tp}:measured_LRA=${m.input_lra}:measured_thresh=${m.input_thresh}:offset=${m.target_offset}:linear=true,aresample=48000`;
+    let af = `loudnorm=I=-14:TP=-1.5:LRA=11:measured_I=${m.input_i}:measured_TP=${m.input_tp}:measured_LRA=${m.input_lra}:measured_thresh=${m.input_thresh}:offset=${m.target_offset}:linear=true,aresample=48000`;
+    if (limit) {
+      // Up to the level, the peaks held, then the little the limiter took given back: the hits stay hits.
+      const held = `volume=${(LOUDNESS.lufs - Number(m.input_i)).toFixed(2)}dB,alimiter=limit=0.62:attack=1:release=60:level=false`;
+      const makeup = Math.min(1.5, Math.max(0, LOUDNESS.lufs - Number(measure(raw, held).input_i)));
+      af = `${held},volume=${makeup.toFixed(2)}dB,aresample=48000`;
+    }
     execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-i", raw, "-map", "0:v:0", "-map", "0:a:0", ...video, "-af", af, "-ar", "48000", "-ac", "2", "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", tmp]);
     const level = loudness(tmp);
     if (Math.abs(level.lufs - LOUDNESS.lufs) > LOUDNESS.tolerance || level.truePeak > LOUDNESS.truePeakMax) throw new Error(`finish: ${level.lufs} LUFS, true peak ${level.truePeak}`);

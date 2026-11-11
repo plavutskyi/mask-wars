@@ -2,9 +2,9 @@
 // each one that is in progress. It is also the safety net behind the webhook: a missed or failed push is picked up on
 // the next poll.
 import { MarketError, type MarketClient } from "./client.ts";
-import { type CheckFn, type Served, serveAssignment } from "./service.ts";
+import { type CheckFn, type Served, type ServiceOptions, serveAssignment } from "./service.ts";
 
-export interface PollDeps {
+export interface PollDeps extends ServiceOptions {
   client: MarketClient;
   check: CheckFn;
   log?: (line: string) => void;

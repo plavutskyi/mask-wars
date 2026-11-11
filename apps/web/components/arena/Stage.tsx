@@ -7,7 +7,8 @@ import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
+import { type CSSProperties, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { PickView } from '@/lib/pick';
 import { artOf, day, shortAccount, timeUtc, toneOf } from '@/lib/show';
 import type { Across } from '@/lib/site';
 import { twoLines } from '../arena3d/headline';
@@ -19,7 +20,8 @@ import { Header } from './Header';
 import { Info, type InfoRow } from './Info';
 import { raceName, raceTitle, stageName, standing } from './names';
 import { Nums } from './Nums';
-import { type Scene, sceneOf, stageCast } from './scene';
+import { ownsDeck, Pick, type PickMode, pickMode } from './Pick';
+import { nextCast, nextScene, opensLine, type Scene, sceneOf, stageCast } from './scene';
 import s from './stage.module.css';
 
 // The 3D arena is its own chunk with three.js inside: it is fetched only once the page has loaded and gone quiet,
@@ -158,6 +160,17 @@ function useShown(scene: Scene | null, on: boolean, key: string): ArenaState {
 /** The home page's one line about the other network (`acrossOf`), with the time of the round that opens there next. */
 export type AcrossLine = Across & { readonly at: number | null };
 
+/** What MASK WARS is, in one line, for someone who has never heard of it. */
+export const WHAT = 'AI masks break a vault of real NEAR. Live. The contract pays the winner.';
+
+/** A round that ended keeps the stage this long; then the next one takes it, its clock running. */
+export const RESULT_MS = 60 * 60_000;
+
+/** When a round that is over stopped moving: the payout, the break, the bounty's way back, or its deadline. */
+export function endOf(race: Race): number {
+  return race.payout?.at ?? race.refund?.at ?? race.brokeAt ?? race.deadline;
+}
+
 export function Stage({
   race,
   next = null,
@@ -165,6 +178,8 @@ export function Stage({
   asOf = null,
   error,
   across = null,
+  pick = null,
+  rpId = 'maskwars.xyz',
 }: {
   race: Race | null;
   next?: NextRace | null;
@@ -173,6 +188,9 @@ export function Stage({
   asOf?: number | null;
   error?: boolean;
   across?: AcrossLine | null;
+  /** Pick the breaker: the round that takes picks, and the person's own calls (lib/pick). */
+  pick?: PickView | null;
+  rpId?: string;
 }) {
   const router = useRouter();
   const [now, setNow] = useState(serverNow);
@@ -181,22 +199,30 @@ export function Stage({
   // instead, and the page asks again.
   const old = asOf !== null;
   const live = !old && (race?.live ?? false);
-  const ended = race !== null && !running;
-  const scene = useMemo(() => sceneOf(race, error === true), [race, error]);
+  // The next round, while nothing runs: only one the treasury can open, and only until its minute comes. Past it the
+  // scheduler is on its way, or late: the page promises no time it cannot keep.
+  const upNext = !old && !running && !live && next !== null && next.funded && next.at > now ? next : null;
+  // Between rounds the stage is the next one: its vault and its sum, the clock to it in the header. A round that has
+  // just ended keeps the stage for a while first.
+  const ahead = upNext !== null && (race === null || now - endOf(race) > RESULT_MS) ? upNext : null;
+  const scene = useMemo(() => (ahead ? nextScene(ahead) : sceneOf(race, error === true)), [ahead, race, error]);
   const three = useThree(scene !== null);
-  const shown = useShown(scene, three.mode === 'on', race?.id ?? (error ? 'error' : 'empty'));
+  const shown = useShown(scene, three.mode === 'on', ahead ? `next-${ahead.at}` : (race?.id ?? (error ? 'error' : 'empty')));
+  // The round that takes picks is the one on the stage: the round itself, or the next one between rounds.
+  const onStage = pick?.window?.race != null || ahead !== null;
+  const [mode, setMode] = useState<PickMode>(() => (pick ? pickMode(pick, serverNow, pick.mine, false) : 'none'));
+  const onMode = useCallback((m: PickMode) => setMode(m), []);
+  // The block takes the deck's one button while the round takes picks, or while it offers the next one.
+  const picking = pick !== null && ownsDeck(mode, pick);
   const screen = useRef<HTMLElement>(null);
   const [insets, setInsets] = useState<{ top: number; bottom: number } | null>(null);
   // One player for the page: the flat stage plays the bed, the 3D arena adds the lock and the payout to it.
   const [audio] = useState(() => new ArenaAudio());
   const [sound, setSound] = useState(false);
 
-  // The next round, while nothing runs: only one the treasury can open, and only until its minute comes. Past it the
-  // scheduler is on its way, or late: the page promises no time it cannot keep.
-  const upNext = !old && !running && !live && next !== null && next.funded && next.at > now ? next : null;
   // In its last minutes the page asks the chain as often as during a race, so the new round is on screen as it opens.
   const nearly = !running && next !== null && next.funded && next.at - now < 3 * 60_000 && now - next.at < 15 * 60_000;
-  const ticking = !old && (running || live || upNext !== null);
+  const ticking = !old && (running || live || upNext !== null || Boolean(pick?.window));
   // The other network has its line only between races: while this arena runs, the screen is the race's alone.
   const other = !running && !live ? across : null;
   const otherAt = other?.at && other.at > now ? new Date(other.at).toISOString().slice(11, 16) : null;
@@ -217,7 +243,8 @@ export function Stage({
   useEffect(() => {
     const el = screen.current;
     if (!el || three.mode === 'flat') return;
-    const head = el.querySelector('header');
+    // The top is the line under the header when the page has one: the arena composes under it.
+    const head = el.querySelector('[data-top]') ?? el.querySelector('header');
     const deck = el.querySelector('footer');
     if (!head || !deck) return;
     const measure = () => {
@@ -269,8 +296,8 @@ export function Stage({
       ]
     : [];
   const factsLabel = race?.phase === 'broken' ? 'Where the money came from' : 'The race on chain';
-  // In the door the sheet opens down, over the floor: above it is the header.
-  const aside = race ? <Info rows={facts} label={factsLabel} side="bottom" /> : null;
+  // In the door the sheet opens down, over the floor: above it is the header. The next round has no facts yet.
+  const aside = race && !ahead ? <Info rows={facts} label={factsLabel} side="bottom" /> : null;
 
   // The clock, top centre: to the start, since the start, to the close; then to the next round. Over a round read too
   // long ago to count on, the time it was read at, and no clock that runs.
@@ -317,21 +344,33 @@ export function Stage({
     );
   }
 
-  const cast = useMemo(() => stageCast(race), [race]);
-  const heats = race ? cast.map((m) => standing(m, race.events)) : cast.map(() => ({ heat: 0.1, text: '' }));
-  const heat = !race ? 0 : race.phase === 'broken' ? 1 : race.phase === 'sealing' ? 0.15 : race.phase === 'held' ? 0 : Math.max(0, ...heats.map((h) => h.heat));
-  const lead = race?.phase === 'racing' && heats.length ? heats.indexOf(heats.reduce((a, b) => (b.heat > a.heat ? b : a))) : -1;
-  const tone = !race ? 'ice' : race.phase === 'broken' ? toneOf(race.winner) : lead >= 0 ? toneOf(cast[lead]) : 'ice';
-  const action = !race ? 'See the league' : running ? (live ? 'Watch live' : 'See the race') : race.phase === 'broken' ? 'See the break' : 'See the race';
+  const cast = useMemo(() => (ahead ? nextCast(ahead) : stageCast(race)), [ahead, race]);
+  const heats = race && !ahead ? cast.map((m) => standing(m, race.events)) : cast.map(() => ({ heat: 0.1, text: '' }));
+  const heat = ahead ? 0.15 : !race ? 0 : race.phase === 'broken' ? 1 : race.phase === 'sealing' ? 0.15 : race.phase === 'held' ? 0 : Math.max(0, ...heats.map((h) => h.heat));
+  const lead = !ahead && race?.phase === 'racing' && heats.length ? heats.indexOf(heats.reduce((a, b) => (b.heat > a.heat ? b : a))) : -1;
+  const tone = ahead || !race ? 'ice' : race.phase === 'broken' ? toneOf(race.winner) : lead >= 0 ? toneOf(cast[lead]) : 'ice';
+  const action = !race
+    ? 'See the league'
+    : ahead
+      ? 'Last round'
+      : running
+        ? live
+          ? 'Watch live'
+          : 'See the race'
+        : race.phase === 'broken'
+          ? 'See the break'
+          : 'See the race';
+  const phase = ahead ? 'next' : (race?.phase ?? 'empty');
 
   return (
     <main
       ref={screen}
       className={s.screen}
-      data-phase={race?.phase ?? 'empty'}
+      data-phase={phase}
       data-tone={tone}
       data-three={three.mode === 'on' ? '' : undefined}
       data-across={other ? '' : undefined}
+      data-pick={mode === 'none' || !pick ? undefined : mode === 'open' ? 'open' : picking ? 'called' : 'row'}
       style={{ '--heat': heat.toFixed(3) } as CSSProperties}
     >
       <div className={s.flatBack} aria-hidden>
@@ -343,12 +382,23 @@ export function Stage({
       </div>
 
       <Header center={center} live={live} network={race?.network ?? NETWORK} here="race" />
+      <p className={s.what} data-top="">
+        {WHAT}
+      </p>
 
-      {race?.phase === 'broken' ? (
+      {race?.phase === 'broken' && !ahead ? (
         <FlatBroken race={race} facts={facts} />
       ) : (
         <>
-          <FlatStage race={race} error={error === true} cast={cast} heats={heats} lead={lead} aside={aside} />
+          <FlatStage
+            race={ahead ? null : race}
+            error={error === true}
+            cast={cast}
+            heats={heats}
+            lead={lead}
+            aside={aside}
+            door={ahead ? { sum: near(ahead.prize), line: opensLine(ahead.at) } : null}
+          />
           <div className={s.fill} />
         </>
       )}
@@ -376,19 +426,27 @@ export function Stage({
       ) : null}
 
       <footer className={s.deck}>
+        {pick ? <Pick pick={pick} now={now} rpId={rpId} onMode={onMode} onStage={onStage} /> : null}
         {error && !race ? (
           // The chain did not answer: the one useful action is to ask it again.
           <a href="/" className={s.btn}>
             <span className={s.word}>Try again</span>
           </a>
-        ) : (
+        ) : picking ? null : (
           <Link href={race ? `/race/${race.id}` : '/league'} className={s.btn}>
             <span className={s.word}>{action}</span>
           </Link>
         )}
-        <Link href="/break" className={s.quiet} prefetch={false}>
-          Break my contract
-        </Link>
+        <div className={s.quietRow}>
+          {picking && race ? (
+            <Link href={`/race/${race.id}`} className={s.quiet}>
+              {action}
+            </Link>
+          ) : null}
+          <Link href="/break" className={s.quiet} prefetch={false}>
+            Break my contract
+          </Link>
+        </div>
         <button type="button" className={s.sound} onClick={toggleSound} aria-pressed={sound} aria-label="Sound">
           <SpeakerIcon on={sound} />
         </button>
@@ -438,6 +496,7 @@ function FlatStage({
   heats,
   lead,
   aside,
+  door = null,
 }: {
   race: Race | null;
   error: boolean;
@@ -445,14 +504,16 @@ function FlatStage({
   heats: readonly { heat: number; text: string }[];
   lead: number;
   aside: ReactNode;
+  /** The next round's vault, between rounds: its sum and when it opens. */
+  door?: { sum: string; line: string } | null;
 }) {
   const running = race !== null && (race.phase === 'sealing' || race.phase === 'racing');
-  const sum = running && race ? near(race.prize) : null;
-  const name = race ? stageName(race) : null;
+  const sum = door ? door.sum : running && race ? near(race.prize) : null;
+  const name = door ? { text: door.line, account: false } : race ? stageName(race) : null;
   // A vault with no sum to show says what happened in its door.
   const headline = running ? null : twoLines(!race ? (error ? 'The chain is not answering' : 'No race yet') : 'Vault held');
   return (
-    <section className={s.flat} aria-label={race ? `${name!.text}: the vault` : 'The vault'} data-masks={cast.length}>
+    <section className={s.flat} aria-label={door ? `The next round: ${door.line}` : race ? `${name!.text}: the vault` : 'The vault'} data-masks={cast.length}>
       <div className={s.fVault} aria-hidden>
         <Image src="/art/vault.webp" alt="" fill priority fetchPriority="high" sizes="(max-width: 760px) 96vw, 640px" quality={85} className={`${s.half} ${s.hl}`} />
         <Image src="/art/vault.webp" alt="" fill priority fetchPriority="high" sizes="(max-width: 760px) 96vw, 640px" quality={85} className={`${s.half} ${s.hr}`} />
@@ -466,7 +527,7 @@ function FlatStage({
               {sum}
               <span className={`${s.word} ${s.fUnit}`}>NEAR</span>
             </span>
-            <span className={s.fUnder} data-short={name!.text.length <= 10 ? '' : undefined}>
+            <span className={s.fUnder} data-short={name!.text.length <= 10 || door ? '' : undefined}>
               {name!.account ? (
                 <span className={s.fAccount} title={race!.target}>
                   {name!.text}

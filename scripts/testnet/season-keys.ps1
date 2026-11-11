@@ -27,8 +27,18 @@
 #   .\season-keys.ps1 -Safe safe-0001.maskwars.near -Network mainnet
 #   .\season-keys.ps1 -Safe safe-0002.maskwars.near -SafeOnly -Network mainnet
 #   .\season-keys.ps1 -Network mainnet -DryRun
-param([string[]]$Masks = @('nova', 'onyx', 'oracle'), [int]$From = 1, [int]$To = 14, [switch]$Rotate, [string]$Safe, [switch]$SafeOnly, [string]$Network, [switch]$DryRun)
+#
+# -Allowance is what a key on a safe may spend on gas, taken from the mask's own balance: '0.5 NEAR' unless given, or
+# 'unlimited'. A won round costs a mask's key two calls of 15 TGas, by the arena's own count about 0.03 NEAR off the
+# allowance (whether NEAR gives that back with the gas refund has not been measured). A season's safe lives one round,
+# so 0.5 NEAR is plenty. The house's vault is made again under the same name every day, so one key serves every round:
+# give it enough for good, once.
+#   .\season-keys.ps1 -Safe vault.house.maskwars.near -SafeOnly -Allowance unlimited -Network mainnet
+# Whatever the allowance, the key calls only that safe's methods and never attaches NEAR: the most a leaked one costs
+# is the gas the mask's own balance can buy.
+param([string[]]$Masks = @('nova', 'onyx', 'oracle'), [int]$From = 1, [int]$To = 14, [switch]$Rotate, [string]$Safe, [switch]$SafeOnly, [string]$Allowance = '0.5 NEAR', [string]$Network, [switch]$DryRun)
 . (Join-Path $PSScriptRoot 'config.ps1')
+if ($Allowance -cnotmatch '^(unlimited|(0|[1-9]\d{0,3})(\.\d{1,5})? NEAR)$') { Write-Error "-Allowance: an amount such as '0.5 NEAR', or unlimited, not '$Allowance'"; exit 1 }
 $file = Get-ScratchFile 'mask-seeds.json'
 $methods = (Read-Input 'season-args.json').safe_methods
 if ($Safe -and $Rotate) { Write-Error '-Safe gives keys from the seeds the masks hold; rotate the season keys on their own'; exit 1 }
@@ -52,7 +62,7 @@ foreach ($m in $Masks) {
     $keys += [pscustomobject]@{ to = $Bounty; allowance = '10 NEAR'; methods = 'commit, reveal, claim_drain, settle'; key = $public.$m.bounty }
   }
   foreach ($s in $public.$m.safes) {
-    $keys += [pscustomobject]@{ to = $s.safe; allowance = '0.5 NEAR'; methods = $methods; key = $s.key }
+    $keys += [pscustomobject]@{ to = $s.safe; allowance = $Allowance; methods = $methods; key = $s.key }
   }
   for ($i = 0; $i -lt $keys.Count; $i += 3) {
     $cmd = @('transaction', 'construct-transaction', $account, $account)

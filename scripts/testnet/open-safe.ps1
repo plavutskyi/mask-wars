@@ -9,10 +9,53 @@
 # its team (safe-init-args.json): the contract locks the safe to the round in the same call, and a safe that does not
 # lock takes no round (the whole deposit comes back at once). Start the `Live race` right after this, so the race ends
 # inside the commit window. The owner chooses "send".
+#
+# -House: the house's daily round on its vault, the third of the three scripts of a day by hand (retire.ps1,
+# safe-deploy.ps1 -House, open-safe.ps1 -House). The house signs. Everything about the round comes from packages/network
+# (`round`: the deposit, min_loot, the windows) and from the chain (Get-HousePlan in config.ps1): its id is the first
+# race-<n> no bounty contract of the arena holds, the vault must be on chain and right, and the bounty contract must
+# list its code and name the judge of judge-args.json. -Near does not apply. Right after it, start the race: Actions,
+# Season, Run workflow finds the round open and races it.
 #   .\open-safe.ps1
+#   .\open-safe.ps1 -House -Network mainnet
 #   .\open-safe.ps1 -Network mainnet -Near 0.5 -DryRun
-param([string]$Near = '0.35', [string]$Network, [switch]$DryRun)
+param([string]$Near = '0.35', [switch]$House, [string]$Network, [switch]$DryRun)
 . (Join-Path $PSScriptRoot 'config.ps1')
+if ($House) {
+  $plan = Get-HousePlan
+  $steps = @($plan.steps)
+  if ($plan.kind -eq 'race') {
+    Write-Host "$($plan.why)"
+    Write-Host "Now: Actions -> Season -> Run workflow (or Live race: challenge $($plan.round.challenge), bounty $($plan.round.id))."
+    Remove-HousePlan
+    exit 0
+  }
+  if ($plan.kind -ne 'steps') { Write-Host "Nothing was sent: $($plan.why)" -ForegroundColor Yellow; Remove-HousePlan; exit 1 }
+  # A dry run shows this script's own step of an ordinary day.
+  $step = if ($DryRun) { $steps | Where-Object { $_.kind -eq 'open' } | Select-Object -First 1 } else { $steps[0] }
+  if ($step.kind -ne 'open') {
+    Write-Host "Nothing was sent: the vault is not ready for a round yet. First: $($step.text) (retire.ps1, then safe-deploy.ps1 -House)." -ForegroundColor Yellow
+    Remove-HousePlan
+    exit 1
+  }
+  Assert-Limit "the round's deposit of $($step.deposit)" (ConvertTo-Yocto ($step.deposit -replace ' NEAR$', '')) $Net.limits.hand.deposit_max
+  if ($plan.note) { Write-Host $plan.note -ForegroundColor Yellow }
+  Write-Host $step.text
+  Invoke-Near contract call-function as-transaction $Bounty open_safe file-args $step.args_file prepaid-gas $step.gas attached-deposit $step.deposit sign-as $HouseAccount network-config $Network sign-with-keychain
+  if ($LASTEXITCODE -ne 0) { Write-Host 'Not sent: nothing changed.'; Remove-HousePlan; exit 1 }
+  if (-not $DryRun) {
+    $after = Wait-HouseStep $step
+    if ($after.kind -ne 'race') {
+      Write-Error "round $($step.id) did not open on $Vault (the transaction above says why; a safe that would not lock gives the whole deposit back): $($after.note) $($after.stop) $($after.why)"
+      Remove-HousePlan
+      exit 1
+    }
+    Write-Host "Round $($after.round.id) is open on $Vault and its masks seal their plans."
+    Write-Host "Now: Actions -> Season -> Run workflow (or Live race: challenge $($after.round.challenge), bounty $($after.round.id))."
+  }
+  Remove-HousePlan
+  exit 0
+}
 Assert-Limit "the round's deposit of $Near NEAR" (ConvertTo-Yocto $Near) $Net.limits.hand.deposit_max
 $file = Get-ScratchFile 'open-safe-args.json'
 $round = Read-Input 'open-safe-args.json'
