@@ -1,0 +1,24 @@
+[package]
+name = "maskwars-home"
+version = "1.0.0"
+edition = "2021"
+license = "MIT"
+publish = false
+description = "MASK WARS home: a mask's winnings above what it keeps go back to the house, and only there."
+
+[lib]
+crate-type = ["cdylib"]
+
+# The house is part of the code: each network has its own build, and a build names exactly one.
+[features]
+mainnet = []
+testnet = []
+
+[profile.release]
+codegen-units = 1
+opt-level = "z"
+lto = true
+debug = false
+panic = "abort"
+overflow-checks = true
+strip = true

@@ -37,7 +37,8 @@ if ($House) {
   $step = if ($DryRun) { $steps | Where-Object { $_.kind -eq 'create' } | Select-Object -First 1 } else { $steps[0] }
   if ($step.kind -eq 'open') { Write-Host "$Vault is already on chain, right and without a round. Next: open-safe.ps1 -House."; Remove-HousePlan; exit 0 }
   if ($step.kind -ne 'create') {
-    Write-Host "Nothing was sent: yesterday's round still stands on $Vault. First: retire.ps1 ($($step.text))." -ForegroundColor Yellow
+    $first = if ($step.kind -eq 'home') { "the masks' winnings come home first" } else { "yesterday's round still stands on $Vault" }
+    Write-Host "Nothing was sent: $first. First: retire.ps1 ($($step.text))." -ForegroundColor Yellow
     Remove-HousePlan
     exit 1
   }

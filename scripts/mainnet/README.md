@@ -27,7 +27,7 @@ by hand, the admin included. The admin proposes a change, the change waits in th
 | `scheduler.maskwars.near` | tells the treasury "now" | function-call: `open_next`, `collect` |
 | `house.maskwars.near` | the house: opens the daily round and takes back what it leaves | full, in the owner's keychain; a second, hot one only if the owner adds it |
 | `vault.house.maskwars.near` | the safe of the daily round: retires itself after the round and is made again under the same name | none |
-| `nova.`, `onyx.`, `oracle.maskwars.near` | the arena's own masks | full in the owner's keychain; in a race, function-call keys made from a seed, one per safe and one for the bounty contract |
+| `nova.`, `onyx.`, `oracle.maskwars.near` | the arena's own masks; each runs `home`, which sends its winnings to the house and nowhere else | full in the owner's keychain; in a race, function-call keys made from a seed, one per safe and one for the bounty contract |
 | `masks.maskwars.near` | the factory of people's masks; a person's mask is `<name>.masks.maskwars.near` | none |
 | `jobs.maskwars.near`, `crews.maskwars.near` | the jobs market and mask crews | none |
 
@@ -89,7 +89,14 @@ the round's records).
   under the same name the next day. The vault asks the bounty contract how the round ended before it goes: after a
   payout it retires once the round's deadline has passed, after a round nobody won once the bounty is refunded. While a
   round is on, nobody moves it.
-- **The daily step** ([`packages/race/src/house.ts`](../../packages/race/src/house.ts)) ends yesterday's round
+- **`home`** ([`contracts/home`](../../contracts/home)) is a code of 1.3 KB on each of the arena's own masks, built
+  without near-sdk. Its one method, `home()`, takes no arguments and anyone may call it: everything the mask holds
+  above 0.4 NEAR and the stake of its own storage goes to `house.maskwars.near`, written into the code, and at or
+  below that nothing goes. The masks' keys stay as they are and play rounds as before. Its code hash is `home_code` of
+  `mainnet.json`, and the daily step calls it only on a mask that runs exactly that code.
+- **The daily step** ([`packages/race/src/house.ts`](../../packages/race/src/house.ts)) first brings the masks' winnings
+  home (`home()` on each mask that holds 0.01 NEAR or more above what it keeps, counted before the house checks it can
+  pay), then ends yesterday's round
   (`settle` or `refund`; `unstick` for a claim the judge never answered), retires the vault, makes it again in one
   transaction that adds no key (create, fund, deploy, `new`) and opens today's round. Each part reads the chain first
   and repeats nothing, so a run that died is simply run again.
@@ -105,7 +112,8 @@ the round's records).
 | `retire`, from the second day on | vault to house | about 1.68 after a won round, 1.93 after one nobody won |
 | The vault, one transaction | house to vault | 1.93: about 1.65 is the stake of its code and state, 0.28 is what the masks race for |
 | `open_safe` | house to the bounty contract | 0.25: about 0.11 is the bounty, about 0.114 of reserve comes back at the payout |
-| A mask wins | vault and bounty contract to the mask | about 0.25 and 0.11, sent home with `house.ps1 -Collect` |
+| A mask wins | vault and bounty contract to the mask | about 0.25 and 0.11 |
+| `home()`, the next day's first step | mask to house | all the mask holds above 0.4 NEAR and its storage's stake |
 
 ### Setting it up, once
 
@@ -114,6 +122,7 @@ the round's records).
 | 1 | Let the bounty contract take the vault's code | `bounty-change.ps1 -Network mainnet -AllowSafe`, an hour later `-Apply`, then `-Show` | 2 |
 | 2 | The house's account | `house.ps1 -Network mainnet` | 1 |
 | 3 | The masks' spare NEAR to the house | `house.ps1 -Network mainnet -Collect` | 1 per mask |
+| 3a | `home` on each mask, so its winnings go home every day with nobody signing | `node scripts/mainnet/home-deploy.mjs` prints three `near contract deploy` commands, one per mask, each signed by that mask's key from the keychain; it checks the file against `home_code` first. Each locks about 0.0135 NEAR of the mask's own balance for the code. Check: `near account view-account-summary nova.maskwars.near network-config mainnet now` shows as the contract's SHA-256 the one `home-deploy.mjs` prints, and `house.ps1 -Network mainnet -Show` names no mask whose winnings stay with it | 1 per mask |
 | 4 | Each mask's key on the vault, good for every round | `season-keys.ps1 -Network mainnet -Safe vault.house.maskwars.near -SafeOnly -Allowance unlimited` | 1 per mask |
 | 5 | Optional: a hot key for the house | `house.ps1 -Network mainnet -HotKey`, then the secret `HOUSE_KEY` of the environment `season-mainnet` | 1 |
 | 6 | The repository variables `MASKWARS_NETWORK=mainnet`, `SEASON_LIVE=true` | | 0 |
@@ -127,7 +136,7 @@ scripts and one run, each script reading the chain and sending only what is left
 
 | # | Script | What it sends |
 | --- | --- | --- |
-| 1 | `retire.ps1 -Network mainnet` | `refund` or `settle` if yesterday's round needs one, then `retire` |
+| 1 | `retire.ps1 -Network mainnet` | `home()` on each mask that holds winnings, `refund` or `settle` if yesterday's round needs one, then `retire` |
 | 2 | `safe-deploy.ps1 -Network mainnet -House` | the vault, in one transaction |
 | 3 | `open-safe.ps1 -Network mainnet -House` | `open_safe` with the deposit |
 | 4 | Actions, `Season`, Run workflow | nothing: it finds the round open and races it |

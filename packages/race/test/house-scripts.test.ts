@@ -2,9 +2,15 @@
  * The owner's scripts for the house's day (scripts/testnet): what the masks send home, and that every script signs
  * with the house's key from the keychain, sends the sums of packages/network and nothing typed into the script.
  */
-import { readFileSync } from "node:fs";
-import { NETWORKS } from "@maskwars/network";
+import { execFile } from "node:child_process";
+import { createHash } from "node:crypto";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { codeHashHex, NETWORKS } from "@maskwars/network";
 import { describe, expect, it } from "vitest";
+import { homeDeploy } from "../../../scripts/mainnet/home-deploy.mjs";
 import { homeTransfers, LEAST, milli, yocto } from "../../../scripts/testnet/house.mjs";
 
 const NEAR = 10n ** 24n;
@@ -110,6 +116,14 @@ describe("the owner's scripts for the house's day", () => {
     expect(text).toContain('create-account fund-myself $HouseAccount "$($Net.fund.house) NEAR" autogenerate-new-keypair save-to-keychain sign-as $Admin');
     expect(text).toContain("Assert-Limit");
     expect(text).toContain("tokens $t.account send-near $HouseAccount $t.near");
+    // The day by hand sends the masks' winnings home with the rest of what closes yesterday, as the plan gives it.
+    expect(code("retire.ps1")).toContain("$closing = @('home', 'unstick', 'settle', 'refund', 'retire')");
+    // Once per mask: a home() that did not go through stops nothing, and the list is gone when the script ends.
+    const retire = code("retire.ps1");
+    expect(retire).toContain("$env:HOUSE_SKIP_HOME = (@($env:HOUSE_SKIP_HOME -split ',' | Where-Object { $_ }) + $step.mask) -join ','");
+    expect(retire.indexOf("if ($step.kind -eq 'home') {")).toBeLessThan(retire.indexOf("if ($LASTEXITCODE -ne 0) { Write-Host 'Not sent: nothing changed.'"));
+    expect(retire).toMatch(/\} finally \{\n\s+Remove-Item Env:HOUSE_SKIP_HOME -ErrorAction SilentlyContinue\n\}/);
+    expect(code("safe-deploy.ps1")).toContain(`$first = if ($step.kind -eq 'home') { "the masks' winnings come home first" }`);
     expect(text).toContain("add-key $HouseAccount grant-full-access use-manually-provided-public-key $public");
     expect(text).toContain("delete-keys $HouseAccount public-keys $Key");
     // The secret lives in the environment of the network, never in the repository.
@@ -124,5 +138,78 @@ describe("the owner's scripts for the house's day", () => {
     expect(text).toContain(`'${ok.source}'`);
     for (const a of ["0.5 NEAR", "2 NEAR", "unlimited", "10.25 NEAR"]) expect(ok.test(a), a).toBe(true);
     for (const a of ["", "2", "NEAR", "-1 NEAR", "1e3 NEAR", "Unlimited ", "0.5 NEAR; rm"]) expect(ok.test(a), a).toBe(false);
+  });
+});
+
+describe("home on the masks (scripts/mainnet/home-deploy.mjs)", () => {
+  const REPO = fileURLToPath(new URL("../../../", import.meta.url));
+
+  it("is the file home_code names, for each network: the build of contracts/home, under its sha256", () => {
+    for (const net of ["mainnet", "testnet"] as const) {
+      const d = homeDeploy(REPO, net);
+      expect(d.sha256).toBe(codeHashHex(NETWORKS[net].home_code!));
+      expect(d.wasm.endsWith(`maskwars-home-${net}-${d.sha256}.wasm`)).toBe(true);
+      expect(createHash("sha256").update(readFileSync(d.wasm)).digest("hex")).toBe(d.sha256);
+      // A wasm module of a few hundred bytes, whose house is the network's own, written into it.
+      const bytes = readFileSync(d.wasm);
+      expect(bytes.subarray(0, 4).toString("hex")).toBe("0061736d");
+      expect(d.bytes).toBeLessThan(2_000);
+      expect(bytes.includes(Buffer.from(`"to":"${NETWORKS[net].house}"`))).toBe(true);
+      expect(d.house).toBe(NETWORKS[net].house);
+      expect(WebAssembly.Module.exports(new WebAssembly.Module(bytes)).filter((e) => e.kind === "function").map((e) => e.name)).toEqual(["home"]);
+    }
+  });
+
+  it("prints exactly three deploys of that file, one per mask, each signed by the mask's own key from the keychain", () => {
+    const d = homeDeploy(REPO);
+    // `near`, or on the owner's machine the near-cli of their scripts, .scratch/near/near.exe.
+    const cli = existsSync(join(REPO, ".scratch", "near", "near.exe")) ? `& '${join(REPO, ".scratch", "near", "near.exe")}'` : "near";
+    const wasm = /\s/.test(d.wasm) ? `'${d.wasm}'` : d.wasm;
+    expect(d.commands).toEqual(
+      Object.values(NETWORKS.mainnet.masks).map(
+        (mask) => `${cli} contract deploy ${mask} use-file ${wasm} without-init-call network-config mainnet sign-with-keychain`,
+      ),
+    );
+    expect(d.commands).toHaveLength(3);
+    // The code locks well under 0.02 NEAR of each mask's balance.
+    expect(Number(d.stake)).toBeGreaterThan(0.005);
+    expect(Number(d.stake)).toBeLessThan(0.02);
+  });
+
+  it("deploys nothing when the file is not the code home_code names", () => {
+    const repo = mkdtempSync(join(tmpdir(), "home-deploy-"));
+    mkdirSync(join(repo, "packages", "network"), { recursive: true });
+    mkdirSync(join(repo, "apps", "web", "public", "contracts"), { recursive: true });
+    cpSync(join(REPO, "packages", "network", "mainnet.json"), join(repo, "packages", "network", "mainnet.json"));
+    const hex = codeHashHex(NETWORKS.mainnet.home_code!)!;
+    expect(() => homeDeploy(repo)).toThrow(`holds no maskwars-home-mainnet-${hex}.wasm`);
+    writeFileSync(join(repo, "apps", "web", "public", "contracts", `maskwars-home-mainnet-${hex}.wasm`), "not home");
+    expect(() => homeDeploy(repo)).toThrow(`hashes to ${createHash("sha256").update("not home").digest("hex")}, not to home_code`);
+    writeFileSync(join(repo, "packages", "network", "mainnet.json"), JSON.stringify({ ...NETWORKS.mainnet, home_code: null }));
+    expect(() => homeDeploy(repo)).toThrow("names no home_code: nothing to deploy");
+  });
+
+  it("calls the near-cli the owner's scripts use when it is there, from PowerShell, with a path that holds a space quoted", () => {
+    const repo = join(mkdtempSync(join(tmpdir(), "home-deploy-")), "the repo");
+    const hex = codeHashHex(NETWORKS.mainnet.home_code!)!;
+    for (const dir of [["packages", "network"], ["apps", "web", "public", "contracts"], [".scratch", "near"]]) mkdirSync(join(repo, ...dir), { recursive: true });
+    cpSync(join(REPO, "packages", "network", "mainnet.json"), join(repo, "packages", "network", "mainnet.json"));
+    cpSync(homeDeploy(REPO).wasm, join(repo, "apps", "web", "public", "contracts", `maskwars-home-mainnet-${hex}.wasm`));
+    writeFileSync(join(repo, ".scratch", "near", "near.exe"), "");
+    const d = homeDeploy(repo);
+    expect(d.commands[0]).toBe(
+      `& '${join(repo, ".scratch", "near", "near.exe")}' contract deploy nova.maskwars.near use-file '${d.wasm}' without-init-call network-config mainnet sign-with-keychain`,
+    );
+  });
+
+  it("run by the owner: the three commands on stdout and nothing else", async () => {
+    const script = fileURLToPath(new URL("../../../scripts/mainnet/home-deploy.mjs", import.meta.url));
+    const r = await new Promise<{ code: number; out: string; err: string }>((done) =>
+      execFile(process.execPath, [script], (error, out, err) => done({ code: error ? Number(error.code ?? 1) : 0, out, err })),
+    );
+    expect(r.code).toBe(0);
+    expect(r.out.trimEnd().split("\n")).toEqual(homeDeploy(REPO).commands);
+    expect(r.err).toContain("choose \"send\"");
+    expect(r.err).toContain(NETWORKS.mainnet.home_code!);
   });
 });

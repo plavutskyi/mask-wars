@@ -43,6 +43,7 @@ jobs:
       bounty: ${{ steps.pick.outputs.bounty }}
       season: ${{ steps.pick.outputs.season }}
       jobs: ${{ steps.pick.outputs.jobs }}
+      home: ${{ steps.pick.outputs.home }}
       outlayer: ${{ steps.pick.outputs.outlayer }}
     steps:
       # A push is compared with the commit before it in git; a pull request needs no checkout.
@@ -103,14 +104,23 @@ jobs:
             contracts:
               - *ci
               - contracts/**
-            # The sandbox runner builds the bounty contract and the season treasury next to its workspace and takes
-            # the judge by path.
+            # The sandbox runner builds the bounty contract, the season treasury and home next to its workspace and
+            # takes the judge by path; its test of home reads home_code and the house from the network files.
             challenges:
               - *ci
               - contracts/challenges/**
               - contracts/bounty/**
               - contracts/season/**
+              - contracts/home/**
+              - packages/network/*.json
               - services/judge/**
+            # home on the masks: its crate, the network files whose house and home_code it must match, and the files
+            # the repository serves for the owner's deploy.
+            home:
+              - *ci
+              - contracts/home/**
+              - packages/network/*.json
+              - apps/web/public/contracts/maskwars-home-*.wasm
             bounty:
               - *ci
               - contracts/bounty/**
@@ -178,6 +188,7 @@ jobs:
             echo "bounty=$(on bounty)"
             echo "season=$(on season)"
             echo "jobs=$(on jobs)"
+            echo "home=$(on home)"
             echo "outlayer=$modules"
           } | tee -a "$GITHUB_OUTPUT" | sed 's/^/- /; s/=/: /' | { echo "### Jobs this run needs"; cat; } >> "$GITHUB_STEP_SUMMARY"
 
@@ -497,11 +508,72 @@ jobs:
             contracts/jobs/target/wasm/maskwars_jobs.wasm
             contracts/jobs/target/wasm/maskwars_crews.wasm
 
+  # home, the code on the arena's own masks that sends their winnings to the house and nowhere else (contracts/home): its
+  # unit tests for each network, its build with its own script, the same bytes again from another folder, a line of
+  # sizes, and those bytes checked against the code hash packages/network names and the file the repository serves for
+  # the owner's deploy. The sandbox runs the very same files in the `challenges` job (runner/tests/home.rs).
+  home:
+    needs: changes
+    if: needs.changes.outputs.home == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: dtolnay/rust-toolchain@f08ac54821369508305fcb9e0121ec6e30ae9ada # 1.97.0
+        with:
+          targets: wasm32-unknown-unknown
+      - name: Unit tests, for each network's house
+        working-directory: contracts/home
+        run: |
+          cargo test --locked --features mainnet
+          cargo test --locked --features testnet
+      - name: The build, and the same bytes again from another folder
+        run: |
+          contracts/home/build.sh
+          mkdir -p "$RUNNER_TEMP/elsewhere"
+          (cd contracts/home && cp -r src Cargo.toml Cargo.lock rust-toolchain.toml build.sh "$RUNNER_TEMP/elsewhere/")
+          "$RUNNER_TEMP/elsewhere/build.sh"
+          for net in mainnet testnet; do
+            cmp "contracts/home/target/wasm/maskwars_home-$net.wasm" "$RUNNER_TEMP/elsewhere/target/wasm/maskwars_home-$net.wasm"
+          done
+      - name: Sizes, fingerprints, home_code and the files the repository serves
+        run: |
+          python3 - <<'PY' | tee -a "$GITHUB_STEP_SUMMARY"
+          import hashlib, json, os, sys
+          a = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
+          bad = False
+          print("### home on the masks\n")
+          for net in ("mainnet", "testnet"):
+              data = open(f"contracts/home/target/wasm/maskwars_home-{net}.wasm", "rb").read()
+              digest = hashlib.sha256(data).digest()
+              sha = digest.hex()
+              n, code = int(sha, 16), ""
+              while n:
+                  n, r = divmod(n, 58)
+                  code = a[r] + code
+              # base58 writes each leading zero byte as a 1.
+              code = "1" * (len(digest) - len(digest.lstrip(b"\0"))) + code
+              named = json.load(open(f"packages/network/{net}.json"))["home_code"]
+              served = f"apps/web/public/contracts/maskwars-home-{net}-{sha}.wasm"
+              same = os.path.exists(served) and open(served, "rb").read() == data
+              print(f"- {net}: {len(data)} bytes, stake {len(data) / 100000:.4f} NEAR a mask, sha256 `{sha}`, code hash `{code}`")
+              if named != code:
+                  print(f"  - home_code of packages/network/{net}.json is {named}, not this build")
+                  bad = True
+              if not same:
+                  print(f"  - {served} is not this build: run contracts/home/build.sh and copy the wasm there under its sha256")
+                  bad = True
+          sys.exit(1 if bad else 0)
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: maskwars-home-wasm
+          path: contracts/home/target/wasm/*.wasm
+
   # The one check to require on main: green when every job above passed or was not needed by the change, red when one
   # failed or was cancelled.
   ci-ok:
     if: always()
-    needs: [changes, typescript, mask-check-live, arena-live, pay-live, contracts, season, jobs, challenges, outlayer, bounty]
+    needs: [changes, typescript, mask-check-live, arena-live, pay-live, contracts, season, jobs, challenges, outlayer, bounty, home]
     runs-on: ubuntu-latest
     steps:
       - name: Every job passed or was not needed

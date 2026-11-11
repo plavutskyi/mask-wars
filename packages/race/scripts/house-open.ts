@@ -12,9 +12,9 @@
  * what the house holds; it has no say over the bounty contract, the masks, or the vault while a round is on.
  *
  * Without `HOUSE_KEY` nothing is signed. The script says which steps wait for a signature (the owner sends them by
- * hand: retire.ps1, safe-deploy.ps1 -House, open-safe.ps1 -House in scripts/testnet) and exits 0: a day opened by hand
- * is not a failed run. A round that is already open and still sealing, opened by hand or by an earlier run, is handed
- * to the race either way.
+ * hand: retire.ps1, which also sends the masks' winnings home, safe-deploy.ps1 -House, open-safe.ps1 -House in
+ * scripts/testnet) and exits 0: a day opened by hand is not a failed run. A round that is already open and still
+ * sealing, opened by hand or by an earlier run, is handed to the race either way.
  *
  * Writes `bounty` and `challenge` to $GITHUB_OUTPUT when a round is open for the race. With a key it exits 1 when the
  * day is skipped (yesterday's round is not over, the house cannot pay, the bounty contract does not know the vault's
@@ -31,6 +31,7 @@
  *   --sample                    with --plan: an ordinary day's steps from the network's file alone, nothing read
  *                               from the chain (a dry run)
  *   --any-time                  with a key: open now, whatever the slot
+ *   HOUSE_SKIP_HOME=<a,b>       with --plan: masks the owner's script already called home() on this run, left out
  * Optional: `NEAR_RPC`, one endpoint in place of the network's own, which are asked in order when one is down.
  */
 import { appendFile, mkdir, readdir, readFile, writeFile } from "node:fs/promises";
@@ -79,7 +80,7 @@ if (flag("--plan")) {
   const sample = flag("--sample");
   const state = sample ? null : await readHouse(chain, cfg).catch((e: Error) => fail(`the chain did not answer: ${e.message}`));
   const plan: DayPlan = state
-    ? planDay(state, cfg, { wasm: wasm ? wasmInfo(wasm.bytes) : null, anyTime: true })
+    ? planDay(state, cfg, { wasm: wasm ? wasmInfo(wasm.bytes) : null, anyTime: true, skipHome: (process.env.HOUSE_SKIP_HOME ?? "").split(",").filter((m) => m) })
     : { kind: "steps", steps: [{ kind: "retire" }, { kind: "create" }, { kind: "open", id: "race-0000" }], note: "a dry run: the steps of an ordinary day; a real run reads the chain and takes the first free id" };
   // What stands on the vault's name: nothing, a safe armed for a round, or a safe no round was opened on.
   const vault = !state ? "armed" : !state.vault ? "none" : state.vault.safe?.lock ? "armed" : "idle";
@@ -87,7 +88,7 @@ if (flag("--plan")) {
   if (dir) await mkdir(dir, { recursive: true });
   const tgas = (n: number) => `${n}.0 Tgas`;
   const steps = plan.kind !== "steps" ? [] : await Promise.all(plan.steps.map(async (step: DayStep, i) => {
-    const args = step.kind === "create" ? vaultInit(cfg) : step.kind === "open" ? roundArgs(cfg, step.id) : step.kind === "retire" ? {} : step.kind === "unstick" ? { id: step.id, claim: String(step.claim) } : { id: step.id };
+    const args = step.kind === "create" ? vaultInit(cfg) : step.kind === "open" ? roundArgs(cfg, step.id) : step.kind === "retire" || step.kind === "home" ? {} : step.kind === "unstick" ? { id: step.id, claim: String(step.claim) } : { id: step.id };
     const file = dir ? join(dir, `house-${i + 1}-${step.kind}-args.json`) : null;
     if (file) await writeFile(file, JSON.stringify(args));
     return {
@@ -102,6 +103,7 @@ if (flag("--plan")) {
       deposit: `${step.kind === "open" ? NET.round.deposit : "0"} NEAR`,
       ...(step.kind === "create" ? { near: `${NET.round.safe} NEAR`, wasm: wasm?.path ?? null, wasm_sha256: cfg.safeCode ? codeHashHex(cfg.safeCode) : null } : {}),
       ...(step.kind === "open" ? { id: step.id } : {}),
+      ...(step.kind === "home" ? { mask: step.mask } : {}),
     };
   }));
   console.log(JSON.stringify({

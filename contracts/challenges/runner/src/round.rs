@@ -783,6 +783,24 @@ pub fn build_masks() -> Result<()> {
     Ok(())
 }
 
+/// Where `build_home` puts the code of `home` for `network` (`mainnet` or `testnet`): the very file contracts/home/build.sh
+/// makes, whose code hash is `home_code` in packages/network.
+pub fn home_wasm_path(network: &str) -> PathBuf {
+    workspace_root().join("..").join("home").join("target").join("wasm").join(format!("maskwars_home-{network}.wasm"))
+}
+
+/// Builds `home` (contracts/home, its own crate) for both networks with its own script, the build a deploy uses.
+pub fn build_home() -> Result<()> {
+    let status = std::process::Command::new("bash")
+        .arg(workspace_root().join("..").join("home").join("build.sh"))
+        .status()
+        .context("run contracts/home/build.sh")?;
+    if !status.success() {
+        bail!("home wasm build failed");
+    }
+    Ok(())
+}
+
 /// Builds the bounty contract (its own crate next to this workspace) for wasm.
 pub fn build_bounty() -> Result<()> {
     let root = workspace_root();

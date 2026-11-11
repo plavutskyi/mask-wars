@@ -84,7 +84,10 @@ export interface HouseRound {
   readonly min_loot: string;
   /** What the house keeps free for gas while it makes the vault and opens the round: NEAR buys gas up front. */
   readonly gas: string;
-  /** What a mask keeps when its winnings go home to the house (house.ps1 -Home): storage and the gas of its claims. */
+  /**
+   * What a mask keeps besides the stake of its storage when its winnings go home to the house: the gas its claims buy
+   * up front. contracts/home keeps exactly this (a test holds the two the same); house.ps1 -Collect keeps it in all.
+   */
   readonly mask_keep: string;
   readonly hours: number;
   readonly commit_minutes: number;
@@ -119,6 +122,12 @@ export interface Network {
    * built and its hash is written here; until then the house opens nothing.
    */
   readonly safe_code: string | null;
+  /**
+   * The code of `home` (contracts/home) for this network: its code hash as NEAR shows it, base58 of the wasm's sha256.
+   * A mask that runs it sends everything above `round.mask_keep` and its storage to `house`, and only there; the
+   * house's day calls `home()` on a mask only when it runs exactly this code. `null` while there is none.
+   */
+  readonly home_code: string | null;
   readonly round: HouseRound;
   /** The mask factory: a person's mask is `<name>.<factory>`. */
   readonly factory: string;
@@ -227,6 +236,7 @@ export function parseNetwork(raw: unknown): Network {
   // The vault is made again for every round, by the house alone: a direct sub-account of it and of nobody else.
   if (n.vault.slice(n.vault.indexOf(".") + 1) !== n.house) fail(`${n.vault} is not a sub-account of ${n.house}: only the house can make it`);
   if (n.safe_code !== null && (typeof n.safe_code !== "string" || codeHashHex(n.safe_code) === null)) fail("safe_code: a code hash in base58, or null");
+  if (n.home_code !== null && (typeof n.home_code !== "string" || codeHashHex(n.home_code) === null)) fail("home_code: a code hash in base58, or null");
   const stated = Object.keys(n.sections ?? fail("sections: which parts are on chain here"));
   for (const part of SECTIONS) if (typeof n.sections[part] !== "boolean") fail(`sections.${part}: true or false`);
   for (const part of stated) if (!SECTIONS.includes(part as Section)) fail(`sections.${part}: not a part of MASK WARS`);

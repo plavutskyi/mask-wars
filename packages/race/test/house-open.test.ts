@@ -14,7 +14,7 @@ import { fileURLToPath } from "node:url";
 import { NETWORKS } from "@maskwars/network";
 import { afterEach, describe, expect, it } from "vitest";
 import { NearKey } from "../src/near-tx.ts";
-import { BOUNTY, FakeNear, HOUSE, KEY, KEY_SECRET, MINUTE, NOW, round, VAULT, WASM } from "./house-chain.ts";
+import { BOUNTY, FakeNear, HOUSE, KEY, KEY_SECRET, MILLI, MINUTE, NOVA, NOW, round, VAULT, WASM } from "./house-chain.ts";
 
 const SCRIPT = fileURLToPath(new URL("../scripts/house-open.ts", import.meta.url));
 const HELPER = fileURLToPath(new URL("../../../scripts/testnet/house.mjs", import.meta.url));
@@ -29,6 +29,7 @@ afterEach(() => {
 /** The made-up chain behind HTTP, answering the way a NEAR node does, errors included. */
 async function serve(chain: FakeNear): Promise<string> {
   chain.judge = judge;
+  server?.close();
   server = createServer((req, res) => {
     let body = "";
     req.on("data", (d: Buffer) => (body += d.toString()));
@@ -170,6 +171,26 @@ describe("house-open.ts --plan, for the owner's scripts", () => {
     ]);
     expect(JSON.parse(readFileSync(plan.steps[0]!.args_file!, "utf8"))).toEqual({ id: "race-0002" });
     expect(JSON.parse(readFileSync(plan.steps[1]!.args_file!, "utf8"))).toEqual({});
+    expect(chain.steps).toEqual([]);
+  });
+
+  it("a mask's winnings come first, as a plain home() on the mask that the house signs", async () => {
+    const chain = FakeNear.after("open").mask(NOVA, 390n * MILLI);
+    const dir = mkdtempSync(join(tmpdir(), "house-plan-"));
+    const r = await start(chain, ["--plan", "--args-dir", dir]);
+    expect(r.code).toBe(0);
+    const plan = JSON.parse(r.out) as { steps: Record<string, string>[] };
+    expect(plan.steps.map((s) => [s.kind, s.receiver, s.method, s.gas, s.deposit])).toEqual([
+      ["home", NOVA, "home", "10.0 Tgas", "0 NEAR"],
+      ["refund", BOUNTY, "refund", "30.0 Tgas", "0 NEAR"],
+      ["retire", VAULT, "retire", "100.0 Tgas", "0 NEAR"],
+    ]);
+    expect(plan.steps[0]).toMatchObject({ mask: NOVA, text: `home: ${NOVA} sends the 0.39 NEAR it holds above what it keeps back to ${HOUSE}` });
+    expect(JSON.parse(readFileSync(plan.steps[0]!.args_file!, "utf8"))).toEqual({});
+    // retire.ps1 calls each mask once: the masks it already called are left out, and said.
+    const again = JSON.parse((await start(chain, ["--plan", "--args-dir", dir], { HOUSE_SKIP_HOME: `${NOVA},` })).out) as { note: string; steps: { kind: string }[] };
+    expect(again.steps.map((s) => s.kind)).toEqual(["refund", "retire"]);
+    expect(again.note).toContain(`${NOVA} holds 0.39 NEAR above what it keeps, and this run has called its home() once already`);
     expect(chain.steps).toEqual([]);
   });
 

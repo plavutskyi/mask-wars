@@ -7,6 +7,11 @@
  *
  * One day is at most these steps, in this order:
  *
+ * 0. `home` on each of the arena's own masks that holds winnings: a mask runs contracts/home, which sends everything
+ *    it holds above what it keeps (`round.mask_keep` and the stake of its storage) to the house and nowhere else. It
+ *    is called only on a mask whose code is the network's `home_code`; any other mask is skipped and said. What comes
+ *    home counts toward what the house can pay. A run calls it once per mask at most, and a call that fails stops
+ *    nothing: the day goes on without it. What a mask is paid later in the run (a `settle`) comes home the next day;
  * 1. close yesterday's round on the bounty contract, whichever applies: `unstick` a claim the judge never answered,
  *    `settle` a confirmed winner nobody paid yet, `refund` a bounty nobody won;
  * 2. `retire` the vault: its balance comes home;
@@ -55,8 +60,10 @@ const STORAGE_PER_BYTE = 10n ** 19n;
 const NS_PER_MINUTE = 60_000_000_000n;
 const GRACE_NS = BigInt(CLAIM_GRACE_MINUTES) * NS_PER_MINUTE;
 
-/** Gas for each call. The vault asks the bounty contract how its round ended before it retires. */
-const GAS = { unstick: 30, settle: 50, refund: 30, retire: 100, new: 30, open: 100 } as const;
+/** Gas for each call. The vault asks the bounty contract how its round ended before it retires. `home` burns ≈2 TGas. */
+const GAS = { home: 10, unstick: 30, settle: 50, refund: 30, retire: 100, new: 30, open: 100 } as const;
+/** Less than this above what a mask keeps is not worth the gas of a call: it waits for the next win. */
+export const HOME_LEAST = 10n ** 22n;
 
 /** What the house's day runs on: all of it from packages/network, and the judge the team agrees to. */
 export interface HouseConfig {
@@ -69,6 +76,8 @@ export interface HouseConfig {
   readonly masks: readonly string[];
   /** The code the vault runs, as NEAR shows a code hash; `null` while it is not known. */
   readonly safeCode: string | null;
+  /** The code of `home` (contracts/home), as NEAR shows a code hash: `home()` is called only on a mask that runs it. */
+  readonly homeCode: string | null;
   /** The judge the house opens its rounds with (scripts/<network>/judge-args.json). */
   readonly judgeVersion: string;
   readonly round: {
@@ -81,8 +90,11 @@ export interface HouseConfig {
     readonly hours: number;
     readonly commitMinutes: number;
     readonly revealMinutes: number;
+    /** What a mask keeps besides the stake of its storage when its winnings go home: what `home` keeps. */
+    readonly maskKeep: bigint;
   };
-  readonly limits: { readonly safeMax: bigint; readonly depositMax: bigint };
+  /** `houseMax`: the day brings no mask's winnings home past it (limits.house_max). */
+  readonly limits: { readonly safeMax: bigint; readonly depositMax: bigint; readonly houseMax: bigint };
 }
 
 /** The house's config on network `n`, with the judge its rounds name. */
@@ -95,6 +107,7 @@ export function houseConfig(n: Network, judgeVersion: string): HouseConfig {
     contracts: [n.bounty, ...n.older_bounty],
     masks: Object.values(n.masks),
     safeCode: n.safe_code,
+    homeCode: n.home_code,
     judgeVersion,
     round: {
       firstMinute: r.first_minute,
@@ -106,8 +119,9 @@ export function houseConfig(n: Network, judgeVersion: string): HouseConfig {
       hours: r.hours,
       commitMinutes: r.commit_minutes,
       revealMinutes: r.reveal_minutes,
+      maskKeep: yocto(r.mask_keep),
     },
-    limits: { safeMax: yocto(n.limits.hand.safe_max), depositMax: yocto(n.limits.hand.deposit_max) },
+    limits: { safeMax: yocto(n.limits.hand.safe_max), depositMax: yocto(n.limits.hand.deposit_max), houseMax: yocto(n.limits.house_max) },
   };
 }
 
@@ -187,12 +201,22 @@ export interface VaultState {
   } | null;
 }
 
+/** One of the arena's own masks, as its account stands: what it holds, what it stores, the code it runs. */
+export interface MaskAccount {
+  readonly account: string;
+  readonly amount: bigint;
+  readonly storageUsage: number;
+  readonly codeHash: string;
+}
+
 /** One reading of everything the day depends on. */
 export interface HouseState {
   readonly nowNs: bigint;
   readonly height: number;
   /** The house's account: what it holds, and what of that is free of its own storage stake. */
   readonly house: { readonly amount: bigint; readonly free: bigint } | null;
+  /** The arena's own masks that are on chain. */
+  readonly masks: readonly MaskAccount[];
   readonly vault: VaultState | null;
   /** The round the vault is armed for, when the house's bounty contract holds it. */
   readonly round: RoundState | null;
@@ -206,6 +230,8 @@ export interface HouseState {
 }
 
 export type DayStep =
+  /** The mask sends `amount` home to the house: what it holds above what it keeps. */
+  | { readonly kind: "home"; readonly mask: string; readonly amount: bigint }
   | { readonly kind: "unstick"; readonly id: string; readonly claim: number; readonly mask: string }
   | { readonly kind: "settle"; readonly id: string }
   | { readonly kind: "refund"; readonly id: string }
@@ -245,6 +271,8 @@ export interface PlanOptions {
    * one round, and none so late that it could not be over before the next slot.
    */
   readonly anyTime?: boolean;
+  /** Masks this run already called `home()` on: once per mask per run, so the day goes on without calling them again. */
+  readonly skipHome?: readonly string[];
 }
 
 const near = (y: bigint): string => {
@@ -419,11 +447,12 @@ async function readRound(chain: Chain, contract: string, id: string): Promise<Ro
 
 /** Reads everything the day depends on, at the latest final block. Sends nothing. */
 export async function readHouse(chain: Chain, cfg: HouseConfig): Promise<HouseState> {
-  const [{ nowNs, height }, house, vault, gov] = await Promise.all([
+  const [{ nowNs, height }, house, vault, gov, masks] = await Promise.all([
     head(chain),
     account(chain, cfg.house),
     readVault(chain, cfg.vault),
     view<{ safe_codes?: string[]; judge?: { version?: string }; pending?: { change?: { kind?: string } } | null }>(chain, cfg.bounty, "governance"),
+    Promise.all(cfg.masks.map(async (m) => ({ m, a: await account(chain, m) }))),
   ]);
   const lock = vault?.safe?.lock ?? null;
   const round = lock && lock.arbiter === cfg.bounty ? await readRound(chain, cfg.bounty, lock.bounty) : null;
@@ -442,6 +471,7 @@ export async function readHouse(chain: Chain, cfg: HouseConfig): Promise<HouseSt
     nowNs,
     height,
     house: house ? { amount: BigInt(house.amount), free: BigInt(house.amount) - BigInt(house.storage_usage) * STORAGE_PER_BYTE } : null,
+    masks: masks.flatMap(({ m, a }) => (a ? [{ account: m, amount: BigInt(a.amount), storageUsage: Number(a.storage_usage), codeHash: a.code_hash }] : [])),
     vault,
     round,
     safeCodes: gov.safe_codes ?? [],
@@ -505,10 +535,66 @@ function closing(r: RoundState, s: HouseState, bounty: string): { steps: DayStep
   return { steps };
 }
 
-/** Which steps are left today, or why there are none. */
+/** What `home()` sends from a mask that holds `amount` and stores `storageUsage` bytes, as contracts/home counts it. */
+export const homeAmount = (m: Pick<MaskAccount, "amount" | "storageUsage">, cfg: Pick<HouseConfig, "round">): bigint => {
+  const keep = cfg.round.maskKeep + BigInt(m.storageUsage) * STORAGE_PER_BYTE;
+  return m.amount > keep ? m.amount - keep : 0n;
+};
+
+/**
+ * The masks' winnings that come home first: a `home` step for each mask that runs the network's `home_code` and holds
+ * HOME_LEAST or more above what it keeps, while the house stays within its limit. Winnings that stay with their mask
+ * are said in `note`, each with why.
+ */
+function homing(s: HouseState, cfg: HouseConfig, skip: readonly string[]): { steps: DayStep[]; coming: bigint; note?: string } {
+  const steps: DayStep[] = [];
+  const stay: string[] = [];
+  let other = false;
+  let coming = 0n;
+  // The limit counts what the rest of the day brings the house too, as if it all came today: the vault's whole
+  // balance, and the bounty of a round nobody won.
+  const later = (s.vault?.amount ?? 0n) + (s.round?.state === "open" ? cfg.round.deposit : 0n);
+  for (const m of s.masks) {
+    const amount = homeAmount(m, cfg);
+    if (amount < HOME_LEAST) continue;
+    const holds = `${m.account} holds ${near(amount)} above what it keeps`;
+    if (!cfg.homeCode) stay.push(`${holds}, and the network names no home_code`);
+    else if (m.codeHash !== cfg.homeCode) {
+      stay.push(`${holds} and runs code ${m.codeHash}, not home ${cfg.homeCode}`);
+      other = true;
+    } else if (skip.includes(m.account)) stay.push(`${holds}, and this run has called its home() once already`);
+    else if (s.house && s.house.amount + later + coming + amount > cfg.limits.houseMax) {
+      stay.push(`${holds}, and bringing it home would take ${cfg.house} above limits.house_max, ${near(cfg.limits.houseMax)}, with what the vault brings back`);
+    } else {
+      steps.push({ kind: "home", mask: m.account, amount });
+      coming += amount;
+    }
+  }
+  if (other) stay.push("scripts/mainnet/home-deploy.mjs prints the deploy of home");
+  return { steps, coming, ...(stay.length > 0 ? { note: `winnings that stay with their mask: ${stay.join("; ")}` } : {}) };
+}
+
+/**
+ * Which steps are left today, or why there are none. The masks' winnings come home first, and count toward what the
+ * house can pay; they are left for another day when a round is sealing, when the slot already has its round, or when
+ * no slot has come.
+ */
 export function planDay(s: HouseState, cfg: HouseConfig, o: PlanOptions): DayPlan {
-  const r = cfg.round;
   if (!s.house) return { kind: "skip", why: `the house ${cfg.house} is not on chain yet: house.ps1 makes it` };
+  const home = homing(s, cfg, o.skipHome ?? []);
+  const p = planRest(s, cfg, o, home.coming);
+  if (p.kind === "race" || p.kind === "done" || p.kind === "waiting") return p;
+  if (p.kind === "skip") {
+    const why = home.note ? `${p.why}; ${home.note}` : p.why;
+    return home.steps.length > 0 ? { kind: "steps", steps: home.steps, stop: why } : { kind: "skip", why };
+  }
+  const note = [home.note, p.note].filter((n) => n).join("; ");
+  return { kind: "steps", steps: [...home.steps, ...p.steps], ...(p.stop ? { stop: p.stop } : {}), ...(note ? { note } : {}) };
+}
+
+/** The day after the masks' winnings: `homeComing` is what they bring the house first. */
+function planRest(s: HouseState, cfg: HouseConfig, o: PlanOptions, homeComing: bigint): DayPlan {
+  const r = cfg.round;
   const slotMs = slotAt({ first_minute: r.firstMinute, every_minutes: r.everyMinutes }, Number(s.nowNs / 1_000_000n));
   const slotNs = slotMs === null ? null : BigInt(slotMs) * 1_000_000n;
   const nextSlotNs = slotNs === null ? null : slotNs + BigInt(r.everyMinutes) * NS_PER_MINUTE;
@@ -587,11 +673,12 @@ export function planDay(s: HouseState, cfg: HouseConfig, o: PlanOptions): DayPla
       }
     }
     const need = (ready ? 0n : r.safe) + r.deposit + r.gas;
-    // A vault about to retire gives its whole balance back first.
-    const coming = steps.some((x) => x.kind === "retire") && v ? v.amount : 0n;
-    if (s.house!.free + coming < need) {
-      const back = coming > 0n ? ` and ${near(coming)} comes back with the vault` : "";
-      return skip(`the house holds ${near(s.house!.free)} free${back}: the round needs ${near(need)}`);
+    // A vault about to retire gives its whole balance back first, and so do the masks' winnings.
+    const back = steps.some((x) => x.kind === "retire") && v ? v.amount : 0n;
+    if (s.house!.free + back + homeComing < need) {
+      const comes = [back > 0n ? `${near(back)} comes back with the vault` : "", homeComing > 0n ? `${near(homeComing)} comes home from the masks` : ""];
+      const and = comes.filter((c) => c).join(" and ");
+      return skip(`the house holds ${near(s.house!.free)} free${and ? ` and ${and}` : ""}: the round needs ${near(need)}`);
     }
     return null;
   })();
@@ -638,6 +725,8 @@ export const roundArgs = (cfg: HouseConfig, id: string) => ({
 /** What `step` does, in a line: for a log, a summary, or the owner before they sign it. */
 export function stepText(step: DayStep, cfg: HouseConfig): string {
   switch (step.kind) {
+    case "home":
+      return `home: ${step.mask} sends the ${near(step.amount)} it holds above what it keeps back to ${cfg.house}`;
     case "unstick":
       return `unstick: drop claim #${step.claim} of ${step.mask} on ${step.id}, which the judge never answered`;
     case "settle":
@@ -656,6 +745,8 @@ export function stepText(step: DayStep, cfg: HouseConfig): string {
 /** The transaction of `step`, signed by the house. Making the vault needs the wasm. */
 export function stepTx(step: DayStep, cfg: HouseConfig, wasm?: Uint8Array | null): StepTx {
   switch (step.kind) {
+    case "home":
+      return { receiver: step.mask, actions: [functionCall("home", {}, GAS.home)] };
     case "unstick":
       return { receiver: cfg.bounty, actions: [functionCall("unstick", { id: step.id, claim: String(step.claim) }, GAS.unstick)] };
     case "settle":
@@ -714,8 +805,28 @@ export type Day =
   /** No key: these steps wait for whoever signs for the house. */
   | { readonly kind: "unsigned"; readonly steps: readonly DayStep[]; readonly stop?: string; readonly sent: readonly Sent[] };
 
-/** The same step again: for a claim, the same claim; for the rest, the same kind (a round's id may have moved on). */
-const same = (a: DayStep, b: DayStep) => a.kind === b.kind && (a.kind !== "unstick" || (b.kind === "unstick" && a.claim === b.claim));
+/**
+ * The same step again: for a claim, the same claim; for winnings, the same mask; for the rest, the same kind (a round's
+ * id may have moved on).
+ */
+const same = (a: DayStep, b: DayStep) =>
+  a.kind === b.kind &&
+  (a.kind !== "unstick" || (b.kind === "unstick" && a.claim === b.claim)) &&
+  (a.kind !== "home" || (b.kind === "home" && a.mask === b.mask));
+
+/**
+ * Whether a mask's winnings have come home, by reading `s` after its `home()`: the house holds what it sent (less the
+ * call's gas, well under HOME_LEAST / 2). The house's credit is what the plan counts on, so it alone says it: the mask
+ * is debited a block before the house is credited, and a node a block behind shows the one without the other; such a
+ * reading is read again until the credit shows or the wait runs out. A mask paid again right after its call still
+ * counts as brought home; that payment waits for the next run. Only when the house's balance is not known does the
+ * mask's own debit say it.
+ */
+function cameHome(step: Extract<DayStep, { kind: "home" }>, houseBefore: bigint | null, s: HouseState, cfg: HouseConfig): boolean {
+  if (houseBefore !== null && s.house !== null) return s.house.amount + HOME_LEAST / 2n >= houseBefore + step.amount;
+  const left = s.masks.find((m) => m.account === step.mask);
+  return !left || homeAmount(left, cfg) < step.amount;
+}
 
 /**
  * The house's day, as far as it goes: reads the chain, sends the first step that is left, reads again. It returns when
@@ -727,7 +838,12 @@ export async function runDay(o: DayOptions): Promise<Day> {
   const sleep = o.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
   const cfg = o.config;
   const wasm = o.wasm ? wasmInfo(o.wasm) : null;
-  const read = async () => planDay(await readHouse(o.chain, cfg), cfg, { wasm, ...(o.anyTime ? { anyTime: true } : {}) });
+  /** Masks this run called home() on: once each, whatever they are paid after it. */
+  const homed: string[] = [];
+  /** The latest reading of the chain. */
+  let last = null as HouseState | null;
+  const plan = (s: HouseState) => planDay(s, cfg, { wasm, skipHome: homed, ...(o.anyTime ? { anyTime: true } : {}) });
+  const read = async () => plan((last = await readHouse(o.chain, cfg)));
   const sent: Sent[] = [];
   /** How many times each kind of step went out: a day needs each once, and a few claims dropped at most. */
   const count = new Map<DayStep["kind"], number>();
@@ -745,11 +861,13 @@ export async function runDay(o: DayOptions): Promise<Day> {
     // A vault this run made is right or the run stops: it is never retired and made again in a loop.
     if (step.kind === "retire" && count.has("create")) throw new Error(`the vault this run made cannot take a round: ${p.note ?? "see the chain"}`);
     const n = (count.get(step.kind) ?? 0) + 1;
-    if (n > (step.kind === "unstick" ? 16 : 1)) throw new Error(`${step.kind} was sent and the chain asks for it again: stopping`);
+    const most = step.kind === "unstick" ? 16 : step.kind === "home" ? cfg.masks.length : 1;
+    if (n > most) throw new Error(`${step.kind} was sent and the chain asks for it again: stopping`);
     count.set(step.kind, n);
 
     log(stepText(step, cfg));
     const tx = stepTx(step, cfg, o.wasm);
+    const houseBefore = last?.house?.amount ?? null;
     let hash = "(the answer was lost)";
     let failure = "";
     try {
@@ -775,13 +893,25 @@ export async function runDay(o: DayOptions): Promise<Day> {
     const until = Date.now() + (o.settleMs ?? 60_000);
     for (;;) {
       const next = await read().catch((e: Error) => (failure ? null : Promise.reject(e)));
-      if (next && !(next.kind === "steps" && same(next.steps[0]!, step))) {
+      const moved = next !== null && (step.kind === "home" ? cameHome(step, houseBefore, last!, cfg) : !(next.kind === "steps" && same(next.steps[0]!, step)));
+      if (moved) {
         log(failure ? `  ${step.kind}: ${failure}; the chain has moved on all the same` : `  ${step.kind} ok ${hash}`);
         sent.push({ step: step.kind, hash });
-        p = next;
+        if (step.kind === "home") {
+          homed.push(step.mask);
+          p = plan(last!);
+        } else p = next;
         break;
       }
       if (Date.now() >= until) {
+        // Winnings that did not come home stay with the mask and stop nothing: the day goes on without them, and the
+        // plan counts on them no more.
+        if (step.kind === "home" && next) {
+          log(`  home: ${failure ? `failed: ${failure}` : `went through (${hash})`}, and ${step.mask} still holds its winnings: the day goes on without them`);
+          homed.push(step.mask);
+          p = plan(last!);
+          break;
+        }
         throw new Error(failure ? `${step.kind} failed: ${failure}` : `${step.kind} went through (${hash}) and the chain still asks for it`);
       }
       await sleep(5_000);

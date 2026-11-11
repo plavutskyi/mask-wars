@@ -9,6 +9,8 @@ import {
   CLAIM_SCAN,
   codeHashOf,
   daySummary,
+  HOME_LEAST,
+  homeAmount,
   houseConfig,
   planDay,
   readHouse,
@@ -24,15 +26,44 @@ import {
   type DayStep,
 } from "../src/house.ts";
 import type { NearKey } from "../src/near-tx.ts";
-import { BOUNTY, CFG, CODE, FakeNear, GONE, HOUR, HOUSE, JUDGE, KEY, MILLI, MINUTE, NEAR, NOVA, NOW, OLD_CODE, ONYX, ORACLE, round, safeWasm, SLOT, VAULT, WASM, ns } from "./house-chain.ts";
+import {
+  BOUNTY,
+  CFG,
+  CODE,
+  FakeNear,
+  GONE,
+  HOME_CODE,
+  HOUR,
+  HOUSE,
+  JUDGE,
+  KEY,
+  MASK_BYTES,
+  MASK_KEEPS,
+  MILLI,
+  MINUTE,
+  NEAR,
+  NO_CODE,
+  NOVA,
+  NOW,
+  OLD_CODE,
+  ONYX,
+  ORACLE,
+  round,
+  safeWasm,
+  SLOT,
+  VAULT,
+  WASM,
+  ns,
+} from "./house-chain.ts";
 
-const run = (chain: FakeNear, o: { key?: NearKey | null; cfg?: HouseConfig; wasm?: Uint8Array | null; anyTime?: boolean } = {}) =>
+const run = (chain: FakeNear, o: { key?: NearKey | null; cfg?: HouseConfig; wasm?: Uint8Array | null; anyTime?: boolean; log?: (line: string) => void } = {}) =>
   runDay({
     chain,
     config: o.cfg ?? CFG,
     ...(o.key === null ? {} : { key: o.key ?? KEY }),
     wasm: o.wasm === undefined ? WASM : o.wasm,
     ...(o.anyTime ? { anyTime: true } : {}),
+    ...(o.log ? { log: o.log } : {}),
     settleMs: 0,
     sleep: async () => {},
   });
@@ -112,6 +143,205 @@ describe("the house's day", () => {
     for (const n of [7, 8]) chain.older.add(`race-000${n}`);
     const cfg = { ...CFG, contracts: [BOUNTY, "old.maskwars.near"] };
     expect(await run(chain, { cfg })).toMatchObject({ kind: "opened", round: { id: "race-0009" } });
+  });
+});
+
+// The masks run contracts/home: anyone may call home(), and everything a mask holds above 0.4 NEAR and the stake of its
+// storage goes to the house and nowhere else. On 13.11 the house alone would hold 2.27 NEAR of the 2.28 a round needs;
+// what the winner holds above what it keeps is what opens the round.
+describe("the masks' winnings come home first", () => {
+  /** The day after a round NOVA won, with a house that cannot open the next one on its own: 0.497 + 1.68 < 2.28. */
+  const after13 = () => {
+    const chain = FakeNear.after("drained").mask(NOVA, 390n * MILLI).mask(ONYX, 0n).mask(ORACLE, 5n * MILLI);
+    chain.house = { amount: 500n * MILLI, storage: 300 };
+    return chain;
+  };
+
+  it("what the winner holds above what it keeps comes home first, counts toward the round, and the round opens", async () => {
+    const chain = after13();
+    const day = await run(chain);
+    expect(day).toMatchObject({ kind: "opened", round: { id: "race-0003" } });
+    expect(chain.steps).toEqual(["home", "retire", "create", "open"]);
+    expect(day.sent.map((s) => s.step)).toEqual(["home", "retire", "create", "open"]);
+    // A plain home() on the mask, signed by the house: no argument, no deposit, 10 TGas.
+    expect(chain.landed[0]).toEqual({
+      step: "home",
+      signer: HOUSE,
+      receiver: NOVA,
+      actions: [{ kind: "functionCall", method: "home", args: {}, gas: 10n * 10n ** 12n, deposit: 0n }],
+    });
+    // NOVA keeps exactly what it keeps; ORACLE's 0.005 NEAR is not worth the gas of a call and waits for its next win.
+    expect(chain.masks.get(NOVA)!.amount).toBe(MASK_KEEPS);
+    expect(chain.masks.get(ORACLE)!.amount).toBe(MASK_KEEPS + 5n * MILLI);
+    expect(chain.house!.amount).toBe((500n + 390n + 1680n - 1930n - 250n) * MILLI);
+  });
+
+  it("a node a block behind shows the mask paid out before the house is credited: the day reads again and opens", async () => {
+    // No vault to retire (the first day, or one already retired): the round opens on what the house holds and what
+    // NOVA brings home, 0.5 + 1.9 ≥ 2.28. The node answers the house's balance two readings late after the home().
+    const chain = new FakeNear().mask(NOVA, 1900n * MILLI).mask(ONYX, 0n).mask(ORACLE, 0n);
+    chain.house = { amount: 500n * MILLI, storage: 300 };
+    chain.houseLag = 2;
+    const day = await runDay({ chain, config: CFG, key: KEY, wasm: WASM, settleMs: 60_000, sleep: async () => {} });
+    expect(day).toMatchObject({ kind: "opened" });
+    expect(chain.steps).toEqual(["home", "create", "open"]);
+  });
+
+  it("without home on the mask the same day is skipped, and says why: the winnings stay with it", async () => {
+    const chain = after13();
+    chain.masks.get(NOVA)!.code = NO_CODE;
+    const day = await run(chain);
+    expect(day.kind).toBe("skipped");
+    expect(why(day)).toBe(
+      `the house holds 2.177 NEAR free: the round needs 2.28 NEAR; winnings that stay with their mask: ${NOVA} holds 0.39 NEAR above what it keeps and runs code ${NO_CODE}, not home ${HOME_CODE}; scripts/mainnet/home-deploy.mjs prints the deploy of home`,
+    );
+    // The vault still came home; nothing was called on a mask that does not run home.
+    expect(chain.steps).toEqual(["retire"]);
+    expect(chain.masks.get(NOVA)!.amount).toBe(MASK_KEEPS + 390n * MILLI);
+  });
+
+  it("calls home() only on a mask that runs the network's home_code; any other is skipped and said", async () => {
+    const chain = after13();
+    chain.masks.get(NOVA)!.code = OLD_CODE;
+    chain.masks.get(ONYX)!.amount += 200n * MILLI;
+    const lines: string[] = [];
+    expect(await run(chain, { log: (l) => lines.push(l) })).toMatchObject({ kind: "opened" });
+    expect(chain.landed.filter((t) => t.step === "home").map((t) => t.receiver)).toEqual([ONYX]);
+    expect(lines).toContain(
+      `winnings that stay with their mask: ${NOVA} holds 0.39 NEAR above what it keeps and runs code ${OLD_CODE}, not home ${HOME_CODE}; scripts/mainnet/home-deploy.mjs prints the deploy of home`,
+    );
+    expect(lines).toContain(`home: ${ONYX} sends the 0.2 NEAR it holds above what it keeps back to ${HOUSE}`);
+    // A network that names no home code calls home() on nobody.
+    const none = after13();
+    const day = await run(none, { cfg: { ...CFG, homeCode: null } });
+    expect(day.kind).toBe("skipped");
+    expect(why(day)).toContain(`${NOVA} holds 0.39 NEAR above what it keeps, and the network names no home_code`);
+    expect(none.steps).toEqual(["retire"]);
+  });
+
+  it("a home() that does not bring the winnings home stops nothing: the day goes on without them", async () => {
+    // The house can open the round without NOVA's winnings: the day opens it all the same.
+    const rich = FakeNear.after("drained").mask(NOVA, 390n * MILLI);
+    rich.homeFails.add(NOVA);
+    const lines: string[] = [];
+    const day = await run(rich, { log: (l) => lines.push(l) });
+    expect(day).toMatchObject({ kind: "opened", round: { id: "race-0003" } });
+    expect(rich.steps).toEqual(["retire", "create", "open"]);
+    expect(day.sent.map((s) => s.step)).toEqual(["retire", "create", "open"]);
+    expect(lines.some((l) => l.includes(`home: failed:`) && l.includes(`${NOVA} still holds its winnings: the day goes on without them`))).toBe(true);
+    expect(rich.masks.get(NOVA)!.amount).toBe(MASK_KEEPS + 390n * MILLI);
+    // The house cannot: the vault still comes home, and the day says why no round opens.
+    const poor = after13();
+    poor.homeFails.add(NOVA);
+    const skipped = await run(poor);
+    expect(skipped.kind).toBe("skipped");
+    expect(why(skipped)).toBe(
+      `the house holds 2.177 NEAR free: the round needs 2.28 NEAR; winnings that stay with their mask: ${NOVA} holds 0.39 NEAR above what it keeps, and this run has called its home() once already`,
+    );
+    expect(poor.steps).toEqual(["retire"]);
+  });
+
+  it("a home() whose answer was lost lands once, and the day goes on", async () => {
+    const chain = after13();
+    chain.lost.add(`home:${NOVA}`);
+    expect(await run(chain)).toMatchObject({ kind: "opened" });
+    expect(chain.steps).toEqual(["home", "retire", "create", "open"]);
+  });
+
+  it("brings each mask's winnings home in one call each, and never takes the house above limits.house_max", async () => {
+    const chain = FakeNear.after("drained").mask(NOVA, 390n * MILLI).mask(ONYX, 110n * MILLI).mask(ORACLE, 3000n * MILLI);
+    const lines: string[] = [];
+    expect(await run(chain, { log: (l) => lines.push(l) })).toMatchObject({ kind: "opened" });
+    expect(chain.landed.filter((t) => t.step === "home").map((t) => t.receiver)).toEqual([NOVA, ONYX]);
+    // 0.9 + 1.68 from the vault + 0.39 + 0.11 is 3.08 NEAR; ORACLE's 3 more would take the house past its 3.5.
+    const stays = `winnings that stay with their mask: ${ORACLE} holds 3 NEAR above what it keeps, and bringing it home would take ${HOUSE} above limits.house_max, 3.5 NEAR, with what the vault brings back`;
+    expect(lines).toContain(stays);
+    expect(chain.masks.get(ORACLE)!.amount).toBe(MASK_KEEPS + 3000n * MILLI);
+    // The vault's NEAR counts even when the winnings alone would fit: 0.5 + 3 is the limit, and the vault's 1.68 is not.
+    const poor = FakeNear.after("drained").mask(ORACLE, 3000n * MILLI);
+    poor.house = { amount: 500n * MILLI, storage: 300 };
+    const skipped = await run(poor);
+    expect(skipped.kind).toBe("skipped");
+    expect(why(skipped)).toBe(`the house holds 2.177 NEAR free: the round needs 2.28 NEAR; ${stays}`);
+    expect(poor.steps).toEqual(["retire"]);
+    expect(poor.house!.amount).toBeLessThanOrEqual(3500n * MILLI);
+  });
+
+  it("calls home() once per mask in a run: what a mask is paid after it waits for the next run, and stops nothing", async () => {
+    // Every mask holds something on the first day; a stranger tops NOVA up right after its home(), and the confirmed
+    // winner of yesterday's round is paid by settle after the masks' calls: no mask is called twice, the day opens.
+    const chain = FakeNear.after("open", { seals: [{ state: "confirmed" }] }).mask(NOVA, 80n * MILLI).mask(ONYX, 80n * MILLI).mask(ORACLE, 80n * MILLI);
+    chain.onLanded = (step, receiver) => {
+      if (step === "home" && receiver === NOVA) chain.masks.get(NOVA)!.amount += 200n * MILLI;
+      if (step === "settle") chain.masks.get(ORACLE)!.amount += 110n * MILLI;
+    };
+    const lines: string[] = [];
+    const day = await run(chain, { log: (l) => lines.push(l) });
+    expect(day).toMatchObject({ kind: "opened", round: { id: "race-0003" } });
+    expect(chain.steps).toEqual(["home", "home", "home", "settle", "retire", "create", "open"]);
+    expect(chain.landed.filter((t) => t.step === "home").map((t) => t.receiver)).toEqual([NOVA, ONYX, ORACLE]);
+    expect(day.sent.map((s) => s.step)).toEqual(["home", "home", "home", "settle", "retire", "create", "open"]);
+    expect(lines.some((l) => l.includes(`${NOVA} holds 0.2 NEAR above what it keeps, and this run has called its home() once already`))).toBe(true);
+    expect(lines.some((l) => l.includes(`${ORACLE} holds 0.11 NEAR above what it keeps, and this run has called its home() once already`))).toBe(true);
+    // The next run brings both home.
+    chain.onLanded = null;
+    chain.now += 24n * HOUR;
+    await run(chain);
+    expect(chain.steps.slice(7, 9)).toEqual(["home", "home"]);
+    expect(chain.landed.slice(7, 9).map((t) => t.receiver)).toEqual([NOVA, ORACLE]);
+  });
+
+  it("nothing is called while a round is sealing, once the slot has its round, or before the house is on chain", async () => {
+    const sealing = FakeNear.after("open").mask(NOVA, 390n * MILLI);
+    sealing.bounties.set("race-0002", round(NOW - 10n * MINUTE));
+    sealing.vault!.lock!.armed_ns = (NOW - 10n * MINUTE).toString();
+    expect(await run(sealing)).toMatchObject({ kind: "open" });
+    const done = FakeNear.after("open").mask(NOVA, 390n * MILLI);
+    done.bounties.set("race-0002", round(SLOT + MINUTE));
+    done.now = SLOT + 2n * HOUR;
+    expect(await run(done)).toMatchObject({ kind: "done" });
+    const homeless = after13();
+    homeless.house = null;
+    expect(why(await run(homeless))).toContain("is not on chain yet");
+    for (const chain of [sealing, done, homeless]) expect(chain.steps).toEqual([]);
+  });
+
+  it("without the house's key the winnings wait with the rest of the day, as one line each", async () => {
+    const chain = after13();
+    const day = await run(chain, { key: null });
+    expect(day).toMatchObject({ kind: "unsigned", steps: [{ kind: "home", mask: NOVA, amount: 390n * MILLI }, { kind: "retire" }, { kind: "create" }, { kind: "open" }] });
+    expect(daySummary(day, CFG)[2]).toBe(`- home: ${NOVA} sends the 0.39 NEAR it holds above what it keeps back to ${HOUSE}`);
+    expect(stepTx({ kind: "home", mask: ONYX, amount: NEAR }, CFG)).toMatchObject({ receiver: ONYX, actions: [{ method: "home", gas: 10n * 10n ** 12n, deposit: 0n }] });
+    // What comes home is counted before it is sent: here even with it the house cannot pay, and the plan says so.
+    chain.house = { amount: 100n * MILLI, storage: 300 };
+    expect(await run(chain, { key: null })).toMatchObject({
+      kind: "unsigned",
+      steps: [{ kind: "home" }, { kind: "retire" }],
+      stop: "the house holds 0.097 NEAR free and 1.68 NEAR comes back with the vault and 0.39 NEAR comes home from the masks: the round needs 2.28 NEAR",
+    });
+    expect(chain.steps).toEqual([]);
+  });
+
+  it("counts what goes home the way contracts/home does: above 0.4 NEAR and the stake of the mask's storage", async () => {
+    const keep = 400n * MILLI + BigInt(MASK_BYTES) * 10n ** 19n;
+    expect(keep).toBe(MASK_KEEPS);
+    expect(homeAmount({ amount: keep, storageUsage: MASK_BYTES }, CFG)).toBe(0n);
+    expect(homeAmount({ amount: keep - 1n, storageUsage: MASK_BYTES }, CFG)).toBe(0n);
+    expect(homeAmount({ amount: keep + 1n, storageUsage: MASK_BYTES }, CFG)).toBe(1n);
+    expect(homeAmount({ amount: keep + NEAR, storageUsage: MASK_BYTES + 1 }, CFG)).toBe(NEAR - 10n ** 19n);
+    expect(HOME_LEAST).toBe(10n * MILLI);
+    // The reading: each mask on chain with what it holds, stores and runs; a mask that is not on chain is left out.
+    const s = await readHouse(new FakeNear().mask(NOVA, 7n), CFG);
+    expect(s.masks).toEqual([{ account: NOVA, amount: MASK_KEEPS + 7n, storageUsage: MASK_BYTES, codeHash: HOME_CODE }]);
+  });
+
+  it("the network names the code of home for each network: a code hash, the one contracts/home builds", () => {
+    for (const net of ["mainnet", "testnet"] as const) {
+      const code = NETWORKS[net].home_code;
+      expect(code && codeHashHex(code), net).toMatch(/^[0-9a-f]{64}$/);
+      expect(houseConfig(NETWORKS[net], JUDGE).homeCode).toBe(code);
+    }
+    expect(NETWORKS.mainnet.home_code).not.toBe(NETWORKS.testnet.home_code);
   });
 });
 
@@ -312,8 +542,13 @@ describe("the limits and the bounty contract's own word", () => {
       const cfg = houseConfig(n, JUDGE);
       expect(cfg.round.safe).toBe(BigInt(Number(n.round.safe) * 1000) * MILLI);
       expect(cfg.round.deposit).toBe(BigInt(Number(n.round.deposit) * 1000) * MILLI);
-      expect(cfg.limits).toEqual({ safeMax: BigInt(Number(n.limits.hand.safe_max) * 1000) * MILLI, depositMax: BigInt(Number(n.limits.hand.deposit_max) * 1000) * MILLI });
-      expect(cfg).toMatchObject({ house: n.house, vault: n.vault, bounty: n.bounty, contracts: [n.bounty, ...n.older_bounty], masks: Object.values(n.masks), safeCode: n.safe_code });
+      expect(cfg.limits).toEqual({
+        safeMax: BigInt(Number(n.limits.hand.safe_max) * 1000) * MILLI,
+        depositMax: BigInt(Number(n.limits.hand.deposit_max) * 1000) * MILLI,
+        houseMax: BigInt(Number(n.limits.house_max) * 1000) * MILLI,
+      });
+      expect(cfg.round.maskKeep).toBe(BigInt(Number(n.round.mask_keep) * 1000) * MILLI);
+      expect(cfg).toMatchObject({ house: n.house, vault: n.vault, bounty: n.bounty, contracts: [n.bounty, ...n.older_bounty], masks: Object.values(n.masks), safeCode: n.safe_code, homeCode: n.home_code });
       const create = stepTx({ kind: "create" }, cfg, WASM);
       expect(create.actions[1]).toEqual({ kind: "transfer", deposit: cfg.round.safe });
       expect(stepTx({ kind: "open", id: "race-0009" }, cfg).actions[0]).toMatchObject({ deposit: cfg.round.deposit });
@@ -491,7 +726,7 @@ describe.each(["mainnet", "testnet"] as const)("%s: the vault's wasm in the repo
     const code = NETWORKS[net].safe_code;
     if (code === null) {
       const chain = new FakeNear();
-      const fresh = { nowNs: chain.now, height: chain.height, house: { amount: 3080n * MILLI, free: 3077n * MILLI }, vault: null, round: null, safeCodes: [CODE], judge: JUDGE, blocking: null, nextId: "race-0002", last: null };
+      const fresh = { nowNs: chain.now, height: chain.height, house: { amount: 3080n * MILLI, free: 3077n * MILLI }, masks: [], vault: null, round: null, safeCodes: [CODE], judge: JUDGE, blocking: null, nextId: "race-0002", last: null };
       expect(planDay(fresh, houseConfig(NETWORKS[net], JUDGE), { wasm: wasmInfo(WASM) })).toMatchObject({ kind: "skip", why: expect.stringContaining("safe_code is not set") });
       return;
     }

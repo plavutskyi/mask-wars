@@ -288,6 +288,14 @@ describe.each(["testnet", "mainnet"] as const)("%s: the house's daily round", (n
     expect(() => parseNetwork({ ...raw(), safe_code: "" })).toThrow("safe_code");
   });
 
+  it("the code of home on the masks is a code hash, or none", () => {
+    if (n.home_code !== null) expect(codeHashHex(n.home_code)).toMatch(/^[0-9a-f]{64}$/);
+    expect(parseNetwork({ ...raw(), home_code: null }).home_code).toBeNull();
+    expect(() => parseNetwork({ ...raw(), home_code: "not-a-hash" })).toThrow("home_code");
+    expect(() => parseNetwork({ ...raw(), home_code: "" })).toThrow("home_code");
+    expect(() => parseNetwork({ ...raw(), home_code: 7 })).toThrow("home_code");
+  });
+
   it("a file that breaks the circle does not load", () => {
     const f = raw();
     const round = (patch: object) => ({ ...f, round: { ...f.round, ...patch } });

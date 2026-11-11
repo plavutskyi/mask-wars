@@ -63,10 +63,25 @@ export const OLD_CODE = codeHashOf(Buffer.alloc(154_000, 3));
 export const KEY = new NearKey(`ed25519:${base58Encode(Buffer.alloc(32, 5))}`);
 
 export const CFG: HouseConfig = { ...houseConfig(NETWORKS.mainnet, JUDGE), safeCode: CODE };
+/** The code of `home` the network names: the code the house calls `home()` on. */
+export const HOME_CODE = NETWORKS.mainnet.home_code!;
+/** A plain account's code hash: no code at all. */
+export const NO_CODE = "11111111111111111111111111111111";
+/** What a mask stores once it runs home: its account, its keys and the code. */
+export const MASK_BYTES = 1_700;
+/** What a mask keeps when its winnings go home: 0.4 NEAR and the stake of what it stores. */
+export const MASK_KEEPS = 400n * MILLI + BigInt(MASK_BYTES) * 10n ** 19n;
 export const { house: HOUSE, vault: VAULT, bounty: BOUNTY } = CFG;
 export const [NOVA, ONYX, ORACLE] = CFG.masks as [string, string, string];
 /** The house key's secret, as the secret HOUSE_KEY holds it. */
 export const KEY_SECRET = `ed25519:${base58Encode(Buffer.alloc(32, 5))}`;
+
+/** One of the arena's own masks: what it holds and stores, and the code it runs. */
+export interface FakeMask {
+  amount: bigint;
+  storage: number;
+  code: string;
+}
 
 export type Decoded =
   | { kind: "createAccount" }
@@ -169,6 +184,24 @@ export class FakeNear implements Chain {
   armFails = false;
   /** What a vault this chain makes differs by from the one the house asked for. */
   made: Partial<FakeVault> = {};
+  /** The arena's own masks that are on chain; none unless a test puts them there. */
+  readonly masks = new Map<string, FakeMask>();
+  /** Masks whose `home()` sends nothing: the transfer to the house fails and NEAR gives it back. */
+  readonly homeFails = new Set<string>();
+  /**
+   * A node a block behind: the mask is debited a block before the house is credited, so after a `home()` lands the
+   * house shows its credit only on this many readings later.
+   */
+  houseLag = 0;
+  private houseDue: { amount: bigint; reads: number }[] = [];
+  /** What else happens on chain right after a step lands: a payment to a mask, say. */
+  onLanded: ((step: string, receiver: string) => void) | null = null;
+
+  /** Puts a mask on chain holding `above` more than it keeps, running `code` (home by default). */
+  mask(id: string, above: bigint, code = HOME_CODE): this {
+    this.masks.set(id, { amount: MASK_KEEPS + above, storage: MASK_BYTES, code });
+    return this;
+  }
 
   /** Yesterday's round on the vault, as the day finds it. */
   static after(state: FakeBounty["state"], patch: Partial<FakeBounty> = {}): FakeNear {
@@ -208,6 +241,18 @@ export class FakeNear implements Chain {
       throw new Error(`query: UNKNOWN_ACCOUNT account ${p.account_id} does not exist while viewing`);
     };
     if (p.request_type === "view_account") {
+      const m = this.masks.get(p.account_id!);
+      if (m) return { amount: m.amount.toString(), code_hash: m.code, storage_usage: m.storage };
+      if (p.account_id === HOUSE && this.house) {
+        this.houseDue = this.houseDue.filter((d) => {
+          if (d.reads > 0) {
+            d.reads -= 1;
+            return true;
+          }
+          this.house!.amount += d.amount;
+          return false;
+        });
+      }
       const a = p.account_id === HOUSE ? this.house : p.account_id === VAULT ? this.vault : null;
       if (!a) return missing();
       return { amount: a.amount.toString(), code_hash: "codeHash" in a ? a.codeHash : "1".repeat(32), storage_usage: "storage" in a ? a.storage : 165_500 };
@@ -250,22 +295,27 @@ export class FakeNear implements Chain {
     const tx = readTx(base64);
     const call = tx.actions.find((a) => a.kind === "functionCall");
     const step = tx.actions[0]!.kind === "createAccount" ? "create" : call?.kind === "functionCall" ? (call.method === "open_safe" ? "open" : call.method) : "?";
+    // The mask a home step went to: a test of a lost or failed home names the mask.
+    const key = step === "home" ? `home:${tx.receiver}` : step;
     if (this.dieBefore !== null && this.landed.length >= this.dieBefore) {
       this.dead = true;
       throw new Error(GONE);
     }
-    if (this.dropped.delete(step)) throw new Error("fetch failed: the RPC timed out");
+    if (this.dropped.delete(step) || this.dropped.delete(key)) throw new Error("fetch failed: the RPC timed out");
     if (this.staleNonce > 0) {
       this.staleNonce -= 1;
       throw new Error('send_tx: INVALID_TRANSACTION {"TxExecutionError":{"InvalidTxError":{"InvalidNonce":{"tx_nonce":41,"ak_nonce":41}}}}');
     }
     const failure = this.apply(step, tx);
-    if (failure === null) this.landed.push({ step, ...tx });
+    if (failure === null) {
+      this.landed.push({ step, ...tx });
+      this.onLanded?.(step, tx.receiver);
+    }
     if (this.dieAfter !== null && this.landed.length >= this.dieAfter) {
       this.dead = true;
       throw new Error(GONE);
     }
-    if (this.lost.delete(step)) throw new Error("fetch failed: the RPC timed out");
+    if (this.lost.delete(step) || this.lost.delete(key)) throw new Error("fetch failed: the RPC timed out");
     if (failure !== null) {
       const status = { Failure: { ActionError: { kind: { FunctionCallError: { ExecutionError: failure } } } } };
       return { status, receipts_outcome: [{ outcome: { status, logs: [] } }] };
@@ -278,6 +328,21 @@ export class FakeNear implements Chain {
     if (tx.signer !== HOUSE) return "only the house signs";
     const call = tx.actions.find((a): a is Extract<Decoded, { kind: "functionCall" }> => a.kind === "functionCall");
     const b = call?.args.id ? this.bounties.get(call.args.id) : undefined;
+    if (step === "home") {
+      // contracts/home: anyone calls it; everything above what the mask keeps goes to the house, and only there.
+      const m = this.masks.get(tx.receiver);
+      if (!m) return "AccountDoesNotExist";
+      if (m.code !== HOME_CODE) return "CodeDoesNotExist";
+      if (tx.actions.length !== 1 || Object.keys(call!.args).length !== 0 || call!.deposit !== 0n) return "not a plain home()";
+      const send = m.amount - (400n * MILLI + BigInt(m.storage) * 10n ** 19n);
+      if (send <= 0n) return null;
+      // The transfer's receipt fails and its NEAR goes back to the mask: the call itself went through.
+      if (this.homeFails.has(tx.receiver)) return "the transfer to the house failed: its NEAR went back to the mask";
+      m.amount -= send;
+      if (this.houseLag > 0) this.houseDue.push({ amount: send, reads: this.houseLag });
+      else this.house!.amount += send;
+      return null;
+    }
     if (step === "unstick") {
       const c = this.claims.get(Number(call!.args.claim));
       if (!c || c.bounty !== call!.args.id) return "no such claim with the judge";
