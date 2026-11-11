@@ -24,6 +24,34 @@ concurrency:
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
+  # The keys that sign and pay (MASK_KEYS, KEEPER_SEED, HOUSE_KEY, SCHEDULER_KEY, OUTLAYER_PAYMENT_KEY, NEAR_AI_API_KEY)
+  # live only in environments that only `main` deploys to. A repository secret reaches every workflow on every branch,
+  # so whoever can push a branch could send it away. This job names no environment and checks out no code: it sees a
+  # key only if the key is a repository secret, and then CI is red on every pull request and push until the owner moves
+  # it. It never prints a value. A pull request from a fork gets no secrets at all and passes.
+  keys:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: No key is a repository secret
+        env:
+          MASK_KEYS: ${{ secrets.MASK_KEYS }}
+          KEEPER_SEED: ${{ secrets.KEEPER_SEED }}
+          HOUSE_KEY: ${{ secrets.HOUSE_KEY }}
+          SCHEDULER_KEY: ${{ secrets.SCHEDULER_KEY }}
+          OUTLAYER_PAYMENT_KEY: ${{ secrets.OUTLAYER_PAYMENT_KEY }}
+          NEAR_AI_API_KEY: ${{ secrets.NEAR_AI_API_KEY }}
+        run: |
+          bad=0
+          for name in MASK_KEYS KEEPER_SEED HOUSE_KEY SCHEDULER_KEY OUTLAYER_PAYMENT_KEY NEAR_AI_API_KEY; do
+            if [ -n "${!name}" ]; then
+              echo "::error::$name is a repository secret: move it into its environment (live-race, season or outlayer; -mainnet on mainnet) and delete it from the repository's secrets"
+              bad=1
+            fi
+          done
+          [ "$bad" = 0 ] && echo "none of the six keys is a repository secret of ${GITHUB_REPOSITORY}"
+          exit $bad
+
   # What the change touches. A job runs when one of its filters matches a changed file, and every job runs when this
   # file changes. A Rust job's filter holds its crate and every folder it builds or takes by path: a new path
   # dependency goes into the filter with it.
@@ -573,7 +601,7 @@ jobs:
   # failed or was cancelled.
   ci-ok:
     if: always()
-    needs: [changes, typescript, mask-check-live, arena-live, pay-live, contracts, season, jobs, challenges, outlayer, bounty, home]
+    needs: [keys, changes, typescript, mask-check-live, arena-live, pay-live, contracts, season, jobs, challenges, outlayer, bounty, home]
     runs-on: ubuntu-latest
     steps:
       - name: Every job passed or was not needed

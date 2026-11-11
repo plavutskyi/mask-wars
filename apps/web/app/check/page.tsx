@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import { Header } from '@/components/arena/Header';
+import { TEE_DEPLOYMENT, canSign } from '@/lib/check-tee';
 import { pageMeta } from '@/lib/meta';
 import { Check } from './Check';
 import s from './check.module.css';
@@ -29,7 +30,7 @@ export default function CheckPage() {
           </h1>
           <p className={s.lede}>Name a NEAR account. A safe the masks broke on the arena comes back as block.</p>
         </section>
-        <Check />
+        <Check signs={canSign(TEE_DEPLOYMENT, process.env.OUTLAYER_PAYMENT_KEY)} />
       </div>
     </main>
   );

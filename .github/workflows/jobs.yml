@@ -65,7 +65,7 @@ jobs:
   guard:
     # The keys live in environments only. This job names none, so it sees a key only if it is a repository secret: then
     # nothing runs. It checks out no code, so nothing here could read a key that is there. `race` inherits every
-    # secret, so the minds' payment key is checked too.
+    # secret, so the keys of the race's own jobs are checked too.
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
@@ -74,9 +74,10 @@ jobs:
           MASK_KEYS: ${{ secrets.MASK_KEYS }}
           KEEPER_SEED: ${{ secrets.KEEPER_SEED }}
           OUTLAYER_PAYMENT_KEY: ${{ secrets.OUTLAYER_PAYMENT_KEY }}
+          NEAR_AI_API_KEY: ${{ secrets.NEAR_AI_API_KEY }}
         run: |
           bad=0
-          for name in MASK_KEYS KEEPER_SEED OUTLAYER_PAYMENT_KEY; do
+          for name in MASK_KEYS KEEPER_SEED OUTLAYER_PAYMENT_KEY NEAR_AI_API_KEY; do
             if [ -n "${!name}" ]; then
               echo "::error::$name is a repository secret: move it into its environment (live-race or outlayer) and delete it from the repository's secrets"
               bad=1

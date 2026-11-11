@@ -1,0 +1,141 @@
+{
+  "model_id": "music_v2_5",
+  "composition_plan": {
+    "chunks": [
+      {
+        "text": "[Cold open]\n{instrumental, no vocals}\n{A deep sub-bass hit on the first beat, a heartbeat kick every second beat, a ticking clock, one metallic stinger at the end}",
+        "duration_ms": 7500,
+        "positive_styles": [
+          "dark cinematic trailer",
+          "128 BPM",
+          "D minor",
+          "sub bass",
+          "heartbeat kick",
+          "ticking clock",
+          "tension"
+        ],
+        "negative_styles": [
+          "vocals",
+          "singing",
+          "lyrics",
+          "spoken words",
+          "acoustic guitar",
+          "happy"
+        ]
+      },
+      {
+        "text": "[Build]\n{instrumental}\n{A driving sixteenth-note pulse, staccato distorted synth bass, rising tension strings, glitch FX; the last bar is a snare roll and a riser, then one beat of total silence}",
+        "duration_ms": 22500,
+        "positive_styles": [
+          "cyberpunk",
+          "hybrid trailer",
+          "128 BPM",
+          "driving pulse",
+          "staccato synth bass",
+          "rising tension",
+          "snare roll"
+        ],
+        "negative_styles": [
+          "vocals",
+          "singing",
+          "lyrics",
+          "spoken words",
+          "calm"
+        ]
+      },
+      {
+        "text": "[Drop 1]\n{instrumental}\n{Massive drop on the first beat}\n{hard-hitting trap and trailer drums, heavy 808, distorted reese bass, huge brass stabs on the downbeats, a short fill every eight bars, relentless energy}",
+        "duration_ms": 45000,
+        "positive_styles": [
+          "epic action",
+          "hybrid trap trailer",
+          "128 BPM",
+          "heavy 808",
+          "distorted reese bass",
+          "brass stabs",
+          "huge impacts",
+          "aggressive"
+        ],
+        "negative_styles": [
+          "vocals",
+          "singing",
+          "lyrics",
+          "spoken words",
+          "lo-fi",
+          "soft"
+        ]
+      },
+      {
+        "text": "[Breakdown]\n{instrumental}\n{Drums out}\n{cold pads, a lone piano motif, a slow sub pulse; the last two bars rise again with a filtered drum loop}",
+        "duration_ms": 15000,
+        "positive_styles": [
+          "cinematic breakdown",
+          "128 BPM",
+          "cold pads",
+          "piano motif",
+          "suspense"
+        ],
+        "negative_styles": [
+          "vocals",
+          "singing",
+          "lyrics",
+          "spoken words",
+          "full drums"
+        ]
+      },
+      {
+        "text": "[Build 2]\n{instrumental}\n{A fast riser, an accelerating snare roll, a wordless choir swell, ending in one beat of total silence}",
+        "duration_ms": 7500,
+        "positive_styles": [
+          "trailer riser",
+          "128 BPM",
+          "snare roll",
+          "wordless choir swell",
+          "tension"
+        ],
+        "negative_styles": [
+          "vocals with words",
+          "lyrics",
+          "spoken words"
+        ]
+      },
+      {
+        "text": "[Drop 2]\n{instrumental}\n{The biggest drop}\n{bigger and more aggressive than the first, extra percussion, wordless choir hits, brass, 808 and distorted bass, a triumphant edge}",
+        "duration_ms": 37500,
+        "positive_styles": [
+          "epic action",
+          "hybrid trap trailer",
+          "128 BPM",
+          "triumphant",
+          "wordless choir hits",
+          "brass",
+          "heavy 808",
+          "maximum energy"
+        ],
+        "negative_styles": [
+          "vocals with words",
+          "lyrics",
+          "spoken words",
+          "soft"
+        ]
+      },
+      {
+        "text": "[Finale]\n{instrumental}\n{One colossal impact on the first beat, a sustained epic chord, three decaying hits, then a long dark tail into silence}",
+        "duration_ms": 15000,
+        "positive_styles": [
+          "trailer finale",
+          "colossal impact",
+          "epic chord",
+          "decay to silence"
+        ],
+        "negative_styles": [
+          "vocals",
+          "singing",
+          "lyrics",
+          "spoken words",
+          "fade-in"
+        ]
+      }
+    ]
+  }
+}

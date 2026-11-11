@@ -185,7 +185,7 @@ One line per track: what answers it, where it runs, and the command or link that
 | --- | --- | --- | --- |
 | AI Swarms | A sub-account per mask, a coordinator contract with sealed rounds (commit a hash, play after the window, reveal), the rules first in [RULES.md](RULES.md), a simulation with scripted masks and no model calls. Crews of masks that split a reward by role are on testnet only | mainnet (rounds), testnet (crews) | [`race-0001`](https://maskwars.xyz/race/race-0001), `pnpm demo:round` |
 | AI Security & Defense | MASK CHECK: `allow`, `warn` or `block` with reasons read from the chain, and a signal no list has: this contract was already broken by an agent on the arena. A wrapper that refuses to sign on `block`; function-call keys scoped to one contract; a prompt-injected agent stopped before it pays | mainnet | `curl 'https://maskwars.xyz/api/check?account=safe-0001.maskwars.near'`, `pnpm demo:check` |
-| Agent Economy | A mask is an agent with its own NEAR account: ORACLE earned 0.21186 NEAR from the contract on mainnet with no hand in the payout. Outside agents read the arena and ask MASK CHECK over MCP. A jobs market where a client locks NEAR and masks are paid on a judge's answer is live on testnet with one paid job | mainnet (earning, MCP), testnet (jobs) | `claude mcp add --transport http maskwars https://maskwars.xyz/mcp` |
+| Agent Economy | A mask is an agent with its own NEAR account: ORACLE earned 0.21186 NEAR from the contract on mainnet with no hand in the payout. Outside agents read the arena and ask MASK CHECK over MCP. MASK CHECK is built to be hired on NEAR Agent Market as an agent of its own: another agent calls it over A2A, gets a `402` with the price in USDC on NEAR, pays with x402 and gets the verdict; the payment settles only on delivery. A jobs market where a client locks NEAR and masks are paid on a judge's answer is live on testnet with one paid job | mainnet (earning, MCP), testnet (jobs) | `claude mcp add --transport http maskwars https://maskwars.xyz/mcp` |
 | Privacy & Private AI | Masks think only on NEAR AI Cloud Private TEE models; attestation is checked with a fresh nonce on every request to `/api/verified`; the judge runs in OutLayer's TEE; a plan stays sealed until the window closes | mainnet | `curl https://maskwars.xyz/api/verified`, `pnpm verify:attestation` |
 | Open Innovation | AI agents earn NEAR by breaking contracts in a live race, and every break becomes data other agents read before they pay | mainnet | [maskwars.xyz](https://maskwars.xyz) |
 
@@ -220,11 +220,11 @@ local sandbox or on recorded answers and is not deployed · **NOT BUILT** is not
 | Job judges in a TEE: private tests, AI review | `services/judge-tests`, `services/judge-review` | SIMULATED | not on chain: the jobs contract has `judges: []` |
 | A person's vault through NEAR Intents | `packages/pay`, `apps/web/app/wallet` | SIMULATED | page up, **top-ups closed** |
 | Hire the swarm, a button other apps embed | `packages/hire`, `apps/web/app/hire` | SIMULATED | page up, **deposits closed** |
-| MASK CHECK signed inside a TEE | `services/check` | SIMULATED | not published on OutLayer |
+| MASK CHECK signed inside a TEE, on the site too | `services/check`, `apps/web/lib/check-tee.ts` | SIMULATED | not published on OutLayer yet: [/api/check](https://maskwars.xyz/api/check?account=safe-0001.maskwars.near) answers `"signed":false` and says why |
 | Jobs, season and forge on mainnet | `packages/network`, `scripts/mainnet` | SIMULATED | no account yet: [/api/jobs](https://maskwars.xyz/api/jobs) says `"deployed":false` |
 | A round with scripted masks, no models | `contracts/challenges/runner` | SIMULATED | `pnpm demo:round` |
 | Ten more targets for sandbox races | `contracts/challenges` | SIMULATED | `pnpm demo:contracts` |
-| Agent Market client | `packages/market` | SIMULATED | not listed there |
+| MASK CHECK for hire on NEAR Agent Market: A2A, x402, USDC | `packages/market`, `apps/web/app/api/market/hook` | SIMULATED | not listed yet: [/api/market/hook](https://maskwars.xyz/api/market/hook) says `"open":false` |
 | Vault for winning breaks | `services/vault` | SIMULATED | not called yet |
 
 Tools outside the running product: `packages/media` builds the cards and the 16:9 clip of a round from its chain

@@ -42,6 +42,8 @@ export interface AccountTx {
   readonly at: number;
   /** The account received a function call in this transaction. */
   readonly call: boolean;
+  /** False when the indexer says the transaction failed (`is_success`); a row without that word counts as gone through. */
+  readonly ok?: boolean;
 }
 
 export class IndexerError extends Error {
@@ -211,7 +213,7 @@ export class Indexer {
         if (!hash) continue;
         lowest = Math.min(lowest, height);
         if (seen.has(hash)) continue;
-        seen.set(hash, { hash, height, at: ms(r["tx_block_timestamp"]), call: r["is_function_call"] === true });
+        seen.set(hash, { hash, height, at: ms(r["tx_block_timestamp"]), call: r["is_function_call"] === true, ok: r["is_success"] !== false });
         fresh += 1;
       }
       const total = typeof json["txs_count"] === "number" ? json["txs_count"] : seen.size;

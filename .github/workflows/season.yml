@@ -77,19 +77,26 @@ concurrency:
 
 jobs:
   guard:
-    # The house's key lives in its environment only. This job names none, so it sees the key only if it is a
-    # repository secret, which every workflow on every branch could read: then nothing runs. It checks out no code.
+    # Every key lives in its environment only: the house's and the scheduler's in `season`, and the race's, which `race`
+    # inherits, in `live-race` and `outlayer`. This job names no environment, so it sees a key only if it is a
+    # repository secret, which every workflow on every branch could read: then nothing opens and nothing races, before
+    # any NEAR moves. It checks out no code.
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
-      - name: The house's key is in its environment, not in the repository
+      - name: The keys are in their environments, not in the repository
         env:
           HOUSE_KEY: ${{ secrets.HOUSE_KEY }}
+          SCHEDULER_KEY: ${{ secrets.SCHEDULER_KEY }}
+          MASK_KEYS: ${{ secrets.MASK_KEYS }}
+          KEEPER_SEED: ${{ secrets.KEEPER_SEED }}
+          OUTLAYER_PAYMENT_KEY: ${{ secrets.OUTLAYER_PAYMENT_KEY }}
+          NEAR_AI_API_KEY: ${{ secrets.NEAR_AI_API_KEY }}
         run: |
           bad=0
-          for name in HOUSE_KEY; do
+          for name in HOUSE_KEY SCHEDULER_KEY MASK_KEYS KEEPER_SEED OUTLAYER_PAYMENT_KEY NEAR_AI_API_KEY; do
             if [ -n "${!name}" ]; then
-              echo "::error::$name is a repository secret: move it into its environment (season-mainnet, or season on testnet) and delete it from the repository's secrets"
+              echo "::error::$name is a repository secret: move it into its environment (season, live-race or outlayer; -mainnet on mainnet) and delete it from the repository's secrets"
               bad=1
             fi
           done

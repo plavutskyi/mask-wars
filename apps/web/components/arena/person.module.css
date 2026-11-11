@@ -250,6 +250,9 @@
   min-width: 0;
 }
 .copyTitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin: 0;
   font-weight: 650;
   font-size: 15px;
@@ -263,6 +266,46 @@
   font-size: 14px;
   line-height: 1.5;
   color: var(--ice-60);
+}
+/* The copy's terms as numbers: what a copy keeps of each win, what the author takes, how many copies there are. */
+.copyNums {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 44px;
+  margin: 6px 0 0;
+}
+.copyNums div {
+  display: grid;
+  gap: 6px;
+}
+.copyNums dt {
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ice-60);
+}
+.copyNums dd {
+  margin: 0;
+  font-size: 34px;
+  font-weight: 800;
+  font-stretch: 125%;
+  line-height: 1;
+  color: var(--ice);
+}
+.copyNums dd[data-tone='money'] {
+  color: var(--money);
+}
+.copyUnit {
+  margin-left: 6px;
+  font-size: 15px;
+  letter-spacing: 0.06em;
+  color: var(--ice-60);
+}
+.copyPrice {
+  padding-left: 12px;
+  margin-left: 12px;
+  border-left: 1px solid color-mix(in oklab, var(--ink) 35%, transparent);
+  letter-spacing: 0.04em;
 }
 .copyStat {
   margin: 2px 0 0;
@@ -529,6 +572,208 @@
   text-underline-offset: 3px;
 }
 
+/* A mask's race history: private, open only to the accounts its owner chose; read in the browser with the reader's
+ * view key. The same frame as copying, in ice instead of violet. */
+.hist {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  width: var(--wide);
+  margin: 16px auto 0;
+  padding: 24px 32px;
+  border-radius: calc(var(--radius) * 1.5);
+  border: 1px solid color-mix(in oklab, var(--ice) 16%, transparent);
+  background: color-mix(in oklab, var(--ink) 88%, var(--ice) 3%);
+}
+.histHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 32px;
+}
+.histTitle {
+  margin: 0;
+  font-weight: 650;
+  font-size: 15px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ice);
+}
+.histState {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 15px;
+  color: var(--ice-60);
+}
+.histLock {
+  position: relative;
+  flex: none;
+  width: 12px;
+  height: 10px;
+  margin-top: 5px;
+  border-radius: 2px;
+  background: currentColor;
+}
+.histLock::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  bottom: 8px;
+  width: 8px;
+  height: 7px;
+  border: 2px solid currentColor;
+  border-bottom: 0;
+  border-radius: 5px 5px 0 0;
+  box-sizing: border-box;
+}
+.histBtn {
+  flex: none;
+  min-height: 52px;
+  padding: 0 26px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, var(--ice) 40%, transparent);
+  background: transparent;
+  color: var(--ice);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.histBtn:hover {
+  background: color-mix(in oklab, var(--ice) 8%, transparent);
+  border-color: color-mix(in oklab, var(--ice) 70%, transparent);
+}
+.histBtn:focus-visible {
+  outline: 2px solid var(--ice);
+  outline-offset: 2px;
+}
+.histBtn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.histLine {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--ice);
+}
+.histRows {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid color-mix(in oklab, var(--ice) 12%, transparent);
+}
+.histRow {
+  display: grid;
+  grid-template-columns: minmax(96px, 1.1fr) minmax(80px, 0.9fr) minmax(120px, 1.6fr) minmax(96px, 1fr) 44px;
+  align-items: center;
+  gap: 12px;
+  min-height: 60px;
+  border-bottom: 1px solid color-mix(in oklab, var(--ice) 12%, transparent);
+  font-size: 15px;
+}
+.histRow:last-child {
+  border-bottom: 0;
+}
+.histRace {
+  font-weight: 800;
+  font-stretch: 125%;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.histResult {
+  color: var(--ice-60);
+}
+.histRow[data-won] .histResult {
+  color: var(--ice);
+}
+.histPlan {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 14px;
+  color: var(--ice-60);
+  overflow-wrap: anywhere;
+}
+.histAmount {
+  justify-self: end;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+.histAmount[data-tone='money'] {
+  color: var(--money);
+}
+.histInfo {
+  display: flex;
+  justify-content: flex-end;
+}
+.hist .owner {
+  padding-top: 18px;
+  border-top: 1px solid color-mix(in oklab, var(--ice) 12%, transparent);
+}
+.readers {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-width: 640px;
+}
+.reader {
+  display: flex;
+  align-items: center;
+  gap: 12px 16px;
+  padding: 6px 0;
+}
+.readerWho {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 0;
+  min-width: 0;
+}
+.readerName {
+  min-width: 0;
+  font-size: 15px;
+  color: var(--ice);
+  overflow-wrap: anywhere;
+}
+.readerKey {
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  color: var(--ice-60);
+}
+.grant {
+  display: grid;
+  gap: 0;
+  max-width: 640px;
+}
+.grantRow {
+  display: flex;
+  gap: 10px;
+}
+.grantInput {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 48px;
+  padding: 0 16px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in oklab, var(--ice) 22%, transparent);
+  background: color-mix(in oklab, var(--ink) 70%, black);
+  color: var(--ice);
+  font: inherit;
+  font-size: 16px;
+}
+.grantInput:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--violet) 80%, white);
+  outline-offset: 2px;
+}
+
 @media (max-width: 760px) {
   .copy {
     flex-direction: column;
@@ -538,6 +783,54 @@
   .copyBtn {
     width: 100%;
   }
+  .copyNums {
+    gap: 14px 28px;
+  }
+  .copyNums dd {
+    font-size: 28px;
+  }
+  .hist {
+    padding: 20px 20px;
+  }
+  .histHead {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .histBtn {
+    width: 100%;
+  }
+  .histRow {
+    grid-template-columns: 1fr auto 44px;
+    grid-template-areas:
+      'race amount info'
+      'result plan plan';
+    gap: 4px 12px;
+    padding: 12px 0;
+  }
+  .histRace {
+    grid-area: race;
+  }
+  .histResult {
+    grid-area: result;
+  }
+  .histPlan {
+    grid-area: plan;
+    justify-self: end;
+  }
+  .histAmount {
+    grid-area: amount;
+  }
+  .histInfo {
+    grid-area: info;
+  }
+  .grantRow {
+    flex-direction: column;
+  }
+  .reader .ownerQuiet {
+    width: auto;
+    flex: none;
+  }
+
   .copy[data-closed] .owner {
     align-items: stretch;
   }

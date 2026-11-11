@@ -3,6 +3,7 @@
 // text, never followed.
 import type { CheckResult, Reason } from '@maskwars/check';
 import { NET } from '@maskwars/network';
+import type { Tee } from '@/lib/check-tee';
 
 /**
  * The arena's first live safe on the network this site reads, named from its settings (packages/network): the team
@@ -68,6 +69,19 @@ export function hostsOf(check: Pick<CheckResult, 'rpc'>): string[] {
       return url;
     }
   });
+}
+
+/** Whether the answer was signed inside the TEE, as Details says it: where and by which key, or a sentence why not. */
+export function signedBy(tee: Tee | undefined): { parts: string[] } | { text: string } {
+  if (tee?.signed) return { parts: ['In a TEE on OutLayer', `key ${shortKey(tee.key)}`] };
+  return { text: tee ? `No. ${tee.why.charAt(0).toUpperCase()}${tee.why.slice(1)}.` : 'No.' };
+}
+
+/** `ed25519:FVen…S96Z`: enough of a key to tell it apart, on one line. */
+export function shortKey(key: string): string {
+  const [scheme, body = ''] = key.includes(':') ? key.split(':', 2) : ['', key];
+  const short = body.length > 12 ? `${body.slice(0, 4)}…${body.slice(-4)}` : body;
+  return scheme ? `${scheme}:${short}` : short;
 }
 
 /** Why no verdict came, in the page's words, from what the API answered. */

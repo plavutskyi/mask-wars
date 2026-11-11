@@ -4,10 +4,11 @@ import { look as lookOf, mind as mindOf, nearText, STYLES, times, timesText } fr
 import Image from 'next/image';
 import Link from 'next/link';
 import type { CSSProperties } from 'react';
-import { type Person, stateOf } from '@/lib/person';
+import { type Person, readableHistory, stateOf } from '@/lib/person';
 import { day } from '@/lib/show';
 import { CopyPanel } from './CopyPanel';
 import { Header } from './Header';
+import { HistoryPanel } from './HistoryPanel';
 import { Info, type InfoRow } from './Info';
 import { raceName } from './names';
 import { Nums } from './Nums';
@@ -117,6 +118,10 @@ export function PersonPage({ person }: { person: Person }) {
 
       {takeOut > 0n ? (
         <TakeOut name={m.name} account={m.account} owner={m.owner} amount={takeOut.toString()} author={m.copy_of} />
+      ) : null}
+
+      {readableHistory(person.history) ? (
+        <HistoryPanel name={m.name} account={m.account} owner={m.owner} viewers={person.history.viewers} events={person.history.events} />
       ) : null}
 
       {stats?.history.length ? (

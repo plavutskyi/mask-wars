@@ -26,8 +26,10 @@
 mod admin;
 #[cfg(test)]
 mod tests;
+mod view;
 
 pub use admin::{Change, Pending, CHANGE_DELAY_HOURS, CHANGE_LAPSE_HOURS, CHANGE_NOTICE_HOURS, GLOBAL_CODE_BYTE_COST};
+pub use view::{Viewer, Wrap, MAX_VIEWERS};
 
 use near_sdk::borsh::BorshSerialize;
 use near_sdk::json_types::{U128, U64};

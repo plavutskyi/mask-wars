@@ -75,6 +75,12 @@ pub const OUT_OF_TOKENS: &str = "the model spent all 24000 tokens before it answ
 /// The model was still at work when its time ran out: these words, the seconds it was given, and ` seconds`
 /// (`out_of_time_words`). No count comes back for an answer that never came.
 pub const OUT_OF_TIME: &str = "the model did not answer in";
+/// The project holds no `NEAR_AI_API_KEY`: the mind cannot ask a model, and says so before it tries.
+pub const NO_KEY: &str = "the mind has no NEAR AI key in its TEE";
+/// A caller who is not the keeper of the mask's factory.
+const NOT_THE_KEEPER: &str = "the mind plays only for the keeper";
+/// A factory that is neither listed nor names this mind.
+const UNKNOWN_FACTORY: &str = "the mind plays only masks of the factories it knows or that name it";
 /// The verdicts a past attempt may have, as the runner gives them.
 const VERDICTS: [&str; 5] = ["breach", "held", "invalid", "timeout", "error"];
 const ONE_NEAR: u128 = 1_000_000_000_000_000_000_000_000;
@@ -335,12 +341,14 @@ pub fn play(
     llm: &dyn Llm,
 ) -> Result<Played, String> {
     let w = words();
-    if !caller.is_some_and(|c| w.callers.iter().any(|k| k == c) || MAINNET_CALLERS.contains(&c)) {
-        return Err("the mind plays only for the keeper".into());
-    }
     let (name, factory) = input.mask.split_once('.').ok_or("mask: <name>.<factory>")?;
-    if !w.factories.iter().any(|f| f == factory) && !MAINNET_FACTORIES.contains(&factory) {
-        return Err("the mind plays only masks of the factories it knows".into());
+    if w.factories.iter().any(|f| f == factory) || MAINNET_FACTORIES.contains(&factory) {
+        if !caller.is_some_and(|c| w.callers.iter().any(|k| k == c) || MAINNET_CALLERS.contains(&c))
+        {
+            return Err(NOT_THE_KEEPER.into());
+        }
+    } else {
+        named_by(factory, caller, mind, chain)?;
     }
     let target = target(&input.challenge).ok_or("the mind plays only the targets it carries")?;
     let m = view(chain, factory, "get_mask", json!({ "name": name }))?;
@@ -363,6 +371,11 @@ pub fn play(
     // author's own account (its AAD), inside the TEE. The copy never carries a strategy of its own, and its owner, the
     // site and the chain never see the author's line. A mask that plays its own line opens its own box, as before.
     let line = if let Some(author) = m["copy_of"].as_str() {
+        // An author is a mask name of this factory, never an account path: a `.` would make `<author>.<factory>` an
+        // account under another mask, and its box would open for the wrong account.
+        if author.is_empty() || author.contains('.') {
+            return Err("the copy names no author of this factory".into());
+        }
         let author_mask = format!("{author}.{factory}");
         let sealed = view(
             chain,
@@ -409,6 +422,29 @@ pub fn play(
         usage: stepped(reply.usage),
         strategy: line.is_some(),
     })
+}
+
+/// A factory the mind does not list may still play its own masks with this mind: its `config` names this mind's key as
+/// the one its strategies are sealed for, and the caller is that factory's own keeper. It opens nothing of anyone
+/// else's: a box opens only for the mask account it was sealed for (its associated data), and that account is
+/// `<name>.<factory>`, so the masks of the listed factories stay theirs. And the run itself is OutLayer's to allow:
+/// the project's secrets reach only the signers their owner whitelisted, so a stranger's run has no seed to open
+/// anything with and no key to ask a model with.
+fn named_by(
+    factory: &str,
+    caller: Option<&str>,
+    mind: &MindSecret,
+    chain: &dyn Chain,
+) -> Result<(), String> {
+    let cfg = view(chain, factory, "config", json!({})).map_err(|_| UNKNOWN_FACTORY.to_string())?;
+    let mine = key_text(&MindPublic::from(mind));
+    if cfg["strategy_key"].as_str() != Some(mine.as_str()) {
+        return Err(UNKNOWN_FACTORY.into());
+    }
+    if caller.is_none_or(|c| cfg["keeper"].as_str() != Some(c)) {
+        return Err(NOT_THE_KEEPER.into());
+    }
+    Ok(())
 }
 
 /// Whether a request to the model that failed with `error` after `waited` seconds failed because the model was still
@@ -592,19 +628,29 @@ mod tests {
     const LINE: &str =
         "Wait for the window, then take the safe through set_owner and sweep it quietly.";
 
-    /// The factory as the worker's RPC shows it.
+    /// The factory as the worker's RPC shows it, at `account`. Any other account the RPC knows nothing of.
     struct Factory {
+        account: String,
         masks: HashMap<String, Value>,
         sealed: HashMap<String, Value>,
+        /// What `config` answers.
+        config: Value,
     }
 
     impl Chain for Factory {
         fn rpc(&self, method: &str, p: Value) -> Result<Value, String> {
             assert_eq!(method, "query");
-            assert_eq!(
-                p["account_id"], "masks.tinygif8324.testnet",
-                "the mind reads only the factory"
-            );
+            if p["account_id"] != self.account.as_str() {
+                return Ok(
+                    json!({ "jsonrpc": "2.0", "id": "x", "error": { "name": "HANDLER_ERROR" } }),
+                );
+            }
+            if p["method_name"] == "config" {
+                let v = self.config.to_string().into_bytes();
+                return Ok(
+                    json!({ "jsonrpc": "2.0", "id": "x", "result": { "result": v, "logs": [] } }),
+                );
+            }
             let b64 = p["args_base64"]
                 .as_str()
                 .unwrap()
@@ -694,7 +740,12 @@ mod tests {
         masks.insert("lena".into(), mask(LENA, "racing", ROUND, qwen));
         let mut sealed = HashMap::new();
         sealed.insert("kira".into(), sealed_for(KIRA, line, &SEED));
-        Factory { masks, sealed }
+        Factory {
+            account: "masks.tinygif8324.testnet".into(),
+            masks,
+            sealed,
+            config: json!({ "keeper": "tinygif8324.testnet" }),
+        }
     }
 
     fn input(account: &str) -> PlanInput {
@@ -920,7 +971,11 @@ mod tests {
             seen.insert(played.usage.completion_tokens);
         }
         assert_eq!(seen.len(), 12, "{seen:?}");
-        assert_eq!(seen.last(), Some(&22_528), "the last step under the allowance");
+        assert_eq!(
+            seen.last(),
+            Some(&22_528),
+            "the last step under the allowance"
+        );
         let u = stepped(Usage {
             prompt_tokens: 16_501,
             completion_tokens: 2_047,
@@ -1063,6 +1118,24 @@ mod tests {
         assert!(!played.strategy && !system_of(&m).contains(LINE));
     }
 
+    /// A copy whose record names an author with a `.` (an account path, not a mask name) is refused before any box is
+    /// read: the mind never opens a strategy for an account the factory did not make.
+    #[test]
+    fn a_copy_of_an_author_with_a_dot_is_refused() {
+        const NINA: &str = "nina.masks.tinygif8324.testnet";
+        for author in ["kira.evil", "", "."] {
+            let mut f = factory();
+            let mut nina = mask(NINA, "racing", ROUND, "Qwen/Qwen3.8-27B");
+            nina["strategy"] = json!(false);
+            nina["copy_of"] = json!(author);
+            f.masks.insert("nina".into(), nina);
+            let m = model(HOLE);
+            let err = play(&input(NINA), KEEPER, &mind_secret(&SEED), &f, &m).unwrap_err();
+            assert_eq!(err, "the copy names no author of this factory");
+            assert!(m.asked.borrow().is_empty(), "the model was never asked");
+        }
+    }
+
     #[test]
     fn a_box_copied_onto_another_mask_does_not_open() {
         // LENA's record carries KIRA's box: sealed for KIRA's account, it does not open for LENA.
@@ -1120,7 +1193,14 @@ mod tests {
         let played = play(&input(KIRA), KEEPER, &mind_secret(&SEED), &factory(), &m).unwrap();
         assert_eq!(played.error.as_deref(), Some(OUT_OF_TOKENS));
         // An empty answer that was not cut is an answer without a plan.
-        let played = play(&input(KIRA), KEEPER, &mind_secret(&SEED), &factory(), &model("")).unwrap();
+        let played = play(
+            &input(KIRA),
+            KEEPER,
+            &mind_secret(&SEED),
+            &factory(),
+            &model(""),
+        )
+        .unwrap();
         assert_eq!(played.error.as_deref(), Some(NO_PLAN));
         // An answer cut in the middle of its text is an answer: here it holds no plan.
         let mut m = model(r#"{"steps":[{"kind":"call","method":"set_ow"#);
@@ -1128,7 +1208,9 @@ mod tests {
         let played = play(&input(KIRA), KEEPER, &mind_secret(&SEED), &factory(), &m).unwrap();
         assert_eq!(played.error.as_deref(), Some(NO_PLAN));
         // And one cut after the plan was whole plays it.
-        let mut m = model(&format!("{HOLE}\nThe first call makes me the owner, the sec"));
+        let mut m = model(&format!(
+            "{HOLE}\nThe first call makes me the owner, the sec"
+        ));
         m.cut = true;
         let played = play(&input(KIRA), KEEPER, &mind_secret(&SEED), &factory(), &m).unwrap();
         assert_eq!((played.plan, played.error), (drain(), None));
@@ -1199,12 +1281,24 @@ mod tests {
         // A run OutLayer gave only its default time, or a worker that did not read the manifest: the request ends
         // at 30 or 60 seconds, and the words say so instead of blaming the network.
         assert!(out_of_time("ErrorCode::ConnectionTimeout", 30));
-        assert_eq!(out_of_time_words(30), "the model did not answer in 30 seconds");
+        assert_eq!(
+            out_of_time_words(30),
+            "the model did not answer in 30 seconds"
+        );
         // One address or two that take no connection are not a late model.
-        assert!(!out_of_time("ErrorCode::ConnectionTimeout", CONNECT_SECONDS));
-        assert!(!out_of_time("ErrorCode::ConnectionTimeout", 2 * CONNECT_SECONDS));
+        assert!(!out_of_time(
+            "ErrorCode::ConnectionTimeout",
+            CONNECT_SECONDS
+        ));
+        assert!(!out_of_time(
+            "ErrorCode::ConnectionTimeout",
+            2 * CONNECT_SECONDS
+        ));
         assert!(!out_of_time("ErrorCode::ConnectionRefused", MODEL_SECONDS));
-        assert!(!out_of_time("ErrorCode::InternalError(Some(\"destination blocked\"))", 0));
+        assert!(!out_of_time(
+            "ErrorCode::InternalError(Some(\"destination blocked\"))",
+            0
+        ));
     }
 
     #[test]
@@ -1230,6 +1324,75 @@ mod tests {
         );
         assert!(err(input(KIRA), &f).contains("Confidential TEE model"));
         assert!(err(input("mira.masks.tinygif8324.testnet"), &factory()).contains("no such mask"));
+    }
+
+    /// A factory the mind does not list plays its own masks with this mind when its `config` names this mind's key and
+    /// its own keeper asks; a box from a listed factory, copied onto it, still opens for nobody.
+    #[test]
+    fn a_factory_that_names_this_mind_plays_its_own_masks_for_its_own_keeper_only() {
+        const DEMO: &str = "kira.masks.demo.testnet";
+        let mind = mind_secret(&SEED);
+        let mine = key_text(&MindPublic::from(&mind));
+        let demo = |key: &str, line_for: &str| {
+            let mut masks = HashMap::new();
+            masks.insert(
+                "kira".into(),
+                mask(DEMO, "racing", ROUND, "Qwen/Qwen3.8-27B"),
+            );
+            let mut sealed = HashMap::new();
+            sealed.insert("kira".into(), sealed_for(line_for, LINE, &SEED));
+            Factory {
+                account: "masks.demo.testnet".into(),
+                masks,
+                sealed,
+                config: json!({ "keeper": "demo.testnet", "strategy_key": key }),
+            }
+        };
+        let f = demo(&mine, DEMO);
+        let m = model(HOLE);
+        let played = play(&input(DEMO), Some("demo.testnet"), &mind, &f, &m).unwrap();
+        assert_eq!(played.plan, drain());
+        assert!(played.strategy, "its own mask's box opens for it");
+        assert!(system_of(&m).contains(LINE));
+        // Only that factory's own keeper: not a stranger, not the keeper of a listed factory, not nobody.
+        for caller in [
+            None,
+            Some("evil.testnet"),
+            KEEPER,
+            Some("masks.demo.testnet"),
+        ] {
+            let m = model(HOLE);
+            let err = play(&input(DEMO), caller, &mind, &f, &m).unwrap_err();
+            assert!(err.contains("only for the keeper"), "{caller:?}: {err}");
+            assert!(m.asked.borrow().is_empty(), "{caller:?}: no token spent");
+        }
+        // A factory that names another mind's key, or none, is a factory the mind does not know.
+        for key in ["x25519:00", ""] {
+            let err = play(
+                &input(DEMO),
+                Some("demo.testnet"),
+                &mind,
+                &demo(key, DEMO),
+                &model(HOLE),
+            )
+            .unwrap_err();
+            assert!(err.contains("factories it knows"), "{err}");
+        }
+        // KIRA's real box, sealed for kira.masks.tinygif8324.testnet, laid on the demo factory: it does not open there.
+        let m = model(HOLE);
+        let played = play(
+            &input(DEMO),
+            Some("demo.testnet"),
+            &mind,
+            &demo(&mine, KIRA),
+            &m,
+        )
+        .unwrap();
+        assert!(
+            !played.strategy,
+            "a listed factory's box opens for no other factory"
+        );
+        assert!(!system_of(&m).contains(LINE));
     }
 
     #[test]
@@ -1325,7 +1488,9 @@ mod tests {
         struct Empty(std::cell::RefCell<Vec<String>>);
         impl Chain for Empty {
             fn rpc(&self, _: &str, p: Value) -> Result<Value, String> {
-                self.0.borrow_mut().push(p["account_id"].as_str().unwrap_or("").to_string());
+                self.0
+                    .borrow_mut()
+                    .push(p["account_id"].as_str().unwrap_or("").to_string());
                 Err("UNKNOWN_ACCOUNT".into())
             }
         }
@@ -1335,20 +1500,47 @@ mod tests {
         let err_testnet_keeper = play(&input(kira), KEEPER, &mind, &chain, &m).unwrap_err();
         if cfg!(feature = "mainnet") {
             // Past the keeper and the factory: the mind asked the mainnet factory, which has no such mask yet.
-            assert!(!err.contains("only for the keeper") && !err.contains("factories it knows"), "{err}");
-            assert!(!err_testnet_keeper.contains("factories it knows"), "{err_testnet_keeper}");
-            assert_eq!(*chain.0.borrow(), ["masks.maskwars.near", "masks.maskwars.near"]);
+            assert!(
+                !err.contains("only for the keeper") && !err.contains("factories it knows"),
+                "{err}"
+            );
+            assert!(
+                !err_testnet_keeper.contains("factories it knows"),
+                "{err_testnet_keeper}"
+            );
+            assert_eq!(
+                *chain.0.borrow(),
+                ["masks.maskwars.near", "masks.maskwars.near"]
+            );
         } else {
-            assert!(err.contains("only for the keeper"), "{err}");
-            assert!(err_testnet_keeper.contains("factories it knows"), "{err_testnet_keeper}");
-            assert!(chain.0.borrow().is_empty(), "the default build asks no mainnet factory anything");
+            // The default build does not list it: it asks the factory only whether it names this mind, and finds none.
+            assert!(err.contains("factories it knows"), "{err}");
+            assert!(
+                err_testnet_keeper.contains("factories it knows"),
+                "{err_testnet_keeper}"
+            );
+            assert_eq!(
+                *chain.0.borrow(),
+                ["masks.maskwars.near", "masks.maskwars.near"]
+            );
         }
-        assert!(m.asked.borrow().is_empty(), "no token is spent on a mask the mind does not play");
+        assert!(
+            m.asked.borrow().is_empty(),
+            "no token is spent on a mask the mind does not play"
+        );
     }
 }
 
 /// The mainnet build (`build.sh --mainnet`, made once the owner holds maskwars.near: scripts/mainnet/README.md) also plays the
 /// masks of the mainnet factory, for the mainnet keeper, besides `factories` and `callers` of `mind.json`. A name nobody
 /// holds yet is one anybody could take, so the default build knows testnet alone.
-const MAINNET_CALLERS: &[&str] = if cfg!(feature = "mainnet") { &["maskwars.near"] } else { &[] };
-const MAINNET_FACTORIES: &[&str] = if cfg!(feature = "mainnet") { &["masks.maskwars.near"] } else { &[] };
+const MAINNET_CALLERS: &[&str] = if cfg!(feature = "mainnet") {
+    &["maskwars.near"]
+} else {
+    &[]
+};
+const MAINNET_FACTORIES: &[&str] = if cfg!(feature = "mainnet") {
+    &["masks.maskwars.near"]
+} else {
+    &[]
+};

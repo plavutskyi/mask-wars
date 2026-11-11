@@ -1,0 +1,12 @@
+{
+  "file": "promo-150.mp3",
+  "title": "MASK WARS long film, 2:30",
+  "use": "The long film (src/promo). Driving from the first second to 30.0 s, a bar of near silence 30.05-31.6 s with a riser into the first drop at 31.88 s (bar 17), a dip 77-79.5 s, near silence 97.55-99.35 s, second drop at 99.38 s (bar 53), finale impact at 135.0 s (bar 72) decaying, one last hit at 142.5 s (bar 76), silence by 150 s.",
+  "bpm": 128,
+  "beat_s": 0.46875,
+  "first_beat_s": 0.02,
+  "duration_s": 150.07,
+  "impacts_s": [0.05, 31.88, 99.38, 135.0, 142.5],
+  "quiet_s": [[30.05, 31.6], [77.0, 79.5], [97.55, 99.35], [137.5, 142.4], [146.0, 150.07]],
+  "source": "ElevenLabs Music, music_v2_5, composition plan audio/promo-150.plan.json (seven sections, 150 000 ms), generated 2026-11-11 through the API with the owner's key"
+}

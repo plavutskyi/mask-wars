@@ -6,11 +6,11 @@ import { CopyOwner } from './CopyOwner';
 import { Info, type InfoRow } from './Info';
 import p from './person.module.css';
 
-/** Confidential copying on the mask page. One main action: "Copy this mind". For an author's mask it invites a copy
- * and shows how many copies there are and what the author earned on them; for a copy it names, in one quiet line, the
- * author it plays and the share it owes. The author's own control (open to copies, the share, stop, collect) sits
- * behind one quiet button, and the technical detail behind the "i". */
-export function CopyPanel({ person: { mask: m, copy } }: { person: Person }) {
+/** Confidential copying on the mask page. One main action: "Copy · 1 NEAR". For an author's mask it shows, as numbers,
+ * what a copy keeps of its wins, what the author takes and how many copies there are; for a copy it names, in one quiet
+ * line, the author it plays and the share it owes. How it works, the copies and their accounts sit behind the «i»; the
+ * author's own control (open to copies, the share, stop, collect) behind one quiet button. */
+export function CopyPanel({ person: { mask: m, copy, minFuel } }: { person: Person }) {
   const NAME = m.name.toUpperCase();
 
   // This mask is a copy: one quiet line naming its author.
@@ -46,38 +46,76 @@ export function CopyPanel({ person: { mask: m, copy } }: { person: Person }) {
   // owner's control keeps its place, and what it just told the owner, when the page reads the chain again.
   const closed = !copy.copyable && copy.copies.length === 0;
   const share = shareText(copy.authorBps);
+  const keep = shareText(10_000 - copy.authorBps);
+  const price = `${nearText(minFuel)} NEAR`;
   const n = copy.copies.length;
   const facts: InfoRow[] = [
-    ...(copy.copyable ? [{ label: 'Share of each new copy’s wins', value: share }] : []),
+    ...(copy.copyable
+      ? [
+          { label: 'To copy', value: `from ${price}: your copy’s own fuel, for its mind. None of it goes to ${NAME}` },
+          { label: 'Of each win', value: `${keep} to you, ${share} to ${NAME}’s owner, paid by your copy’s own code` },
+        ]
+      : []),
+    { label: 'The strategy', value: `Sealed. Your copy’s mind opens it only inside a TEE; nobody reads it, you included` },
     { label: 'Copies', value: String(n) },
-    { label: 'Earned on copies', value: `${nearText(copy.earned)} NEAR` },
+    { label: `${NAME} earned on copies`, value: `${nearText(copy.earned)} NEAR` },
     ...(copy.due > 0n ? [{ label: 'Waiting on copies', value: `${nearText(copy.due)} NEAR` }] : []),
     ...copy.copies.map((c): InfoRow => ({ label: `Copy · ${c.name.toUpperCase()} · ${shareText(c.bps)}`, value: c.account, href: accountUrl(c.account) })),
   ];
 
+  if (closed) {
+    return (
+      <section className={p.copy} data-closed="" aria-labelledby="copy">
+        <div className={p.copyText}>
+          <p id="copy" className={p.copyTitle}>
+            Copy {NAME}
+          </p>
+          <p className={p.copyNote}>Closed: its owner has not opened it to copies.</p>
+        </div>
+        {owner}
+      </section>
+    );
+  }
+
   return (
-    <section className={p.copy} data-closed={closed ? '' : undefined} aria-labelledby="copy">
+    <section className={p.copy} aria-labelledby="copy">
       <div className={p.copyText}>
         <p id="copy" className={p.copyTitle}>
-          Copy this mind
+          Copy {NAME}
+          <Info rows={facts} label="Copying, on chain" align="start" />
         </p>
-        <p className={p.copyNote}>
-          {closed
-            ? `Closed for now: ${NAME}’s owner has not opened it to copies.`
-            : copy.copyable
-              ? `Forge your own mask that plays ${NAME}’s sealed strategy inside a TEE — you never see the line, and neither does anyone else. ${NAME}’s owner earns ${share} of what your copy wins; you keep the rest.`
-              : `${NAME}’s owner closed it to new copies. The copies made keep playing it inside a TEE.`}
-        </p>
-        {n > 0 ? (
-          <p className={p.copyStat}>
-            {n === 1 ? '1 copy' : `${n} copies`} · {NAME} earned {nearText(copy.earned)} NEAR on them
-          </p>
-        ) : null}
-        {closed ? null : <Info rows={facts} label="Copying, on chain" align="start" />}
+        <dl className={p.copyNums}>
+          {copy.copyable ? (
+            <>
+              <div>
+                <dt>You keep</dt>
+                <dd data-tone="money">{keep}</dd>
+              </div>
+              <div>
+                <dt>{NAME} takes</dt>
+                <dd>{share}</dd>
+              </div>
+            </>
+          ) : null}
+          <div>
+            <dt>Copies</dt>
+            <dd>{n}</dd>
+          </div>
+          {copy.earned > 0n ? (
+            <div>
+              <dt>{NAME} earned</dt>
+              <dd>
+                {nearText(copy.earned)}
+                <span className={p.copyUnit}>NEAR</span>
+              </dd>
+            </div>
+          ) : null}
+        </dl>
       </div>
-      {closed ? null : copy.copyable ? (
-        <Link href={`/forge?copy=${m.name}`} className={p.copyBtn}>
-          Copy this mind
+      {copy.copyable ? (
+        <Link href={`/forge?copy=${m.name}`} className={p.copyBtn} aria-label={`Copy ${NAME} for ${price}: ${share} of its wins go to ${NAME}’s owner`}>
+          Copy
+          <span className={p.copyPrice}>{price}</span>
         </Link>
       ) : (
         <span className={p.copyClosed}>Closed to new copies</span>

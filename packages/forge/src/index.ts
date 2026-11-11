@@ -3,6 +3,7 @@
 export * from "./catalog.ts";
 export * from "./chain.ts";
 export * from "./forge.ts";
+export * from "./history.ts";
 export * from "./name.ts";
 export * from "./near.ts";
 export * from "./owner.ts";

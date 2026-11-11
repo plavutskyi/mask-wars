@@ -2,6 +2,7 @@ import { duration, near } from '@maskwars/arena/format';
 import { nearText, times, timesText } from '@maskwars/forge';
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
+import { cache } from 'react';
 import { MaskPage } from '@/components/arena/MaskPage';
 import { PersonPage } from '@/components/arena/PersonPage';
 import { Unreachable } from '@/components/arena/Unreachable';
@@ -16,6 +17,9 @@ export const dynamic = 'force-dynamic';
 
 type Props = { params: Promise<{ name: string }> };
 
+// A person's mask is read once a request: the title and the page share it (the factory, the arena, the history window).
+const person = cache((key: string) => readPerson(key).catch(() => null));
+
 const find = (key: string) =>
   readArena().then((v) => {
     const i = v.league.findIndex((m) => m.who.slug === key || m.who.account === key);
@@ -24,14 +28,14 @@ const find = (key: string) =>
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const key = (await params).name.toLowerCase();
-  const person = await readPerson(key).catch(() => null);
-  if (person) {
-    const NAME = person.mask.name.toUpperCase();
-    const earned = person.stats?.earned ?? '0';
-    const description = person.stats?.breaks
-      ? `${NAME} broke ${person.stats.breaks} ${person.stats.breaks === 1 ? 'safe' : 'safes'} and took ${near(earned)} NEAR: ${timesText(times(earned, person.mask.fuel))} on ${nearText(person.mask.fuel)} NEAR put in.`
+  const p = await person(key);
+  if (p) {
+    const NAME = p.mask.name.toUpperCase();
+    const earned = p.stats?.earned ?? '0';
+    const description = p.stats?.breaks
+      ? `${NAME} broke ${p.stats.breaks} ${p.stats.breaks === 1 ? 'safe' : 'safes'} and took ${near(earned)} NEAR: ${timesText(times(earned, p.mask.fuel))} on ${nearText(p.mask.fuel)} NEAR put in.`
       : `${NAME} is a mask a person forged. It races AI masks for bounties on NEAR and pays for its own mind.`;
-    return pageMeta({ title: `${NAME} · MASK WARS`, description, path: `/mask/${person.mask.name}` });
+    return pageMeta({ title: `${NAME} · MASK WARS`, description, path: `/mask/${p.mask.name}` });
   }
   const hit = await find(key).catch(() => null);
   const m = hit && hit.i >= 0 ? hit.view.league[hit.i]! : null;
@@ -45,8 +49,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function MaskRoute({ params }: Props) {
   const key = (await params).name.toLowerCase();
-  const person = await readPerson(key).catch(() => null);
-  if (person) return <PersonPage person={person} />;
+  const p = await person(key);
+  if (p) return <PersonPage person={p} />;
   let hit;
   try {
     hit = await find(key);

@@ -9,8 +9,10 @@ any folder on any machine, so anyone can rebuild them and compare the SHA-256.
 | Module | SHA-256 | Source | What it does |
 | --- | --- | --- | --- |
 | Judge v6 | `1f8e1aca…86f7` | `services/judge` | The current judge, one for testnet and mainnet. Reads a drain from the chain and checks the revealed plan of a sealed round; on mainnet it reads through three RPC operators |
-| Brain, mainnet build | `a1922652…bae0` | `services/brain`, `build.sh --mainnet` | The mind of a forged mask, the build for mainnet: an answer of up to 24 000 tokens, the longest run OutLayer gives, and its own manifest inside the wasm |
-| Brain | `c32820e0…f264` | `services/brain`, `build.sh` | The same mind, the build for testnet |
+| Brain, mainnet build | `6bafa376…e611` | `services/brain`, `build.sh --mainnet` | The mind of a forged mask, the build for mainnet. Plays a copy with its author's sealed strategy; also plays the masks of a factory that names this mind's key, for that factory's own keeper; says so when its project holds no NEAR AI key instead of trapping |
+| Brain | `ed1606cc…0100` | `services/brain`, `build.sh` | The same mind, the build for testnet. Live on `outlayer.testnet` as `mwc59801.testnet/brain` (confidential copying, `docs/spec/copy.md`) |
+| Brain, mainnet build | `a1922652…bae0` | `services/brain`, `build.sh --mainnet` | Earlier build for mainnet: an answer of up to 24 000 tokens, the longest run OutLayer gives, and its own manifest inside the wasm |
+| Brain | `c32820e0…f264` | `services/brain`, `build.sh` | Earlier build for testnet |
 | MASK CHECK | `e31b3442…99cf` | `services/check`, `build.sh` | The paid, signed check: allow, warn or block on an account before anyone pays it, run inside a TEE and signed there. It carries the two shared lists, so a change to either list is a new build; CI fails a commit whose file here is not its own build. This build's lists hold the mainnet safe of race 1 and the testnet safes of races 4–6 and of season rounds 1–2 |
 | MASK CHECK | `1dae2166…4264` | `services/check`, `build.sh` | Earlier build: the mainnet list was still empty, so the safe broken in race 1 on mainnet read as warn, not block |
 | Brain, mainnet build | `65540964…a4fd` | `services/brain`, `build.sh --mainnet` | Earlier build for mainnet: an answer of up to 3 000 tokens, too few for a live safe |

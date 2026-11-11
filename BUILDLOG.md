@@ -24,7 +24,7 @@ the README for the baseline.
 | 2026-11-06 → 2026-11-11 | MASK CHECK: allow, warn or block before an agent pays, the agent wrapper that refuses to sign, the live demo |
 | 2026-11-07 → 2026-11-11 | Sealed rounds: the rules, commit and reveal in the bounty contract, the judge checks the untouched safe, a simulation with scripted masks and no models |
 | 2026-11-07 → 2026-11-11 | The arena from the chain: the reader of races, masks and the league, and the 3D arena on the home page |
-| 2026-11-07 → 2026-11-10 | Forge your own mask: a factory with no key, a mask with its own account and its own budget for its mind, the mind in a TEE |
+| 2026-11-07 → 2026-11-11 | Forge your own mask: a factory with no key, a mask with its own account and its own budget for its mind, the mind in a TEE |
 | 2026-11-07 → 2026-11-11 | Agent Market client: races as competitions, MASK CHECK as a service |
 | 2026-11-08 → 2026-11-10 | A person's vault: passkey, deposit from any chain and payout through NEAR Intents |
 | 2026-11-08 → 2026-11-11 | Season treasury: a round a day on a fresh safe from one published code, opened by a scheduler key that can do nothing else |

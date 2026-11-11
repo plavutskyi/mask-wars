@@ -78,20 +78,27 @@ export function extrasOf(record: RaceRecord): RoundExtras {
 /** The site built for filming on this network, from the code as it stands now: a film never shows an older site. */
 function buildSite(network: string, log: (line: string) => void): void {
   log(`building the site for filming on ${network} (apps/web/.next-film)`);
-  execFileSync("pnpm", ["exec", "next", "build"], { cwd: WEB, stdio: "ignore", env: { ...process.env, NEXT_PUBLIC_ARENA_FILM: "1", MASKWARS_NETWORK: network } });
+  execFileSync("pnpm", ["exec", "next", "build"], { cwd: WEB, stdio: "ignore", shell: WINDOWS, env: { ...process.env, NEXT_PUBLIC_ARENA_FILM: "1", MASKWARS_NETWORK: network } });
 }
+
+/** On Windows pnpm is a `.cmd` script, which only a shell starts; the server's process tree is stopped by taskkill. */
+const WINDOWS = process.platform === "win32";
 
 async function startSite(network: string, fixture: string, port: number): Promise<{ base: string; stop(): void }> {
   const child: ChildProcess = spawn("pnpm", ["exec", "next", "start", "-p", String(port)], {
     cwd: WEB,
     stdio: "ignore",
-    detached: true,
+    detached: !WINDOWS,
+    shell: WINDOWS,
+    windowsHide: true,
     env: { ...process.env, NEXT_PUBLIC_ARENA_FILM: "1", MASKWARS_NETWORK: network, ARENA_FIXTURE: fixture },
   });
   const base = `http://localhost:${port}`;
   const stop = () => {
     try {
-      if (child.pid) process.kill(-child.pid);
+      if (!child.pid) return;
+      if (WINDOWS) execFileSync("taskkill", ["/pid", String(child.pid), "/T", "/F"], { stdio: "ignore" });
+      else process.kill(-child.pid);
     } catch {
       /* already gone */
     }

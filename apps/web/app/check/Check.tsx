@@ -1,17 +1,20 @@
 'use client';
 
-import type { CheckResult } from '@maskwars/check';
 import Link from 'next/link';
+import type { CheckAnswer } from '@/lib/check-tee';
 import { type FormEvent, Fragment, useEffect, useRef, useState } from 'react';
 import s from './check.module.css';
-import { EXAMPLE, hostsOf, lineOf, partsOf, proofOf, readAt, refusalOf, restOf, txOf } from './show';
+import { EXAMPLE, hostsOf, lineOf, partsOf, proofOf, readAt, refusalOf, restOf, signedBy, txOf } from './show';
 
-type State = { phase: 'idle' } | { phase: 'asking'; account: string } | { phase: 'answer'; check: CheckResult } | { phase: 'refused'; why: string };
+type State = { phase: 'idle' } | { phase: 'asking'; account: string } | { phase: 'answer'; check: CheckAnswer } | { phase: 'refused'; why: string };
 
 const WORD = { allow: 'Allow', warn: 'Warn', block: 'Block' } as const;
 
-/** One account in, one verdict out, read live through /api/check. Everything else waits behind Details. */
-export function Check() {
+/**
+ * One account in, one verdict out, read live through /api/check. Everything else waits behind Details. `signs`: the
+ * site can have answers signed inside MASK CHECK's TEE (lib/check-tee.ts); each answer still says whether it was.
+ */
+export function Check({ signs = false }: { signs?: boolean }) {
   const [account, setAccount] = useState(EXAMPLE);
   const [state, setState] = useState<State>({ phase: 'idle' });
   const asked = useRef(0);
@@ -24,7 +27,7 @@ export function Check() {
     let next: State;
     try {
       const res = await fetch(`/api/check?account=${encodeURIComponent(name)}`, { cache: 'no-store' });
-      next = res.ok ? { phase: 'answer', check: (await res.json()) as CheckResult } : { phase: 'refused', why: refusalOf(res.status, res.headers.get('retry-after')) };
+      next = res.ok ? { phase: 'answer', check: (await res.json()) as CheckAnswer } : { phase: 'refused', why: refusalOf(res.status, res.headers.get('retry-after')) };
     } catch {
       next = { phase: 'refused', why: refusalOf(0, null) };
     }
@@ -84,6 +87,12 @@ export function Check() {
             <p className={s.line}>
               <Text text={lineOf(check)} />
             </p>
+            {check.tee?.signed ? (
+              <p className={s.seal}>
+                <Seal />
+                Signed inside a TEE on OutLayer
+              </p>
+            ) : null}
           </div>
         ) : state.phase === 'refused' ? (
           <p className={s.refused}>{state.why}</p>
@@ -99,7 +108,7 @@ export function Check() {
               <li data-verdict="warn">Warn</li>
               <li data-verdict="block">Block</li>
             </ul>
-            <p className={s.hint}>One of three, read live from NEAR.</p>
+            <p className={s.hint}>{signs ? 'One of three, read live from NEAR and signed inside a TEE.' : 'One of three, read live from NEAR.'}</p>
           </div>
         )}
       </div>
@@ -156,6 +165,10 @@ export function Check() {
               <dd>
                 <Row parts={hostsOf(check)} />
               </dd>
+              <dt>Signed</dt>
+              <dd>
+                <Signed tee={check.tee} />
+              </dd>
             </dl>
           </>
         ) : (
@@ -191,6 +204,22 @@ function Row({ parts }: { parts: readonly string[] }) {
       <span className={s.keep}>{i < parts.length - 1 ? `${part} ·` : part}</span>
     </Fragment>
   ));
+}
+
+/** Whether the answer was signed inside the TEE: where and by which key, or why not, in a sentence that may wrap. */
+function Signed({ tee }: { tee: CheckAnswer['tee'] | undefined }) {
+  const said = signedBy(tee);
+  return 'parts' in said ? <Row parts={said.parts} /> : said.text;
+}
+
+/** A shield with a check: the answer was signed inside the TEE. */
+function Seal() {
+  return (
+    <svg className={s.sealIcon} viewBox="0 0 20 20" aria-hidden focusable="false">
+      <path d="M10 2.5l6 2.25v4.5c0 3.9-2.55 6.7-6 8.25-3.45-1.55-6-4.35-6-8.25v-4.5z" />
+      <path d="M7.25 10.1l1.9 1.9 3.6-3.85" />
+    </svg>
+  );
 }
 
 function Chevron() {

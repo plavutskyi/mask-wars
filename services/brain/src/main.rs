@@ -19,7 +19,7 @@ static OUTLAYER_MANIFEST: [u8; include_bytes!("../manifest.json").len()] =
 #[cfg(target_os = "wasi")]
 mod world {
     use maskwars_brain::mind::{
-        out_of_time, out_of_time_words, Chain, Llm, Reply, Usage, CONNECT_SECONDS,
+        out_of_time, out_of_time_words, Chain, Llm, Reply, Usage, CONNECT_SECONDS, NO_KEY,
     };
     use serde_json::{json, Value};
     use std::time::{Duration, Instant};
@@ -51,6 +51,11 @@ mod world {
             max_tokens: u32,
             temperature: f32,
         ) -> Result<Reply, String> {
+            // A project with no key of its own: the header would be `Bearer ` alone, which wasi-http refuses with a
+            // trap. Say so instead, before anything is sent.
+            if self.key.trim().is_empty() {
+                return Err(NO_KEY.to_string());
+            }
             let body = json!({ "model": model, "messages": messages, "stream": false, "max_tokens": max_tokens,
                                "temperature": temperature });
             // The answer is not streamed, so nothing comes back until the model is done. OutLayer ends the request
@@ -62,7 +67,7 @@ mod world {
                 .post("https://cloud-api.near.ai/v1/chat/completions")
                 .header("content-type", "application/json")
                 .header("accept", "application/json")
-                .header("authorization", format!("Bearer {}", self.key))
+                .header("authorization", format!("Bearer {}", self.key.trim()))
                 .header("x-no-aliasing", "true")
                 .header("user-agent", "maskwars-brain")
                 .body(body.to_string().as_bytes())

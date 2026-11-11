@@ -2,7 +2,7 @@
 // in), what is on the mask's own account for its owner, what the arena paid it, and — for confidential copying — the
 // masks that copy it and what their author earned, or, when it is a copy, the author it plays and the share it owes.
 // All from NEAR.
-import type { MaskStats } from '@maskwars/arena';
+import { Indexer, type MaskStats } from '@maskwars/arena';
 import { raceNo } from '@maskwars/arena/format';
 import {
   accountState,
@@ -12,11 +12,16 @@ import {
   copyEarnings,
   copyTerms,
   type CopyTerms,
+  config,
+  factoryHistoryEvents,
   getMask,
+  type HistoryEvent,
   type MaskView,
   nameOk,
   reserved,
   takeOut,
+  type Viewer,
+  viewersOf,
 } from '@maskwars/forge';
 import { FORGE_NET } from './forge';
 import { readArena } from './arena';
@@ -40,8 +45,18 @@ export interface CopyInfo {
   readonly copyOf: { readonly name: string; readonly account: string; readonly bps: number; readonly terms: CopyTerms | null } | null;
 }
 
+/** A mask's race history, sealed: who may read it, and its notes and shares as the chain carries them. Only a reader's
+ * own view key, made in their browser from their wallet, opens a note (`packages/forge/src/history.ts`). */
+export interface History {
+  readonly viewers: readonly Viewer[];
+  readonly events: readonly HistoryEvent[];
+}
+
 export interface Person {
   readonly mask: MaskView;
+  /** The least a copy is forged with, yoctoNEAR: its own fuel, never paid to the author. */
+  readonly minFuel: bigint;
+  readonly history: History;
   /** What its owner may take out now, yoctoNEAR. For a copy, this already leaves the author's owed share on the mask. */
   readonly takeOut: bigint;
   readonly account: AccountState | null;
@@ -62,16 +77,51 @@ async function termsOf(copies: readonly CopyChild[]): Promise<(CopyTerms | null)
   return out;
 }
 
+/**
+ * The window the history is read from: the factory's newest `HISTORY_TXS` calls that went through, every mask's
+ * together. The public indexer lists a transaction under the accounts that signed, received or were named in its
+ * arguments, never under an account named only in an event, so a `note` (sent to the factory, naming the mask in its
+ * event alone) cannot be asked for by the mask. Failed calls are left out before the window is cut, so cheap failing
+ * calls do not push a note out of it; a note older than the window is not read, and a mask with no note inside it shows
+ * no history at all.
+ */
+const HISTORY_TXS = 120;
+
+/** The note and share events of `mask` in the factory's transactions, oldest first. Public, and sealed: only a reader's
+ * view key opens them. Only the factory's own receipts, called by its keeper, count (`factoryHistoryEvents`). An
+ * indexer that does not answer leaves the history empty. */
+async function historyOf(account: string, keeper: string): Promise<HistoryEvent[]> {
+  const ix = new Indexer({ fetch });
+  const list = (await ix.accountTxs(FORGE_NET.factory)).filter((t) => t.call && t.ok !== false).slice(0, HISTORY_TXS);
+  const txs = await ix.transactions(list.map((t) => t.hash));
+  return txs
+    .flatMap((t) => (t.ok ? factoryHistoryEvents(t.receipts, FORGE_NET.factory, keeper, account, t.at, t.hash) : []))
+    .sort((a, b) => a.at - b.at);
+}
+
+/** A history worth a panel: at least one genuine note of this mask that an account holding a view now can open, by
+ * its own wrap or by a share sent to it. A mask with none shows no history panel at all. */
+export function readableHistory(history: History): boolean {
+  const readers = new Set(history.viewers.map((v) => v.account));
+  const shared = new Set(history.events.flatMap((e) => (e.kind === 'share' && readers.has(e.to) ? [e.to] : [])));
+  return history.events.some((e) => e.kind === 'note' && (e.keys.some((k) => readers.has(k.to)) || shared.size > 0));
+}
+
 /** The person's mask named `name`, or null when the factory has none by that name. */
 export async function readPerson(name: string): Promise<Person | null> {
   if (!nameOk(name) || reserved(name)) return null;
   const mask = await getMask(FORGE_NET, name).catch(() => null);
   if (!mask || mask.state === 'forging') return null;
-  const [account, arena, children, ownTerms] = await Promise.all([
+  const factory = config(FORGE_NET).catch(() => null);
+  const [account, arena, children, ownTerms, cfg, viewers, events] = await Promise.all([
     accountState(FORGE_NET, mask.account),
     readArena().catch(() => null),
     mask.copies > 0 ? allCopiesOf(FORGE_NET, name, mask.copies).catch(() => []) : Promise.resolve<CopyChild[]>([]),
     mask.copy_of ? copyTerms(FORGE_NET, mask.account).catch(() => null) : Promise.resolve(null),
+    factory,
+    viewersOf(FORGE_NET, name).catch(() => [] as Viewer[]),
+    // Without the factory's keeper no note can be told from a forged one: then there is no history to show.
+    factory.then((c) => (c ? historyOf(mask.account, c.keeper) : [])).catch(() => [] as HistoryEvent[]),
   ]);
   const i = arena ? arena.league.findIndex((m) => m.who.account === mask.account) : -1;
   const terms = children.length ? await termsOf(children) : [];
@@ -92,6 +142,8 @@ export async function readPerson(name: string): Promise<Person | null> {
   const take = mask.copy_of ? (ownTerms?.owner ?? 0n) : takeOut(account);
   return {
     mask,
+    minFuel: cfg ? BigInt(cfg.min_fuel) : 10n ** 24n,
+    history: { viewers, events },
     takeOut: take > 0n ? take : 0n,
     account,
     stats: arena && i >= 0 ? arena.league[i]! : null,

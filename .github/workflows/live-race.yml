@@ -22,17 +22,17 @@ name: Live race
 # OutLayer with OUTLAYER_PAYMENT_KEY and never reads the strategy. In a round with them every sealed sweep asks for
 # min_loot, so an early seal spoils no later plan.
 #
-# Open the round right before this run; the season does both. A called run gets the environment's secrets through the
-# `arm`, `drain` and `settle` jobs' `environment:` and NEAR_AI_API_KEY as the one secret the caller passes: nothing
-# else of the caller.
+# Open the round right before this run; the season does both. A called run gets every key through its jobs'
+# `environment:`, never from the caller: the caller inherits, and an environment's secret wins over what it passes.
 #
 # Where every key lives (the owner sets this up once). On mainnet (MASKWARS_NETWORK) the same
 # names live in environments of their own, `live-race-mainnet` and `outlayer-mainnet`, set up as below
 # (scripts/mainnet/README.md), and the claim keys in the variable MASK_CLAIM_KEYS_MAINNET:
 # - `live-race`: MASK_KEYS and KEEPER_SEED. Deployment branches `main` only, no required reviewers, or the season's daily
 #   run would wait past its commit window. Only `arm`, `drain` and `settle` name it.
-# - `outlayer`: OUTLAYER_PAYMENT_KEY, which pays OutLayer to run the people's minds. Deployment branches `main` only.
-#   Only `race` names it: the job that runs the models and the sandbox never shares a runner with a mask's key.
+# - `outlayer`: NEAR_AI_API_KEY, which pays NEAR AI for our masks' models, and OUTLAYER_PAYMENT_KEY, which pays
+#   OutLayer to run the people's minds. Deployment branches `main` only. Only `race` names it: the job that runs the
+#   models and the sandbox never shares a runner with a mask's key.
 # - `live-race-hand`: no secret, a required reviewer. A run of `Live race` started by hand waits for the owner's yes;
 #   the season's runs do not.
 # `guard` runs first, on a runner that checks out no code: if any of those keys is still a repository secret, which
@@ -68,11 +68,11 @@ on:
         type: boolean
         default: true
     secrets:
-      NEAR_AI_API_KEY:
-        required: true
-      # A called workflow sees only the secrets named here. These three are named so that the jobs below can read them
+      # A called workflow sees only the secrets named here. These four are named so that the jobs below can read them
       # from their own environments (`live-race`, `outlayer`): an environment's secret wins over one a caller passes,
-      # and season.yml passes none of them.
+      # and `guard` stops the run if a caller could pass one at all, as a repository secret.
+      NEAR_AI_API_KEY:
+        required: false
       MASK_KEYS:
         required: false
       KEEPER_SEED:
@@ -102,9 +102,10 @@ jobs:
           MASK_KEYS: ${{ secrets.MASK_KEYS }}
           KEEPER_SEED: ${{ secrets.KEEPER_SEED }}
           OUTLAYER_PAYMENT_KEY: ${{ secrets.OUTLAYER_PAYMENT_KEY }}
+          NEAR_AI_API_KEY: ${{ secrets.NEAR_AI_API_KEY }}
         run: |
           bad=0
-          for name in MASK_KEYS KEEPER_SEED OUTLAYER_PAYMENT_KEY; do
+          for name in MASK_KEYS KEEPER_SEED OUTLAYER_PAYMENT_KEY NEAR_AI_API_KEY; do
             if [ -n "${!name}" ]; then
               echo "::error::$name is a repository secret: move it into its environment (live-race or outlayer) and delete it from the repository's secrets"
               bad=1
@@ -155,7 +156,8 @@ jobs:
     needs: [guard, hand, arm]
     if: ${{ !cancelled() && needs.guard.result == 'success' && needs.hand.result != 'failure' }}
     runs-on: ubuntu-latest
-    # OUTLAYER_PAYMENT_KEY only, for the people's minds on OutLayer: no mask key is in this environment.
+    # NEAR_AI_API_KEY for our masks' models and OUTLAYER_PAYMENT_KEY for the people's minds on OutLayer: no mask key is
+    # in this environment.
     environment: ${{ vars.MASKWARS_NETWORK == 'mainnet' && 'outlayer-mainnet' || 'outlayer' }}
     timeout-minutes: 90
     outputs:

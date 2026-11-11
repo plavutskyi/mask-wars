@@ -68,8 +68,11 @@ async fn a_copy_plays_an_author_s_mask_and_its_own_code_pays_the_author() {
     assert_eq!((kids[0]["name"].as_str(), kids[0]["bps"].as_u64()), (Some("nina"), Some(3000)));
     assert_eq!(w.view("copies_of", json!({ "name": "kira", "from_index": 1 })).await.unwrap(), json!([]));
 
-    // Findings 1 and 2, the attack: BOB grants a view of his copy to an account of his own, to have the mind seal
-    // KIRA's line for it. There is no such call: not on the copy, not on the author, for nobody.
+    // Findings 1 and 2, the attack: BOB grants a view of his copy to an account of his own, with a key of his choosing,
+    // to have the mind seal KIRA's line for it. `grant_view` exists now, and it is another thing: a view of a mask's
+    // race history (view keys, `factory/src/view.rs`). It takes no key from the one who grants: a reader's key is only
+    // the one that reader registered (`set_view_key`), and nothing in the factory, a history note included, ever holds
+    // or reaches a strategy. The mind has no action that opens one for anybody (`services/brain`, its tests).
     for (who, name) in [(&w.bob, "nina"), (&w.ann, "kira")] {
         let grant = who
             .call(&w.factory, "grant_view")
@@ -78,8 +81,20 @@ async fn a_copy_plays_an_author_s_mask_and_its_own_code_pays_the_author() {
             .transact()
             .await
             .unwrap();
-        assert!(why(&grant).contains("MethodNotFound"), "{name}: {}", why(&grant));
+        assert!(grant.is_success(), "{name}: a view of the race history: {}", why(&grant));
+        let readers = w.view("viewers", json!({ "name": name })).await.unwrap();
+        assert_eq!(
+            readers,
+            json!([{ "account": w.bob.id(), "key": null }]),
+            "{name}: the grant took no key: BOB reads nothing until he registers his own"
+        );
+        let mask = w.mask(name).await.unwrap();
+        assert!(mask.get("viewers").is_none() && mask.get("key").is_none(), "{name}: the mask's record shows no key");
     }
+    // A stranger cannot grant a view of a mask that is not theirs.
+    let stranger = w.bob.call(&w.factory, "grant_view").args_json(json!({ "name": "kira", "viewer": w.bob.id() }));
+    let stranger = stranger.deposit(NearToken::from_millinear(100)).transact().await.unwrap();
+    assert!(why(&stranger).contains("only the mask's owner"), "{}", why(&stranger));
     // And nothing on chain holds the line for NINA's owner to read: NINA has no box, the factory's state never holds
     // the line in the clear, and KIRA's box opens only inside the mind's TEE (the mind's tests).
     assert!(w.view("get_sealed_strategy", json!({ "name": "nina" })).await.unwrap().is_null(), "a copy keeps no box");

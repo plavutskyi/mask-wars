@@ -72,3 +72,117 @@ describe('/api/check', () => {
     expect(Number(res.headers.get('retry-after'))).toBeGreaterThan(0);
   });
 });
+
+describe('/api/check, as the repo stands: MASK CHECK not yet published in its TEE', () => {
+  it('reads the chain itself and says plainly that nothing is signed', async () => {
+    const r = await (await get('account=intents.near', '198.51.100.20')).json();
+    expect(r.verdict).toBe('allow');
+    expect(r.tee).toEqual({ signed: false, why: 'MASK CHECK is not published in its TEE yet: the site read this answer itself' });
+  });
+});
+
+describe('/api/check, once the module is published and the site holds a payment key', () => {
+  type Fixtures = typeof import('@/lib/check-tee.fixtures');
+  let signed: typeof import('./route');
+  let f: Fixtures;
+  let outlayer: { url: string; body: unknown }[] = [];
+  let reply: (account: string) => Response = () => new Response('{}', { status: 500 });
+
+  beforeAll(async () => {
+    f = await import('@/lib/check-tee.fixtures');
+    vi.resetModules();
+    vi.doMock('@/lib/check-tee', async (original) => {
+      const real = await original<typeof import('@/lib/check-tee')>();
+      return { ...real, createTees: (o: Parameters<typeof real.createTees>[0]) => real.createTees({ ...o, deployment: f.DEPLOYED, now: () => f.NOW }) };
+    });
+    vi.stubEnv('OUTLAYER_PAYMENT_KEY', 'maskwars.near:3:secret');
+    const rpc = globalThis.fetch;
+    vi.stubGlobal('fetch', (async (input: string | URL | Request, init?: RequestInit) => {
+      if (String(input).startsWith('https://api.outlayer.ai/')) {
+        const body = JSON.parse(String(init?.body)) as { input: { account: string } };
+        outlayer.push({ url: String(input), body });
+        return reply(body.input.account);
+      }
+      return rpc(input, init);
+    }) as typeof fetch);
+    signed = await import('./route');
+    vi.unstubAllEnvs();
+  });
+
+  const ask = (query: string, ip: string) => signed.GET(new Request(`https://maskwars.xyz/api/check?${query}`, { headers: { 'x-real-ip': ip } }));
+
+  it('hands on the answer signed in the TEE, with the key, the message and the signature', async () => {
+    outlayer = [];
+    reply = (account) => Response.json(f.run(f.signedAnswer(f.checkOf(account))));
+    const r = await (await ask('account=Safe-0001.maskwars.near', '198.51.100.30')).json();
+    expect(outlayer).toEqual([
+      { url: 'https://api.outlayer.ai/call/maskwars.near/check', body: { input: { account: 'safe-0001.maskwars.near', network: 'mainnet', signed: true }, version_key: f.WASM } },
+    ]);
+    expect(r).toMatchObject({ ...f.checkOf(), tee: { signed: true, key: f.PROJECT.key, project: 'maskwars.near/check', requested_wasm_sha256: f.WASM } });
+    expect(r.tee).not.toHaveProperty('wasm_sha256');
+    expect(typeof r.tee.signature).toBe('string');
+    expect(JSON.parse(r.tee.message)).toMatchObject({ maskwars_check: 2, account: 'safe-0001.maskwars.near', verdict: 'block' });
+  });
+
+  it('reads the chain itself when the TEE answer does not verify, and says why', async () => {
+    reply = (account) => Response.json(f.run(f.signedAnswer(f.checkOf(account), { by: f.FORGER })));
+    const r = await (await ask('account=intents.near', '198.51.100.31')).json();
+    // The site's own read of the recorded chain, not the forged block.
+    expect(r).toMatchObject({ account: 'intents.near', verdict: 'allow', rpc: ['https://rpc.mainnet.fastnear.com', 'https://near.drpc.org'] });
+    expect(r.tee).toEqual({ signed: false, why: "the TEE's answer did not verify (signed by another key than the published one): the site read this one itself" });
+  });
+
+  it('never pays for what the check refuses anyway', async () => {
+    outlayer = [];
+    for (const query of ['account=Not%20an%20id', 'account=alice.near&network=testnet', 'account=nova.tinygif8324.testnet&network=mainnet']) {
+      expect((await ask(query, '198.51.100.32')).status).toBe(400);
+    }
+    expect(outlayer).toEqual([]);
+  });
+});
+
+describe('/api/check, when the TEE side goes wrong', () => {
+  type Fixtures = typeof import('@/lib/check-tee.fixtures');
+  type Tees = ReturnType<typeof import('@/lib/check-tee').createTees>;
+  let route2: typeof import('./route');
+  let f: Fixtures;
+  let STALE = '';
+  let behave: Tees['ask'] = async () => ({ signed: false, why: 'unset' });
+
+  beforeAll(async () => {
+    f = await import('@/lib/check-tee.fixtures');
+    STALE = (await import('@/lib/check-tee')).STALE_RULES;
+    vi.resetModules();
+    vi.doMock('@/lib/check-tee', async (original) => {
+      const real = await original<typeof import('@/lib/check-tee')>();
+      return { ...real, createTees: (): Tees => ({ ready: true, ask: (...args) => behave(...args) }) };
+    });
+    route2 = await import('./route');
+  });
+
+  const ask = (query: string, ip: string) => route2.GET(new Request(`https://maskwars.xyz/api/check?${query}`, { headers: { 'x-real-ip': ip } }));
+
+  it('serves its own verdict, not a signed one made by an older shared list, and says why', async () => {
+    // The module's list had no word on this account, so it signed `block` by other rules; the site's own list rules.
+    behave = async (account) => {
+      const answer = f.signedAnswer(f.checkOf(account), { rules: 'f'.repeat(64) });
+      return { check: f.checkOf(account), tee: { signed: true, outlayer: 'mainnet', project: 'maskwars.near/check', requested_wasm_sha256: f.WASM, key: f.PROJECT.key, module: answer.module, message: answer.signed.message, signature: answer.signed.signature, attestation_url: null, call_id: null } };
+    };
+    const res = await ask('account=intents.near', '198.51.100.40');
+    expect(res.status).toBe(200);
+    const r = await res.json();
+    expect(r).toMatchObject({ account: 'intents.near', verdict: 'allow', rpc: ['https://rpc.mainnet.fastnear.com', 'https://near.drpc.org'] });
+    expect(r.tee).toEqual({ signed: false, why: STALE });
+  });
+
+  it('never fails the check when asking the TEE throws', async () => {
+    behave = async () => {
+      throw new TypeError("Invalid URL: 'http://['");
+    };
+    const res = await ask('account=intents.near', '198.51.100.41');
+    expect(res.status).toBe(200);
+    const r = await res.json();
+    expect(r).toMatchObject({ account: 'intents.near', verdict: 'allow' });
+    expect(r.tee).toEqual({ signed: false, why: "the TEE's answer could not be read: the site read this one itself" });
+  });
+});

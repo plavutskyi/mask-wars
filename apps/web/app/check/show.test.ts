@@ -2,7 +2,7 @@
 import { readFileSync } from 'node:fs';
 import type { CheckResult } from '@maskwars/check';
 import { describe, expect, it } from 'vitest';
-import { EXAMPLE, hostsOf, lineOf, partsOf, proofOf, readAt, refusalOf, restOf, txOf } from './show';
+import { EXAMPLE, hostsOf, lineOf, partsOf, proofOf, readAt, refusalOf, restOf, shortKey, signedBy, txOf } from './show';
 
 type Vector = { name: string; expect: CheckResult };
 const vectors = (JSON.parse(readFileSync(new URL('../../../../packages/check/test/vectors.json', import.meta.url), 'utf8')) as { vectors: Vector[] }).vectors;
@@ -84,5 +84,21 @@ describe('the account the field opens on', () => {
     }
     vi.unstubAllEnvs();
     vi.resetModules();
+  });
+});
+
+describe('whether an answer was signed inside the TEE', () => {
+  it('names where and the key, short, on one line each', () => {
+    const key = 'ed25519:FVen3X669xLzsi6N2V91DoiyzHzg1uAgqiT8jZ9nS96Z';
+    expect(shortKey(key)).toBe('ed25519:FVen…S96Z');
+    const tee = { signed: true as const, outlayer: 'mainnet', project: 'maskwars.near/check', requested_wasm_sha256: 'e3'.repeat(32), key, module: { version: '0.2.0', rules: 'a'.repeat(64) }, message: '{}', signature: 'x', attestation_url: null, call_id: null };
+    expect(signedBy(tee)).toEqual({ parts: ['In a TEE on OutLayer', 'key ed25519:FVen…S96Z'] });
+  });
+
+  it('says why not in a sentence, and never claims a signature it does not have', () => {
+    expect(signedBy({ signed: false, why: 'the site holds no OutLayer payment key yet: it read this answer itself' })).toEqual({
+      text: 'No. The site holds no OutLayer payment key yet: it read this answer itself.',
+    });
+    expect(signedBy(undefined)).toEqual({ text: 'No.' });
   });
 });

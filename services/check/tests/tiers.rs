@@ -327,3 +327,17 @@ fn the_published_price_is_the_modules_own() {
     assert_eq!(deployment["key"].is_null(), deployment["wasm_sha256"].is_null());
     assert_eq!(deployment["key"].is_null(), deployment["rules"].is_null());
 }
+
+/// A recorded version is this checkout's build: the module carries the two shared lists, so a version recorded before
+/// a list changed signs answers that could miss a drain the site already reads. The site then answers itself
+/// (apps/web/lib/check-tee.ts); here it fails loudly. Nothing recorded yet: nothing to compare.
+#[test]
+fn a_recorded_version_states_the_rules_this_checkout_builds() {
+    let deployment: Value = serde_json::from_str(include_str!("../deployment.json")).unwrap();
+    if let Some(rules) = deployment["rules"].as_str() {
+        assert_eq!(
+            rules, RULES,
+            "deployment.json records a module built from other sources or another shared list: publish this build and record it (live.mjs --record)"
+        );
+    }
+}

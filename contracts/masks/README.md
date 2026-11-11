@@ -88,8 +88,7 @@ lists, side maps) so the record's layout never changes:
   route around it.
 - **Nobody reads a strategy, ever.** Not the copy's owner, not the author, not the keeper, not the site: the factory
   has no call that grants a view of one, and the mind has no action that opens one. Playing is all the mind does with
-  it. A view key in the plan is a key to a mask's **race history** (the mind's notes on each race, its moves, the
-  result), never to the strategy; it comes once the mind writes those notes, grants and all, and opens nothing before.
+  it. A view key opens a mask's **race history**, never its strategy: see "View keys" below.
 - **The author's share, counted and paid by the copy's own code** (`../mask`). The copy keeps a mark: its balance at
   forging, raised by every deposit put in through its methods (`top_up`) and lowered by every payout. Only balance
   above the mark is winnings, so the forging fund and the owner's top-ups are never shared, race gas is made up from the
@@ -106,6 +105,28 @@ reads an author's own list of copies, a page at a time, whatever the number of m
 earned on it), what `pay_author` would send now, and what the owner's `withdraw` would. The site shows an author's
 copies and earnings on its mask page, and the author's own control sits there behind one quiet button: the share,
 open, stop, and collect from every copy where something waits.
+
+## View keys: a mask's history for the readers its owner chose
+
+The × and every payout are public on chain. How the mind played each race is not: the attempts and their verdicts, the
+plan it sealed, the payout, the author's share, what the mind spent. The owner shares that history with whom they like
+([`factory/src/view.rs`](factory/src/view.rs), formats in `packages/forge/src/history.ts`, spec `docs/spec/copy.md`):
+
+- `set_view_key(key)`: a reader registers one X25519 key for every mask. The site makes it from a signature of the
+  reader's own wallet (NEP-413 over a fixed message), so the secret half is never stored and the same wallet makes the
+  same key anywhere.
+- `grant_view(name, viewer)` and `revoke_view(name, viewer)`: only the owner, at most 16 readers; a grant pays its own
+  storage and a revoke, with exactly 1 yoctoNEAR attached, gives it back. A grant takes no key: a reader is reached
+  only under the key they registered.
+- `note(name, race, note, keys)`: the keeper's note of one race, sealed with a key for that race alone, and that key
+  sealed for each current reader; the factory checks that every key goes to a reader the owner granted, once, under
+  the key that reader registered. `share(name, to, keys)` hands a reader granted later the keys of the races before.
+  Both are events of the keeper's transaction: nothing is stored.
+- A revoked reader gets the key of no race after it. A note holds the race as the keeper saw it, never the model's text
+  and never the strategy: a copy's owner reading the copy's history learns nothing of its author's line.
+
+The two maps live under prefixes of their own, apart from the factory's stored root, so adding them changed no layout
+and needs no migration.
 
 ## Who can change what
 
@@ -185,6 +206,9 @@ the bounty contract, the live safe, the judge.
 | `name_free(name)` | whether a name can be forged now |
 | `get_sealed_strategy(name)` | the sealed box and the key it was sealed for |
 | `config()` | admin, keeper, treasury, arena, mask code, the mind's key, catalog, limits, pending change |
+| `copies_of(name, from_index, limit)` | an author's copies, a page at a time |
+| `viewers(name)` | the accounts that read a mask's history, each with the view key it registered |
+| `view_key_of(account)` | the view key an account registered |
 
 Events: `EVENT_JSON:{"standard":"maskwars_masks","version":"1.0.0","event":…}` for `forge`, `refuel`, `unfuel`,
 `arm`, `settle`, `release`, `pause`, `resume`, `renew` and every governance step.
@@ -212,6 +236,14 @@ the person who copies, the forging fund and a top-up counted as winnings, race g
 the author's share, an author's copies read without walking every mask. It also moves a mask forged on `main` (the first
 factory and the first mask code, [legacy/mask-v1](legacy/mask-v1)) to this mask code: its state is read as the old one
 and kept.
+
+`sandbox/tests/view.rs` holds view keys on a real node: only the owner grants, a note's race key reaches only a
+reader the owner granted under the key that reader registered, a note stores nothing, a revoke gives the storage back
+and leaves the reader no key to any later race.
+
+The sandbox's `neard` asks for 65535 open files. A container that allows fewer (a cloud session gives 20000) runs the
+sandbox with a one-function `LD_PRELOAD` shim that lets the call succeed and keeps the limit; nothing in the tests
+depends on it.
 
 To walk the site's `/forge` against a local sandbox:
 

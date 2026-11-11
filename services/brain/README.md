@@ -43,8 +43,15 @@ is the module's own plan.
 **Nobody reads a strategy, ever.** Playing is the only thing the mind does with a line: no action opens one, re-seals
 it for another key or hands it to anyone, the author, a copy's owner and the keeper included. An input asking for
 anything else (`view`, `reveal`, `open`) is not one the module reads, and OutLayer gets only `bad input` back.
-A view key in the plan is a key to a mask's **race history** (the mind's notes on each race, its moves and the result),
-never to the strategy; it comes once the mind writes those notes.
+A view key opens a mask's **race history** (the keeper's sealed notes on each race), never the strategy: the mind
+plays no part in it (`contracts/masks/factory/src/view.rs`).
+
+**A factory that names this mind.** Besides the factories in `mind.json`, the module plays the masks of any factory
+whose `config()` names this mind's key as the one its strategies are sealed for, and only when that factory's own
+`keeper` asks. It opens nothing of anyone else's: a box opens only for the mask account it was sealed for, and that
+account is `<name>.<factory>`. And OutLayer still decides who runs at all: the project's secrets, the mind's seed and
+the NEAR AI key, reach only the signers their owner whitelisted. A project with no `NEAR_AI_API_KEY` answers
+`the mind has no NEAR AI key in its TEE` before it sends anything.
 
 **What can leave, counted.** Whatever the model writes, one attempt's answer is one of 30 plans or one of two errors
 (the answer holds no plan; the model spent its tokens before it answered), and a count of answer tokens in one of 12
@@ -111,8 +118,9 @@ cargo build --release --target wasm32-wasip2
 ```
 
 Publish: CI attaches `maskwars-brain.wasm`, named on maskwars.xyz by its sha256. Then, on the owner's OutLayer account:
-the project `brain`, its version, `outlayer secrets set --generate PROTECTED_BRAIN_SEED:hex32 --project <owner>/brain`,
-one run with `{"action":"key"}`, and the key goes to the factory (`scripts/testnet/forge-deploy.ps1 -StrategyKey` or
+the project `brain`, its version, `outlayer secrets set --generate PROTECTED_BRAIN_SEED:hex32 --project <owner>/brain
+--access whitelist:<owner>` (mainnet: `whitelist:maskwars.near`, the keeper; as the judges do, so nobody else's run gets
+the mind's seed or spends the owner's NEAR AI key), one run with `{"action":"key"}`, and the key goes to the factory (`scripts/testnet/forge-deploy.ps1 -StrategyKey` or
 `forge-change.ps1 -StrategyKey`). For the mind at play the project also needs the secret `NEAR_AI_API_KEY`, added with
 `outlayer secrets update '{"NEAR_AI_API_KEY":"…"}' --project <owner>/brain`: `update` merges and keeps every
 `PROTECTED_*` secret, while `set` would write the row anew, give the mind a new key and leave every sealed strategy

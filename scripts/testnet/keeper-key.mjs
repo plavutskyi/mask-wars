@@ -1,5 +1,5 @@
 // The keeper's seed for keeper-key.ps1. One secret seed, KEEPER_SEED, gives the keeper everything it signs with, the
-// same way as packages/race/src/keeper.ts: its own function-call key on the mask factory (arm and settle only) is the
+// same way as packages/race/src/keeper.ts: its own function-call key on the mask factory (arm, settle, note and share only) is the
 // ed25519 key whose 32-byte seed is HMAC-SHA256(seed, "maskwars-keeper-key:" + factory), and each person's mask gets
 // two new race keys every round from HMAC-SHA256(seed, "maskwars-human-key:" + mask + ":" + round + ":" + receiver).
 //

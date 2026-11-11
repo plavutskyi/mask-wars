@@ -304,6 +304,29 @@
   overflow-wrap: anywhere;
 }
 
+/* The one line about the TEE, only under an answer that was signed inside it: quiet, a strength, not a headline. */
+.seal {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--ice-60);
+}
+
+.sealIcon {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: var(--ice);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 /* Details: everything technical waits behind one quiet control. */
 .more {
   border-top: 1px solid var(--line);

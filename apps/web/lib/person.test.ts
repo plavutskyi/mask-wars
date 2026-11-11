@@ -1,5 +1,6 @@
+import type { HistoryEvent } from '@maskwars/forge';
 import { describe, expect, it } from 'vitest';
-import { shareText, stateOf } from './person';
+import { readableHistory, shareText, stateOf } from './person';
 
 const mask = (state: 'ready' | 'racing' | 'paused', brain: string, race: string | null = null) => ({
   state,
@@ -19,6 +20,31 @@ describe('where a person’s mask stands', () => {
   it('names the race it is in, and its owner’s pause', () => {
     expect(stateOf(mask('racing', '0', 'human-0001'))).toEqual({ key: 'racing', word: 'Racing now', note: 'In race H0001' });
     expect(stateOf(mask('paused', '5'))).toMatchObject({ key: 'paused', word: 'Paused' });
+  });
+});
+
+describe('the race history panel shows only a history someone can read', () => {
+  const ECHO = 'echo.masks.mwc59801.testnet';
+  const note = (to: string[]): HistoryEvent => ({
+    kind: 'note', mask: ECHO, race: 'copy-0001', note: 'v1.AAAA', keys: to.map((t) => ({ to: t, key: 'v1.BBBB' })), at: 1, tx: 't',
+  });
+  const bob = [{ account: 'bob.testnet', key: 'x25519:00' }];
+
+  it('hides a mask with no note at all, even with readers granted', () => {
+    expect(readableHistory({ viewers: bob, events: [] })).toBe(false);
+    expect(readableHistory({ viewers: [], events: [] })).toBe(false);
+  });
+
+  it('hides notes sealed for nobody who holds a view now', () => {
+    expect(readableHistory({ viewers: bob, events: [note([])] })).toBe(false);
+    expect(readableHistory({ viewers: bob, events: [note(['eve.testnet'])] })).toBe(false);
+    expect(readableHistory({ viewers: [], events: [note(['bob.testnet'])] })).toBe(false);
+  });
+
+  it('shows a note sealed for a reader, or shared with one', () => {
+    expect(readableHistory({ viewers: bob, events: [note(['bob.testnet'])] })).toBe(true);
+    const share: HistoryEvent = { kind: 'share', mask: ECHO, to: 'bob.testnet', keys: 'v1.CCCC', at: 2, tx: 's' };
+    expect(readableHistory({ viewers: bob, events: [note([]), share] })).toBe(true);
   });
 });
 

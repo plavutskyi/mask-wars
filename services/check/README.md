@@ -13,14 +13,14 @@ break becomes the answer.
 
 ```bash
 # The verdict, free: nothing attached for the project
-curl -X POST https://testnet-api.outlayer.ai/call/tinygif8324.testnet/check \
+curl -X POST https://api.outlayer.ai/call/maskwars.near/check \
   -H "X-Payment-Key: $OUTLAYER_PAYMENT_KEY" -H "Content-Type: application/json" \
   -d '{"input": {"account": "treasury.intents.near"}}'
 
 # Every reason with its evidence, signed: $0.01
-curl -X POST https://testnet-api.outlayer.ai/call/tinygif8324.testnet/check \
+curl -X POST https://api.outlayer.ai/call/maskwars.near/check \
   -H "X-Payment-Key: $OUTLAYER_PAYMENT_KEY" -H "X-Attached-Deposit: 10000" -H "Content-Type: application/json" \
-  -d '{"input": {"account": "safe-0001.tinygif8324.testnet"}}'
+  -d '{"input": {"account": "safe-0001.maskwars.near"}}'
 ```
 
 `X-Payment-Key` is any OutLayer [payment key](https://app.outlayer.ai/docs/payment-keys): it pays OutLayer for the
@@ -278,8 +278,34 @@ writes it again, and `cargo test` fails until it is.
 - The key belongs to the project. Every version of the module signs with the same key, so the owner of the project
   decides what the key signs, and a signature says which rules made it only through `module.rules` in the message:
   compare it. A caller who wants one exact build pins it with OutLayer's `version_key` (the wasm's sha256).
-- Published on OutLayer's testnet today, where payment keys hold test stablecoins. The same wasm on OutLayer mainnet
-  needs a mainnet account for the project.
+- The project is `maskwars.near/check` on OutLayer mainnet (`deployment.json`), where payment keys hold real
+  stablecoins. Until its first calls record the key there, the address answers nothing and nothing sends an agent to
+  it.
+
+## On the site
+
+`maskwars.xyz/api/check` and the `/check` page give the module's signed answer whenever they can
+([`apps/web/lib/check-tee.ts`](../../apps/web/lib/check-tee.ts)): the site calls the project with its own payment key
+(`OUTLAYER_PAYMENT_KEY` in Vercel), pays the price like any caller, and hands the answer on only after the same three
+checks as `verify.mjs` against the key and the rules in `deployment.json`, plus a fourth: the answer is about the
+account that was asked. The response carries `tee.signed: true`, the key, the signed message and the signature, so
+whoever gets it can verify it again offline. `tee.requested_wasm_sha256` is the build the site asked for with
+`version_key`, not a proof of what ran: the site does not read the attestation, and `tee.attestation_url` (kept only on
+OutLayer's own API origin, over https) is where OutLayer attests the build.
+
+The module carries the shared list it was built with, and the site reads the current one. So the site asks the TEE
+only while `deployment.json` names the rules this checkout builds (`sample.json`); once a safe is added to the list and
+no new version is recorded, the site answers itself and says so, rather than sign an answer that could miss a drain.
+`cargo test` and the site's tests fail on such a commit too: publish the new build and record it.
+
+When the module is not published yet or was built from another list, the site holds no payment key, the site's budget
+for signed answers is spent for the minute, OutLayer does not answer within 6 s, or anything in its answer cannot be
+read, the site reads the chain itself with `packages/check` and says so: `tee.signed: false` and `tee.why`. After three
+failed runs in a row, or one `402`, an instance asks OutLayer nothing for a minute.
+
+**Before the site pays for signed answers** (`OUTLAYER_PAYMENT_KEY` in Vercel): a Vercel Firewall rule on `/api/check`,
+30 a minute per IP, fixed window 60 s. Every signed answer costs the price and the run's compute; the route's own limits
+live in one instance's memory only.
 
 ## Publishing a version
 

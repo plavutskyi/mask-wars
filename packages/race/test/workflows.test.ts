@@ -1,10 +1,11 @@
 /**
- * Where the keys live. `MASK_KEYS` and `KEEPER_SEED` sign for the masks,
- * `OUTLAYER_PAYMENT_KEY` pays for the people's minds, and `HOUSE_KEY` signs for the house, which opens the daily round
- * on mainnet. A repository secret is read by any workflow on any branch, so each
- * of them lives only in an environment that only `main` deploys to, and only the jobs that name it read it. These tests
- * read the workflow files themselves: a job that reads a key without its environment, a caller that could hand a key
- * in, or a job with a key that does not wait for `guard`, fails here before it ever reaches GitHub.
+ * Where the keys live. `MASK_KEYS` and `KEEPER_SEED` sign for the masks, `OUTLAYER_PAYMENT_KEY` pays for the people's
+ * minds, `NEAR_AI_API_KEY` pays for our masks' models, `HOUSE_KEY` signs for the house, which opens the daily round on
+ * mainnet, and `SCHEDULER_KEY` opens the season's round on testnet. A repository secret is read by any workflow on any
+ * branch, so each of them lives only in an environment that only `main` deploys to, and only the jobs that name it read
+ * it. These tests read the workflow files themselves: a job that reads a key without its environment, a caller that
+ * could hand a key in, a guard that misses a key its workflow receives, or a job with a key that does not wait for
+ * `guard`, fails here before it ever reaches GitHub.
  */
 import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
@@ -15,7 +16,9 @@ const HOME: Readonly<Record<string, string>> = {
   MASK_KEYS: "live-race",
   KEEPER_SEED: "live-race",
   OUTLAYER_PAYMENT_KEY: "outlayer",
+  NEAR_AI_API_KEY: "outlayer",
   HOUSE_KEY: "season",
+  SCHEDULER_KEY: "season",
 };
 const KEYS = Object.keys(HOME);
 /**
@@ -91,7 +94,7 @@ describe("the masks' keys and the minds' payment key live in environments only",
       for (const j of jobsOf(text(f))) {
         for (const key of j.secrets.filter((s) => KEYS.includes(s))) {
           readers.push(`${f}/${j.name}/${key}`);
-          if (j.name === "guard") continue;
+          if (j.name === "guard" || (f === "ci.yml" && j.name === "keys")) continue;
           expect(j.environment, `${f}: job ${j.name} reads ${key}`).toBe(onNetwork(HOME[key]!));
         }
       }
@@ -104,6 +107,7 @@ describe("the masks' keys and the minds' payment key live in environments only",
         "live-race.yml/drain/KEEPER_SEED",
         "live-race.yml/settle/KEEPER_SEED",
         "live-race.yml/race/OUTLAYER_PAYMENT_KEY",
+        "live-race.yml/race/NEAR_AI_API_KEY",
         "keeper.yml/keeper/KEEPER_SEED",
         "live-race.yml/guard/MASK_KEYS",
         "keeper.yml/guard/KEEPER_SEED",
@@ -112,11 +116,14 @@ describe("the masks' keys and the minds' payment key live in environments only",
         "jobs.yml/guard/MASK_KEYS",
         "jobs.yml/guard/OUTLAYER_PAYMENT_KEY",
         "season.yml/open/HOUSE_KEY",
+        "season.yml/open/SCHEDULER_KEY",
         "season.yml/guard/HOUSE_KEY",
       ]),
     );
-    // The house's key signs in one job of one workflow, and nowhere else.
-    expect(readers.filter((r) => r.endsWith("/HOUSE_KEY")).sort()).toEqual(["season.yml/guard/HOUSE_KEY", "season.yml/open/HOUSE_KEY"]);
+    // The house's key signs in one job of one workflow, and nowhere else; the guards only look.
+    expect(readers.filter((r) => r.endsWith("/HOUSE_KEY")).sort()).toEqual(["ci.yml/keys/HOUSE_KEY", "season.yml/guard/HOUSE_KEY", "season.yml/open/HOUSE_KEY"]);
+    // The models' key pays in the race job and nowhere else.
+    expect(readers.filter((r) => r.endsWith("/NEAR_AI_API_KEY") && !/\/(guard|keys)\//.test(r)).sort()).toEqual(["live-race.yml/race/NEAR_AI_API_KEY"]);
   });
 
   it("no job with a mask's key ever runs the race: the models and the sandbox never share a runner with one", () => {
@@ -135,11 +142,38 @@ describe("the masks' keys and the minds' payment key live in environments only",
         expect(waitsForGuard(j), `${f}: ${j.name} waits for guard (${j.needs.join(",")} / ${j.cond})`).toBe(true);
       }
     }
-    expect(text("live-race.yml")).toMatch(/for name in MASK_KEYS KEEPER_SEED OUTLAYER_PAYMENT_KEY; do/);
-    expect(text("keeper.yml")).toMatch(/for name in MASK_KEYS KEEPER_SEED; do/);
-    // The jobs inherit every secret into the race: their guard checks the minds' payment key too.
-    expect(text("jobs.yml")).toMatch(/for name in MASK_KEYS KEEPER_SEED OUTLAYER_PAYMENT_KEY; do/);
-    expect(text("season.yml")).toMatch(/for name in HOUSE_KEY; do/);
+    // Each guard checks every key its workflow can receive: its own jobs' keys and, where it inherits into the race,
+    // the race's. A key a guard does not name would reach the jobs as a repository secret unnoticed.
+    const race = ["MASK_KEYS", "KEEPER_SEED", "OUTLAYER_PAYMENT_KEY", "NEAR_AI_API_KEY"];
+    const want: Record<string, string[]> = {
+      "live-race.yml": race,
+      "keeper.yml": ["MASK_KEYS", "KEEPER_SEED"],
+      "jobs.yml": race,
+      "season.yml": ["HOUSE_KEY", "SCHEDULER_KEY", ...race],
+    };
+    for (const [f, keys] of Object.entries(want)) {
+      const guard = block(text(f), "guard");
+      expect(guard, f).toContain(`for name in ${keys.join(" ")}; do`);
+      for (const key of keys) expect(guard, `${f}: guard reads ${key}`).toContain(`${key}: \${{ secrets.${key} }}`);
+      const received = new Set(jobsOf(text(f)).flatMap((j) => j.secrets).filter((s) => KEYS.includes(s)));
+      for (const key of received) expect(keys, `${f} reads ${key}, so its guard checks it`).toContain(key);
+    }
+  });
+
+  // A cloud session or a stolen token that can push a branch could run a workflow of its own; a key that is a
+  // repository secret would go with it. CI runs on every pull request and every push to main, so it is where such a key
+  // shows first.
+  it("CI is red whenever any key is a repository secret, and never runs code where it looks", () => {
+    const keys = jobsOf(text("ci.yml")).find((j) => j.name === "keys")!;
+    expect(keys.environment).toBeNull();
+    expect(keys.checkout).toBe(false);
+    expect([...keys.secrets].sort()).toEqual([...KEYS].sort());
+    expect(block(text("ci.yml"), "keys")).toContain(`for name in ${["MASK_KEYS", "KEEPER_SEED", "HOUSE_KEY", "SCHEDULER_KEY", "OUTLAYER_PAYMENT_KEY", "NEAR_AI_API_KEY"].join(" ")}; do`);
+    expect(job("ci.yml", "ci-ok").needs).toContain("keys");
+    // The one other secret CI reads is the 1Click partner key: it moves no money and the live 1Click job needs it on
+    // pull requests, where an environment limited to main would hide it.
+    const other = jobsOf(text("ci.yml")).flatMap((j) => j.secrets).filter((s) => !KEYS.includes(s));
+    expect([...new Set(other)]).toEqual(["ONE_CLICK_API_KEY"]);
   });
 
   // The season inherits: only then does GitHub give the called drain job the secrets of its own environment (with a
@@ -152,7 +186,10 @@ describe("the masks' keys and the minds' payment key live in environments only",
       expect(text(f).match(/secrets:\s*inherit/g), f).toHaveLength(1);
       expect(block(text(f), "race"), f).toMatch(/uses: \.\/\.github\/workflows\/live-race\.yml[\s\S]*secrets: inherit/);
     }
-    expect(text("season.yml")).not.toMatch(/OUTLAYER_PAYMENT_KEY|MASK_KEYS|KEEPER_SEED/);
+    // The season's own jobs sign with the house's and the scheduler's keys only; the race's keys are named by guard alone.
+    for (const j of jobsOf(text("season.yml")).filter((j) => j.name !== "guard")) {
+      expect(j.secrets.filter((s) => s !== "HOUSE_KEY" && s !== "SCHEDULER_KEY"), `season.yml/${j.name}`).toEqual([]);
+    }
     // The jobs' own jobs sign with the masks' keys and nothing else: the keeper's seed and the minds' payment key are
     // named only by guard, which checks they are not repository secrets.
     for (const j of jobsOf(text("jobs.yml")).filter((j) => j.name !== "guard")) {
@@ -201,10 +238,13 @@ describe("the masks' keys and the minds' payment key live in environments only",
   it("the called race names each key so its jobs read it from their environments, and requires none from a caller", () => {
     const t = text("live-race.yml");
     const call = t.slice(t.indexOf("  workflow_call:"), t.indexOf("\nenv:"));
-    for (const key of KEYS.filter((k) => k !== "HOUSE_KEY")) expect(call, `live-race.yml names ${key}`).toContain(`      ${key}:\n        required: false\n`);
+    for (const key of ["MASK_KEYS", "KEEPER_SEED", "OUTLAYER_PAYMENT_KEY", "NEAR_AI_API_KEY"]) expect(call, `live-race.yml names ${key}`).toContain(`      ${key}:\n        required: false\n`);
+    // A required key would make every caller hold it where a caller can: as a repository secret.
+    expect(call.slice(call.indexOf("    secrets:"))).not.toContain("required: true");
     // The house's key opens the round and goes no further: the race, which runs the models and the sandbox, never
     // names it, so no job of it can read it even from a caller that inherits.
-    for (const f of files.filter((f) => f !== "season.yml")) expect(text(f), f).not.toContain("HOUSE_KEY");
+    for (const f of files.filter((f) => f !== "season.yml" && f !== "ci.yml")) expect(text(f), f).not.toContain("HOUSE_KEY");
+    expect(text("live-race.yml")).not.toContain("SCHEDULER_KEY");
   });
 
   it("a run started by hand waits for the owner's yes; the season's run does not", () => {

@@ -1,0 +1,87 @@
+{
+  "v": 1,
+  "source": "LIVE",
+  "network": "mainnet",
+  "id": "race-0002",
+  "contract": "bounty.maskwars.near",
+  "target": {
+    "kind": "live-safe",
+    "account": "vault.house.maskwars.near"
+  },
+  "bounty": "0.25",
+  "hours": 4,
+  "safe": "1.93",
+  "opened": {
+    "at": "2026-11-11T18:49:09.534Z",
+    "tx": "BtAiy98VEUdc9zWBMCnZBhvRJ2xfisijfCNBjXTqNJU8"
+  },
+  "masks": [
+    {
+      "name": "ORACLE",
+      "account": "oracle.maskwars.near",
+      "model": "Qwen/Qwen3.8-27B"
+    }
+  ],
+  "sealed": {
+    "minutes": 45,
+    "closedAt": "2026-11-11T19:34:09.534Z",
+    "seals": [
+      {
+        "mask": "ORACLE",
+        "seq": 0,
+        "at": "2026-11-11T18:58:39.574Z",
+        "tx": "GEvfN4zKkeVq6nBqNnxrbiCi9SiSQ4DznTXEqpZHha4x"
+      }
+    ],
+    "reveal": {
+      "at": "2026-11-11T19:34:29.792Z",
+      "tx": "4i5Cci3Md8wqgDKdHwfsekS6DmeFppHn2k5WGAs9uED5"
+    },
+    "claim": {
+      "at": "2026-11-11T19:34:33.236Z",
+      "tx": "BdUN85L7g32uCPx7a8PDqJn5cAZgyzvUv3dFYf3v864y"
+    }
+  },
+  "winner": "ORACLE",
+  "drain": {
+    "amount": "0.24",
+    "at": "2026-11-11T19:34:24.983Z",
+    "txs": [
+      {
+        "method": "set_owner",
+        "hash": "GV3Nd2u7inDse5RVMp4nYcBmuFbtQjEHfDANud8VcuyW",
+        "at": "2026-11-11T19:34:21.394Z"
+      },
+      {
+        "method": "sweep",
+        "hash": "Bk7Sa66uaxtqdeH63YLqeKq6szivM769BbB37U1Pjwnc",
+        "at": "2026-11-11T19:34:24.983Z",
+        "amount": "0.24"
+      }
+    ]
+  },
+  "judge": {
+    "request": 2989,
+    "seconds": 4.756,
+    "cost": "0.0014756022"
+  },
+  "payout": {
+    "amount": "0.11176",
+    "tx": "BdUN85L7g32uCPx7a8PDqJn5cAZgyzvUv3dFYf3v864y",
+    "at": "2026-11-11T19:34:46.543Z"
+  },
+  "status": "drained",
+  "next": {
+    "round": 3,
+    "safe": "0.28",
+    "bounty": "0.1276",
+    "at": "2026-11-12T18:00:00.000Z"
+  },
+  "sources": [
+    "NEAR, read through the arena reader at 2026-11-11T19:37:17.054Z: get, get_safe and get_round of race-0002 on bounty.maskwars.near",
+    "The round's transactions in the public indexer: the vault vault.house.maskwars.near, the bounty contract bounty.maskwars.near",
+    "The judge: OutLayer's execution_requested and execution_completed events in the logs of the claim",
+    "Each mask's model: the arena's own profile of the mask, not the chain",
+    "The next round: the season treasury's own `next`, read at 2026-11-11T19:37:17.054Z"
+  ]
+}

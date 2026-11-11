@@ -132,3 +132,8 @@ export async function allCopiesOf(net: Network, name: string, copies: number): P
   const pages = await Promise.all(Array.from({ length: Math.ceil(copies / 50) }, (_, i) => copiesOf(net, name, i * 50, 50)));
   return pages.flat();
 }
+
+/** Who may read a mask's race history, each with the view key it registered (`contracts/masks/factory/src/view.rs`). */
+export const viewersOf = (net: Network, name: string) => view<{ account: string; key: string | null }[]>(net, "viewers", { name });
+/** The view key an account registered on the factory, if any. */
+export const viewKeyOf = (net: Network, account: string) => view<string | null>(net, "view_key_of", { account });

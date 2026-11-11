@@ -411,6 +411,15 @@ export function Forge({ origin }: { origin: string }) {
     }
   })();
 
+  // Forging a copy: one line on every step, so the person never loses whose strategy they copy and what it costs them.
+  const copying =
+    copyOf && author && phase !== 'done' ? (
+      <>
+        Copy of <b className={s.copyName}>{author.name.toUpperCase()}</b>: your mask plays its sealed strategy in a TEE.{' '}
+        {author.name.toUpperCase()}’s owner earns <b className={s.copyName}>{shareText(author.author_bps)}</b> of your wins.
+      </>
+    ) : null;
+
   return (
     <div className={s.body} data-phase={phase} data-reveal={revealed && phase === 'done' ? '' : undefined}>
       <Waiting cfg={cfg} />
@@ -425,11 +434,8 @@ export function Forge({ origin }: { origin: string }) {
             {phase === 'done' && done ? done.name.toUpperCase() : last && shown ? shown : 'your mask'}
           </span>
         </h1>
-        {copyOf && author && phase !== 'done' ? (
-          <p className={s.copyLede}>
-            Copying {author.name.toUpperCase()}’s mind — your mask plays its sealed strategy in a TEE. {author.name.toUpperCase()}’s owner
-            earns {shareText(author.author_bps)} of what you win.
-          </p>
+        {copying ? (
+          <p className={`${s.stageLede} ${s.copyLede}`}>{copying}</p>
         ) : step === 0 && phase === 'choose' ? (
           <p className={s.stageLede}>{LEDE}</p>
         ) : null}
@@ -486,7 +492,7 @@ export function Forge({ origin }: { origin: string }) {
           </div>
         ) : (
           <form className={s.form} onSubmit={submit} noValidate>
-            {step === 0 ? <p className={s.lede}>{LEDE}</p> : null}
+            {copying ? <p className={`${s.lede} ${s.copyLede}`}>{copying}</p> : step === 0 ? <p className={s.lede}>{LEDE}</p> : null}
 
             <div className={s.top}>
               <span className={`${s.word} ${s.label}`} id={`${id}-label`}>

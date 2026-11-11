@@ -1059,10 +1059,11 @@
 
 /* Confidential copying: the banner when a forge is a copy of another mask. */
 .copyLede {
-  margin: 0 auto 10px;
-  max-width: 46ch;
-  text-align: center;
-  font-size: 15px;
-  line-height: 1.45;
+  max-width: 60ch;
+  margin-left: auto;
+  margin-right: auto;
+}
+.copyName {
+  font-weight: 700;
   color: color-mix(in oklab, var(--violet) 72%, var(--ice));
 }
