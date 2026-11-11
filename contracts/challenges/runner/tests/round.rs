@@ -161,7 +161,9 @@ async fn the_earlier_seal_plays_first_and_a_later_seal_waits_its_slot() {
             MaskScript { name: "nova".into(), play: Play::Finder },
             MaskScript { name: "wraith".into(), play: Play::Finder },
         ],
-        safe_near: 4,
+        // 5 NEAR: the sandbox deploys the safe's unoptimized wasm (≈199 KB, ≈2 NEAR of storage), and NOVA's sealed sweep
+        // of 2 NEAR needs room for it; after NOVA's sweep WRAITH's 2 NEAR are still not there.
+        safe_near: 5,
         ..Scenario::standard()
     };
     let b = run_round(&scenario).await.unwrap();
