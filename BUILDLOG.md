@@ -12,7 +12,7 @@ the README for the baseline.
 | 2026-11-01 → 2026-11-10 | First design, market duels: the fight state machine (OPEN → PAID or VOID), Market Duel scoring with CALLED IT, parimutuel books with rake and full refunds, sealed moves, Elo rating and the Model Index, shared test vectors |
 | 2026-11-01 → 2026-11-10 | Mask minds and voices: NEAR AI Cloud client for Private TEE models, attestation check, checked decisions with default moves, six voices of written lines, viewer text cleaning |
 | 2026-11-01 → 2026-11-11 | maskwars.xyz: the race screen, sign-up for teams, the MASK CHECK API |
-| 2026-11-01 → 2026-11-10 | MCP server: rules, races, masks, the league, MASK CHECK and the jobs board for outside agents |
+| 2026-11-01 → 2026-11-11 | MCP server: rules, races, masks, the league, MASK CHECK and the jobs board for outside agents |
 | 2026-11-01 → 2026-11-11 | Race clip, post cards and a thread from one race |
 | 2026-11-02 → 2026-11-08 | Training targets with planted holes and the sandbox runner: every attempt in a fresh local NEAR node |
 | 2026-11-02 → 2026-11-10 | The race: AI masks on NEAR AI Cloud attack a target in parallel, a break replayed in a second clean sandbox before it counts, the public board |
@@ -31,6 +31,6 @@ the README for the baseline.
 | 2026-11-08 → 2026-11-10 | People's masks in sealed rounds: the keeper arms a mask for a round and charges what its mind really spent |
 | 2026-11-08 → 2026-11-10 | Jobs market and crews: a client locks NEAR on a job, masks take it alone or as a crew, the contract splits the reward by contribution |
 | 2026-11-08 → 2026-11-10 | Hire the swarm: an embeddable button and checkout that orders a job from any chain |
-| 2026-11-09 → 2026-11-10 | MASK CHECK as a module for OutLayer: the same answer, signed inside a TEE |
+| 2026-11-09 → 2026-11-11 | MASK CHECK as a module for OutLayer: the same answer, signed inside a TEE |
 | 2026-11-09 → 2026-11-10 | Job judges in a TEE: a client's private tests, and an AI review by a published rubric |
 | 2026-11-10 | The first round on NEAR mainnet, race-0001: its record read from the chain, the cards and the clip |

@@ -10,6 +10,11 @@
   "ns_per_block": "609829000",
   "day_ago_height": 276551649,
   "accounts": {
+    "s0001.season.tinygif8324.testnet": { "now": null, "day_ago": null },
+    "s0002.season.tinygif8324.testnet": { "now": null, "day_ago": null },
+    "safe-0002.tinygif8324.testnet": { "now": null, "day_ago": null },
+    "safe-0003.tinygif8324.testnet": { "now": null, "day_ago": null },
+    "safe-0004.tinygif8324.testnet": { "now": null, "day_ago": null },
     "tinygif8324.testnet": {
       "now": { "amount": "290000000000000000000000", "locked": "0", "code_hash": "32chJkJSeV4oPTxD18affPNyWCiFPohC2QPf5pxLou3X", "storage_usage": 182214 },
       "day_ago": { "amount": "290000000000000000000000", "locked": "0", "code_hash": "32chJkJSeV4oPTxD18affPNyWCiFPohC2QPf5pxLou3X", "storage_usage": 182214 }
