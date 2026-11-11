@@ -4,7 +4,7 @@ import { duration, near } from '@maskwars/arena/format';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { CSSProperties } from 'react';
-import { artOf, day, eventLine, longest, shortAccount, toneOf, utc } from '@/lib/show';
+import { artOf, day, eventLine, longest, shortAccount, timeUtc, toneOf, utc } from '@/lib/show';
 import { Mark } from '../Mark';
 import { Clock } from './Clock';
 import { Header } from './Header';
@@ -25,7 +25,29 @@ function title(r: Race): string {
   return r.kind === 'safe' ? 'The vault held' : 'Nobody got through';
 }
 
-/** +8:13 from the opening; −0:26 before it. */
+/**
+ * The moment the race's clock starts: the vault unlocking at the end of the commit window in a sealed round, the
+ * opening otherwise. The headline's «in 0:15» counts from it, so the steps count from it too.
+ */
+function zeroOf(r: Race): number | null {
+  return r.startsAt ?? r.openedAt;
+}
+
+/** A sealed round's vault unlocks once its commit window ends: a step of its own, at 0:00, once it has happened. */
+function unlockOf(r: Race): number | null {
+  return r.sealUntil !== null && r.startsAt !== null && r.phase !== 'sealing' ? r.startsAt : null;
+}
+
+/** The events with the unlock in its place among them, by time. */
+function stepsOf(r: Race): readonly (RaceEvent | { kind: 'unlock'; at: number })[] {
+  const unlock = unlockOf(r);
+  if (unlock === null) return r.events;
+  const at = r.events.findIndex((e) => e.at >= unlock);
+  const i = at < 0 ? r.events.length : at;
+  return [...r.events.slice(0, i), { kind: 'unlock', at: unlock }, ...r.events.slice(i)];
+}
+
+/** +8:13 from the race's zero; −0:26 before it. */
 function offset(at: number, from: number | null): string {
   if (from === null) return '';
   const d = at - from;
@@ -101,7 +123,18 @@ function MaskChip({ who, won, race }: { who: Who; won: boolean; race: Race }) {
   );
 }
 
-export function RacePage({ race: r, prev, next }: { race: Race; prev: Race | null; next: Race | null }) {
+export function RacePage({
+  race: r,
+  prev,
+  next,
+  asOf = null,
+}: {
+  race: Race;
+  prev: Race | null;
+  next: Race | null;
+  /** When the reading was taken, for one too old to be shown as happening now (`asOf` of lib/arena); else null. */
+  asOf?: number | null;
+}) {
   const winner = r.winner;
   const art = r.phase === 'broken' ? artOf(winner) : null;
   const number = r.phase === 'broken' ? r.takes : r.phase === 'held' ? (r.refund?.amount ?? r.bounty) : r.prize;
@@ -152,7 +185,12 @@ export function RacePage({ race: r, prev, next }: { race: Race; prev: Race | nul
             <Info rows={facts} label="The race on chain" align="start" />
           </div>
           <p className={s.sub}>
-            {r.phase === 'sealing' && r.startsAt ? (
+            {asOf !== null && (r.phase === 'sealing' || r.phase === 'racing') ? (
+              // A round read too long ago to count on: the time it was read at, and no clock that runs.
+              <>
+                as of <span className={s.clock}>{timeUtc(asOf)}</span>
+              </>
+            ) : r.phase === 'sealing' && r.startsAt ? (
               <>
                 starts in <Clock to={r.startsAt} className={s.clock} />
               </>
@@ -180,30 +218,41 @@ export function RacePage({ race: r, prev, next }: { race: Race; prev: Race | nul
           The race
         </h2>
         <ol className={s.steps}>
-          {r.events.map((e, i) => (
-            <li key={`${e.tx}-${e.kind}-${i}`} className={s.step} data-kind={e.kind} data-quiet={e.kind === 'claim' && e.verdict !== 'paid' ? '' : undefined}>
-              <span className={s.when}>{offset(e.at, r.openedAt)}</span>
-              <span className={s.what}>
-                {eventLine(e, r.team)}
-                {e.kind === 'drain' ? <span className={`${s.word} ${s.tag}`}>The break</span> : null}
-              </span>
-              <span className={s.amount} data-tone={amountTone(e)}>
-                {e.amount ? `${near(e.amount)} NEAR` : ''}
-              </span>
-              <span className={s.stepInfo}>
-                <Info
-                  align="end"
-                  label="This step on chain"
-                  rows={[
-                    { label: 'Time', value: utc(e.at) },
-                    ...(e.who ? [{ label: 'Who', value: e.who.account, href: accountUrl(e.who.account) }] : []),
-                    ...(e.method ? [{ label: 'Call', value: e.method }] : []),
-                    ...(e.tx ? [{ label: 'Transaction', value: e.tx, href: txUrl(e.tx) }] : []),
-                  ]}
-                />
-              </span>
-            </li>
-          ))}
+          {stepsOf(r).map((e, i) =>
+            e.kind === 'unlock' ? (
+              <li key={`unlock-${i}`} className={s.step} data-kind="unlock">
+                <span className={s.when}>{offset(e.at, zeroOf(r))}</span>
+                <span className={s.what}>The vault unlocks</span>
+                <span className={s.amount} />
+                <span className={s.stepInfo}>
+                  <Info align="end" label="This step on chain" rows={[{ label: 'Time', value: utc(e.at) }, { label: 'What', value: 'The commit window closes' }]} />
+                </span>
+              </li>
+            ) : (
+              <li key={`${e.tx}-${e.kind}-${i}`} className={s.step} data-kind={e.kind} data-quiet={e.kind === 'claim' && e.verdict !== 'paid' ? '' : undefined}>
+                <span className={s.when}>{offset(e.at, zeroOf(r))}</span>
+                <span className={s.what}>
+                  {e.kind === 'open' && r.sealUntil !== null ? 'The round opens' : eventLine(e, r.team)}
+                  {e.kind === 'drain' ? <span className={`${s.word} ${s.tag}`}>The break</span> : null}
+                </span>
+                <span className={s.amount} data-tone={amountTone(e)}>
+                  {e.amount ? `${near(e.amount)} NEAR` : ''}
+                </span>
+                <span className={s.stepInfo}>
+                  <Info
+                    align="end"
+                    label="This step on chain"
+                    rows={[
+                      { label: 'Time', value: utc(e.at) },
+                      ...(e.who ? [{ label: 'Who', value: e.who.account, href: accountUrl(e.who.account) }] : []),
+                      ...(e.method ? [{ label: 'Call', value: e.method }] : []),
+                      ...(e.tx ? [{ label: 'Transaction', value: e.tx, href: txUrl(e.tx) }] : []),
+                    ]}
+                  />
+                </span>
+              </li>
+            ),
+          )}
         </ol>
       </section>
 

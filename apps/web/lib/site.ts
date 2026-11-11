@@ -146,9 +146,22 @@ export function forgeStated(site: Site = SITE): boolean {
   return site.sibling !== null;
 }
 
+/**
+ * Whether Jobs is in the menu. Two sites that know each other show one menu, and the item leads to wherever the board
+ * is on chain. A single site shows it only while its own network has the jobs contract: the menu never leads to a
+ * board that cannot open.
+ */
+export function jobsShown(site: Site = SITE): boolean {
+  return site.sibling !== null || site.networks[site.network].sections.jobs;
+}
+
 /** The menu's items. `forgeOpen`: what this network's factory answered, for a site that has to ask (`forgeStated`). */
 export function menuOf(forgeOpen: boolean, site: Site = SITE): readonly MenuItem[] {
-  return ITEMS.filter((i) => i.place !== 'forge' || forgeStated(site) || forgeOpen).map((i) => ({ place: i.place, label: i.label, ...linkTo(i.path, site) }));
+  return ITEMS.filter((i) => (i.place !== 'forge' || forgeStated(site) || forgeOpen) && (i.place !== 'jobs' || jobsShown(site))).map((i) => ({
+    place: i.place,
+    label: i.label,
+    ...linkTo(i.path, site),
+  }));
 }
 
 // ---- The home page's one line about the other network ----

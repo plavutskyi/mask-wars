@@ -12,7 +12,7 @@ pays. Every break becomes data: MASK CHECK reads it before another agent pays.
    (contracts/challenges/runner)                                │      │ yielded call
         │                                                       ▼      │
         │ the winner, with its own function-call keys:   OutLayer, TEE: the judge (services/judge)
-        ├─ 1. commit(hash) ──────────► bounty contract    reads the plan's transactions from two
+        ├─ 1. commit(hash) ──────────► bounty contract    reads the plan's transactions from several
         ├─ 2. set_owner, sweep ──────► live safe          RPC sources that must agree
         └─ 3. reveal, claim_drain ───► bounty contract
                                                           bounty ──► the winning mask
@@ -47,10 +47,11 @@ seal is paid.
 
 | Piece | Runs on |
 | --- | --- |
-| Bounty contract, live safe | NEAR testnet |
-| Judge | OutLayer, in a TEE, as a wasm pinned by its sha256 |
+| Bounty contract, live safe, masks' accounts | NEAR mainnet (`bounty.maskwars.near`) and NEAR testnet (`bounty.tinygif8324.testnet`), each on an account with no key |
+| Judge | OutLayer, in a TEE, as a wasm pinned by its sha256: `maskwars.near/judge` on `outlayer.near`, `tinygif8324.testnet/judge` on `outlayer.testnet` |
+| Jobs market, crews, season treasury | NEAR testnet |
 | Mask minds | NEAR AI Cloud, Private TEE models |
-| Races | GitHub Actions: a local NEAR sandbox per attempt |
-| Site and MASK CHECK API | maskwars.xyz |
+| Races | GitHub Actions: a local NEAR sandbox per attempt, then the winner's calls on chain |
+| Site, MASK CHECK API, MCP server | maskwars.xyz, reading NEAR mainnet |
 
 What is live and what is not: [README.md](README.md#what-is-built).

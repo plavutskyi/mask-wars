@@ -176,8 +176,6 @@ importers:
         specifier: ^3.0.0
         version: 3.2.7(@types/node@22.20.5)(happy-dom@21.0.4)(supports-color@8.1.1)(terser@5.51.2)
 
-  apps/engine: {}
-
   apps/mcp:
     dependencies:
       '@maskwars/arena':
@@ -235,6 +233,9 @@ importers:
       '@vercel/blob':
         specifier: ^2.8.2
         version: 2.8.2
+      '@vercel/functions':
+        specifier: ^3.11.1
+        version: 3.11.1(ws@8.21.0)
       next:
         specifier: 16.4.3
         version: 16.4.3(@types/node@22.20.5)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -414,8 +415,6 @@ importers:
       zod:
         specifier: ^4.6.7
         version: 4.6.7
-
-  packages/near: {}
 
   packages/network: {}
 
@@ -1526,12 +1525,31 @@ packages:
   '@vercel/cli-config@0.3.1':
     resolution: {integrity: sha512-sISbygqlFXYb8qfPu/+2Cf/A8IjrlAuZePdag3EDQr2PRA455s7UZtl9Ro674CWsB/saBRmz3jEkw0YsQs8OoQ==}
 
+  '@vercel/cli-config@0.3.8':
+    resolution: {integrity: sha512-C6av1p4tN+rHIcD0rdlsx3y9SaosRUU67dbgrjbLG8KdAK8oNVzfKg0ckV+1qWh5VC/Ft1BN3Pg/PuXSKNFVOA==}
+
   '@vercel/cli-exec@1.0.1':
     resolution: {integrity: sha512-g9XerViJ/paZujufXYcu5XYI2vU2rtB4sgdpjUHde5RnOkdmpu0ngH46LCFGHoPXO/C+qDPSczIHIRN+8Q2YKQ==}
     engines: {node: '>= 18'}
 
+  '@vercel/functions@3.11.1':
+    resolution: {integrity: sha512-tZoePP4TRh25G5VNsWuLanANvfq0wdbvoUdabhoc8UT2QxIXj6mfoqXE4ycOm6CZyZuAN9dHqU51vuijPXjTcg==}
+    engines: {node: '>= 20'}
+    peerDependencies:
+      '@aws-sdk/credential-provider-web-identity': '*'
+      ws: '>=8'
+    peerDependenciesMeta:
+      '@aws-sdk/credential-provider-web-identity':
+        optional: true
+      ws:
+        optional: true
+
   '@vercel/oidc@3.8.10':
     resolution: {integrity: sha512-sPw1kIfQEA6/2dB+zlAJHnhhNBRJ8t/t4HfFvKO+g0EPBA7NbCKyGovuhgAV6Mnl865ka7HqCEguIy596czdAw==}
+    engines: {node: '>= 20'}
+
+  '@vercel/oidc@4.0.8':
+    resolution: {integrity: sha512-8wcmhuhrEsQlgTvPfRIeE4Y2geSaid0a1DP+um1PfNK4ETjqnfGTL5k5l7vS2T8A2gOx/MV7yNGxUJTs+0tqPQ==}
     engines: {node: '>= 20'}
 
   '@vitest/expect@3.2.7':
@@ -3468,13 +3486,30 @@ snapshots:
       xdg-app-paths: 5.5.1
       zod: 4.1.11
 
+  '@vercel/cli-config@0.3.8':
+    dependencies:
+      xdg-app-paths: 5.5.1
+      zod: 4.6.7
+
   '@vercel/cli-exec@1.0.1':
     dependencies:
       execa: 5.1.1
 
+  '@vercel/functions@3.11.1(ws@8.21.0)':
+    dependencies:
+      '@vercel/oidc': 4.0.8
+    optionalDependencies:
+      ws: 8.21.0
+
   '@vercel/oidc@3.8.10':
     dependencies:
       '@vercel/cli-config': 0.3.1
+      '@vercel/cli-exec': 1.0.1
+      jose: 5.10.0
+
+  '@vercel/oidc@4.0.8':
+    dependencies:
+      '@vercel/cli-config': 0.3.8
       '@vercel/cli-exec': 1.0.1
       jose: 5.10.0
 

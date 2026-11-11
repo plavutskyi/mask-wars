@@ -1,6 +1,6 @@
 import { NETWORKS, SECTIONS, type NetworkId, type Section } from '@maskwars/network';
 import { describe, expect, it } from 'vitest';
-import { acrossOf, acrossPath, acrossUrl, awayFor, elsewhere, forgeStated, linkTo, maskElsewhere, menuOf, passkeyHost, sectionOf, siblingOf, siteOrigin, type Site } from './site';
+import { acrossOf, acrossPath, acrossUrl, awayFor, elsewhere, forgeStated, jobsShown, linkTo, maskElsewhere, menuOf, passkeyHost, sectionOf, siblingOf, siteOrigin, type Site } from './site';
 
 // The rules are proved on pictures written out here, not on the network files: what is on chain where changes (one
 // word in packages/network/<network>.json), the rules do not. The last block holds the real files to the same rules.
@@ -169,12 +169,21 @@ describe('a site with no sibling named', () => {
   });
 
   it('asks its factory, and shows Forge only while it is open', () => {
-    for (const site of Object.values(FORGE_ON_TESTNET).map(alone)) {
-      expect(forgeStated(site)).toBe(false);
-      expect(menuOf(false, site).map((i) => i.place)).toEqual(['league', 'jobs', 'agents', 'vault']);
-      expect(menuOf(true, site).map((i) => i.place)).toEqual(['forge', 'league', 'jobs', 'agents', 'vault']);
-      for (const item of menuOf(true, site)) expect(item.away).toBeNull();
-    }
+    const test = alone(FORGE_ON_TESTNET.test);
+    expect(forgeStated(test)).toBe(false);
+    expect(menuOf(false, test).map((i) => i.place)).toEqual(['league', 'jobs', 'agents', 'vault']);
+    expect(menuOf(true, test).map((i) => i.place)).toEqual(['forge', 'league', 'jobs', 'agents', 'vault']);
+    for (const item of menuOf(true, test)) expect(item.away).toBeNull();
+  });
+
+  it('shows Jobs only while its own network has the jobs contract', () => {
+    // maskwars.xyz on mainnet alone: the arena is on chain, the jobs contract is not yet.
+    const main = alone(JOBS_ON_TESTNET.main);
+    expect(jobsShown(main)).toBe(false);
+    expect(menuOf(false, main).map((i) => i.place)).toEqual(['league', 'agents', 'vault']);
+    expect(jobsShown(alone(JOBS_ON_TESTNET.test))).toBe(true);
+    expect(jobsShown(alone(ALL_ON_BOTH.main))).toBe(true);
+    expect(menuOf(false, alone(ALL_ON_BOTH.main)).map((i) => i.place)).toEqual(['league', 'jobs', 'agents', 'vault']);
   });
 });
 

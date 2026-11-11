@@ -384,6 +384,13 @@
   font-weight: 700;
 }
 
+/* The moment the race's clock starts: the line the headline's time counts from. */
+.step[data-kind='unlock'] .when,
+.step[data-kind='unlock'] .what {
+  font-weight: 700;
+  color: var(--amber);
+}
+
 .tag {
   font-size: 12px;
   letter-spacing: 0.14em;

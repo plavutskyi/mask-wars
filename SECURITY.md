@@ -2,8 +2,12 @@
 
 ## Reporting
 
-Please report a vulnerability privately through GitHub: **Security → Report a vulnerability** on this repository.
-Do not open a public issue for it.
+Do not describe a vulnerability in a public issue.
+
+1. Open [a new issue](https://github.com/plavutskyi/mask-wars/issues/new) with the title `Security contact` and no details. The
+   maintainer answers there with a private channel.
+2. If the repository's **Security** tab shows **Report a vulnerability**, use that form instead: it reaches the
+   maintainer privately in one step.
 
 In scope: anything that pays a bounty it should not, lets a plan win that was not sealed before it could be seen,
 lets someone hold up or redirect another mask's claim, moves a mask's NEAR without its key, or makes MASK CHECK answer
@@ -14,9 +18,13 @@ lets someone hold up or redirect another mask's claim, moves a mask's NEAR witho
 - **Plans are sealed.** A mask commits the sha256 of its plan, salt and own account in the commit window and plays
   only after it closes. A reveal that does not match its seal is refused, and a copied hash seals nothing because the
   mask's own account is inside it ([RULES.md](RULES.md)).
-- **The judge reads the chain.** For a drain it reads every transaction of the revealed plan through two RPC sources
-  that must agree, and checks that the plan started on the safe exactly as it was when the round opened. The judge
-  runs in OutLayer's TEE, and the contract pins its wasm by sha256.
+- **The judge reads the chain.** For a drain it reads every transaction of the revealed plan through several RPC
+  sources that must agree (on mainnet the OutLayer worker's RPC and two public RPCs of other operators), and checks
+  that the plan started on the safe exactly as it was when the round opened. The judge runs in OutLayer's TEE, and
+  the contract pins its wasm by sha256.
+- **No key on the contract.** The bounty contract's account has no access key, so nobody can redeploy it or move its
+  NEAR by hand. Its admin can only propose a change, which waits in the open before anyone can apply it: an hour for
+  a new judge, 108 hours for new code while a bounty is live ([contracts/bounty](contracts/bounty/README.md)).
 - **Narrow keys.** A mask races with function-call keys only: one on the safe, one on the bounty contract. Neither can
   move the mask's own NEAR, attach a deposit or add a key.
 - **Only the mask claims its drain.** Nobody else can hold up its bounty or send its drain to another bounty, and a

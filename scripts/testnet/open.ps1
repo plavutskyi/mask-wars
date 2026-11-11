@@ -2,7 +2,7 @@
 # pays for its storage. The bounty names the masks that may win it (whatever a run reports, the contract pays only one
 # of them) and the judge it agrees to, the one in judge-args.json: if the contract's judge is another one, nothing opens.
 # The judge then reads only a `Live race` run made after this, on a commit in main, with the GitHub token of the judge's
-# OutLayer project (judge-token.ps1). Season 0 on mainnet races live safes only. The owner chooses "send".
+# OutLayer project. Season 0 on mainnet races live safes only. The owner chooses "send".
 #   .\open.ps1 -Network mainnet -DryRun
 param([string]$Network, [switch]$DryRun)
 . (Join-Path $PSScriptRoot 'config.ps1')

@@ -1,0 +1,13 @@
+{
+  "file": "break-02.mp3",
+  "title": "Vault Protocol",
+  "use": "Silence before the break: one hit at 1.0 s, a long decay into silence, the drop at 15.0 s. For cuts where a countdown runs out before the vault cracks. Not for a cold open: the first 0.9 s are silent.",
+  "bpm": 180,
+  "beat_s": 0.3333,
+  "first_beat_s": 1.02,
+  "duration_s": 30.04,
+  "impacts_s": [1.02, 15.0],
+  "quiet_s": [[8.5, 14.7]],
+  "strong_hits_s": [1.02, 15.0, 17.0, 17.76, 18.76, 19.34, 20.02, 20.67, 21.34, 22.01, 22.45, 23.01],
+  "source": "ElevenLabs Music v2.5, instrumental, generated 2026-11-11 (second variant of the same prompt as break-01)"
+}

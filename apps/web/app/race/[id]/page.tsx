@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 import { raceTitle } from '@/components/arena/names';
 import { RacePage } from '@/components/arena/RacePage';
 import { Unreachable } from '@/components/arena/Unreachable';
-import { readArena } from '@/lib/arena';
+import { asOf, readArena } from '@/lib/arena';
 import { pageMeta } from '@/lib/meta';
 
 // One race and its whole course, read from the chain.
@@ -38,5 +38,5 @@ export default async function RaceRoute({ params }: Props) {
   }
   const i = view.races.findIndex((r) => r.id === id);
   if (i < 0) notFound();
-  return <RacePage race={view.races[i]!} prev={view.races[i + 1] ?? null} next={view.races[i - 1] ?? null} />;
+  return <RacePage race={view.races[i]!} prev={view.races[i + 1] ?? null} next={view.races[i - 1] ?? null} asOf={asOf(view)} />;
 }

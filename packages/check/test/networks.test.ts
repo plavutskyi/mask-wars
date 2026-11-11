@@ -40,10 +40,11 @@ describe("the reader of each network", () => {
 });
 
 describe("one shared list per network", () => {
-  it("has the testnet list as before and an empty mainnet list until season 0 opens its races", () => {
+  it("has the testnet list as before and a mainnet list of the arena's mainnet safes", () => {
     expect(sharedList.network).toBe("testnet");
     expect(sharedLists.testnet).toBe(sharedList);
-    expect(mainnetList).toMatchObject({ network: "mainnet", arena: [], reports: [] });
+    expect(mainnetList).toMatchObject({ network: "mainnet", reports: [] });
+    expect(mainnetList.arena.map((e) => e.safe)).toEqual(["safe-0001.maskwars.near"]);
     expect(sharedLists.mainnet).toBe(mainnetList);
   });
 

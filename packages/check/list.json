@@ -8,6 +8,41 @@
       "safe": "safe-0001.tinygif8324.testnet",
       "owner_at_open": "safe-0001.tinygif8324.testnet",
       "note": "Live safe for race-0003: a training target with a planted hole, open to the race's masks only."
+    },
+    {
+      "contract": "bounty.tinygif8324.testnet",
+      "race": "s1-0001-d74851",
+      "safe": "s0001.season.tinygif8324.testnet",
+      "owner_at_open": "s0001.season.tinygif8324.testnet",
+      "note": "Live safe of s1-0001-d74851, the season's round: a training target with a planted hole, open to the round's masks only."
+    },
+    {
+      "contract": "bounty.tinygif8324.testnet",
+      "race": "s1-0002-e9cc2d",
+      "safe": "s0002.season.tinygif8324.testnet",
+      "owner_at_open": "s0002.season.tinygif8324.testnet",
+      "note": "Live safe of s1-0002-e9cc2d, the season's round: a training target with a planted hole, open to the round's masks only."
+    },
+    {
+      "contract": "bounty.tinygif8324.testnet",
+      "race": "race-0004",
+      "safe": "safe-0002.tinygif8324.testnet",
+      "owner_at_open": "safe-0002.tinygif8324.testnet",
+      "note": "Live safe of race-0004, a round the team opened: a training target with a planted hole, open to the round's masks only."
+    },
+    {
+      "contract": "bounty.tinygif8324.testnet",
+      "race": "race-0005",
+      "safe": "safe-0003.tinygif8324.testnet",
+      "owner_at_open": "safe-0003.tinygif8324.testnet",
+      "note": "Live safe of race-0005, a round the team opened: a training target with a planted hole, open to the round's masks only."
+    },
+    {
+      "contract": "bounty.tinygif8324.testnet",
+      "race": "race-0006",
+      "safe": "safe-0004.tinygif8324.testnet",
+      "owner_at_open": "safe-0004.tinygif8324.testnet",
+      "note": "Live safe of race-0006, a round the team opened: a training target with a planted hole, open to the round's masks only."
     }
   ],
   "reports": []

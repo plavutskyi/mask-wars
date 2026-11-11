@@ -10,15 +10,18 @@ const season = (n: number, id: string): OpenedRound => ({
 });
 
 describe("season 0 adds its safes to the mainnet list", () => {
-  it("starts empty and says in what order its safes come", () => {
-    expect(mainnetList.arena).toEqual([]);
+  it("holds race 1, which the team opened by hand on 10 Nov, and says in what order its safes come", () => {
+    expect(mainnetList.arena).toEqual([
+      expect.objectContaining({ contract: "bounty.maskwars.near", race: "race-0001", safe: "safe-0001.maskwars.near", owner_at_open: "safe-0001.maskwars.near" }),
+    ]);
     const raw = JSON.parse(readFileSync(new URL("../list.mainnet.json", import.meta.url), "utf8"));
     expect(raw.about).toContain("s0001.season.maskwars.near");
     expect(raw.about).toContain("add-safe --network mainnet");
   });
 
   it("appends each round once, in the order it opened, with the safe as its owner at the opening", () => {
-    const one = withArena(mainnetList, [season(1, "s0-0001-3fa9c2")]);
+    const empty = parseList({ ...mainnetList, arena: [] });
+    const one = withArena(empty, [season(1, "s0-0001-3fa9c2")]);
     expect(one.added).toHaveLength(1);
     expect(one.list.arena[0]).toMatchObject({
       contract: "bounty.maskwars.near",

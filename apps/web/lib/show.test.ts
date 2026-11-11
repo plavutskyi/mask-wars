@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { targetName } from './show';
+import { targetName, timeUtc } from './show';
+
+describe('timeUtc', () => {
+  it('says when a reading was taken, in UTC to the minute', () => {
+    expect(timeUtc(Date.UTC(2026, 10, 11, 13, 0, 59))).toBe('13:00 UTC');
+    expect(timeUtc(Date.UTC(2026, 10, 11, 23, 59, 0))).toBe('23:59 UTC');
+  });
+});
 
 describe('targetName', () => {
   it('names the arena team’s safe SAFE-0001', () => {

@@ -8,7 +8,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
-import { artOf, day, shortAccount, toneOf } from '@/lib/show';
+import { artOf, day, shortAccount, timeUtc, toneOf } from '@/lib/show';
 import type { Across } from '@/lib/site';
 import { twoLines } from '../arena3d/headline';
 import { ArenaAudio } from '../arena3d/sound';
@@ -162,19 +162,25 @@ export function Stage({
   race,
   next = null,
   serverNow,
+  asOf = null,
   error,
   across = null,
 }: {
   race: Race | null;
   next?: NextRace | null;
   serverNow: number;
+  /** When the reading was taken, for one too old to be shown as happening now (`asOf` of lib/arena); else null. */
+  asOf?: number | null;
   error?: boolean;
   across?: AcrossLine | null;
 }) {
   const router = useRouter();
   const [now, setNow] = useState(serverNow);
   const running = race !== null && (race.phase === 'sealing' || race.phase === 'racing');
-  const live = race?.live ?? false;
+  // LIVE and every running clock belong to a reading of now. One the chain could not renew says when it was taken
+  // instead, and the page asks again.
+  const old = asOf !== null;
+  const live = !old && (race?.live ?? false);
   const ended = race !== null && !running;
   const scene = useMemo(() => sceneOf(race, error === true), [race, error]);
   const three = useThree(scene !== null);
@@ -187,24 +193,25 @@ export function Stage({
 
   // The next round, while nothing runs: only one the treasury can open, and only until its minute comes. Past it the
   // scheduler is on its way, or late: the page promises no time it cannot keep.
-  const upNext = !running && !live && next !== null && next.funded && next.at > now ? next : null;
+  const upNext = !old && !running && !live && next !== null && next.funded && next.at > now ? next : null;
   // In its last minutes the page asks the chain as often as during a race, so the new round is on screen as it opens.
   const nearly = !running && next !== null && next.funded && next.at - now < 3 * 60_000 && now - next.at < 15 * 60_000;
-  const ticking = running || live || upNext !== null;
+  const ticking = !old && (running || live || upNext !== null);
   // The other network has its line only between races: while this arena runs, the screen is the race's alone.
   const other = !running && !live ? across : null;
   const otherAt = other?.at && other.at > now ? new Date(other.at).toISOString().slice(11, 16) : null;
 
-  // The clock ticks on the device; the race itself is read again from the chain every few seconds while it runs.
+  // The clock ticks on the device; the race itself is read again from the chain every few seconds while it runs. A
+  // chain that is not answering is asked again soon, and not every few seconds by every open page.
   useEffect(() => {
     setNow(Date.now());
     const tick = ticking ? window.setInterval(() => setNow(Date.now()), 1000) : undefined;
-    const poll = window.setInterval(() => router.refresh(), live || running || nearly ? 5_000 : 60_000);
+    const poll = window.setInterval(() => router.refresh(), old ? 20_000 : live || running || nearly ? 5_000 : 60_000);
     return () => {
       window.clearInterval(tick);
       window.clearInterval(poll);
     };
-  }, [router, ticking, running, live, nearly]);
+  }, [router, ticking, running, live, nearly, old]);
 
   // The arena composes between the header and the deck: their real heights, measured, as the page lays them out.
   useEffect(() => {
@@ -265,9 +272,17 @@ export function Stage({
   // In the door the sheet opens down, over the floor: above it is the header.
   const aside = race ? <Info rows={facts} label={factsLabel} side="bottom" /> : null;
 
-  // The clock, top centre: to the start, since the start, to the close; then to the next round.
+  // The clock, top centre: to the start, since the start, to the close; then to the next round. Over a round read too
+  // long ago to count on, the time it was read at, and no clock that runs.
   let center: ReactNode = null;
-  if (race && race.phase === 'sealing' && race.startsAt) {
+  if (asOf !== null && running) {
+    center = (
+      <>
+        <span className={s.clockLabel}>As of</span>
+        <span className={s.clockDay}>{timeUtc(asOf)}</span>
+      </>
+    );
+  } else if (race && race.phase === 'sealing' && race.startsAt) {
     center = (
       <>
         <span className={s.clockLabel}>Starts in</span>

@@ -1,0 +1,14 @@
+{
+  "file": "break-01.mp3",
+  "title": "Vault Breach",
+  "use": "Cold open: full volume from the first beat. Roller 1 «THE BREAK» and any cut that starts on an impact.",
+  "bpm": 120,
+  "beat_s": 0.5,
+  "first_beat_s": 0.017,
+  "duration_s": 30.04,
+  "impacts_s": [0.0, 8.0, 15.0, 20.0],
+  "strong_hits_s": [1.51, 3.51, 5.5, 8.01, 10.01, 11.01, 15.0, 15.51, 20.02, 22.01, 23.01, 24.01],
+  "tail_fades_from_s": 25.0,
+  "source": "ElevenLabs Music v2.5, instrumental, generated 2026-11-11",
+  "prompt": "Dark cinematic heist trailer music, 120 BPM, instrumental, no vocals. No intro: a massive sub-bass impact hits on the very first beat. Metallic percussion that sounds like a heavy vault lock clicking, tight ticking hi-hats like a countdown, pulsing low synth bass, rising tension with a riser, a hard stop and half a second of silence around the 8 second mark, then a huge triumphant drop with deep drums and a short three-note brass motif. Modern, premium, punchy, clean wide mix, ends on a single resonant hit."
+}

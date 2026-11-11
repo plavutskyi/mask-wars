@@ -34,6 +34,11 @@ export function day(ms: number | null | undefined): string {
   return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}`;
 }
 
+/** 18:34 UTC: when a reading was taken, for one too old to be shown as happening now. */
+export function timeUtc(ms: number): string {
+  return `${new Date(ms).toISOString().slice(11, 16)} UTC`;
+}
+
 /** 2026-11-06 18:34:44 UTC */
 export function utc(ms: number | null | undefined): string {
   if (!ms) return '–';

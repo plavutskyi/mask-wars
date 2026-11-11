@@ -23,6 +23,7 @@
     "@maskwars/network": "workspace:*",
     "@maskwars/pay": "workspace:*",
     "@vercel/blob": "^2.8.2",
+    "@vercel/functions": "^3.11.1",
     "next": "16.4.3",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
