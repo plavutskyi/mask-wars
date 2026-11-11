@@ -29,8 +29,10 @@ name: Season
 # 2. `race`: `Live race` on the round that opened: the masks race the target in the sandbox, the winner seals its plan,
 #    plays it on the real safe, reveals it and claims; the contract pays it.
 #
-# GitHub starts scheduled runs a few minutes late, and now and then drops one: the first cron sits just after the
-# 18:00 UTC slot, and two more follow at 19:04 and 21:04, so one start GitHub skips does not cost the day. A late run
+# GitHub starts scheduled runs late, by hours on a quiet repository, and now and then drops one. So the site keeps the
+# time: Vercel Cron calls /api/season/tick at 18:04, 18:14, 18:34, 19:04 and 21:04 UTC, and the tick starts this
+# workflow by hand with `tick` whenever the slot has no run queued, running or green (apps/web/lib/season.ts). The crons
+# below stay as the fallback: the first sits just after the 18:00 UTC slot, and two more follow at 19:04 and 21:04. A late run
 # still opens the slot it missed. A run after the one that opened the slot's round finds it and sends nothing; one that
 # finds it still sealing races it as it is. A run when nothing is due opens nothing and stays green; a slot that was due
 # and got no round turns it red.
@@ -49,6 +51,12 @@ on:
     inputs:
       house:
         description: "Testnet only: open the house's round instead of the season's"
+        type: boolean
+        default: false
+      # The site's clock (apps/web/lib/season.ts, Vercel Cron) starts Season at the slot, because GitHub starts the cron
+      # above late by hours or not at all. Its run is the schedule's run: it waits for SEASON_LIVE and keeps to the slot.
+      tick:
+        description: "Sent by the site's clock: run as the schedule does"
         type: boolean
         default: false
 
@@ -89,7 +97,7 @@ jobs:
 
   open:
     needs: guard
-    if: github.event_name == 'workflow_dispatch' || vars.SEASON_LIVE == 'true'
+    if: (github.event_name == 'workflow_dispatch' && !inputs.tick) || vars.SEASON_LIVE == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     # The scheduler's key and the house's key live in this environment, not in the repository: Deployment branches
@@ -123,7 +131,7 @@ jobs:
           # Empty when the environment holds no such secret: the step then signs nothing and says what waits.
           HOUSE_KEY: ${{ secrets.HOUSE_KEY }}
           # A rehearsal by hand on testnet opens now, whatever the slot; mainnet keeps to its slot always.
-          ANY_TIME: ${{ github.event_name == 'workflow_dispatch' && vars.MASKWARS_NETWORK != 'mainnet' && '--any-time' || '' }}
+          ANY_TIME: ${{ github.event_name == 'workflow_dispatch' && !inputs.tick && vars.MASKWARS_NETWORK != 'mainnet' && '--any-time' || '' }}
         run: node packages/race/scripts/house-open.ts $ANY_TIME
 
   race:

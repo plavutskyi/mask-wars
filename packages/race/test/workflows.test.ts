@@ -181,8 +181,13 @@ describe("the masks' keys and the minds' payment key live in environments only",
     expect(house).toContain("        if: ${{ vars.MASKWARS_NETWORK == 'mainnet' || inputs.house }}\n");
     expect(house).toContain("          HOUSE_KEY: ${{ secrets.HOUSE_KEY }}\n");
     expect(house).toContain("        run: node packages/race/scripts/house-open.ts $ANY_TIME\n");
-    // Any hour only for a rehearsal by hand on testnet; on schedule, and on mainnet always, the slot holds.
-    expect(house).toContain("          ANY_TIME: ${{ github.event_name == 'workflow_dispatch' && vars.MASKWARS_NETWORK != 'mainnet' && '--any-time' || '' }}\n");
+    // Any hour only for a rehearsal by hand on testnet; on schedule, on the site's tick, and on mainnet always, the
+    // slot holds.
+    expect(house).toContain("          ANY_TIME: ${{ github.event_name == 'workflow_dispatch' && !inputs.tick && vars.MASKWARS_NETWORK != 'mainnet' && '--any-time' || '' }}\n");
+    // The site's clock (apps/web/lib/season.ts) starts the workflow by hand with `tick`; its run is the schedule's run,
+    // so it waits for SEASON_LIVE as the schedule does. A run by the owner's hand does not.
+    expect(t).toContain("      tick:\n        description: \"Sent by the site's clock: run as the schedule does\"\n        type: boolean\n        default: false\n");
+    expect(job("season.yml", "open").cond).toBe("(github.event_name == 'workflow_dispatch' && !inputs.tick) || vars.SEASON_LIVE == 'true'");
     expect(house).not.toContain("SCHEDULER_KEY");
     // The race starts on the round either step opened.
     expect(t).toContain("      bounty: ${{ steps.season.outputs.bounty || steps.house.outputs.bounty }}\n");
