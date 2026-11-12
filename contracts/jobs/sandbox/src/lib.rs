@@ -277,6 +277,20 @@ impl World {
         Ok(self.worker.view_account(id).await?.balance.as_yoctonear())
     }
 
+    /// The balance once it is above `floor`. A payment the judge's callback sends is a receipt of its own: it lands a
+    /// block or two after the callback, so a test that reads a balance right after the judge's answer waits for it here,
+    /// ten seconds at most, and then gets the balance as it is.
+    pub async fn balance_above(&self, id: &AccountId, floor: u128) -> Result<u128> {
+        for _ in 0..50 {
+            let now = self.balance(id).await?;
+            if now > floor {
+                return Ok(now);
+            }
+            tokio::time::sleep(Duration::from_millis(200)).await;
+        }
+        self.balance(id).await
+    }
+
     pub async fn now(&self) -> Result<u64> {
         Ok(self.worker.view_block().await?.timestamp())
     }

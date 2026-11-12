@@ -127,7 +127,7 @@ for (const [view, opts] of VIEWS) {
     await page.getByText('A refund comes back here, on Arbitrum.').waitFor({ timeout: 5_000 });
     await page.getByRole('button', { name: 'Get deposit address' }).click();
     await page.getByRole('button', { name: 'Copy address' }).waitFor({ timeout: 20_000 });
-    const end = END === 'short' ? page.getByText(/Send 0\.5 USDT more by/) : page.getByText(/How much is not known yet/);
+    const end = END === 'short' ? page.getByText(/Send 0\.5 USDC more by/) : page.getByText(/How much is not known yet/);
     await end.waitFor({ timeout: 40_000 }).catch(fault(`never ${END}`));
     if (END === 'short-unknown' && (await page.getByRole('button', { name: /^Copy the amount/ }).count())) faults.push(`${view}: an amount to copy while it is unknown`);
     await shot(`18-${END}`);
@@ -188,9 +188,9 @@ for (const [view, opts] of VIEWS) {
   await page.getByRole('button', { name: 'Get deposit address' }).click();
   await page.getByRole('button', { name: 'Copy address' }).waitFor({ timeout: 20_000 }).catch(fault('no deposit address'));
   // Which coin on which network, plainly, with its contract one tap away.
-  await page.getByText('Send only USDT on Arbitrum', { exact: true }).waitFor({ timeout: 5_000 }).catch(fault('the coin to send not named'));
-  const contract = page.getByRole('link', { name: /USDT contract 0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9, view on Arbiscan/ });
-  if ((await contract.getAttribute('href').catch(() => null)) !== 'https://arbiscan.io/token/0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9') faults.push(`${view}: no Arbiscan link to the USDT contract`);
+  await page.getByText('Send only USDC on Arbitrum', { exact: true }).waitFor({ timeout: 5_000 }).catch(fault('the coin to send not named'));
+  const contract = page.getByRole('link', { name: /USDC contract 0xaf88d065e77c8cc2239327c5edb3a432268e5831, view on Arbiscan/ });
+  if ((await contract.getAttribute('href').catch(() => null)) !== 'https://arbiscan.io/token/0xaf88d065e77c8cc2239327c5edb3a432268e5831') faults.push(`${view}: no Arbiscan link to the USDC contract`);
   if ((await contract.getAttribute('rel').catch(() => null)) !== 'noopener noreferrer') faults.push(`${view}: contract link without noopener noreferrer`);
   await shot('11-address');
   if (view !== 'desk') {

@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
-// The page itself, against /api/pay/near in memory: who receives when a link names someone, a deposit that comes in
-// short and is then topped up, paying from an EVM wallet in the browser, and the receiver from the person's NEAR wallet.
+// The page itself, against /api/pay/near in memory: the coin a first visit starts from, who receives when a link names
+// someone, a deposit that comes in short and is then topped up, paying from an EVM wallet in the browser, and the
+// receiver from the person's NEAR wallet.
 import { act, type ReactNode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -16,6 +17,7 @@ import fixture from '@maskwars/pay/fixtures/tokens.json';
 
 const tokens = fixture.tokens as Token[];
 const catalog = nearCatalogOf(tokens)!;
+const usdc = catalog.chains.find((c) => c.id === 'arb')!.coins.find((c) => c.symbol === 'USDC')!;
 const usdt = catalog.chains.find((c) => c.id === 'arb')!.coins.find((c) => c.symbol === 'USDT')!;
 
 const preview: NearQuoteView = {
@@ -54,6 +56,7 @@ const progress = (p: Partial<NearProgress>): NearProgress => ({
 });
 
 let statuses: NearProgress[] = [];
+let asked: { from: string; usd: number; dry: boolean }[] = [];
 let told: unknown[] = [];
 let root: Root | null = null;
 let box: HTMLDivElement;
@@ -66,7 +69,11 @@ function api() {
       const id = new URL(url, 'https://maskwars.xyz').searchParams.get('id')!;
       return Response.json({ ok: true, id, kind: 'named', exists: true });
     }
-    if (url === '/api/pay/near/quote') return Response.json({ quote: preview });
+    if (url === '/api/pay/near/quote') {
+      const b = JSON.parse(String(init?.body)) as { from: string; usd: number; dry: boolean };
+      asked.push(b);
+      return Response.json({ quote: { ...preview, originAsset: b.from } });
+    }
     if (url.startsWith('/api/pay/near/status')) return Response.json(statuses.length > 1 ? statuses.shift() : statuses[0]);
     if (url === '/api/pay/near/deposit') {
       told.push(JSON.parse(String(init?.body)));
@@ -101,6 +108,7 @@ const button = (name: string) => [...box.querySelectorAll('button')].find((b) =>
 beforeEach(() => {
   localStorage.clear();
   statuses = [];
+  asked = [];
   told = [];
   api();
 });
@@ -110,6 +118,22 @@ afterEach(async () => {
   root = null;
   box?.remove();
   vi.unstubAllGlobals();
+});
+
+describe('a first visit', () => {
+  it('starts from USDC on Arbitrum and asks its price', async () => {
+    await open('https://maskwars.xyz/near');
+    await until(() => asked.length > 0);
+    expect(box.querySelector('button[id$="-coin"]')!.textContent).toMatch(/^USDC\s*Arbitrum$/);
+    expect(asked[0]).toMatchObject({ from: usdc.assetId, dry: true });
+  });
+
+  it('comes back to the coin this browser used last, USDT on Arbitrum too', async () => {
+    localStorage.setItem('maskwars:near:last', JSON.stringify({ from: usdt.assetId }));
+    await open('https://maskwars.xyz/near');
+    await until(() => asked.some((a) => a.from === usdt.assetId));
+    expect(box.querySelector('button[id$="-coin"]')!.textContent).toMatch(/^USDT\s*Arbitrum$/);
+  });
 });
 
 describe('a receiver a link names', () => {

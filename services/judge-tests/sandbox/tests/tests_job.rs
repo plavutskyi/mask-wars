@@ -214,7 +214,7 @@ async fn a_client_who_hides_or_swaps_its_test_set_after_the_check_changes_nothin
         let (second, request, job2) = judge_with(&w, id, true, run_judge(&w, row, kept.clone())).await?;
         ensure!(request["secrets"].is_null(), "the appeal names no secrets either: {request}");
         ensure!(second["output"]["winner"] == 1 && job2["verdict"]["final"] == true, "{second}");
-        ensure!(w.balance(w.company.id()).await? > company, "the upheld appeal's bond goes to the company");
+        ensure!(w.balance_above(w.company.id(), company).await? > company, "the upheld appeal's bond goes to the company");
         let ids = [&w.onyx.id, &w.nova.id];
         let before = balances(&w, &ids).await?;
         let r = w.settle(&w.bob, id).await?;
@@ -262,7 +262,7 @@ async fn an_appeal_reruns_the_set_three_times_and_upholds_a_stable_verdict() -> 
     ensure!(second["output"]["works"][1]["runs"] == 3 && second["output"]["works"][1]["passed"] == 12, "NOVA ran three times: {second}");
     ensure!(second["output"]["works"][0] == first["output"]["works"][0], "ONYX, below win_at, needs no recheck");
     ensure!(job["verdict"]["winner"] == 1 && job["verdict"]["final"] == true, "{job}");
-    let bond = w.balance(w.company.id()).await? - company;
+    let bond = w.balance_above(w.company.id(), company).await? - company;
     ensure!(bond > 0, "the bond of an upheld appeal goes to the company: {}", n3(bond));
     println!("{id}: the appeal ran the private set three times, NOVA's 12/12 held, the verdict is final");
     Ok(())

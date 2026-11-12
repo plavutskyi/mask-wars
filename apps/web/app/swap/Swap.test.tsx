@@ -209,7 +209,7 @@ afterEach(async () => {
 describe('paying from a wallet in this browser', () => {
   it('quotes with the wallet as the refund, then pays exactly the quote from it', async () => {
     await open();
-    expect(text()).toMatch(/1 USDT ≈/);
+    expect(text()).toMatch(/1 USDC ≈/);
     await until(() => radio('MetaMask')?.getAttribute('aria-checked') === 'true');
     await type(field('Solana address'), SOL_WALLET);
     await until(() => /A Solana wallet\./.test(text()));
@@ -217,11 +217,11 @@ describe('paying from a wallet in this browser', () => {
     await act(async () => button('Swap')!.click());
     await until(() => /Sent from MetaMask\./.test(text()));
     const real = asked.filter((a) => !a.dry);
-    expect(real).toEqual([{ from: coin('arb', 'USDT').assetId, to: coin('sol', 'SOL').assetId, amount: '25000000', dry: false, recipient: SOL_WALLET, payer: FROM }]);
+    expect(real).toEqual([{ from: coin('arb', 'USDC').assetId, to: coin('sol', 'SOL').assetId, amount: '25000000', dry: false, recipient: SOL_WALLET, payer: FROM }]);
     expect(wallet.chain).toBe('0xa4b1');
     expect(wallet.sent).toEqual([
       // Bound to Arbitrum: the wallet refuses to send it on any other network.
-      { from: FROM, to: coin('arb', 'USDT').contract, data: `0xa9059cbb000000000000000000000000${EVM_DEPOSIT.slice(2)}${(25_000_000).toString(16).padStart(64, '0')}`, value: '0x0', chainId: '0xa4b1' },
+      { from: FROM, to: coin('arb', 'USDC').contract, data: `0xa9059cbb000000000000000000000000${EVM_DEPOSIT.slice(2)}${(25_000_000).toString(16).padStart(64, '0')}`, value: '0x0', chainId: '0xa4b1' },
     ]);
     expect(told).toEqual([{ address: EVM_DEPOSIT, txHash: `0x${'ab'.repeat(32)}` }]);
     const saved = JSON.parse(localStorage.getItem('maskwars:swap')!);
@@ -258,7 +258,7 @@ describe('paying from an exchange', () => {
     await act(async () => button('Get deposit address')!.click());
     await until(() => button('Copy address') !== null);
     expect(asked.filter((a) => !a.dry)).toEqual([
-      { from: coin('arb', 'USDT').assetId, to: coin('sol', 'SOL').assetId, amount: '25000000', dry: false, recipient: SOL_WALLET, refund: '0x71C7656EC7ab88b098defB751B7401B5f6d8976F' },
+      { from: coin('arb', 'USDC').assetId, to: coin('sol', 'SOL').assetId, amount: '25000000', dry: false, recipient: SOL_WALLET, refund: '0x71C7656EC7ab88b098defB751B7401B5f6d8976F' },
     ]);
     expect(text()).toContain(EVM_DEPOSIT);
     expect(text()).not.toMatch(/for you/);
@@ -274,7 +274,7 @@ describe('paying from an exchange', () => {
     await act(async () => button('Get deposit address')!.click());
     await until(() => button('Copy address') !== null);
     const real = asked.filter((a) => !a.dry);
-    expect(real).toEqual([{ from: coin('arb', 'USDT').assetId, to: coin('near', 'USDC').assetId, amount: '25000000', dry: false, recipient: 'maskwars.near' }]);
+    expect(real).toEqual([{ from: coin('arb', 'USDC').assetId, to: coin('near', 'USDC').assetId, amount: '25000000', dry: false, recipient: 'maskwars.near' }]);
     expect(JSON.parse(localStorage.getItem('maskwars:swap')!).refund).toEqual({ to: 'maskwars.near', type: 'INTENTS' });
   });
 
@@ -469,7 +469,7 @@ describe('the turn-around', () => {
   it('pays what was received at the same dollars, and cannot pay out where no address is read', async () => {
     await open();
     await act(async () => button('Turn the swap around')!.click());
-    await until(() => /Pay SOL on Solana/.test(button(/^Pay /)!.getAttribute('aria-label')!) && /Receive USDT on Arbitrum/.test(button(/^Receive /)!.getAttribute('aria-label')!));
+    await until(() => /Pay SOL on Solana/.test(button(/^Pay /)!.getAttribute('aria-label')!) && /Receive USDC on Arbitrum/.test(button(/^Receive /)!.getAttribute('aria-label')!));
     await pickCoin(/^Pay /, 'ton', /^USDT\s*TON/);
     expect(button('Turn the swap around')!.disabled).toBe(true);
   });

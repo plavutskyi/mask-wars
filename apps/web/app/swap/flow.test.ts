@@ -1,10 +1,56 @@
 import { describe, expect, it } from 'vitest';
 // @vitest-environment happy-dom
-import { addressText, amountText, amountUnits, clearPendingSwap, heroAmount, rateText, refundText, swapShortText } from './flow';
+import { swapCatalogOf, type Token } from '@maskwars/pay';
+import fixture from '@maskwars/pay/fixtures/tokens.json';
+import { searchCoins } from '../near/flow';
+import {
+  addressText,
+  amountText,
+  amountUnits,
+  clearPendingSwap,
+  heroAmount,
+  POPULAR_FROM,
+  POPULAR_TO,
+  rateText,
+  refundText,
+  START_FROM,
+  START_TO,
+  swapShortText,
+} from './flow';
 
 const usdt = { symbol: 'USDT', price: 0.99923, decimals: 6, assetId: 'u', contract: null };
 const sol = { symbol: 'SOL', price: 84.87, decimals: 9, assetId: 's', contract: null };
 const meme = { symbol: 'BLACKDRAGON', price: 6.787e-9, decimals: 24, assetId: 'b', contract: null };
+
+describe('the coin pickers', () => {
+  // The token list 1Click answered with on 2026-11-11, as the page gets it.
+  const chains = swapCatalogOf(fixture.tokens as Token[])!.chains;
+  const rows = (list: typeof chains, popular: typeof POPULAR_FROM) => searchCoins(list, '', null, popular).map((x) => `${x.coin.symbol}·${x.chain.id}`);
+  const named = (popular: typeof POPULAR_FROM) => popular.map(([chain, symbol]) => `${symbol}·${chain}`);
+
+  it('open "You pay" on USDC where people hold it, then USDT, every row a coin on the list', () => {
+    const top = rows(chains, POPULAR_FROM);
+    expect(top.slice(0, 4)).toEqual(['USDC·arb', 'USDC·sol', 'USDC·base', 'USDC·eth']);
+    expect(top.slice(4, 9)).toEqual(['USDT·arb', 'USDT·tron', 'USDT·eth', 'USDT·bsc', 'USDT·near']);
+    expect(top).toEqual(named(POPULAR_FROM));
+  });
+
+  it('open "You receive" on NEAR, USDC before USDT, every row on a network that pays out', () => {
+    const top = rows(chains.filter((c) => c.to), POPULAR_TO);
+    expect(top[0]).toBe('NEAR·near');
+    expect(top.filter((r) => /^USD[CT]·/.test(r))).toEqual(['USDC·near', 'USDC·sol', 'USDC·base', 'USDC·eth', 'USDT·near', 'USDT·tron', 'USDT·arb']);
+    expect(top).toEqual(named(POPULAR_TO));
+  });
+
+  it('start a first visit from USDC on Arbitrum into SOL on Solana', () => {
+    expect(START_FROM).toEqual(['arb', 'USDC']);
+    expect(START_TO).toEqual(['sol', 'SOL']);
+    expect(POPULAR_FROM[0]).toEqual(START_FROM);
+    const from = chains.find((c) => c.id === START_FROM[0])!.coins.find((c) => c.symbol === START_FROM[1])!;
+    expect(from).toMatchObject({ symbol: 'USDC', decimals: 6, contract: '0xaf88d065e77c8cc2239327c5edb3a432268e5831' });
+    expect(chains.find((c) => c.id === START_TO[0])).toMatchObject({ to: true });
+  });
+});
 
 describe('amounts', () => {
   it('reads what a person types in the coin’s units, and nothing that is not an amount', () => {

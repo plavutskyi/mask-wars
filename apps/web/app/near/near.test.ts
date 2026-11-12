@@ -12,12 +12,14 @@ import {
   NearError,
   OWN,
   percentText,
+  POPULAR,
   priceText,
   type PendingNear,
   problemText,
   searchCoins,
   shortRest,
   shortText,
+  START,
   startReceiver,
 } from './flow';
 
@@ -26,10 +28,20 @@ const tokens = JSON.parse(readFileSync(new URL('../../../../packages/pay/test/fi
 const chains = nearCatalogOf(tokens)!.chains;
 
 describe('the coin picker', () => {
-  it('opens on where people’s money usually sits, USDT on Arbitrum first', () => {
+  it('opens on where people’s money usually sits, USDC on Arbitrum first, then USDT', () => {
     const top = searchCoins(chains, '', null).map((x) => `${x.coin.symbol}·${x.chain.id}`);
-    expect(top.slice(0, 4)).toEqual(['USDT·arb', 'USDT·tron', 'USDC·sol', 'USDC·base']);
+    expect(top.slice(0, 4)).toEqual(['USDC·arb', 'USDC·sol', 'USDC·base', 'USDC·eth']);
+    expect(top.slice(4, 8)).toEqual(['USDT·arb', 'USDT·tron', 'USDT·eth', 'USDT·bsc']);
     expect(top).toContain('BTC·btc');
+    // Every row named is a coin on the list: none drops out of the picker.
+    expect(top).toEqual(POPULAR.map(([chain, symbol]) => `${symbol}·${chain}`));
+  });
+
+  it('starts a first visit from USDC on Arbitrum, the first row of the picker', () => {
+    expect(START).toEqual(['arb', 'USDC']);
+    expect(POPULAR[0]).toEqual(START);
+    const coin = chains.find((c) => c.id === START[0])!.coins.find((c) => c.symbol === START[1])!;
+    expect(coin).toMatchObject({ symbol: 'USDC', decimals: 6, contract: '0xaf88d065e77c8cc2239327c5edb3a432268e5831' });
   });
 
   it('finds a coin by symbol first, a network by name, and Tether’s USD₮0 as USDT', () => {

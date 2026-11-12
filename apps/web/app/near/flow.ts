@@ -316,23 +316,23 @@ export function priceText(price: number): string {
   return `$${price.toLocaleString('en-US', { maximumSignificantDigits: 3, maximumFractionDigits: 20 })}`;
 }
 
-/** Where people's money usually sits, first in the picker. */
+/** Where people's money usually sits, first in the picker: USDC where people hold it, then USDT, then the networks' own coins. */
 export const POPULAR: readonly (readonly [string, string])[] = [
-  ['arb', 'USDT'],
-  ['tron', 'USDT'],
+  ['arb', 'USDC'],
   ['sol', 'USDC'],
   ['base', 'USDC'],
-  ['eth', 'USDT'],
   ['eth', 'USDC'],
+  ['arb', 'USDT'],
+  ['tron', 'USDT'],
+  ['eth', 'USDT'],
   ['bsc', 'USDT'],
+  ['pol', 'USDT'],
+  ['ton', 'USDT'],
   ['eth', 'ETH'],
   ['sol', 'SOL'],
   ['btc', 'BTC'],
-  ['arb', 'USDC'],
-  ['pol', 'USDT'],
-  ['ton', 'USDT'],
   ['base', 'ETH'],
 ];
 
-/** The coin a first visit starts from: USDT on Arbitrum, cheap to send from an exchange and quick to land. */
-export const START: readonly [string, string] = ['arb', 'USDT'];
+/** The coin a first visit starts from: USDC on Arbitrum, cheap to send and quick to land. */
+export const START: readonly [string, string] = ['arb', 'USDC'];

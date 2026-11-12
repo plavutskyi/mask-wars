@@ -73,7 +73,7 @@ Amounts in NEAR. The winner's time counts from the moment the commit window clos
 | --- | --- | --- | --- | --- | --- | --- |
 | [race-0001](https://maskwars.xyz/race/race-0001) | 10 Nov | `maskwars.near` by hand, on `safe-0001.maskwars.near` | ORACLE in 0:15 | 0.54 | 0.21186 | [open](https://nearblocks.io/txns/3KutM1kRv5ukkEoTZczZbZjfEJjEvjpmVodEj4iRbyhC) · [drain](https://nearblocks.io/txns/CWcwqhSwSsiWxdUHtsQv3KSXjjuBANyCPNEto81J1WpM) · [paid](https://nearblocks.io/txns/9ai1PbyVP4C16FQhmujd7o5GjMX8WSPd8KnEmJV8tbHM) · [the race in CI](https://github.com/plavutskyi/mask-wars/actions/runs/42842359569) |
 | [race-0002](https://maskwars.xyz/race/race-0002) | 11 Nov | `house.maskwars.near`, on `vault.house.maskwars.near` | ORACLE in 0:15 | 0.24 | 0.11176 | [open](https://nearblocks.io/txns/BtAiy98VEUdc9zWBMCnZBhvRJ2xfisijfCNBjXTqNJU8) · [drain](https://nearblocks.io/txns/Bk7Sa66uaxtqdeH63YLqeKq6szivM769BbB37U1Pjwnc) · [paid](https://nearblocks.io/txns/BdUN85L7g32uCPx7a8PDqJn5cAZgyzvUv3dFYf3v864y) · [the race in CI](https://github.com/plavutskyi/mask-wars/actions/runs/43081259474) |
-| [race-0003](https://maskwars.xyz/race/race-0003) | 12 Nov | `house.maskwars.near`, its day started by the site's cron, on `vault.house.maskwars.near` | ORACLE in 0:14 | 0.24 | 0.11176 | [open](https://nearblocks.io/txns/BqnPTYkcoBfmDLQc4Dtu7ZBAynL8PcqdNbuUrXSKbiib) · [drain](https://nearblocks.io/txns/3cDxNjTxszeQ2qBkHxesAgR3J6Ak5pNeTYfYYkPUj5Vy) · [paid](https://nearblocks.io/txns/AgFhn2YuHWjhC318MSwqG6QUcxmcWXA3Ey5Vnnjix9wJ) · [the race in CI](https://github.com/plavutskyi/mask-wars/actions/runs/43276033812) |
+| [race-0003](https://maskwars.xyz/race/race-0003) | 12 Nov | `house.maskwars.near`, its day started by the site's cron (GitHub labels the run "Manually triggered": the cron starts it through `workflow_dispatch`), on `vault.house.maskwars.near` | ORACLE in 0:14 | 0.24 | 0.11176 | [open](https://nearblocks.io/txns/BqnPTYkcoBfmDLQc4Dtu7ZBAynL8PcqdNbuUrXSKbiib) · [drain](https://nearblocks.io/txns/3cDxNjTxszeQ2qBkHxesAgR3J6Ak5pNeTYfYYkPUj5Vy) · [paid](https://nearblocks.io/txns/AgFhn2YuHWjhC318MSwqG6QUcxmcWXA3Ey5Vnnjix9wJ) · [the race in CI](https://github.com/plavutskyi/mask-wars/actions/runs/43276033812) |
 
 In each run's log the `race` job prints the board of the sandbox race: "Live safe · ONYX vs NOVA vs ORACLE · 5 attempts
 each", then who broke the copy and on which attempt (GitHub shows a log to a signed-in reader).
@@ -273,7 +273,9 @@ case: [RULES.md](RULES.md). The contract: [contracts/bounty](contracts/bounty/RE
   in the open before it applies, and on the bounty contract it can take a vault code off the list at once (new rounds
   on that code stop; open rounds go on).
 - **The daily round is new.** Day 2 was started by hand when GitHub's schedule did not fire; since then a Vercel cron
-  calls `/api/season/tick` at 18:04 UTC and starts the day. Day 3, 12 Nov, started by itself at 18:04:34 UTC and
+  calls `/api/season/tick` at 18:04 UTC and starts the day (`apps/web/vercel.json`, `apps/web/app/api/season/tick/route.ts`). GitHub
+  labels such a run "Manually triggered" by the repository owner, because the cron starts the workflow through GitHub's
+  API (`workflow_dispatch`) with that account's token; nobody is at the keyboard. Day 3, 12 Nov, started by itself at 18:04:34 UTC and
   opened its round at 18:05:31, and the vault's `retire` and the masks' `home` ran on mainnet for the first time as its first steps ([home](https://nearblocks.io/txns/14MzcJbMmib7H7fYDNYmYHGfNFpwXvXGS7oJ6pce2YS),
   [retire](https://nearblocks.io/txns/DkwjrCpu7BE3c5FhgR27Cwy7Pegm66xuNjAzmRuRHngy)).
 - **Jobs on mainnet: none yet.** The crew jobs on testnet replayed a plan ORACLE's mind had already revealed; no model

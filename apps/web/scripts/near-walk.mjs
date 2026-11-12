@@ -87,7 +87,7 @@ for (const [view, opts] of VIEWS) {
   };
 
   await page.goto(`${BASE}/near`, { waitUntil: 'networkidle' });
-  await page.getByRole('button', { name: /USDT/ }).waitFor();
+  await page.getByRole('button', { name: /USDC/ }).waitFor();
 
   if (END) {
     // Straight to an ending that is not NEAR landing: the way back to the coin in NEAR Intents.
@@ -110,7 +110,7 @@ for (const [view, opts] of VIEWS) {
   await shot('1-price');
 
   // The picker: popular first, then a search, then a network.
-  await page.getByRole('button', { name: /USDT/ }).click();
+  await page.getByRole('button', { name: /USDC/ }).click();
   await page.getByRole('dialog').waitFor();
   await shot('2-picker');
   await page.getByRole('textbox', { name: /Search/ }).fill('sol');
@@ -147,9 +147,9 @@ for (const [view, opts] of VIEWS) {
   await page.getByRole('button', { name: 'Copy address' }).waitFor({ timeout: 20_000 });
   await page.getByRole('button', { name: 'Pay with MetaMask' }).waitFor({ timeout: 5_000 }).catch(() => faults.push(`${view}: no pay-from-wallet button`));
   // Which coin on which network, plainly, with its contract on the network's explorer.
-  await page.getByText('Send only USDT on Arbitrum', { exact: true }).waitFor({ timeout: 5_000 }).catch(() => faults.push(`${view}: the coin to send not named`));
-  if ((await page.getByRole('link', { name: /view on Arbiscan/ }).getAttribute('href').catch(() => null)) !== 'https://arbiscan.io/token/0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9') {
-    faults.push(`${view}: no Arbiscan link to the USDT contract`);
+  await page.getByText('Send only USDC on Arbitrum', { exact: true }).waitFor({ timeout: 5_000 }).catch(() => faults.push(`${view}: the coin to send not named`));
+  if ((await page.getByRole('link', { name: /view on Arbiscan/ }).getAttribute('href').catch(() => null)) !== 'https://arbiscan.io/token/0xaf88d065e77c8cc2239327c5edb3a432268e5831') {
+    faults.push(`${view}: no Arbiscan link to the USDC contract`);
   }
   await shot('8-send');
   if (view !== 'desk') {

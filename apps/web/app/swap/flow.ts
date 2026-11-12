@@ -304,42 +304,42 @@ export function swapShortText(o: { pending: Pick<PendingSwap, 'from' | 'quote' |
   return `${got} arrived, less than the swap needs. Send ${fromUnits(rest, p.from.coin.decimals)} ${sym} more by ${clock(p.quote.deadline)}, or what came goes back to ${back}.`;
 }
 
-/** Where people's money usually sits, first in the "You pay" picker: blue chips only. */
+/** Where people's money usually sits, first in the "You pay" picker: USDC where people hold it, then USDT, then blue chips only. */
 export const POPULAR_FROM: readonly (readonly [string, string])[] = [
+  ['arb', 'USDC'],
+  ['sol', 'USDC'],
+  ['base', 'USDC'],
+  ['eth', 'USDC'],
   ['arb', 'USDT'],
   ['tron', 'USDT'],
   ['eth', 'USDT'],
-  ['sol', 'USDC'],
-  ['base', 'USDC'],
+  ['bsc', 'USDT'],
+  ['near', 'USDT'],
   ['near', 'NEAR'],
   ['eth', 'ETH'],
   ['btc', 'BTC'],
   ['sol', 'SOL'],
-  ['bsc', 'USDT'],
-  ['eth', 'USDC'],
-  ['arb', 'USDC'],
-  ['near', 'USDT'],
   ['base', 'ETH'],
 ];
 
-/** What people swap into, first in the "You receive" picker: NEAR up front, then blue chips only. */
+/** What people swap into, first in the "You receive" picker: NEAR up front, then blue chips only, USDC before USDT. */
 export const POPULAR_TO: readonly (readonly [string, string])[] = [
   ['near', 'NEAR'],
   ['sol', 'SOL'],
   ['eth', 'ETH'],
   ['btc', 'BTC'],
   ['near', 'USDC'],
-  ['near', 'USDT'],
-  ['tron', 'USDT'],
-  ['arb', 'USDT'],
   ['sol', 'USDC'],
   ['base', 'USDC'],
   ['eth', 'USDC'],
+  ['near', 'USDT'],
+  ['tron', 'USDT'],
+  ['arb', 'USDT'],
   ['bsc', 'BNB'],
   ['base', 'ETH'],
   ['arb', 'ETH'],
 ];
 
-/** The pair a first visit starts from: USDT on Arbitrum (cheap to send, quick to land) into SOL on Solana. */
-export const START_FROM: readonly [string, string] = ['arb', 'USDT'];
+/** The pair a first visit starts from: USDC on Arbitrum (cheap to send, quick to land) into SOL on Solana. */
+export const START_FROM: readonly [string, string] = ['arb', 'USDC'];
 export const START_TO: readonly [string, string] = ['sol', 'SOL'];

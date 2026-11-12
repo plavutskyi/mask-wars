@@ -329,7 +329,7 @@ async fn an_appeal_over_several_runs_takes_the_median_of_each_entrant_s_answers(
     }
     ensure!(job["verdict"]["winner"] == 1 && job["verdict"]["final"] == true, "{job}");
     ensure!(runs == 5, "one call a run: five calls, five runs: {runs}");
-    ensure!(w.balance(w.bob.id()).await? + 50 * MILLI > bob, "the winner changed: the bond came back");
+    ensure!(w.balance_above(w.bob.id(), bob - 50 * MILLI).await? + 50 * MILLI > bob, "the winner changed: the bond came back");
     println!("{id}: the first verdict named ONYX; the appeal took {runs} runs, NOVA's median 88 against ONYX's 17; final");
     Ok(())
 }
@@ -376,7 +376,7 @@ async fn an_outage_during_an_appeal_spends_no_seed_and_the_appeal_decides_when_n
     ensure!(job["status"]["state"] == "decided" && job["verdict"]["winner"] == 0 && job["verdict"]["final"] == true, "{job}");
     let seeds: Vec<Value> = out["output"]["calls"].as_array().unwrap().iter().map(|c| c["seed"].clone()).collect();
     ensure!(seeds == vec![json!(11), json!(12)], "the seed that failed was asked again, not spent: {out}");
-    ensure!(w.balance(w.company.id()).await? > company, "the winner held: the bond goes to the company");
+    ensure!(w.balance_above(w.company.id(), company).await? > company, "the winner held: the bond goes to the company");
     println!("{id}: NEAR AI answered 503 during the appeal: no seed spent; the contract refused the next run until the judge's back-off was over (retry_at), nothing spent; two minutes on, seeds 11 and 12 agreed: the first verdict stands, final");
     Ok(())
 }
