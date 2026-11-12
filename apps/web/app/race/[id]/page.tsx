@@ -1,4 +1,5 @@
 import { duration, near } from '@maskwars/arena/format';
+import { raceThought } from '@maskwars/arena/minds';
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
@@ -10,6 +11,7 @@ import { CALL_SIZE } from '@/lib/card';
 import { pageMeta, tag } from '@/lib/meta';
 import { briefOf, choiceName, HELD, outcomeOf, pickable, pickOn, verdictOf, windowOf } from '@/lib/pick';
 import { entriesOf, PICKS_COOKIE } from '@/lib/picks';
+import { mindsOf } from '@/lib/minds';
 import { readShare } from '@/lib/share';
 
 // One race and its whole course, read from the chain.
@@ -30,7 +32,7 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
       ? `${race.winner.name} broke it${race.breakMs !== null ? ` in ${duration(race.breakMs)}` : ''} and took ${near(race.takes)} NEAR.`
       : race.phase === 'held'
         ? 'Nobody got through. The bounty went back to the team.'
-        : `${near(race.prize)} NEAR on the line. AI masks race to break the safe.`;
+        : `${near(race.prize)} NEAR on the line. AI masks race to break the vault.`;
   const meta = pageMeta({ title, description, path: `/race/${id}` });
   // A shared call: the card says who was called and how it ended, the claim signed by this site, the end from the chain.
   const claim = readShare(typeof call === 'string' ? call : null);
@@ -62,12 +64,14 @@ export default async function RaceRoute({ params }: Props) {
   const jar = await cookies();
   const old = asOf(view);
   const mine = pickable(race) ? pickOn(entriesOf(jar.get(PICKS_COOKIE)?.value), race, view.races) : null;
+  const records = await mindsOf([race]);
   return (
     <RacePage
       race={race}
       prev={view.races[i + 1] ?? null}
       next={view.races[i - 1] ?? null}
       asOf={old}
+      thought={raceThought(race, records.get(race.id))}
       call={mine ? { round: briefOf(race), mine, open: windowOf(view, pickNow(), old !== null)?.race === race.id } : null}
     />
   );

@@ -12,6 +12,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { RacePage } from './RacePage';
 import { Stage } from './Stage';
+import { TARGET_LINE } from './Target';
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 // One router for the page's life, as Next.js gives it.
@@ -178,9 +179,48 @@ describe('what it is, and the next round between rounds', () => {
   it('one line says what MASK WARS is, on every state of the stage', () => {
     vi.setSystemTime(racing.startsAt! + 60_000);
     show(<Stage race={racing} serverNow={racing.startsAt! + 60_000} asOf={null} />);
-    expect(box.querySelector('[data-top]')?.textContent).toBe('AI masks break a vault of real NEAR. Live. The contract pays the winner.');
+    expect(box.querySelector('[data-top] > p')?.textContent).toBe('AI masks break a vault of real NEAR. Live. The contract pays the winner.');
     show(<Stage race={null} serverNow={Date.now()} asOf={null} error />);
-    expect(box.querySelector('[data-top]')?.textContent).toContain('real NEAR');
+    expect(box.querySelector('[data-top] > p')?.textContent).toContain('real NEAR');
+  });
+
+  /** The safe's line under it, its words without the «i»; null when the stage has none. */
+  const targetLine = () => {
+    const p = box.querySelector('button[aria-label="The arena target"]')?.closest('p');
+    if (!p) return null;
+    const words = p.cloneNode(true) as HTMLElement;
+    words.querySelector('button')?.remove();
+    return words.textContent;
+  };
+
+  it('the safe on the stage is said plainly under that line: the race’s, the next round’s, none on an empty arena', () => {
+    vi.setSystemTime(racing.startsAt! + 60_000);
+    show(<Stage race={racing} serverNow={racing.startsAt! + 60_000} asOf={null} />);
+    expect(targetLine()).toBe(TARGET_LINE);
+    // It stands in the top the arena composes under, so nothing of the vault ever runs over it.
+    expect(box.querySelector('[data-top] button[aria-label="The arena target"]')).not.toBeNull();
+    expect(box.querySelector('main')?.hasAttribute('data-target')).toBe(true);
+
+    const now = broken.deadline + 6 * 3_600_000;
+    vi.setSystemTime(now);
+    show(<Stage race={broken} next={next(now + 90 * 60_000)} serverNow={now} asOf={null} />);
+    expect(box.querySelector('[data-phase]')?.getAttribute('data-phase')).toBe('next');
+    expect(targetLine()).toBe(TARGET_LINE);
+
+    show(<Stage race={null} serverNow={Date.now()} asOf={null} error />);
+    expect(targetLine()).toBeNull();
+    expect(box.querySelector('main')?.hasAttribute('data-target')).toBe(false);
+  });
+
+  it('a race of another team’s safe has no line: MASK WARS does not fund it', () => {
+    vi.setSystemTime(racing.startsAt! + 60_000);
+    show(<Stage race={{ ...racing, official: false }} serverNow={racing.startsAt! + 60_000} asOf={null} />);
+    expect(targetLine()).toBeNull();
+  });
+
+  it('the race page says it under the number', () => {
+    show(<RacePage race={broken} prev={null} next={null} />);
+    expect(targetLine()).toBe(TARGET_LINE);
   });
 
   it('long after the last round, the stage is the next one: its sum, when it opens, the clock to it', () => {

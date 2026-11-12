@@ -108,6 +108,92 @@ fn the_vectors_cover_every_reason_and_verdict_on_both_networks() {
     assert_eq!(networks, ["mainnet", "testnet"]);
 }
 
+/// The house's vault, made again under the same name for every round, reads as an arena target by design once the
+/// chain confirms it is the house's: never as a hole, and its new account and new code are said, not warned about. A
+/// look-alike, or the vault's name the chain does not confirm, gets no label at all.
+#[test]
+fn the_houses_vault_is_an_arena_target_by_design_and_a_look_alike_is_not() {
+    let read = |name: &str| {
+        let (got, unexpected) = answer(&vector(name));
+        assert!(unexpected.is_empty(), "{name}: {unexpected:?}");
+        let reasons: Vec<(String, String)> = got["reasons"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|r| (r["code"].as_str().unwrap().to_string(), r["level"].as_str().unwrap().to_string()))
+            .collect();
+        (got, reasons)
+    };
+    let pairs = |list: &[(&str, &str)]| list.iter().map(|(c, l)| (c.to_string(), l.to_string())).collect::<Vec<_>>();
+    let design = "Only the house funds it; only the masks of its round (nova.maskwars.near, onyx.maskwars.near, oracle.maskwars.near) can open it; after the round, retire sends the rest home to house.maskwars.near.";
+
+    let (open, reasons) = read("the house's vault in its open round: an arena target by design, warn; its new account said, not warned");
+    assert_eq!(open["verdict"], "warn");
+    assert_eq!(
+        open["summary"],
+        format!("WARN: Arena target, by design: the MASK WARS house's vault, live in race-0012 right now. {design} Bounty 0.2 NEAR. Do not send NEAR here.")
+    );
+    assert_eq!(reasons, pairs(&[("arena_target", "warn"), ("young_account", "info"), ("contract", "info"), ("rpc_agree", "info")]));
+    let evidence = &open["reasons"][0]["evidence"];
+    assert_eq!((evidence["race"].as_str(), evidence["state"].as_str()), (Some("race-0012"), Some("open")));
+    assert_eq!(evidence["code"], maskwars_check::check::SAFE_CODE_URL);
+    assert_eq!(evidence["explorer"], "https://nearblocks.io/address/vault.house.maskwars.near");
+    assert!(open["reasons"][1]["text"]
+        .as_str()
+        .unwrap()
+        .ends_with("Expected here: the house makes its vault again under the same name for every round."));
+    let said = open["summary"].as_str().unwrap().to_lowercase();
+    assert!(!said.contains("hole") && !said.contains("critical") && !said.contains("vulnerab"), "{said}");
+
+    let (_, reasons) = read("the house's vault made again over yesterday's with a newer safe code: the change said, not warned");
+    assert_eq!(reasons[..3], pairs(&[("arena_target", "warn"), ("code_changed", "info"), ("account_age", "info")]));
+
+    let (drained, reasons) = read("the house's vault a mask drained: block, framed as the arena");
+    assert_eq!(drained["verdict"], "block");
+    assert!(drained["summary"]
+        .as_str()
+        .unwrap()
+        .starts_with("BLOCK: Drained on the MASK WARS arena, by design: mask nova.maskwars.near won race-0012"));
+    assert_eq!(reasons[0], ("arena_drained".to_string(), "block".to_string()));
+
+    let (taken, reasons) = read("the house's vault a mask took over in its open round: block, and still the arena's target");
+    assert_eq!(taken["verdict"], "block");
+    assert_eq!(reasons[..2], pairs(&[("arena_taken_over", "block"), ("arena_target", "warn")]));
+
+    // A round nobody broke leaves the vault the arena's until it retires: never an allow.
+    let (withstood, reasons) = read("the house's vault that withstood its round: warn, still the arena's target until it retires, the round said");
+    assert_eq!(withstood["verdict"], "warn");
+    assert_eq!(
+        withstood["summary"],
+        "WARN: Arena target, by design: the MASK WARS house's vault; race-0012 ended with no break, and retire sends everything it holds home to house.maskwars.near. Do not send NEAR here."
+    );
+    assert_eq!(reasons[..2], pairs(&[("arena_target", "warn"), ("arena_withstood", "info")]));
+    for v in vectors().iter().filter(|v| v["account"] == "vault.house.maskwars.near" && v["name"].as_str().unwrap().starts_with("the house's vault"))
+    {
+        let label = v["expect"]["reasons"].as_array().unwrap().iter().any(|r| r["code"].as_str().unwrap().starts_with("arena_"));
+        if label {
+            assert_ne!(v["expect"]["verdict"], "allow", "{}", v["name"]);
+        }
+    }
+
+    let (waiting, _) = read("the house's vault before its round opens: warn, waiting for today's round");
+    assert_eq!(
+        waiting["summary"],
+        format!("WARN: Arena target, by design: the MASK WARS house's vault, waiting for today's round to open. {design} Do not send NEAR here.")
+    );
+
+    for name in [
+        "a look-alike of the house's vault that answers all the same on chain: no label, a new account",
+        "the house's vault whose team is not the house: no label",
+        "the house's vault on a code the bounty contract does not list: no label",
+    ] {
+        let (got, reasons) = read(name);
+        assert_eq!(got["verdict"], "warn", "{name}");
+        assert_eq!(reasons, pairs(&[("young_account", "warn"), ("contract", "info"), ("rpc_agree", "info")]), "{name}");
+        assert!(!got.to_string().contains("by design") && !got.to_string().contains("Expected here"), "{name}");
+    }
+}
+
 /// A hung first node costs the module one request, not one per read: OutLayer ends a run on its second timeout.
 #[test]
 fn a_node_that_went_down_is_not_asked_again_in_failover() {

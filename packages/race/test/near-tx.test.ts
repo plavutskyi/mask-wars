@@ -8,6 +8,7 @@ import {
   encodeTransaction,
   encodeTx,
   functionCall,
+  holdsKey,
   NearKey,
   send,
   signTx,
@@ -197,5 +198,21 @@ describe("sending", () => {
     expect(r.ok).toBe(false);
     expect(r.error).toContain("AccountAlreadyExists");
     expect(r.logs).toEqual(["a line"]);
+  });
+
+  it("says a key the account does not hold plainly, and sends nothing", async () => {
+    const sent: string[] = [];
+    const missing: Chain = {
+      rpc: async (method: string) => {
+        if (method === "query") return { error: "access key does not exist while viewing", block_height: 1 };
+        sent.push(method);
+        return {};
+      },
+    };
+    await expect(send(missing, HOUSE, key, VAULT, makeSafe)).rejects.toThrow(/AccessKeyNotFound: .* holds no key ed25519:/);
+    expect(sent).toEqual([]);
+    expect(await holdsKey(missing, HOUSE, key)).toBe(false);
+    const held: Chain = { rpc: async () => ({ nonce: 5, block_hash: "x", permission: "FullAccess" }) };
+    expect(await holdsKey(held, HOUSE, key)).toBe(true);
   });
 });

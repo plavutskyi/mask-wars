@@ -1,0 +1,85 @@
+/* The price of a mask's thinking: the × beside what it took, and one quiet pill with the details behind its «i». */
+
+.times {
+  display: inline-flex;
+  align-items: center;
+  height: 48px;
+  padding: 0 16px;
+  border-radius: var(--radius);
+  border: 1px solid color-mix(in oklab, var(--money) 55%, transparent);
+  background: color-mix(in oklab, var(--money) 12%, transparent);
+  font-family: var(--font-num);
+  font-size: 28px;
+  font-weight: 800;
+  font-stretch: 125%;
+  line-height: 1;
+  color: var(--money);
+  white-space: nowrap;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 26px;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  margin: 18px 0 0;
+  padding: 6px 8px 6px 16px;
+  border-radius: var(--radius);
+  background: color-mix(in oklab, var(--ice) 7%, transparent);
+  border: 1px solid color-mix(in oklab, var(--ice) 12%, transparent);
+}
+
+.row .pill {
+  margin: 0;
+}
+
+/* A pill without an «i» keeps its right edge even. */
+.pill:not(:has(button)) {
+  padding-right: 16px;
+}
+
+.label {
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  color: var(--ice-60);
+}
+
+.value {
+  font-family: var(--font-num);
+  font-size: 17px;
+  font-weight: 700;
+  font-stretch: 112%;
+  color: var(--ice);
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  /* On a phone the × goes under the number when the line is full; the number keeps its «i». */
+  .times {
+    order: 3;
+    height: 40px;
+    padding: 0 12px;
+    font-size: 22px;
+  }
+
+  .row {
+    margin-top: 20px;
+    gap: 8px;
+  }
+
+  .pill {
+    margin-top: 14px;
+    padding-left: 14px;
+  }
+
+  .value {
+    font-size: 15px;
+  }
+}

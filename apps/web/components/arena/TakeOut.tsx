@@ -1,6 +1,7 @@
 'use client';
 
-import { accountState, copyTerms, nearText, takeOut, withdrawAction, withdrawn, type Withdrawn } from '@maskwars/forge';
+import { accountState, copyTerms, fuelAction, fueled, nearText, takeOut, withdrawAction, withdrawn, type Withdrawn } from '@maskwars/forge';
+import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { connect } from '@/app/forge/wallet';
 import { FORGE_NET } from '@/lib/forge';
@@ -8,15 +9,20 @@ import p from './person.module.css';
 import s from './page.module.css';
 
 type Phase = 'idle' | 'signing' | 'checking' | 'done' | 'gone' | 'pending' | 'wrong' | 'failed';
+/** The owner's two moves with the prize: take it out (`withdraw`), or let the mask pay for its own mind (`fuel`). */
+type Move = 'withdraw' | 'fuel';
+/** The least the factory's `refuel` takes, so the least the mask's `fuel` sends: below it the move is not offered. */
+const MIN_FUEL = 10n ** 23n;
 
 /** How many times the page asks NEAR about the withdraw, a second and a half apart, before it says it does not know. */
 const READS = 20;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-/** The prize on a person's mask, and the one call that gives it to its owner: `withdraw` on the mask's own account.
- * Anyone sees what waits there; only the owner's wallet takes it out, and the gas fund stays for the next race. What
- * the page says after the wallet comes from NEAR, as `/forge` does for a forge: the transaction's outcome and the
- * amount the mask's own log names, then the mask's account read again. A wallet's word alone is never a success. */
+/** The prize on a person's mask, and the owner's two calls on the mask's own account: `withdraw` gives it to the
+ * owner; `fuel` puts it into the mask's own tank, so the mask pays for its own mind with what it won. Anyone sees what
+ * waits there; only the owner's wallet moves it, and the gas fund stays for the next race. What the page says after
+ * the wallet comes from NEAR, as `/forge` does for a forge: the transaction's outcome and the amount the mask's own log
+ * names, then the mask's account read again. A wallet's word alone is never a success. */
 export function TakeOut({
   name,
   account,
@@ -33,6 +39,8 @@ export function TakeOut({
   author?: string | null;
 }) {
   const [phase, setPhase] = useState<Phase>('idle');
+  const [move, setMove] = useState<Move>('withdraw');
+  const router = useRouter();
   const [who, setWho] = useState<string | null>(null);
   const [tx, setTx] = useState<string | null>(null);
   /** On the mask's account for its owner: the page's figure until NEAR answers, then what NEAR says. */
@@ -44,9 +52,10 @@ export function TakeOut({
     if (phase === 'idle') setShown(amount);
   }, [amount, phase]);
 
-  async function take() {
+  async function take(m: Move) {
     if (busy.current) return;
     busy.current = true;
+    setMove(m);
     setPhase('signing');
     try {
       let signer;
@@ -63,7 +72,7 @@ export function TakeOut({
       }
       let hash: string | null = null;
       try {
-        hash = await signer.call(account, withdrawAction());
+        hash = await signer.call(account, m === 'fuel' ? fuelAction() : withdrawAction());
       } catch {
         // A wallet can fail after it has sent: the mask's account says whether the prize left.
       }
@@ -71,7 +80,8 @@ export function TakeOut({
       setPhase('checking');
       let got: Withdrawn = { state: 'unknown' };
       for (let i = 0; hash && got.state === 'unknown' && i < READS; i++) {
-        got = await withdrawn(FORGE_NET, hash, owner, account).catch((): Withdrawn => ({ state: 'unknown' }));
+        const read = m === 'fuel' ? fueled : withdrawn;
+        got = await read(FORGE_NET, hash, owner, account).catch((): Withdrawn => ({ state: 'unknown' }));
         if (got.state === 'unknown') await sleep(1500);
       }
       const left = author
@@ -80,11 +90,13 @@ export function TakeOut({
       if (got.state === 'done') {
         setShown(got.amount.toString());
         setPhase('done');
+        // The tank on the page is the factory's: read it again.
+        if (m === 'fuel') router.refresh();
       } else if (got.state === 'failed') {
         setShown(left.toString());
         setPhase('failed');
       } else if (left < BigInt(amount)) {
-        // No transaction NEAR knows, but the prize is no longer on the mask: only its owner's withdraw moves it.
+        // No transaction NEAR knows, but the prize is no longer on the mask: only its owner's calls move it.
         setShown(left.toString());
         setPhase('gone');
       } else {
@@ -95,15 +107,16 @@ export function TakeOut({
     }
   }
 
+  const fuel = move === 'fuel';
   const line = {
     idle: `Waiting on ${NAME}’s account for its owner.`,
     signing: `Waiting on ${NAME}’s account for its owner.`,
     checking: 'Sent. Waiting for NEAR to confirm it.',
-    done: `Taken out. ${nearText(shown)} NEAR went to ${owner}.`,
-    gone: `Taken out. The prize left ${NAME}’s account for ${owner}.`,
+    done: fuel ? `Fueled. ${nearText(shown)} NEAR went into ${NAME}’s mind.` : `Taken out. ${nearText(shown)} NEAR went to ${owner}.`,
+    gone: fuel ? `Fueled. The prize left ${NAME}’s account for its mind.` : `Taken out. The prize left ${NAME}’s account for ${owner}.`,
     pending: `NEAR does not show it yet. The prize is still on ${NAME}’s account.`,
-    wrong: `Only ${NAME}’s owner takes it out. This wallet is ${who}.`,
-    failed: 'Not taken out. The prize stays on the mask.',
+    wrong: `Only ${NAME}’s owner moves it. This wallet is ${who}.`,
+    failed: fuel ? 'Not fueled. The prize stays on the mask.' : 'Not taken out. The prize stays on the mask.',
   }[phase];
   const over = phase === 'done' || phase === 'gone';
 
@@ -111,7 +124,7 @@ export function TakeOut({
     <section className={p.take} aria-labelledby="take" data-phase={phase}>
       <div className={p.takeText}>
         <h2 id="take" className={`${s.word} ${p.takeTitle}`}>
-          {over ? 'Taken out' : 'To take out'}
+          {over ? (fuel ? 'Fueled' : 'Taken out') : 'On its account'}
         </h2>
         {phase !== 'gone' ? (
           <span className={p.takeNum}>
@@ -132,15 +145,28 @@ export function TakeOut({
         </p>
       </div>
       {!over ? (
-        <button
-          type="button"
-          className={`${s.btn} ${s.word} ${p.takeBtn}`}
-          onClick={take}
-          disabled={phase === 'signing' || phase === 'checking'}
-          aria-busy={phase === 'signing' || phase === 'checking'}
-        >
-          {phase === 'signing' ? 'Signing…' : phase === 'checking' ? 'Confirming…' : 'Take it out'}
-        </button>
+        <div className={p.takeActs}>
+          <button
+            type="button"
+            className={`${s.btn} ${s.word} ${p.takeBtn}`}
+            onClick={() => take('withdraw')}
+            disabled={phase === 'signing' || phase === 'checking'}
+            aria-busy={!fuel && (phase === 'signing' || phase === 'checking')}
+          >
+            {!fuel && phase === 'signing' ? 'Signing…' : !fuel && phase === 'checking' ? 'Confirming…' : 'Take it out'}
+          </button>
+          {BigInt(shown) >= MIN_FUEL ? (
+            <button
+              type="button"
+              className={`${s.btn} ${s.word} ${p.fuelBtn}`}
+              onClick={() => take('fuel')}
+              disabled={phase === 'signing' || phase === 'checking'}
+              aria-busy={fuel && (phase === 'signing' || phase === 'checking')}
+            >
+              {fuel && phase === 'signing' ? 'Signing…' : fuel && phase === 'checking' ? 'Confirming…' : 'Fuel its mind'}
+            </button>
+          ) : null}
+        </div>
       ) : null}
     </section>
   );

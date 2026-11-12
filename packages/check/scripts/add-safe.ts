@@ -9,7 +9,8 @@
  * The season's rounds come from its treasury (`rounds`, oldest first: s0001, s0002, … under the season's account); a
  * round by hand from the bounty contract (`get_safe`). The accounts are the network's (packages/network). The list is
  * checked before it is written; the file never says what happened to a safe, the chain does on every check. Commit the
- * change and open a pull request: the site reads the list from the repository.
+ * change and open a pull request: the site reads the list from the repository. A round on the house's vault is never
+ * added: the list names the vault once (`vault`), and the check reads its round from the vault itself.
  */
 import { readFile, writeFile } from "node:fs/promises";
 import { NETWORKS } from "@maskwars/network";
@@ -61,6 +62,9 @@ const rounds = await opened().catch((error: unknown) => {
 });
 
 const list = parseList(JSON.parse(await readFile(file, "utf8")));
+if (race && rounds.some((r) => r.safe === list.vault?.safe)) {
+  fail(`${race} is on the house's vault: MASK CHECK reads the vault's round from the vault itself, so it is never listed`);
+}
 const { list: next, added } = withArena(list, rounds);
 for (const e of added) console.log(`+ ${e.race}  ${e.safe}  on ${e.contract}`);
 if (added.length === 0) console.log("nothing new: every round is in the list");

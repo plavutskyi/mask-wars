@@ -59,6 +59,11 @@ Person            Factory (masks.<arena>)              Mask (<name>.masks.<arena
 - **The owner decides.** `pause` removes the race keys at once and no new race arms the mask; `resume` lets it race
   again. `unfuel` takes back what is left in the tank (not what a race holds). `refuel` adds to it; anyone may. The
   prize is on the mask's account: only the owner `withdraw`s it, and the gas fund stays so the mask keeps racing.
+- **The mask pays for its own mind.** Instead of taking the prize out, the owner may call `fuel` on the mask's account:
+  everything `withdraw` would pay them goes from the mask's account into its own tank (the factory's `refuel` for this
+  very mask, and nowhere else). A copy pays its author what is owed first, in the same call. NEAR that comes from the
+  mask's own account fills the tank but is not counted as put in, so the × stays what the mask earned on what people
+  gave it.
 - **The ×.** `fuel` counts everything ever put into a mask. What a mask earned is on chain in the arena's payouts, so
   the mask page shows earned ÷ fuel without trusting anyone's word.
 
@@ -110,7 +115,7 @@ open, stop, and collect from every copy where something waits.
 
 The × and every payout are public on chain. How the mind played each race is not: the attempts and their verdicts, the
 plan it sealed, the payout, the author's share, what the mind spent. The owner shares that history with whom they like
-([`factory/src/view.rs`](factory/src/view.rs), formats in `packages/forge/src/history.ts`, spec `docs/spec/copy.md`):
+([`factory/src/view.rs`](factory/src/view.rs), formats in `packages/forge/src/history.ts`):
 
 - `set_view_key(key)`: a reader registers one X25519 key for every mask. The site makes it from a signature of the
   reader's own wallet (NEP-413 over a fixed message), so the secret half is never stored and the same wallet makes the

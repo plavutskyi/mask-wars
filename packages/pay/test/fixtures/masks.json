@@ -1,0 +1,52 @@
+{
+  "source": "Two masks of the mask factory for walking /wallet with PAY_FIXTURE=1: the shape of get_mask in contracts/masks/factory, owned by the fixture's NEAR wallet. Not from any chain.",
+  "owner": "kira.near",
+  "masks": [
+    {
+      "name": "kira",
+      "account": "kira.masks.maskwars.near",
+      "owner": "kira.near",
+      "look": "crimson",
+      "model": "z-ai/glm-5.3-flash",
+      "style": "bold",
+      "strategy": true,
+      "born_ns": "1762800000000000000",
+      "fuel": "1000000000000000000000000",
+      "brain": "240000000000000000000000",
+      "spent": "60000000000000000000000",
+      "race_limit": "50000000000000000000000",
+      "races": 3,
+      "state": "ready",
+      "race": null,
+      "code": "",
+      "copyable": false,
+      "author_bps": 0,
+      "copies": 0,
+      "copy_of": null,
+      "copy_bps": 0
+    },
+    {
+      "name": "vex",
+      "account": "vex.masks.maskwars.near",
+      "owner": "kira.near",
+      "look": "graphite",
+      "model": "Qwen/Qwen3.8-27B",
+      "style": "patient",
+      "strategy": false,
+      "born_ns": "1762810000000000000",
+      "fuel": "1000000000000000000000000",
+      "brain": "910000000000000000000000",
+      "spent": "40000000000000000000000",
+      "race_limit": "50000000000000000000000",
+      "races": 1,
+      "state": "ready",
+      "race": null,
+      "code": "",
+      "copyable": false,
+      "author_bps": 0,
+      "copies": 0,
+      "copy_of": null,
+      "copy_bps": 0
+    }
+  ]
+}

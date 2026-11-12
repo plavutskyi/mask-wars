@@ -4,7 +4,7 @@
 // a key this script made), and the whole job is walked through to the money landing (Solana USDC → NEAR in the vault),
 // with the host page logging every hire:* event it hears. Then /hire itself, a page naming a vault the payer does not
 // hold, a page that names no job, the checkout before HIRE_LIVE, a reload mid-payment, and a checkout that never loads.
-// Desk 1440×900 and phone 375×812; every shot is checked for console errors, horizontal scroll and finger-sized targets,
+// Desk 1440×900, phone 375×812 and a small phone 360×640; every shot is checked for console errors, horizontal scroll and finger-sized targets,
 // page and frame both. Every request the checkout makes is counted: none before the payer touches it, one price per
 // coin and amount, never more.
 //
@@ -146,6 +146,7 @@ mkdirSync(SHOTS, { recursive: true });
 const VIEWS = [
   ['desk', { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 }],
   ['phone', { viewport: { width: 375, height: 812 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }],
+  ['small', { viewport: { width: 360, height: 640 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }],
 ];
 const problems = [];
 const browser = await chromium.launch();
@@ -248,7 +249,7 @@ async function prove(ctx, popups, frame, view, shots = null, expectProven = true
   const w = popups.at(-1);
   if (!w) throw new Error('no vault window');
   // A popup on a desk is the size the checkout asks for; a phone opens it as a whole tab.
-  await w.setViewportSize(view === 'desk' ? { width: 480, height: 760 } : { width: 375, height: 812 });
+  await w.setViewportSize(view === 'desk' ? { width: 480, height: 760 } : view === 'small' ? { width: 360, height: 640 } : { width: 375, height: 812 });
   await w.waitForSelector('main [role=group]', { timeout: 30_000 });
   await w.waitForFunction(() => document.fonts.status === 'loaded');
   // The window closes itself once it is done: here it only notes that it asked, so its last screen can be seen.
@@ -349,12 +350,15 @@ for (const [view, opts] of VIEWS) {
     await page.goto(`${BASE}/hire`, { waitUntil: 'networkidle' });
     await page.waitForFunction(() => document.fonts.status === 'loaded');
     await shot(page, '13-hire', view);
-    if (view === 'phone') {
+    if (view !== 'desk') {
       await page.screenshot({ path: join(SHOTS, `13-hire-full-${view}.jpg`), type: 'jpeg', quality: 88, fullPage: true });
     }
     await page.getByRole('button', { name: 'Details', exact: true }).click();
     await shot(page, '14-hire-details', view);
     await page.getByRole('button', { name: 'Details', exact: true }).click();
+    await page.getByRole('tab', { name: 'React', exact: true }).click();
+    await page.getByRole('tab', { name: 'React', exact: true }).scrollIntoViewIfNeeded();
+    await shot(page, '15-hire-react', view);
     await page.getByRole('tab', { name: 'Events', exact: true }).click();
     await page.getByRole('tab', { name: 'Events', exact: true }).scrollIntoViewIfNeeded();
     await shot(page, '15-hire-events', view);
@@ -413,7 +417,7 @@ for (const [view, opts] of VIEWS) {
     await ctx.close();
   }
 
-  // 5. Before season 0 (no HIRE_LIVE): the whole path to the amount with a live price, and an honest line.
+  // 5. Before HIRE_LIVE: the whole path to the amount with a live price, and an honest line.
   {
     const { ctx, page, popups } = await context(opts, view);
     await ctx.route('**/api/hire/catalog', async (route) => {
@@ -428,7 +432,7 @@ for (const [view, opts] of VIEWS) {
     await prove(ctx, popups, frame, view);
     await frame.getByRole('button', { name: 'Next', exact: true }).click();
     await frame.getByRole('button', { name: 'Next', exact: true }).click();
-    await text(frame, 'Hiring opens with season 0');
+    await text(frame, 'Hiring opens soon');
     await shot(page, '21-closed', view, frame);
     await ctx.close();
   }

@@ -1,5 +1,5 @@
 {
-  "spec": "docs/spec/fight.md#market-duel-v1",
+  "spec": "packages/core/README.md#market-duel-v1",
   "vectors": [
     {
       "fight_id": "f-0-1",

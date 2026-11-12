@@ -1,12 +1,12 @@
 // Live attestation of the models the masks think with. Every check makes a fresh nonce; a result is kept for a few
 // minutes so page views never flood NEAR AI, Intel's PCCS or NVIDIA. Server only: it reaches those services directly.
 import { allChecks, outcomeOf, verifyModel, type Check, type CheckId, type ModelVerification, type Outcome } from '@maskwars/mind/attestation';
-import { TEE_MODELS } from '@maskwars/mind/models';
+import { ATTESTED_MODELS } from '@maskwars/mind/models';
 
 export type { ModelVerification, Outcome };
 
-/** The models every mask plays with, in the order the race assigns them. */
-export const MODELS: readonly string[] = Object.keys(TEE_MODELS);
+/** The models every mask plays with: the ones a person's mask may pick, then the arena's own red-teaming build. */
+export const MODELS: readonly string[] = ATTESTED_MODELS;
 
 /** A passing check is shown for five minutes; anything else is tried again after thirty seconds. */
 export const FRESH_MS = 5 * 60_000;
@@ -69,6 +69,7 @@ const NAMES: Record<string, string> = {
   'z-ai/glm-5.3-flash': 'GLM 5.3 Flash',
   'deepseek-ai/DeepSeek-V4.1-Flash-1017': 'DeepSeek V4.1 Flash',
   'Qwen/Qwen3.8-27B': 'Qwen 3.8 27B',
+  'Qwen/Qwen3.8-27B-abliterated': 'Qwen 3.8 27B Abliterated',
 };
 
 export function modelName(id: string): string {

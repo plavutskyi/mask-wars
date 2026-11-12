@@ -18,6 +18,15 @@
  * 3. make the vault again in one transaction that adds no key: create the account, fund it, deploy the code, `new`;
  * 4. `open_safe`: the round, with its deposit.
  *
+ * The round's masks are the arena's own and, beside them, today's guests (src/house-guests.ts): masks people forged and
+ * agents from outside that signed up over MCP, at most the network's `guests`. The vault is made with them and lets in
+ * exactly them; the round lists the same; each guest adds `guests.deposit` to the round's deposit (the storage the
+ * bounty contract sets aside for one more mask, the judge's fee of its first claim, its account id), so the bounty stays
+ * what it is. Guests take only what the house holds beyond the round it opens anyway (the vault, the deposit, the gas
+ * it keeps): the last of today's list drops out first, and a day is skipped only when that round itself cannot be paid,
+ * never for a guest. A vault made for other guests than today's retires and is made again. A guest's winnings stay
+ * with it: `home` is called only on the arena's own masks.
+ *
  * Nothing here remembers anything. `readHouse` reads the chain, `planDay` says from that reading alone which steps are
  * left or why the day is skipped, and `runDay` sends the first step, reads the chain again and plans again. A run that
  * died after any step, or whose answer was lost, starts over the same way and repeats nothing: a step the chain
@@ -62,6 +71,27 @@ const GRACE_NS = BigInt(CLAIM_GRACE_MINUTES) * NS_PER_MINUTE;
 
 /** Gas for each call. The vault asks the bounty contract how its round ended before it retires. `home` burns ≈2 TGas. */
 const GAS = { home: 10, unstick: 30, settle: 50, refund: 30, retire: 100, new: 30, open: 100 } as const;
+
+/**
+ * The house contract (contracts/house) on the house's own account: each step of the day is one of its methods, and the
+ * day's key is a function-call key for these alone (contracts/house/README.md). In the day's order.
+ */
+export const HOUSE_METHODS = ["home", "unstick", "settle", "refund", "retire", "make_vault", "open_round"] as const;
+/**
+ * Gas for each method of the house contract: what it passes on (contracts/house rules.rs, `*_GAS`), its callback and
+ * its own work. The day's key pays the whole of it from its allowance, whatever is burnt, so it is no more than that.
+ */
+const HOUSE_GAS: Readonly<Record<(typeof HOUSE_METHODS)[number], number>> = {
+  home: 20,
+  unstick: 40,
+  settle: 60,
+  refund: 40,
+  retire: 60,
+  make_vault: 100,
+  open_round: 120,
+};
+/** The code hash NEAR shows for an account with no code. */
+const NO_CODE = "11111111111111111111111111111111";
 /** Less than this above what a mask keeps is not worth the gas of a call: it waits for the next win. */
 export const HOME_LEAST = 10n ** 22n;
 
@@ -95,6 +125,8 @@ export interface HouseConfig {
   };
   /** `houseMax`: the day brings no mask's winnings home past it (limits.house_max). */
   readonly limits: { readonly safeMax: bigint; readonly depositMax: bigint; readonly houseMax: bigint };
+  /** At most so many guests beside `masks`, and what each adds to the round's deposit (packages/network `guests`). */
+  readonly guests: { readonly max: number; readonly deposit: bigint };
 }
 
 /** The house's config on network `n`, with the judge its rounds name. */
@@ -122,6 +154,7 @@ export function houseConfig(n: Network, judgeVersion: string): HouseConfig {
       maskKeep: yocto(r.mask_keep),
     },
     limits: { safeMax: yocto(n.limits.hand.safe_max), depositMax: yocto(n.limits.hand.deposit_max), houseMax: yocto(n.limits.house_max) },
+    guests: { max: n.guests.masks + n.guests.agents, deposit: yocto(n.guests.deposit) },
   };
 }
 
@@ -227,6 +260,18 @@ export interface HouseState {
   /** The first id no bounty contract of the arena holds, and the round right before it on the house's contract. */
   readonly nextId: string;
   readonly last: { readonly id: string; readonly owner: string; readonly state: string; readonly openedNs: bigint; readonly deadlineNs: bigint } | null;
+  /**
+   * The house contract's own day (its `day` view) when the house runs it: every step then goes through it. Null on a
+   * house with no code, whose key signs each step itself.
+   */
+  readonly contract?: HouseContractDay | null;
+}
+
+/** The house contract's `day`: the last round it opened, that round's slot, and the slot it made the vault in (0: none). */
+export interface HouseContractDay {
+  readonly lastRound: number;
+  readonly lastSlotNs: bigint;
+  readonly madeSlotNs: bigint;
 }
 
 export type DayStep =
@@ -236,8 +281,10 @@ export type DayStep =
   | { readonly kind: "settle"; readonly id: string }
   | { readonly kind: "refund"; readonly id: string }
   | { readonly kind: "retire" }
-  | { readonly kind: "create" }
-  | { readonly kind: "open"; readonly id: string };
+  /** The vault, made with the arena's masks and `guests` beside them. */
+  | { readonly kind: "create"; readonly guests?: readonly string[] }
+  /** The round on the vault, for exactly the masks the vault lets in (the arena's own when none is named). */
+  | { readonly kind: "open"; readonly id: string; readonly masks?: readonly string[] };
 
 /** A round of the house that is open. Times in ns. */
 export interface OpenRound {
@@ -246,6 +293,8 @@ export interface OpenRound {
   readonly challenge: string;
   readonly commitUntilNs: bigint;
   readonly deadlineNs: bigint;
+  /** Every mask on its list: the arena's own and its guests. */
+  readonly masks?: readonly string[];
 }
 
 export type DayPlan =
@@ -273,6 +322,16 @@ export interface PlanOptions {
   readonly anyTime?: boolean;
   /** Masks this run already called `home()` on: once per mask per run, so the day goes on without calling them again. */
   readonly skipHome?: readonly string[];
+  /**
+   * Today's guests (src/house-guests.ts), the one with the most right to a seat first, for a vault made in this plan.
+   * A vault already made keeps its own. Given, even empty, it is what a vault on chain without a round must match.
+   */
+  readonly guests?: readonly string[];
+  /**
+   * This run made the vault: the gas the house kept for the day bought its making, and the round opens on it with
+   * the deposit alone. Without it a vault that waits on chain needs the gas kept again.
+   */
+  readonly made?: boolean;
 }
 
 const near = (y: bigint): string => {
@@ -286,7 +345,30 @@ const raceNo = (id: string): number | null => {
   const m = /^race-(\d{1,9})$/.exec(id);
   return m ? Number(m[1]) : null;
 };
-const sameSet = (a: readonly string[], b: readonly string[]) => a.length === b.length && [...a].sort().join() === [...b].sort().join();
+/** The masks of a vault or a round, besides the arena's own: its guests. */
+export const guestsOf = (masks: readonly string[], cfg: Pick<HouseConfig, "masks">): string[] => masks.filter((m) => !cfg.masks.includes(m));
+
+/** Today's guests as the vault takes them: none of the arena's own, each once, at most the network's number. */
+const todays = (cfg: Pick<HouseConfig, "masks" | "guests">, guests: readonly string[] | undefined): string[] =>
+  (guests ?? []).filter((g, i, all) => !cfg.masks.includes(g) && all.indexOf(g) === i).slice(0, cfg.guests.max);
+const sameMembers = (a: readonly string[], b: readonly string[]) => a.length === b.length && a.every((x) => b.includes(x));
+
+/**
+ * How many guests a round can take on top of the house's own: what the house can spend beyond the round it opens
+ * anyway (`spare`), a deposit each, and within limits.hand.deposit_max. Guests never cost the day its round.
+ */
+const guestSeats = (cfg: Pick<HouseConfig, "round" | "guests" | "limits">, spare: bigint): number => {
+  const each = cfg.guests.deposit;
+  const cap = cfg.limits.depositMax - cfg.round.deposit;
+  if (spare < 0n || cap < 0n) return 0;
+  if (each === 0n) return cfg.guests.max;
+  const n = [spare / each, cap / each, BigInt(cfg.guests.max)].reduce((a, b) => (a < b ? a : b));
+  return Number(n);
+};
+
+/** The round's deposit for these masks: the network's, and `guests.deposit` for each guest. */
+export const openDeposit = (cfg: Pick<HouseConfig, "masks" | "round" | "guests">, masks: readonly string[] = cfg.masks): bigint =>
+  cfg.round.deposit + BigInt(guestsOf(masks, cfg).length) * cfg.guests.deposit;
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Reading the chain
@@ -456,8 +538,13 @@ export async function readHouse(chain: Chain, cfg: HouseConfig): Promise<HouseSt
   ]);
   const lock = vault?.safe?.lock ?? null;
   const round = lock && lock.arbiter === cfg.bounty ? await readRound(chain, cfg.bounty, lock.bounty) : null;
+  // A house with code runs the house contract, and its `day` must answer: a house whose code says nothing is an error,
+  // never a reason to sign the steps another way.
+  const contract = house && house.code_hash !== NO_CODE ? await readContractDay(chain, cfg.house) : null;
   const after = round ? raceNo(round.id) : null;
-  const free = await firstFreeId(chain, cfg.contracts, after === null ? null : after + 1);
+  // The house contract opens only a number after its own last round: the search starts there at least.
+  const from = Math.max(after === null ? 0 : after + 1, contract ? contract.lastRound + 1 : 0);
+  const free = await firstFreeId(chain, cfg.contracts, from > 0 ? from : null);
   // The round right before the first free id: the one that tells whether this slot already had its round.
   let last: HouseState["last"] = null;
   if (round && raceNo(round.id) === free - 1) last = { id: round.id, owner: round.owner, state: round.state, openedNs: round.openedNs, deadlineNs: round.deadlineNs };
@@ -480,7 +567,16 @@ export async function readHouse(chain: Chain, cfg: HouseConfig): Promise<HouseSt
     blocking: pending === "code" || pending === "admin" ? pending : null,
     nextId: raceId(free),
     last,
+    contract,
   };
+}
+
+async function readContractDay(chain: Chain, house: string): Promise<HouseContractDay> {
+  const d = await view<{ last_round: number; last_slot_ns: string; made_slot_ns?: string }>(chain, house, "day").catch((e: Error) => {
+    throw new Error(`${house} runs code that does not answer the house contract's day: ${e.message}`);
+  });
+  if (d.made_slot_ns === undefined) throw new Error(`${house} runs a house contract from before made_slot_ns (1.0.0): deploy 1.1.0 or later`);
+  return { lastRound: Number(d.last_round), lastSlotNs: BigInt(d.last_slot_ns), madeSlotNs: BigInt(d.made_slot_ns) };
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -494,7 +590,9 @@ export function vaultFault(v: VaultState, cfg: HouseConfig): string | null {
   if (v.safe.owner !== cfg.vault) return `its owner is ${v.safe.owner}, not itself`;
   if (v.safe.team !== cfg.house) return `its team is ${v.safe.team ?? "nobody"}, not ${cfg.house}`;
   if (v.safe.arbiter !== cfg.bounty) return `its bounty contract is ${v.safe.arbiter ?? "none"}, not ${cfg.bounty}`;
-  if (!sameSet(v.safe.masks, cfg.masks)) return "its masks are not the round's";
+  // The arena's own masks, each once, and at most the network's number of guests beside them.
+  if (!cfg.masks.every((m) => v.safe!.masks.includes(m)) || new Set(v.safe.masks).size !== v.safe.masks.length) return "its masks are not the round's";
+  if (guestsOf(v.safe.masks, cfg).length > cfg.guests.max) return `it lets in ${guestsOf(v.safe.masks, cfg).length} guests, more than ${cfg.guests.max}`;
   if (v.safe.available < cfg.round.minLoot + SWEEP_MARGIN) {
     return `it can pay out ${near(v.safe.available)}, less than the least drain of ${near(cfg.round.minLoot)} and its margin`;
   }
@@ -613,7 +711,7 @@ function planRest(s: HouseState, cfg: HouseConfig, o: PlanOptions, homeComing: b
       if (!round) return { kind: "skip", why: `${cfg.bounty} does not hold ${lock.bounty}, the round ${cfg.vault} is armed for` };
       // A round sealing right now is raced as it is, whoever opened it: an earlier run, or the owner by hand.
       if (round.state === "open" && s.nowNs < round.commitUntilNs) {
-        const open = { id: round.id, safe: cfg.vault, challenge: HOUSE_CHALLENGE, commitUntilNs: round.commitUntilNs, deadlineNs: round.deadlineNs };
+        const open = { id: round.id, safe: cfg.vault, challenge: HOUSE_CHALLENGE, commitUntilNs: round.commitUntilNs, deadlineNs: round.deadlineNs, masks: v.safe.masks };
         return { kind: "race", round: open, why: `round ${round.id} is open and seals until ${when(round.commitUntilNs)}: racing it` };
       }
       if (!o.anyTime && slotNs !== null && round.openedNs >= slotNs) {
@@ -628,13 +726,54 @@ function planRest(s: HouseState, cfg: HouseConfig, o: PlanOptions, homeComing: b
     } else {
       // A vault no round was opened on: an earlier run made it and stopped. One that is right takes the round as it
       // is; any other goes back to the house first, and a safe without a round retires at once.
-      const fault = vaultFault(v, cfg);
+      // Today's guests, when the run knows them: a vault made for another set (its `open` failed on another day) would
+      // let in accounts nobody checked for this slot, and keep out the ones who signed up for it. A vault made with the
+      // first of today's guests, as many as the house could pay for then, is today's.
+      const want = todays(cfg, o.guests);
+      const has = guestsOf(v.safe.masks, cfg);
+      // Under the house contract the vault's masks are the ones its terms pin, made in this very slot: not a day's guests.
+      const stale = !s.contract && o.guests !== undefined && !sameMembers(has, want.slice(0, has.length)) ? `its guests are not today's (${want.length > 0 ? want.join(", ") : "none"})` : null;
+      // A vault whose guests' deposit the house cannot pay goes back too, and is made again with the guests it can pay
+      // for: guests never cost the day its round.
+      const dear = !s.contract && has.length > 0 && !o.made && s.house!.free + homeComing < openDeposit(cfg, v.safe.masks) + r.gas ? `the house cannot pay the deposit of its ${has.length} guest(s)` : null;
+      const fault = vaultFault(v, cfg) ?? stale ?? dear;
       if (fault) {
         note = `${cfg.vault} is on chain without a round and cannot take one (${fault}): it retires first`;
+        steps.push({ kind: "retire" });
+      } else if (s.contract && (slotNs === null || s.contract.madeSlotNs !== slotNs)) {
+        // The house contract opens a round only on a vault it made in this very slot: one from before retires (a
+        // vault that took no round goes at once, all its NEAR home) and is made again.
+        note = `${cfg.vault} is on chain without a round, made before this slot: the house contract opens a round only on a vault made in the slot, so it retires and is made again`;
         steps.push({ kind: "retire" });
       } else ready = true;
     }
   }
+
+  // What the house can spend today: what it holds free, what a vault about to retire gives back (its whole balance),
+  // and the masks' winnings that come home first.
+  const back = steps.some((x) => x.kind === "retire") && v ? v.amount : 0n;
+  const can = s.house!.free + back + homeComing;
+  // The round's masks: those of the vault already made, or the arena's own and today's guests for a vault made now.
+  // Guests take only what the house holds beyond the round it opens anyway (the vault, the deposit, the gas it keeps):
+  // the last of today's list drops out first, and a day is never skipped for a guest.
+  const base = r.safe + r.deposit + r.gas;
+  // The house contract (contracts/house) makes the vault and opens the round with the masks its terms pin, the same
+  // every day: a guest of the day cannot come in through it, so the plan names none rather than one it cannot seat.
+  const pinned = Boolean(s.contract) && !ready;
+  const asked = todays(cfg, o.guests);
+  if (pinned && asked.length > 0) {
+    const line = `the house contract pins the round's masks: today's guest(s) ${asked.join(", ")} wait until its terms take guests`;
+    note = note ? `${note}; ${line}` : line;
+  }
+  const invited = ready ? guestsOf(v!.safe!.masks, cfg) : pinned ? [] : asked;
+  const guests = ready ? invited : invited.slice(0, guestSeats(cfg, can - base));
+  if (guests.length < invited.length && can >= base) {
+    const wait = invited.slice(guests.length);
+    const line = `the house pays for ${guests.length} of today's ${invited.length} guest(s): ${wait.join(", ")} ${wait.length === 1 ? "waits" : "wait"} for another day`;
+    note = note ? `${note}; ${line}` : line;
+  }
+  const roundMasks = [...cfg.masks, ...guests];
+  const deposit = openDeposit(cfg, roundMasks);
 
   // Whether a round opens after that, and if not, why: nothing is due, the slot has its round, or the day is skipped.
   const stop = ((): { kind: "waiting" | "done" | "skip"; why: string } | null => {
@@ -652,7 +791,7 @@ function planRest(s: HouseState, cfg: HouseConfig, o: PlanOptions, homeComing: b
     }
     if (!cfg.safeCode) return skip("the network's safe_code is not set: the vault's code hash goes into packages/network once its wasm is built");
     if (r.safe > cfg.limits.safeMax) return skip(`the vault's ${near(r.safe)} is above limits.hand.safe_max, ${near(cfg.limits.safeMax)}`);
-    if (r.deposit > cfg.limits.depositMax) return skip(`the round's deposit of ${near(r.deposit)} is above limits.hand.deposit_max, ${near(cfg.limits.depositMax)}`);
+    if (deposit > cfg.limits.depositMax) return skip(`the round's deposit of ${near(deposit)} is above limits.hand.deposit_max, ${near(cfg.limits.depositMax)}`);
     if (!s.safeCodes.includes(cfg.safeCode)) {
       return skip(`${cfg.bounty} does not know the vault's code ${cfg.safeCode}: bounty-change.ps1 -AllowSafe, then -Apply after its hour`);
     }
@@ -672,10 +811,9 @@ function planRest(s: HouseState, cfg: HouseConfig, o: PlanOptions, homeComing: b
         return skip(`${near(r.safe)} in the vault would leave less than the least drain of ${near(r.minLoot)} above the ${near(stake)} its code and state lock`);
       }
     }
-    const need = (ready ? 0n : r.safe) + r.deposit + r.gas;
-    // A vault about to retire gives its whole balance back first, and so do the masks' winnings.
-    const back = steps.some((x) => x.kind === "retire") && v ? v.amount : 0n;
-    if (s.house!.free + back + homeComing < need) {
+    // A vault this run made was paid with the gas the house kept: what is left of it buys the open's.
+    const need = (ready ? 0n : r.safe) + deposit + (ready && o.made ? 0n : r.gas);
+    if (can < need) {
       const comes = [back > 0n ? `${near(back)} comes back with the vault` : "", homeComing > 0n ? `${near(homeComing)} comes home from the masks` : ""];
       const and = comes.filter((c) => c).join(" and ");
       return skip(`the house holds ${near(s.house!.free)} free${and ? ` and ${and}` : ""}: the round needs ${near(need)}`);
@@ -688,8 +826,8 @@ function planRest(s: HouseState, cfg: HouseConfig, o: PlanOptions, homeComing: b
     if (steps.length === 0) return stop;
     return { kind: "steps", steps, stop: stop.why, ...(note ? { note } : {}) };
   }
-  if (!ready) steps.push({ kind: "create" });
-  steps.push({ kind: "open", id: s.nextId });
+  if (!ready) steps.push(guests.length > 0 ? { kind: "create", guests } : { kind: "create" });
+  steps.push(guests.length > 0 ? { kind: "open", id: s.nextId, masks: roundMasks } : { kind: "open", id: s.nextId });
   if (o.anyTime && nextSlotNs !== null) {
     const over = s.nowNs + BigInt(r.hours * 60) * NS_PER_MINUTE + GRACE_NS;
     if (over > nextSlotNs) note ??= `a round opened now can stay open until ${when(over)}: the slot of ${when(nextSlotNs)} would be skipped if nobody wins it`;
@@ -707,13 +845,13 @@ export interface StepTx {
 }
 
 /** The arguments `new` takes on the vault: it owns itself, lets in the round's masks and takes only the house's round. */
-export const vaultInit = (cfg: HouseConfig) => ({ owner: cfg.vault, masks: [...cfg.masks], arbiter: cfg.bounty, team: cfg.house });
+export const vaultInit = (cfg: HouseConfig, guests: readonly string[] = []) => ({ owner: cfg.vault, masks: [...cfg.masks, ...guests], arbiter: cfg.bounty, team: cfg.house });
 
 /** The arguments `open_safe` takes for round `id`. */
-export const roundArgs = (cfg: HouseConfig, id: string) => ({
+export const roundArgs = (cfg: HouseConfig, id: string, masks: readonly string[] = cfg.masks) => ({
   id,
   safe: cfg.vault,
-  masks: [...cfg.masks],
+  masks: [...masks],
   min_loot: cfg.round.minLoot.toString(),
   hours: cfg.round.hours,
   commit_minutes: cfg.round.commitMinutes,
@@ -735,10 +873,48 @@ export function stepText(step: DayStep, cfg: HouseConfig): string {
       return `refund: the bounty of ${step.id}, which nobody won, goes back to ${cfg.house}`;
     case "retire":
       return `retire: ${cfg.vault} deletes itself and gives its whole balance back to ${cfg.house}`;
-    case "create":
-      return `make ${cfg.vault} with ${near(cfg.round.safe)} in one transaction that adds no key: create, fund, deploy, new`;
+    case "create": {
+      const g = step.guests ?? [];
+      return `make ${cfg.vault} with ${near(cfg.round.safe)} in one transaction that adds no key: create, fund, deploy, new${g.length > 0 ? `, letting in ${g.length} guest(s) beside the arena's masks: ${g.join(", ")}` : ""}`;
+    }
     case "open":
-      return `open_safe: round ${step.id} on ${cfg.vault} with a deposit of ${near(cfg.round.deposit)}`;
+    {
+      const g = guestsOf(step.masks ?? cfg.masks, cfg).length;
+      return `open_safe: round ${step.id} on ${cfg.vault}${g > 0 ? ` for the arena's ${cfg.masks.length} masks and ${g} guest(s),` : ""} with a deposit of ${near(openDeposit(cfg, step.masks))}`;
+    }
+  }
+}
+
+/** The method of the house contract that makes `step`. */
+export const houseMethod = (step: DayStep): (typeof HOUSE_METHODS)[number] =>
+  step.kind === "create" ? "make_vault" : step.kind === "open" ? "open_round" : step.kind;
+
+/**
+ * The transaction of `step` through the house contract: one call on the house's own account, nothing attached, which
+ * the day's function-call key may sign. The contract passes it on with the terms it pins; making the vault hands it
+ * the wasm itself as the call's input.
+ */
+export function houseStepTx(step: DayStep, cfg: HouseConfig, wasm?: Uint8Array | null): StepTx {
+  const method = houseMethod(step);
+  const call = (args: object) => ({ receiver: cfg.house, actions: [functionCall(method, args, HOUSE_GAS[method])] });
+  switch (step.kind) {
+    case "home":
+      return call({ mask: step.mask });
+    case "unstick":
+      return call({ id: step.id, claim: String(step.claim) });
+    case "settle":
+    case "refund":
+    case "open":
+      return call({ id: step.id });
+    case "retire":
+      return call({});
+    case "create": {
+      if (!wasm) throw new Error("the safe's wasm is not at hand: nothing to deploy");
+      const missing = retireMissing(wasmInfo(wasm));
+      if (missing.length > 0) throw new Error(`the safe's wasm exports no ${missing.join(" or ")}: a vault made from it could never retire`);
+      const raw: Action = { kind: "functionCall", method, args: new Uint8Array(wasm), gas: BigInt(HOUSE_GAS[method]) * 10n ** 12n, deposit: 0n };
+      return { receiver: cfg.house, actions: [raw] };
+    }
   }
 }
 
@@ -760,10 +936,10 @@ export function stepTx(step: DayStep, cfg: HouseConfig, wasm?: Uint8Array | null
       // The plan refuses such a code before this; the transaction refuses it again, the last word before it is signed.
       const missing = retireMissing(wasmInfo(wasm));
       if (missing.length > 0) throw new Error(`the safe's wasm exports no ${missing.join(" or ")}: a vault made from it could never retire`);
-      return { receiver: cfg.vault, actions: [createAccount(), transfer(cfg.round.safe), deployContract(wasm), functionCall("new", vaultInit(cfg), GAS.new)] };
+      return { receiver: cfg.vault, actions: [createAccount(), transfer(cfg.round.safe), deployContract(wasm), functionCall("new", vaultInit(cfg, step.guests), GAS.new)] };
     }
     case "open":
-      return { receiver: cfg.bounty, actions: [functionCall("open_safe", roundArgs(cfg, step.id), GAS.open, cfg.round.deposit)] };
+      return { receiver: cfg.bounty, actions: [functionCall("open_safe", roundArgs(cfg, step.id, step.masks), GAS.open, openDeposit(cfg, step.masks))] };
   }
 }
 
@@ -785,6 +961,11 @@ export interface DayOptions {
   readonly sleep?: (ms: number) => Promise<void>;
   /** How long to look for a step on chain after its answer was lost. */
   readonly settleMs?: number;
+  /**
+   * Today's guests (src/house-guests.ts `pickGuests`), let into a vault this run makes, as many as the house can pay
+   * for. An empty list says nobody plays as a guest today; left out, a vault already on chain keeps the guests it has.
+   */
+  readonly guests?: readonly string[];
 }
 
 /** A transaction this run sent. */
@@ -842,7 +1023,10 @@ export async function runDay(o: DayOptions): Promise<Day> {
   const homed: string[] = [];
   /** The latest reading of the chain. */
   let last = null as HouseState | null;
-  const plan = (s: HouseState) => planDay(s, cfg, { wasm, skipHome: homed, ...(o.anyTime ? { anyTime: true } : {}) });
+  // Today's guests as given, an empty list included: the day knows nobody plays as a guest today, and a vault left
+  // with yesterday's guests retires, as `--plan` says too.
+  const plan = (s: HouseState) =>
+    planDay(s, cfg, { wasm, skipHome: homed, ...(o.anyTime ? { anyTime: true } : {}), ...(o.guests !== undefined ? { guests: o.guests } : {}), ...(count.has("create") ? { made: true } : {}) });
   const read = async () => plan((last = await readHouse(o.chain, cfg)));
   const sent: Sent[] = [];
   /** How many times each kind of step went out: a day needs each once, and a few claims dropped at most. */
@@ -865,8 +1049,10 @@ export async function runDay(o: DayOptions): Promise<Day> {
     if (n > most) throw new Error(`${step.kind} was sent and the chain asks for it again: stopping`);
     count.set(step.kind, n);
 
-    log(stepText(step, cfg));
-    const tx = stepTx(step, cfg, o.wasm);
+    // A house that runs the house contract takes each step as a call of its own: the key may be the day's key alone.
+    const viaHouse = Boolean(last?.contract);
+    log(viaHouse ? `${stepText(step, cfg)} (through the house contract: ${houseMethod(step)})` : stepText(step, cfg));
+    const tx = viaHouse ? houseStepTx(step, cfg, o.wasm) : stepTx(step, cfg, o.wasm);
     const houseBefore = last?.house?.amount ?? null;
     let hash = "(the answer was lost)";
     let failure = "";
@@ -924,12 +1110,15 @@ export function daySummary(day: Day, cfg: HouseConfig): string[] {
   const txs = day.sent.map((s) => `- \`${s.step}\`: ${s.hash}`);
   if (day.kind === "opened" || day.kind === "open") {
     const r = day.round;
+    const masks = r.masks ?? cfg.masks;
+    const guests = guestsOf(masks, cfg);
     return [
       `### Round ${r.id}`,
       "",
       `- target: \`${r.challenge}\` on \`${r.safe}\` (code \`${cfg.safeCode}\`)`,
-      `- in the vault: ${near(cfg.round.safe)}, deposit: ${near(cfg.round.deposit)}, a drain counts from ${near(cfg.round.minLoot)}`,
+      `- in the vault: ${near(cfg.round.safe)}, deposit: ${near(openDeposit(cfg, masks))}, a drain counts from ${near(cfg.round.minLoot)}`,
       `- masks: ${cfg.masks.map((m) => `\`${m}\``).join(", ")}`,
+      ...(guests.length > 0 ? [`- guests: ${guests.map((m) => `\`${m}\``).join(", ")}`] : []),
       `- sealing until ${when(r.commitUntilNs)}, deadline ${when(r.deadlineNs)}`,
       ...(day.kind === "open" ? [`- not opened by this run: ${day.why}`] : []),
       ...txs,

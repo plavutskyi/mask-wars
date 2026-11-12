@@ -37,6 +37,7 @@
 }
 
 .tab:focus-visible,
+.check:focus-visible,
 .btn:focus-visible {
   outline: 2px solid var(--ice);
   outline-offset: 2px;
@@ -52,7 +53,9 @@
   max-width: 1312px;
   width: 100%;
   margin: 0 auto;
-  padding: calc(64px + env(safe-area-inset-top) + 32px) var(--gut) 64px;
+  /* The foot is a little shorter than the head: with one more tool in the list (MASK CHECK on Agent Market) the
+     panel and its button still hold one 900 px screen. */
+  padding: calc(64px + env(safe-area-inset-top) + 32px) var(--gut) 48px;
 }
 
 /* The left column on a desk: the title, then what an agent reads. On a phone its parts take their own places. */
@@ -249,6 +252,9 @@
   .tab:hover {
     color: var(--ice);
   }
+  .check:hover {
+    box-shadow: inset 0 0 0 1px var(--ice);
+  }
 }
 
 .tools {
@@ -278,7 +284,40 @@
   color: var(--ice-60);
 }
 
-/* The one tool a person can try without an agent. */
+/* The one tool a person can try without an agent: the door to MASK CHECK. A quiet button of its own under the list,
+   a finger tall, its words in the page's own face. */
+.check {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 52px;
+  margin-top: -12px;
+  padding: 0 20px;
+  border-radius: var(--radius);
+  box-shadow: inset 0 0 0 1px var(--ice-38);
+  color: var(--ice);
+  font-size: 13px;
+  transition:
+    box-shadow 160ms,
+    transform 100ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.check .word {
+  letter-spacing: 0.06em;
+}
+
+.checkArrow {
+  flex: none;
+  width: 22px;
+  height: 11px;
+}
+
+.check:active {
+  transform: scale(0.97);
+}
+
+/* A link out of a tool's line. */
 .try {
   white-space: nowrap;
   color: var(--ice);
@@ -298,12 +337,51 @@
   }
 }
 
+/* The line the sheet of its «i» opens from (Info's `anchor="line"`): positioned, with no stacking of its own. */
 .note {
+  position: relative;
   margin-top: -8px;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.4;
   color: var(--ice-60);
   text-wrap: pretty;
+}
+
+/* The «i» stands right after the last words and never parts from them. */
+.more {
+  display: inline-flex;
+  margin-left: 12px;
+  vertical-align: middle;
+}
+
+/* In the sheet: a group's name over the names of its tools. */
+.group {
+  display: grid;
+  gap: 6px;
+}
+
+.group + .group {
+  margin-top: 16px;
+}
+
+.groupTitle {
+  font-family: var(--font-word);
+  font-weight: 800;
+  font-stretch: 125%;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: var(--ice-60);
+}
+
+.groupNames {
+  font-family: var(--font-num);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: var(--ice);
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 1000px) {
@@ -348,10 +426,15 @@
     padding: 20px 16px;
     gap: 20px;
   }
-  /* Long words narrow on the width axis, never in size (BRANDBOOK §4). */
+  /* The same wide face as on a desk. Each tab is as wide as its own words plus an even share of what is left, so the
+     longest name fits a 360 px phone without a narrower face. */
+  .tabs {
+    display: flex;
+  }
   .tab {
-    font-size: 12px;
-    font-stretch: 85%;
+    flex: 1 1 auto;
+    padding: 0 4px;
+    font-size: 11px;
     letter-spacing: 0.04em;
   }
   .cmd {
@@ -386,7 +469,8 @@
   .tab {
     transition: opacity 200ms;
   }
-  .btn:active {
+  .btn:active,
+  .check:active {
     transform: none;
   }
 }

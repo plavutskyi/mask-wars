@@ -19,3 +19,10 @@ export function isMainnetName(id: string): boolean {
 export function isTestnetName(id: string): boolean {
   return id === "testnet" || id.endsWith(".testnet");
 }
+
+/** `child` is a direct sub-account of `parent` (`vault.house.near` of `house.near`): only `parent` can make it. */
+export function isSubAccountOf(child: string, parent: string): boolean {
+  if (!child.endsWith(`.${parent}`)) return false;
+  const name = child.slice(0, child.length - parent.length - 1);
+  return name.length > 0 && !name.includes(".");
+}

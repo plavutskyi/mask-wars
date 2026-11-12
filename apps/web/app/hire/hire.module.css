@@ -52,20 +52,22 @@
   width: 100%;
   max-width: 1312px;
   margin: 0 auto;
-  padding: calc(64px + env(safe-area-inset-top) + 16px) var(--gut) 24px;
+  /* The words start a clear step under the header, as on the site's other first screens. */
+  padding: calc(64px + env(safe-area-inset-top) + 32px) var(--gut) 16px;
 }
 
 .copy {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 24px;
+  gap: 20px;
   min-width: 0;
 }
 
-/* Three words, three lines on a desk; two lines where the stage stacks. */
+/* Three words, three lines on a desk; two lines where the stage stacks. The size follows the screen's height too, so
+   the name, the button, the route and the line to paste hold one 1440 x 900 screen with room under the last line. */
 .title {
-  font-size: clamp(34px, 5.6vw, 84px);
+  font-size: clamp(34px, min(5.6vw, 8svh), 84px);
   line-height: 0.94;
 }
 
@@ -293,7 +295,7 @@
 .band {
   position: relative;
   flex: none;
-  padding: 24px var(--gut) calc(32px + env(safe-area-inset-bottom));
+  padding: 16px var(--gut) calc(32px + env(safe-area-inset-bottom));
 }
 
 .band::before {
@@ -323,6 +325,7 @@
 .embedLabel {
   font-size: 15px;
   letter-spacing: 0.08em;
+  white-space: nowrap;
 }
 
 .tabs {
@@ -352,6 +355,23 @@
   grid-template-columns: minmax(0, 1fr) 240px;
   align-items: stretch;
   gap: 8px;
+}
+
+/* A whole file: the code as a block that scrolls inside itself, Copy under it on the right. */
+.embedRow[data-block] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.embedRow[data-block] .code {
+  align-items: flex-start;
+  max-height: 340px;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.embedRow[data-block] .btn {
+  justify-self: end;
+  width: 240px;
 }
 
 .code {
@@ -472,6 +492,18 @@
   }
   .embedRow {
     grid-template-columns: minmax(0, 1fr);
+  }
+  .embedRow[data-block] .btn {
+    justify-self: stretch;
+    width: auto;
+  }
+  /* Three tabs and the title on one line at 360 px. */
+  .tab {
+    min-width: 0;
+    padding: 0 10px;
+  }
+  .embedRow[data-block] .code {
+    max-height: 300px;
   }
   .code {
     padding: 14px 16px;

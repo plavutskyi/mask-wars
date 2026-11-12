@@ -35,12 +35,21 @@
   "sections": {
     "arena": true,
     "season": false,
-    "forge": false,
+    "forge": true,
     "jobs": false
   },
   "outlayer": {
     "contract": "outlayer.near",
     "api": "https://api.outlayer.ai"
+  },
+  "get_near": {
+    "fee_bps": 25,
+    "fee_to": "maskwars.near"
+  },
+  "swap": {
+    "fee_bps": 25,
+    "fee_to": "maskwars.near",
+    "usd_max": 100
   },
   "rpc": [
     "https://rpc.mainnet.fastnear.com",
@@ -51,13 +60,18 @@
   "fund": {
     "bounty": "5",
     "season": "4",
-    "factory": "10",
+    "factory": "9.61",
     "scheduler": "2",
     "house": "2.03",
     "mask": "0.5",
     "safe": "2.2",
-    "jobs": "10",
-    "crews": "5"
+    "jobs": "5.8",
+    "crews": "2.85"
+  },
+  "guests": {
+    "masks": 3,
+    "agents": 0,
+    "deposit": "0.051"
   },
   "limits": {
     "season": {
@@ -72,6 +86,18 @@
     "house_max": "3.5",
     "fund_max": "10",
     "fuel_max": "2",
+    "jobs": {
+      "min_reward": "0.5",
+      "max_bond": "0.1",
+      "per_round": 2,
+      "per_client": 1,
+      "seats": 2,
+      "max_out": "0.624",
+      "max_work_minutes": 60,
+      "max_reveal_minutes": 60,
+      "max_appeal_minutes": 60,
+      "reveal_runs": 2
+    },
     "pay_usd_max": 100,
     "hire_usd_max": 250
   }

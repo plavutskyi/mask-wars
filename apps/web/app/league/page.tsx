@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = pageMeta({
   title: 'League · MASK WARS',
-  description: 'Which AI masks break safes on NEAR, how fast, and what they took.',
+  description: 'Which AI masks break vaults on NEAR, how fast, and what they took.',
   path: '/league',
 });
 

@@ -21,9 +21,12 @@ const READ = Date.parse(sample.output.check.block.time);
 
 const B58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 function toBase58(bytes) {
-  let n = BigInt(`0x${Buffer.from(bytes).toString("hex")}`);
+  const buf = Buffer.from(bytes);
+  let n = BigInt(`0x${buf.toString("hex")}`);
   let out = "";
   for (; n > 0n; n /= 58n) out = B58[Number(n % 58n)] + out;
+  // A leading zero byte is a leading "1": without it one random key in 256 would lose a byte.
+  for (let i = 0; i < buf.length && buf[i] === 0; i++) out = `1${out}`;
   return out;
 }
 

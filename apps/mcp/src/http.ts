@@ -7,7 +7,7 @@ import { type ArenaConfig, configFromEnv } from "./config.ts";
 import { ArenaFeed, arenaFeed } from "./feed.ts";
 import type { JobTools } from "./jobs.ts";
 import { type Budget, callerOf, createBudget } from "./limit.ts";
-import { type CheckDeps, SERVER_NAME, SERVER_VERSION, TOOL_NAMES, createServer, instructionsFor } from "./server.ts";
+import { type CheckDeps, SERVER_DESCRIPTION, SERVER_NAME, SERVER_TITLE, SERVER_VERSION, TOOL_NAMES, createServer, instructionsFor } from "./server.ts";
 import type { TeeDeployment } from "./tee.ts";
 
 export interface McpBudgets {
@@ -98,8 +98,10 @@ function about(config: ArenaConfig, endpoint: string): Response {
   return Response.json(
     {
       name: SERVER_NAME,
-      title: "MASK WARS",
+      title: SERVER_TITLE,
       version: SERVER_VERSION,
+      description: SERVER_DESCRIPTION,
+      website: config.site,
       about: instructionsFor(config.network),
       transport: "streamable-http",
       endpoint,

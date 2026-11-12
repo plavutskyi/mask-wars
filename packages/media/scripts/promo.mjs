@@ -5,7 +5,7 @@
 //                          [--stills 0,30,52.5,98,140]
 //
 // Footage: the live site filmed in its real minute (shots/<today>/live/, scripts/live.mjs), the 3D arena filmed off
-// the site replaying the round (shots/<today>/film/, scripts/film.mjs) and pages of the site (shots/promo-1111/site/).
+// the site replaying the round (shots/<today>/film/, scripts/film.mjs) and pages of the site (shots/<today>/site/).
 // --stills renders those seconds as JPEG beside the film, for eyes, and skips the film when given alone with --no-video.
 // Needs ffmpeg.
 import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
@@ -33,7 +33,7 @@ const video = !argv.includes("--no-video");
 const live = join(root, "shots", today, "live");
 // --film names another round's reels, for a look at the cut before today's are filmed; never for the film that goes out.
 const film = flag("--film", null) ? resolve(flag("--film")) : join(root, "shots", today, "film");
-const site = join(root, "shots", "promo-1111", "site");
+const site = join(live, "..", "site");
 const FOOTAGE = {
   "race-page": join(live, "race-page-1.mp4"),
   "home-break": join(live, "home-racing-1.mp4"),

@@ -1,8 +1,10 @@
 //! `home` on a mask (contracts/home), on a real local node. A mask that wins a round of the house holds the NEAR it
 //! won; `home()`, which anyone may call, sends everything above what the mask keeps back to the house, and only there.
 //!
-//! The code here is the very file contracts/home/build.sh makes, checked against `home_code` in packages/network, so
-//! the bytes that run in these tests are the bytes the owner deploys. Its house is written into it, so the house here
+//! The code here is the very file contracts/home/build.sh makes from this source: `home()` as the next deploy runs it
+//! (that deploy is the same source built by cargo-near in its pinned image, contracts/README.md "Source on chain"; the
+//! code on the masks now is `home_code` in packages/network, and CI checks the file served under it). Its house is
+//! written into it, so the house here
 //! has its real name: `house.maskwars.near` (and `house.tinygif8324.testnet` for the testnet build), put on the node
 //! with a key of the test's own, as the sandbox lets anyone do. The vault is that house's own sub-account, as on
 //! mainnet. Everything else is as in tests/retire.rs: the real bounty contract, the real safe, the real judge reading
@@ -11,7 +13,7 @@
 //! - the mask keeps exactly 0.4 NEAR and the stake of its own storage; the rest goes to the house, to the yoctoNEAR;
 //! - at the threshold or below it nothing goes, and one yoctoNEAR above it is one yoctoNEAR sent;
 //! - a stranger's call, whatever arguments it brings, pays the stranger's gas and sends to the house alone, and the
-//!   code has no other method;
+//!   code has no other method but the read-only `contract_source_metadata` (NEP-330);
 //! - a mask running `home`, with nothing but its two function-call keys and what it keeps, seals, plays, reveals and
 //!   claims its rounds as before, is paid, and its winnings go home: the circle closes, day after day.
 
@@ -60,8 +62,8 @@ fn yocto(near: &str) -> u128 {
     whole.parse::<u128>().expect("whole") * ONE_NEAR + format!("{frac:0<24}").parse::<u128>().expect("fraction")
 }
 
-/// The code of `home` for `net`, its house and the 0.4 NEAR a mask keeps, all as packages/network names them: the
-/// wasm must hash to that network's `home_code`.
+/// The code of `home` for `net` built from this source, its house and the 0.4 NEAR a mask keeps, as packages/network
+/// names them.
 struct Home {
     wasm: Vec<u8>,
     house: AccountId,
@@ -72,7 +74,6 @@ fn home_of(net: &str) -> Result<Home> {
     built();
     let wasm = std::fs::read(home_wasm_path(net)).context("read the home wasm")?;
     let n = network(net)?;
-    assert_eq!(n["home_code"], json!(code_hash(&wasm)), "the {net} build of home is home_code of packages/network");
     let house = n["house"].as_str().context("house")?.parse()?;
     let keep = yocto(n["round"]["mask_keep"].as_str().context("mask_keep")?);
     assert_eq!(keep, 4 * ONE_NEAR / 10);
@@ -252,6 +253,16 @@ async fn home_keeps_exactly_the_threshold_and_sends_the_rest_to_the_house_alone(
             let r = stranger.call(mask.id(), method).args_json(json!({})).gas(HOME_GAS).transact().await?;
             assert!(r.is_failure() && why(&r).contains("MethodNotFound"), "{method}: {}", why(&r));
         }
+        // Its one other method only reads: where its source is (NEP-330). Nothing moves.
+        let held = balance(&worker, mask.id()).await?;
+        let meta = view(&worker, mask.id(), "contract_source_metadata", json!({})).await?;
+        assert_eq!(meta["standards"], json!([{ "standard": "nep330", "version": "1.3.0" }]), "{meta}");
+        assert!(
+            meta["link"].as_str().is_some_and(|l| l.starts_with("https://github.com/plavutskyi/mask-wars")),
+            "{meta}"
+        );
+        assert!(meta["version"].as_str().is_some_and(|v| v.split('.').count() == 3), "{meta}");
+        assert_eq!(balance(&worker, mask.id()).await?, held);
         // The mask's own key still signs for it.
         mask.transfer_near(stranger.id(), NearToken::from_millinear(10)).await?.into_result()?;
     }

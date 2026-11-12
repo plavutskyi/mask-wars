@@ -22,6 +22,7 @@ const MODEL_NAMES: Record<string, string> = {
   "z-ai/glm-5.3-flash": "GLM 5.3 Flash",
   "deepseek-ai/DeepSeek-V4.1-Flash-1017": "DeepSeek V4.1 Flash",
   "Qwen/Qwen3.8-27B": "Qwen3.8 27B",
+  "Qwen/Qwen3.8-27B-abliterated": "Qwen3.8 27B Abliterated",
 };
 export const modelName = (id: string): string => MODEL_NAMES[id] ?? id.split("/").pop()!;
 

@@ -6,7 +6,7 @@
  * The system message carries only our words. The target's source and everything about past attempts go into one JSON
  * object in the user message: a team's contract may contain text aimed at the model, and there it stays data.
  */
-import type { ChatMessage, Provider } from "@maskwars/mind";
+import { ProviderError, type ChatMessage, type Completion, type Provider, type Usage } from "@maskwars/mind";
 import type { Challenge } from "./challenge.ts";
 import type { Outcome } from "./outcome.ts";
 import { MAX_GAS_TGAS, parsePlan, type Plan, type PlanParse } from "./plan.ts";
@@ -35,9 +35,26 @@ export interface ModelAttackerOptions {
   readonly memory?: number;
 }
 
+/** One answer a mask's mind got: what NEAR AI counted for it, its list price, and its id on NEAR AI's bill. */
+export interface Answer {
+  readonly model: string;
+  readonly usage: Usage;
+  /** From the usage at NEAR AI's list price (`costUsd` in @maskwars/mind). */
+  readonly listUsd: number;
+  /** NEAR AI's `inference-id`: the bill prices the answer by it. */
+  readonly inferenceId: string | null;
+  /** Cut off on its way, out of time: no tokens are known, and only the bill can price it by its id. */
+  readonly cut?: boolean;
+  /** Its TEE signature checked out against the signers the model's fresh attestation named (`signatureVerified`). */
+  readonly verified?: boolean;
+}
+
 export class ModelAttacker implements Attacker {
   readonly id: string;
   readonly #o: Required<Omit<ModelAttackerOptions, "id">>;
+  readonly #answers: Answer[] = [];
+  readonly #calls = new Set<Promise<unknown>>();
+  #unanswered = 0;
 
   constructor(options: ModelAttackerOptions) {
     this.id = options.id;
@@ -54,19 +71,62 @@ export class ModelAttacker implements Attacker {
     };
   }
 
+  /** The model this mask thinks with. */
+  get model(): string {
+    return this.#o.model;
+  }
+
+  /** Every answer the mind got so far, in order: what the race's record of its mind is made of. */
+  get answers(): readonly Answer[] {
+    return [...this.#answers];
+  }
+
+  /**
+   * Calls that brought nothing back to count (out of time before NEAR AI named the call, refused, unreachable). A call
+   * cut off after NEAR AI named it is among `answers`, marked `cut`, for the bill to price.
+   */
+  get unanswered(): number {
+    return this.#unanswered;
+  }
+
+  /**
+   * Resolves once no call of this mind is on its way. A race is over the moment one mask wins, while the others may
+   * still be waiting on their models (each call up to its own deadline, 300 s): their answers come all the same and are
+   * paid for all the same, so the race's record waits for them.
+   */
+  async idle(): Promise<void> {
+    while (this.#calls.size > 0) await Promise.allSettled([...this.#calls]);
+  }
+
   async propose(challenge: Challenge, history: readonly AttemptMemory[]): Promise<PlanParse> {
     let text: string;
+    const call = this.#o.provider.complete({
+      model: this.#o.model,
+      messages: attackPrompt(challenge, history.slice(-this.#o.memory)),
+      maxTokens: this.#o.maxTokens,
+      temperature: this.#o.temperature,
+      timeoutMs: this.#o.timeoutMs,
+    });
+    this.#calls.add(call);
     try {
-      const completion = await this.#o.provider.complete({
-        model: this.#o.model,
-        messages: attackPrompt(challenge, history.slice(-this.#o.memory)),
-        maxTokens: this.#o.maxTokens,
-        temperature: this.#o.temperature,
-        timeoutMs: this.#o.timeoutMs,
+      const completion: Completion = await call;
+      this.#answers.push({
+        model: completion.model,
+        usage: { ...completion.usage },
+        listUsd: completion.costUsd,
+        inferenceId: completion.inferenceId ?? null,
+        verified: completion.signatureVerified,
       });
       text = completion.text;
     } catch (e) {
+      // An answer that came with no plan in it (the model spent its tokens thinking) is paid for all the same, and so is
+      // one cut off on its way after NEAR AI named it: the bill prices it by its id.
+      const b = e instanceof ProviderError ? e.billed : undefined;
+      if (b) this.#answers.push({ model: b.model, usage: { ...b.usage }, listUsd: b.costUsd, inferenceId: b.inferenceId ?? null, ...(b.cut ? { cut: true } : {}), verified: false });
+      else this.#unanswered += 1;
       return { ok: false, error: `model call failed: ${(e as Error).message}` };
+    } finally {
+      this.#calls.delete(call);
     }
     return parsePlan(text, challenge.manifest.limits.max_steps);
   }

@@ -5220,6 +5220,1044 @@
      "https://a.example"
     ]
    }
+  },
+  {
+   "name": "the house's vault in its open round: an arena target by design, warn; its new account said, not warned",
+   "network": "mainnet",
+   "account": "vault.house.maskwars.near",
+   "list": "repo",
+   "now_ms": 1793984405000,
+   "window_hours": 24,
+   "reader": {
+    "endpoints": [
+     "https://a.example",
+     "https://b.example"
+    ],
+    "crossCheck": true,
+    "archival": {
+     "https://a.example": "https://archive-a.example"
+    }
+   },
+   "exchanges": [
+    {"url":"https://a.example","method":"block","params":{"finality":"final"},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":230000000,"prev_height":229999999,"hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxp4vAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793984400000000000,"timestamp_nanosec":"1793984400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://b.example","method":"block","params":{"finality":"final"},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":230000000,"prev_height":229999999,"hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxp4vAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793984400000000000,"timestamp_nanosec":"1793984400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://a.example","method":"block","params":{"block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":230000000,"prev_height":229999999,"hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxp4vAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793984400000000000,"timestamp_nanosec":"1793984400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://b.example","method":"block","params":{"block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":230000000,"prev_height":229999999,"hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxp4vAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793984400000000000,"timestamp_nanosec":"1793984400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"view_account","account_id":"vault.house.maskwars.near","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"amount":"1930000000000000000000000","code_hash":"GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV","storage_usage":160000,"locked":"0","storage_paid_at":0,"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"view_account","account_id":"vault.house.maskwars.near","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"amount":"1930000000000000000000000","code_hash":"GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV","storage_usage":160000,"locked":"0","storage_paid_at":0,"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"team","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[34,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"team","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[34,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"arbiter","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[34,98,111,117,110,116,121,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"arbiter","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[34,98,111,117,110,116,121,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"bounty.maskwars.near","method_name":"governance","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,97,100,109,105,110,34,58,34,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,112,101,110,100,105,110,103,34,58,110,117,108,108,44,34,115,97,102,101,95,99,111,100,101,115,34,58,91,34,71,66,99,103,74,52,82,65,66,78,72,87,88,98,56,54,88,72,75,54,97,70,101,69,107,54,113,77,116,83,78,70,104,83,51,107,97,56,78,121,75,55,106,86,34,93,44,34,108,105,118,101,34,58,49,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"bounty.maskwars.near","method_name":"governance","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,97,100,109,105,110,34,58,34,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,112,101,110,100,105,110,103,34,58,110,117,108,108,44,34,115,97,102,101,95,99,111,100,101,115,34,58,91,34,71,66,99,103,74,52,82,65,66,78,72,87,88,98,56,54,88,72,75,54,97,70,101,69,107,54,113,77,116,83,78,70,104,83,51,107,97,56,78,121,75,55,106,86,34,93,44,34,108,105,118,101,34,58,49,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"masks","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[91,34,110,111,118,97,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,110,121,120,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,114,97,99,108,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,93],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"masks","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[91,34,110,111,118,97,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,110,121,120,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,114,97,99,108,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,93],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"get_round","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,97,114,98,105,116,101,114,34,58,34,98,111,117,110,116,121,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,98,111,117,110,116,121,34,58,34,114,97,99,101,45,48,48,49,50,34,44,34,111,112,101,110,115,95,110,115,34,58,34,49,55,57,51,57,56,49,55,48,48,48,48,48,48,48,48,48,48,48,34,44,34,97,114,109,101,100,95,110,115,34,58,34,49,55,57,51,57,55,55,50,48,48,48,48,48,48,48,48,48,48,48,34,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"get_round","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,97,114,98,105,116,101,114,34,58,34,98,111,117,110,116,121,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,98,111,117,110,116,121,34,58,34,114,97,99,101,45,48,48,49,50,34,44,34,111,112,101,110,115,95,110,115,34,58,34,49,55,57,51,57,56,49,55,48,48,48,48,48,48,48,48,48,48,48,34,44,34,97,114,109,101,100,95,110,115,34,58,34,49,55,57,51,57,55,55,50,48,48,48,48,48,48,48,48,48,48,48,34,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"bounty.maskwars.near","method_name":"get","args_base64":"eyJpZCI6InJhY2UtMDAxMiJ9","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,111,119,110,101,114,34,58,34,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,97,109,111,117,110,116,34,58,34,50,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,34,44,34,116,97,114,103,101,116,34,58,34,118,97,117,108,116,46,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,100,101,97,100,108,105,110,101,95,110,115,34,58,34,49,55,57,51,57,57,49,54,48,48,48,48,48,48,48,48,48,48,48,34,44,34,115,116,97,116,117,115,34,58,123,34,115,116,97,116,101,34,58,34,111,112,101,110,34,125,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"bounty.maskwars.near","method_name":"get","args_base64":"eyJpZCI6InJhY2UtMDAxMiJ9","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,111,119,110,101,114,34,58,34,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,97,109,111,117,110,116,34,58,34,50,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,34,44,34,116,97,114,103,101,116,34,58,34,118,97,117,108,116,46,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,100,101,97,100,108,105,110,101,95,110,115,34,58,34,49,55,57,51,57,57,49,54,48,48,48,48,48,48,48,48,48,48,48,34,44,34,115,116,97,116,117,115,34,58,123,34,115,116,97,116,101,34,58,34,111,112,101,110,34,125,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"bounty.maskwars.near","method_name":"get_safe","args_base64":"eyJpZCI6InJhY2UtMDAxMiJ9","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,115,97,102,101,34,58,34,118,97,117,108,116,46,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,109,97,115,107,115,34,58,91,34,110,111,118,97,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,110,121,120,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,114,97,99,108,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,93,44,34,109,105,110,95,108,111,111,116,34,58,34,49,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,34,44,34,111,112,101,110,101,100,95,110,115,34,58,34,49,55,57,51,57,55,55,50,48,48,48,48,48,48,48,48,48,48,48,34,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"bounty.maskwars.near","method_name":"get_safe","args_base64":"eyJpZCI6InJhY2UtMDAxMiJ9","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,115,97,102,101,34,58,34,118,97,117,108,116,46,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,109,97,115,107,115,34,58,91,34,110,111,118,97,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,110,121,120,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,114,97,99,108,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,93,44,34,109,105,110,95,108,111,111,116,34,58,34,49,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,34,44,34,111,112,101,110,101,100,95,110,115,34,58,34,49,55,57,51,57,55,55,50,48,48,48,48,48,48,48,48,48,48,48,34,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"get_owner","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[34,118,97,117,108,116,46,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"get_owner","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[34,118,97,117,108,116,46,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"block","params":{"block_id":229990000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":229990000,"prev_height":229989999,"hash":"Hx3sxhf4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxhf3AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793978400000000000,"timestamp_nanosec":"1793978400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://b.example","method":"block","params":{"block_id":229990000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":229990000,"prev_height":229989999,"hash":"Hx3sxhf4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxhf3AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793978400000000000,"timestamp_nanosec":"1793978400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://a.example","method":"block","params":{"block_id":229856000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":229856000,"prev_height":229855999,"hash":"Hx3sumzwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sumzvAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793898000000000000,"timestamp_nanosec":"1793898000000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://b.example","method":"block","params":{"block_id":229856000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":229856000,"prev_height":229855999,"hash":"Hx3sumzwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sumzvAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793898000000000000,"timestamp_nanosec":"1793898000000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"view_account","account_id":"vault.house.maskwars.near","block_id":229856000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","error":{"name":"HANDLER_ERROR","cause":{"name":"UNKNOWN_ACCOUNT","info":{"block_hash":"Hx3sumzwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":229856000,"requested_account_id":"vault.house.maskwars.near"}},"code":-32000,"message":"Server error","data":"account vault.house.maskwars.near does not exist while viewing"}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"view_account","account_id":"vault.house.maskwars.near","block_id":229856000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","error":{"name":"HANDLER_ERROR","cause":{"name":"UNKNOWN_ACCOUNT","info":{"block_hash":"Hx3sumzwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":229856000,"requested_account_id":"vault.house.maskwars.near"}},"code":-32000,"message":"Server error","data":"account vault.house.maskwars.near does not exist while viewing"}}}
+   ],
+   "expect": {
+    "account": "vault.house.maskwars.near",
+    "network": "mainnet",
+    "verdict": "warn",
+    "summary": "WARN: Arena target, by design: the MASK WARS house's vault, live in race-0012 right now. Only the house funds it; only the masks of its round (nova.maskwars.near, onyx.maskwars.near, oracle.maskwars.near) can open it; after the round, retire sends the rest home to house.maskwars.near. Bounty 0.2 NEAR. Do not send NEAR here.",
+    "reasons": [
+     {
+      "code": "arena_target",
+      "level": "warn",
+      "text": "Arena target, by design: the MASK WARS house's vault, live in race-0012 right now. Only the house funds it; only the masks of its round (nova.maskwars.near, onyx.maskwars.near, oracle.maskwars.near) can open it; after the round, retire sends the rest home to house.maskwars.near. Bounty 0.2 NEAR. Do not send NEAR here.",
+      "evidence": {
+       "contract": "bounty.maskwars.near",
+       "race": "race-0012",
+       "state": "open",
+       "house": "house.maskwars.near",
+       "masks": "nova.maskwars.near, onyx.maskwars.near, oracle.maskwars.near",
+       "code_hash": "GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV",
+       "code": "https://github.com/plavutskyi/mask-wars/blob/main/contracts/challenges/live-safe/src/lib.rs",
+       "explorer": "https://nearblocks.io/address/vault.house.maskwars.near",
+       "deadline": "2026-11-06T19:00:00Z"
+      }
+     },
+     {
+      "code": "young_account",
+      "level": "info",
+      "text": "New account: it did not exist 24 h ago (block 229856000, 2026-11-05T17:00:00Z). Expected here: the house makes its vault again under the same name for every round.",
+      "evidence": {
+       "block_height": 229856000,
+       "block_time": "2026-11-05T17:00:00Z"
+      }
+     },
+     {
+      "code": "contract",
+      "level": "info",
+      "text": "A contract, code hash GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV.",
+      "evidence": {
+       "code_hash": "GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV"
+      }
+     },
+     {
+      "code": "rpc_agree",
+      "level": "info",
+      "text": "Two independent RPC providers, a.example and b.example, gave the same answer to all 13 reads.",
+      "evidence": {
+       "rpc": "a.example, b.example",
+       "reads": 13,
+       "cross_checked": 13
+      }
+     }
+    ],
+    "block": {
+     "height": 230000000,
+     "hash": "Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+     "time": "2026-11-06T17:00:00Z"
+    },
+    "checked_at": "2026-11-06T17:00:05Z",
+    "rpc": [
+     "https://a.example",
+     "https://b.example"
+    ]
+   }
+  },
+  {
+   "name": "the house's vault made again over yesterday's with a newer safe code: the change said, not warned",
+   "network": "mainnet",
+   "account": "vault.house.maskwars.near",
+   "list": "repo",
+   "now_ms": 1793984405000,
+   "window_hours": 24,
+   "reader": {
+    "endpoints": [
+     "https://a.example",
+     "https://b.example"
+    ],
+    "crossCheck": true,
+    "archival": {
+     "https://a.example": "https://archive-a.example"
+    }
+   },
+   "exchanges": [
+    {"url":"https://a.example","method":"block","params":{"finality":"final"},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":230000000,"prev_height":229999999,"hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxp4vAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793984400000000000,"timestamp_nanosec":"1793984400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://b.example","method":"block","params":{"finality":"final"},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":230000000,"prev_height":229999999,"hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxp4vAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793984400000000000,"timestamp_nanosec":"1793984400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://a.example","method":"block","params":{"block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":230000000,"prev_height":229999999,"hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxp4vAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793984400000000000,"timestamp_nanosec":"1793984400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://b.example","method":"block","params":{"block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":230000000,"prev_height":229999999,"hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxp4vAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793984400000000000,"timestamp_nanosec":"1793984400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"view_account","account_id":"vault.house.maskwars.near","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"amount":"1930000000000000000000000","code_hash":"GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV","storage_usage":160000,"locked":"0","storage_paid_at":0,"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"view_account","account_id":"vault.house.maskwars.near","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"amount":"1930000000000000000000000","code_hash":"GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV","storage_usage":160000,"locked":"0","storage_paid_at":0,"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"team","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[34,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"team","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[34,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"arbiter","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[34,98,111,117,110,116,121,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"arbiter","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[34,98,111,117,110,116,121,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"bounty.maskwars.near","method_name":"governance","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,97,100,109,105,110,34,58,34,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,112,101,110,100,105,110,103,34,58,110,117,108,108,44,34,115,97,102,101,95,99,111,100,101,115,34,58,91,34,71,66,99,103,74,52,82,65,66,78,72,87,88,98,56,54,88,72,75,54,97,70,101,69,107,54,113,77,116,83,78,70,104,83,51,107,97,56,78,121,75,55,106,86,34,93,44,34,108,105,118,101,34,58,49,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"bounty.maskwars.near","method_name":"governance","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,97,100,109,105,110,34,58,34,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,112,101,110,100,105,110,103,34,58,110,117,108,108,44,34,115,97,102,101,95,99,111,100,101,115,34,58,91,34,71,66,99,103,74,52,82,65,66,78,72,87,88,98,56,54,88,72,75,54,97,70,101,69,107,54,113,77,116,83,78,70,104,83,51,107,97,56,78,121,75,55,106,86,34,93,44,34,108,105,118,101,34,58,49,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"masks","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[91,34,110,111,118,97,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,110,121,120,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,114,97,99,108,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,93],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"masks","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[91,34,110,111,118,97,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,110,121,120,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,114,97,99,108,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,93],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"get_round","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,97,114,98,105,116,101,114,34,58,34,98,111,117,110,116,121,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,98,111,117,110,116,121,34,58,34,114,97,99,101,45,48,48,49,50,34,44,34,111,112,101,110,115,95,110,115,34,58,34,49,55,57,51,57,56,49,55,48,48,48,48,48,48,48,48,48,48,48,34,44,34,97,114,109,101,100,95,110,115,34,58,34,49,55,57,51,57,55,55,50,48,48,48,48,48,48,48,48,48,48,48,34,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"get_round","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,97,114,98,105,116,101,114,34,58,34,98,111,117,110,116,121,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,98,111,117,110,116,121,34,58,34,114,97,99,101,45,48,48,49,50,34,44,34,111,112,101,110,115,95,110,115,34,58,34,49,55,57,51,57,56,49,55,48,48,48,48,48,48,48,48,48,48,48,34,44,34,97,114,109,101,100,95,110,115,34,58,34,49,55,57,51,57,55,55,50,48,48,48,48,48,48,48,48,48,48,48,34,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"bounty.maskwars.near","method_name":"get","args_base64":"eyJpZCI6InJhY2UtMDAxMiJ9","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,111,119,110,101,114,34,58,34,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,97,109,111,117,110,116,34,58,34,50,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,34,44,34,116,97,114,103,101,116,34,58,34,118,97,117,108,116,46,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,100,101,97,100,108,105,110,101,95,110,115,34,58,34,49,55,57,51,57,57,49,54,48,48,48,48,48,48,48,48,48,48,48,34,44,34,115,116,97,116,117,115,34,58,123,34,115,116,97,116,101,34,58,34,111,112,101,110,34,125,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"bounty.maskwars.near","method_name":"get","args_base64":"eyJpZCI6InJhY2UtMDAxMiJ9","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,111,119,110,101,114,34,58,34,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,97,109,111,117,110,116,34,58,34,50,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,34,44,34,116,97,114,103,101,116,34,58,34,118,97,117,108,116,46,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,100,101,97,100,108,105,110,101,95,110,115,34,58,34,49,55,57,51,57,57,49,54,48,48,48,48,48,48,48,48,48,48,48,34,44,34,115,116,97,116,117,115,34,58,123,34,115,116,97,116,101,34,58,34,111,112,101,110,34,125,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"bounty.maskwars.near","method_name":"get_safe","args_base64":"eyJpZCI6InJhY2UtMDAxMiJ9","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,115,97,102,101,34,58,34,118,97,117,108,116,46,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,109,97,115,107,115,34,58,91,34,110,111,118,97,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,110,121,120,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,114,97,99,108,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,93,44,34,109,105,110,95,108,111,111,116,34,58,34,49,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,34,44,34,111,112,101,110,101,100,95,110,115,34,58,34,49,55,57,51,57,55,55,50,48,48,48,48,48,48,48,48,48,48,48,34,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"bounty.maskwars.near","method_name":"get_safe","args_base64":"eyJpZCI6InJhY2UtMDAxMiJ9","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,115,97,102,101,34,58,34,118,97,117,108,116,46,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,109,97,115,107,115,34,58,91,34,110,111,118,97,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,110,121,120,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,114,97,99,108,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,93,44,34,109,105,110,95,108,111,111,116,34,58,34,49,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,34,44,34,111,112,101,110,101,100,95,110,115,34,58,34,49,55,57,51,57,55,55,50,48,48,48,48,48,48,48,48,48,48,48,34,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"get_owner","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[34,118,97,117,108,116,46,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"get_owner","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[34,118,97,117,108,116,46,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"block","params":{"block_id":229990000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":229990000,"prev_height":229989999,"hash":"Hx3sxhf4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxhf3AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793978400000000000,"timestamp_nanosec":"1793978400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://b.example","method":"block","params":{"block_id":229990000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":229990000,"prev_height":229989999,"hash":"Hx3sxhf4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxhf3AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793978400000000000,"timestamp_nanosec":"1793978400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://a.example","method":"block","params":{"block_id":229856000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":229856000,"prev_height":229855999,"hash":"Hx3sumzwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sumzvAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793898000000000000,"timestamp_nanosec":"1793898000000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://b.example","method":"block","params":{"block_id":229856000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":229856000,"prev_height":229855999,"hash":"Hx3sumzwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sumzvAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793898000000000000,"timestamp_nanosec":"1793898000000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"view_account","account_id":"vault.house.maskwars.near","block_id":229856000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"amount":"1000000000000000000000000","code_hash":"8JLoDp5bYW3HbvwdjqLM6QiXEeNs7fWkuAHMCw3D7Xyn","storage_usage":150000,"locked":"0","storage_paid_at":0,"block_hash":"Hx3sumzwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":229856000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"view_account","account_id":"vault.house.maskwars.near","block_id":229856000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"amount":"1000000000000000000000000","code_hash":"8JLoDp5bYW3HbvwdjqLM6QiXEeNs7fWkuAHMCw3D7Xyn","storage_usage":150000,"locked":"0","storage_paid_at":0,"block_hash":"Hx3sumzwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":229856000}}}
+   ],
+   "expect": {
+    "account": "vault.house.maskwars.near",
+    "network": "mainnet",
+    "verdict": "warn",
+    "summary": "WARN: Arena target, by design: the MASK WARS house's vault, live in race-0012 right now. Only the house funds it; only the masks of its round (nova.maskwars.near, onyx.maskwars.near, oracle.maskwars.near) can open it; after the round, retire sends the rest home to house.maskwars.near. Bounty 0.2 NEAR. Do not send NEAR here.",
+    "reasons": [
+     {
+      "code": "arena_target",
+      "level": "warn",
+      "text": "Arena target, by design: the MASK WARS house's vault, live in race-0012 right now. Only the house funds it; only the masks of its round (nova.maskwars.near, onyx.maskwars.near, oracle.maskwars.near) can open it; after the round, retire sends the rest home to house.maskwars.near. Bounty 0.2 NEAR. Do not send NEAR here.",
+      "evidence": {
+       "contract": "bounty.maskwars.near",
+       "race": "race-0012",
+       "state": "open",
+       "house": "house.maskwars.near",
+       "masks": "nova.maskwars.near, onyx.maskwars.near, oracle.maskwars.near",
+       "code_hash": "GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV",
+       "code": "https://github.com/plavutskyi/mask-wars/blob/main/contracts/challenges/live-safe/src/lib.rs",
+       "explorer": "https://nearblocks.io/address/vault.house.maskwars.near",
+       "deadline": "2026-11-06T19:00:00Z"
+      }
+     },
+     {
+      "code": "code_changed",
+      "level": "info",
+      "text": "The contract's code changed within the last 24 h. Expected here: the house makes its vault again under the same name for every round.",
+      "evidence": {
+       "block_height": 229856000,
+       "block_time": "2026-11-05T17:00:00Z",
+       "code_hash_before": "8JLoDp5bYW3HbvwdjqLM6QiXEeNs7fWkuAHMCw3D7Xyn",
+       "code_hash_now": "GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV"
+      }
+     },
+     {
+      "code": "account_age",
+      "level": "info",
+      "text": "The account already existed 24 h ago (block 229856000, 2026-11-05T17:00:00Z).",
+      "evidence": {
+       "block_height": 229856000,
+       "block_time": "2026-11-05T17:00:00Z"
+      }
+     },
+     {
+      "code": "contract",
+      "level": "info",
+      "text": "A contract, code hash GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV.",
+      "evidence": {
+       "code_hash": "GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV"
+      }
+     },
+     {
+      "code": "rpc_agree",
+      "level": "info",
+      "text": "Two independent RPC providers, a.example and b.example, gave the same answer to all 13 reads.",
+      "evidence": {
+       "rpc": "a.example, b.example",
+       "reads": 13,
+       "cross_checked": 13
+      }
+     }
+    ],
+    "block": {
+     "height": 230000000,
+     "hash": "Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+     "time": "2026-11-06T17:00:00Z"
+    },
+    "checked_at": "2026-11-06T17:00:05Z",
+    "rpc": [
+     "https://a.example",
+     "https://b.example"
+    ]
+   }
+  },
+  {
+   "name": "the house's vault a mask drained: block, framed as the arena",
+   "network": "mainnet",
+   "account": "vault.house.maskwars.near",
+   "list": "repo",
+   "now_ms": 1793984405000,
+   "window_hours": 24,
+   "reader": {
+    "endpoints": [
+     "https://a.example",
+     "https://b.example"
+    ],
+    "crossCheck": true,
+    "archival": {
+     "https://a.example": "https://archive-a.example"
+    }
+   },
+   "exchanges": [
+    {"url":"https://a.example","method":"block","params":{"finality":"final"},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":230000000,"prev_height":229999999,"hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxp4vAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793984400000000000,"timestamp_nanosec":"1793984400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://b.example","method":"block","params":{"finality":"final"},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":230000000,"prev_height":229999999,"hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxp4vAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793984400000000000,"timestamp_nanosec":"1793984400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://a.example","method":"block","params":{"block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":230000000,"prev_height":229999999,"hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxp4vAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793984400000000000,"timestamp_nanosec":"1793984400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://b.example","method":"block","params":{"block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":230000000,"prev_height":229999999,"hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxp4vAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793984400000000000,"timestamp_nanosec":"1793984400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"view_account","account_id":"vault.house.maskwars.near","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"amount":"1930000000000000000000000","code_hash":"GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV","storage_usage":160000,"locked":"0","storage_paid_at":0,"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"view_account","account_id":"vault.house.maskwars.near","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"amount":"1930000000000000000000000","code_hash":"GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV","storage_usage":160000,"locked":"0","storage_paid_at":0,"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"team","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[34,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"team","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[34,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"arbiter","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[34,98,111,117,110,116,121,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"arbiter","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[34,98,111,117,110,116,121,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"bounty.maskwars.near","method_name":"governance","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,97,100,109,105,110,34,58,34,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,112,101,110,100,105,110,103,34,58,110,117,108,108,44,34,115,97,102,101,95,99,111,100,101,115,34,58,91,34,71,66,99,103,74,52,82,65,66,78,72,87,88,98,56,54,88,72,75,54,97,70,101,69,107,54,113,77,116,83,78,70,104,83,51,107,97,56,78,121,75,55,106,86,34,93,44,34,108,105,118,101,34,58,49,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"bounty.maskwars.near","method_name":"governance","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,97,100,109,105,110,34,58,34,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,112,101,110,100,105,110,103,34,58,110,117,108,108,44,34,115,97,102,101,95,99,111,100,101,115,34,58,91,34,71,66,99,103,74,52,82,65,66,78,72,87,88,98,56,54,88,72,75,54,97,70,101,69,107,54,113,77,116,83,78,70,104,83,51,107,97,56,78,121,75,55,106,86,34,93,44,34,108,105,118,101,34,58,49,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"masks","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[91,34,110,111,118,97,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,110,121,120,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,114,97,99,108,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,93],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"masks","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[91,34,110,111,118,97,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,110,121,120,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,114,97,99,108,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,93],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"get_round","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,97,114,98,105,116,101,114,34,58,34,98,111,117,110,116,121,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,98,111,117,110,116,121,34,58,34,114,97,99,101,45,48,48,49,50,34,44,34,111,112,101,110,115,95,110,115,34,58,34,49,55,57,51,57,56,49,55,48,48,48,48,48,48,48,48,48,48,48,34,44,34,97,114,109,101,100,95,110,115,34,58,34,49,55,57,51,57,55,55,50,48,48,48,48,48,48,48,48,48,48,48,34,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"get_round","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,97,114,98,105,116,101,114,34,58,34,98,111,117,110,116,121,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,98,111,117,110,116,121,34,58,34,114,97,99,101,45,48,48,49,50,34,44,34,111,112,101,110,115,95,110,115,34,58,34,49,55,57,51,57,56,49,55,48,48,48,48,48,48,48,48,48,48,48,34,44,34,97,114,109,101,100,95,110,115,34,58,34,49,55,57,51,57,55,55,50,48,48,48,48,48,48,48,48,48,48,48,34,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"bounty.maskwars.near","method_name":"get","args_base64":"eyJpZCI6InJhY2UtMDAxMiJ9","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,111,119,110,101,114,34,58,34,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,97,109,111,117,110,116,34,58,34,50,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,34,44,34,116,97,114,103,101,116,34,58,34,118,97,117,108,116,46,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,100,101,97,100,108,105,110,101,95,110,115,34,58,34,49,55,57,51,57,57,49,54,48,48,48,48,48,48,48,48,48,48,48,34,44,34,115,116,97,116,117,115,34,58,123,34,115,116,97,116,101,34,58,34,100,114,97,105,110,101,100,34,44,34,119,105,110,110,101,114,34,58,34,110,111,118,97,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,116,120,95,104,97,115,104,34,58,34,57,102,87,112,117,56,97,89,99,52,90,98,98,71,65,102,82,82,97,82,106,80,56,100,115,82,106,51,119,118,74,90,88,122,87,55,100,71,56,117,52,110,121,72,34,125,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"bounty.maskwars.near","method_name":"get","args_base64":"eyJpZCI6InJhY2UtMDAxMiJ9","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,111,119,110,101,114,34,58,34,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,97,109,111,117,110,116,34,58,34,50,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,34,44,34,116,97,114,103,101,116,34,58,34,118,97,117,108,116,46,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,100,101,97,100,108,105,110,101,95,110,115,34,58,34,49,55,57,51,57,57,49,54,48,48,48,48,48,48,48,48,48,48,48,34,44,34,115,116,97,116,117,115,34,58,123,34,115,116,97,116,101,34,58,34,100,114,97,105,110,101,100,34,44,34,119,105,110,110,101,114,34,58,34,110,111,118,97,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,116,120,95,104,97,115,104,34,58,34,57,102,87,112,117,56,97,89,99,52,90,98,98,71,65,102,82,82,97,82,106,80,56,100,115,82,106,51,119,118,74,90,88,122,87,55,100,71,56,117,52,110,121,72,34,125,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"bounty.maskwars.near","method_name":"get_safe","args_base64":"eyJpZCI6InJhY2UtMDAxMiJ9","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,115,97,102,101,34,58,34,118,97,117,108,116,46,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,109,97,115,107,115,34,58,91,34,110,111,118,97,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,110,121,120,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,114,97,99,108,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,93,44,34,109,105,110,95,108,111,111,116,34,58,34,49,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,34,44,34,111,112,101,110,101,100,95,110,115,34,58,34,49,55,57,51,57,55,55,50,48,48,48,48,48,48,48,48,48,48,48,34,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"bounty.maskwars.near","method_name":"get_safe","args_base64":"eyJpZCI6InJhY2UtMDAxMiJ9","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,115,97,102,101,34,58,34,118,97,117,108,116,46,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,109,97,115,107,115,34,58,91,34,110,111,118,97,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,110,121,120,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,114,97,99,108,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,93,44,34,109,105,110,95,108,111,111,116,34,58,34,49,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,34,44,34,111,112,101,110,101,100,95,110,115,34,58,34,49,55,57,51,57,55,55,50,48,48,48,48,48,48,48,48,48,48,48,34,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"block","params":{"block_id":229990000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":229990000,"prev_height":229989999,"hash":"Hx3sxhf4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxhf3AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793978400000000000,"timestamp_nanosec":"1793978400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://b.example","method":"block","params":{"block_id":229990000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":229990000,"prev_height":229989999,"hash":"Hx3sxhf4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxhf3AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793978400000000000,"timestamp_nanosec":"1793978400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://a.example","method":"block","params":{"block_id":229856000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":229856000,"prev_height":229855999,"hash":"Hx3sumzwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sumzvAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793898000000000000,"timestamp_nanosec":"1793898000000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://b.example","method":"block","params":{"block_id":229856000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":229856000,"prev_height":229855999,"hash":"Hx3sumzwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sumzvAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793898000000000000,"timestamp_nanosec":"1793898000000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"view_account","account_id":"vault.house.maskwars.near","block_id":229856000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","error":{"name":"HANDLER_ERROR","cause":{"name":"UNKNOWN_ACCOUNT","info":{"block_hash":"Hx3sumzwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":229856000,"requested_account_id":"vault.house.maskwars.near"}},"code":-32000,"message":"Server error","data":"account vault.house.maskwars.near does not exist while viewing"}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"view_account","account_id":"vault.house.maskwars.near","block_id":229856000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","error":{"name":"HANDLER_ERROR","cause":{"name":"UNKNOWN_ACCOUNT","info":{"block_hash":"Hx3sumzwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":229856000,"requested_account_id":"vault.house.maskwars.near"}},"code":-32000,"message":"Server error","data":"account vault.house.maskwars.near does not exist while viewing"}}}
+   ],
+   "expect": {
+    "account": "vault.house.maskwars.near",
+    "network": "mainnet",
+    "verdict": "block",
+    "summary": "BLOCK: Drained on the MASK WARS arena, by design: mask nova.maskwars.near won race-0012 on the house's vault, and the judge confirmed the drain on chain. Only the house funds it; only the masks of its round (nova.maskwars.near, onyx.maskwars.near, oracle.maskwars.near) can open it; after the round, retire sends the rest home to house.maskwars.near. Do not send NEAR here.",
+    "reasons": [
+     {
+      "code": "arena_drained",
+      "level": "block",
+      "text": "Drained on the MASK WARS arena, by design: mask nova.maskwars.near won race-0012 on the house's vault, and the judge confirmed the drain on chain. Only the house funds it; only the masks of its round (nova.maskwars.near, onyx.maskwars.near, oracle.maskwars.near) can open it; after the round, retire sends the rest home to house.maskwars.near. Do not send NEAR here.",
+      "evidence": {
+       "contract": "bounty.maskwars.near",
+       "race": "race-0012",
+       "state": "drained",
+       "house": "house.maskwars.near",
+       "masks": "nova.maskwars.near, onyx.maskwars.near, oracle.maskwars.near",
+       "code_hash": "GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV",
+       "code": "https://github.com/plavutskyi/mask-wars/blob/main/contracts/challenges/live-safe/src/lib.rs",
+       "explorer": "https://nearblocks.io/address/vault.house.maskwars.near",
+       "winner": "nova.maskwars.near",
+       "tx_hash": "9fWpu8aYc4ZbbGAfRRaRjP8dsRj3wvJZXzW7dG8u4nyH",
+       "tx": "https://nearblocks.io/txns/9fWpu8aYc4ZbbGAfRRaRjP8dsRj3wvJZXzW7dG8u4nyH"
+      }
+     },
+     {
+      "code": "young_account",
+      "level": "info",
+      "text": "New account: it did not exist 24 h ago (block 229856000, 2026-11-05T17:00:00Z). Expected here: the house makes its vault again under the same name for every round.",
+      "evidence": {
+       "block_height": 229856000,
+       "block_time": "2026-11-05T17:00:00Z"
+      }
+     },
+     {
+      "code": "contract",
+      "level": "info",
+      "text": "A contract, code hash GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV.",
+      "evidence": {
+       "code_hash": "GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV"
+      }
+     },
+     {
+      "code": "rpc_agree",
+      "level": "info",
+      "text": "Two independent RPC providers, a.example and b.example, gave the same answer to all 12 reads.",
+      "evidence": {
+       "rpc": "a.example, b.example",
+       "reads": 12,
+       "cross_checked": 12
+      }
+     }
+    ],
+    "block": {
+     "height": 230000000,
+     "hash": "Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+     "time": "2026-11-06T17:00:00Z"
+    },
+    "checked_at": "2026-11-06T17:00:05Z",
+    "rpc": [
+     "https://a.example",
+     "https://b.example"
+    ]
+   }
+  },
+  {
+   "name": "the house's vault a mask took over in its open round: block, and still the arena's target",
+   "network": "mainnet",
+   "account": "vault.house.maskwars.near",
+   "list": "repo",
+   "now_ms": 1793984405000,
+   "window_hours": 24,
+   "reader": {
+    "endpoints": [
+     "https://a.example",
+     "https://b.example"
+    ],
+    "crossCheck": true,
+    "archival": {
+     "https://a.example": "https://archive-a.example"
+    }
+   },
+   "exchanges": [
+    {"url":"https://a.example","method":"block","params":{"finality":"final"},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":230000000,"prev_height":229999999,"hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxp4vAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793984400000000000,"timestamp_nanosec":"1793984400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://b.example","method":"block","params":{"finality":"final"},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":230000000,"prev_height":229999999,"hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxp4vAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793984400000000000,"timestamp_nanosec":"1793984400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://a.example","method":"block","params":{"block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":230000000,"prev_height":229999999,"hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxp4vAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793984400000000000,"timestamp_nanosec":"1793984400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://b.example","method":"block","params":{"block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":230000000,"prev_height":229999999,"hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxp4vAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793984400000000000,"timestamp_nanosec":"1793984400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"view_account","account_id":"vault.house.maskwars.near","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"amount":"1930000000000000000000000","code_hash":"GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV","storage_usage":160000,"locked":"0","storage_paid_at":0,"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"view_account","account_id":"vault.house.maskwars.near","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"amount":"1930000000000000000000000","code_hash":"GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV","storage_usage":160000,"locked":"0","storage_paid_at":0,"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"team","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[34,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"team","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[34,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"arbiter","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[34,98,111,117,110,116,121,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"arbiter","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[34,98,111,117,110,116,121,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"bounty.maskwars.near","method_name":"governance","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,97,100,109,105,110,34,58,34,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,112,101,110,100,105,110,103,34,58,110,117,108,108,44,34,115,97,102,101,95,99,111,100,101,115,34,58,91,34,71,66,99,103,74,52,82,65,66,78,72,87,88,98,56,54,88,72,75,54,97,70,101,69,107,54,113,77,116,83,78,70,104,83,51,107,97,56,78,121,75,55,106,86,34,93,44,34,108,105,118,101,34,58,49,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"bounty.maskwars.near","method_name":"governance","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,97,100,109,105,110,34,58,34,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,112,101,110,100,105,110,103,34,58,110,117,108,108,44,34,115,97,102,101,95,99,111,100,101,115,34,58,91,34,71,66,99,103,74,52,82,65,66,78,72,87,88,98,56,54,88,72,75,54,97,70,101,69,107,54,113,77,116,83,78,70,104,83,51,107,97,56,78,121,75,55,106,86,34,93,44,34,108,105,118,101,34,58,49,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"masks","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[91,34,110,111,118,97,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,110,121,120,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,114,97,99,108,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,93],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"masks","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[91,34,110,111,118,97,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,110,121,120,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,114,97,99,108,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,93],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"get_round","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,97,114,98,105,116,101,114,34,58,34,98,111,117,110,116,121,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,98,111,117,110,116,121,34,58,34,114,97,99,101,45,48,48,49,50,34,44,34,111,112,101,110,115,95,110,115,34,58,34,49,55,57,51,57,56,49,55,48,48,48,48,48,48,48,48,48,48,48,34,44,34,97,114,109,101,100,95,110,115,34,58,34,49,55,57,51,57,55,55,50,48,48,48,48,48,48,48,48,48,48,48,34,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"get_round","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,97,114,98,105,116,101,114,34,58,34,98,111,117,110,116,121,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,98,111,117,110,116,121,34,58,34,114,97,99,101,45,48,48,49,50,34,44,34,111,112,101,110,115,95,110,115,34,58,34,49,55,57,51,57,56,49,55,48,48,48,48,48,48,48,48,48,48,48,34,44,34,97,114,109,101,100,95,110,115,34,58,34,49,55,57,51,57,55,55,50,48,48,48,48,48,48,48,48,48,48,48,34,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"bounty.maskwars.near","method_name":"get","args_base64":"eyJpZCI6InJhY2UtMDAxMiJ9","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,111,119,110,101,114,34,58,34,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,97,109,111,117,110,116,34,58,34,50,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,34,44,34,116,97,114,103,101,116,34,58,34,118,97,117,108,116,46,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,100,101,97,100,108,105,110,101,95,110,115,34,58,34,49,55,57,51,57,57,49,54,48,48,48,48,48,48,48,48,48,48,48,34,44,34,115,116,97,116,117,115,34,58,123,34,115,116,97,116,101,34,58,34,111,112,101,110,34,125,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"bounty.maskwars.near","method_name":"get","args_base64":"eyJpZCI6InJhY2UtMDAxMiJ9","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,111,119,110,101,114,34,58,34,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,97,109,111,117,110,116,34,58,34,50,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,34,44,34,116,97,114,103,101,116,34,58,34,118,97,117,108,116,46,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,100,101,97,100,108,105,110,101,95,110,115,34,58,34,49,55,57,51,57,57,49,54,48,48,48,48,48,48,48,48,48,48,48,34,44,34,115,116,97,116,117,115,34,58,123,34,115,116,97,116,101,34,58,34,111,112,101,110,34,125,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"bounty.maskwars.near","method_name":"get_safe","args_base64":"eyJpZCI6InJhY2UtMDAxMiJ9","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,115,97,102,101,34,58,34,118,97,117,108,116,46,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,109,97,115,107,115,34,58,91,34,110,111,118,97,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,110,121,120,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,114,97,99,108,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,93,44,34,109,105,110,95,108,111,111,116,34,58,34,49,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,34,44,34,111,112,101,110,101,100,95,110,115,34,58,34,49,55,57,51,57,55,55,50,48,48,48,48,48,48,48,48,48,48,48,34,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"bounty.maskwars.near","method_name":"get_safe","args_base64":"eyJpZCI6InJhY2UtMDAxMiJ9","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,115,97,102,101,34,58,34,118,97,117,108,116,46,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,109,97,115,107,115,34,58,91,34,110,111,118,97,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,110,121,120,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,114,97,99,108,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,93,44,34,109,105,110,95,108,111,111,116,34,58,34,49,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,34,44,34,111,112,101,110,101,100,95,110,115,34,58,34,49,55,57,51,57,55,55,50,48,48,48,48,48,48,48,48,48,48,48,34,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"get_owner","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[34,111,110,121,120,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"get_owner","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[34,111,110,121,120,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"block","params":{"block_id":229990000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":229990000,"prev_height":229989999,"hash":"Hx3sxhf4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxhf3AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793978400000000000,"timestamp_nanosec":"1793978400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://b.example","method":"block","params":{"block_id":229990000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":229990000,"prev_height":229989999,"hash":"Hx3sxhf4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxhf3AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793978400000000000,"timestamp_nanosec":"1793978400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://a.example","method":"block","params":{"block_id":229856000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":229856000,"prev_height":229855999,"hash":"Hx3sumzwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sumzvAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793898000000000000,"timestamp_nanosec":"1793898000000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://b.example","method":"block","params":{"block_id":229856000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":229856000,"prev_height":229855999,"hash":"Hx3sumzwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sumzvAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793898000000000000,"timestamp_nanosec":"1793898000000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"view_account","account_id":"vault.house.maskwars.near","block_id":229856000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","error":{"name":"HANDLER_ERROR","cause":{"name":"UNKNOWN_ACCOUNT","info":{"block_hash":"Hx3sumzwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":229856000,"requested_account_id":"vault.house.maskwars.near"}},"code":-32000,"message":"Server error","data":"account vault.house.maskwars.near does not exist while viewing"}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"view_account","account_id":"vault.house.maskwars.near","block_id":229856000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","error":{"name":"HANDLER_ERROR","cause":{"name":"UNKNOWN_ACCOUNT","info":{"block_hash":"Hx3sumzwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":229856000,"requested_account_id":"vault.house.maskwars.near"}},"code":-32000,"message":"Server error","data":"account vault.house.maskwars.near does not exist while viewing"}}}
+   ],
+   "expect": {
+    "account": "vault.house.maskwars.near",
+    "network": "mainnet",
+    "verdict": "block",
+    "summary": "BLOCK: Taken over on the MASK WARS arena, by design: the house's vault is owned by onyx.maskwars.near now, not by itself. A mask of its round got in through the planted hole; the drain is not judged yet. Do not send NEAR here.",
+    "reasons": [
+     {
+      "code": "arena_taken_over",
+      "level": "block",
+      "text": "Taken over on the MASK WARS arena, by design: the house's vault is owned by onyx.maskwars.near now, not by itself. A mask of its round got in through the planted hole; the drain is not judged yet. Do not send NEAR here.",
+      "evidence": {
+       "contract": "bounty.maskwars.near",
+       "race": "race-0012",
+       "state": "open",
+       "house": "house.maskwars.near",
+       "masks": "nova.maskwars.near, onyx.maskwars.near, oracle.maskwars.near",
+       "code_hash": "GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV",
+       "code": "https://github.com/plavutskyi/mask-wars/blob/main/contracts/challenges/live-safe/src/lib.rs",
+       "explorer": "https://nearblocks.io/address/vault.house.maskwars.near",
+       "owner": "onyx.maskwars.near",
+       "owner_at_open": "vault.house.maskwars.near"
+      }
+     },
+     {
+      "code": "arena_target",
+      "level": "warn",
+      "text": "Arena target, by design: the MASK WARS house's vault, live in race-0012 right now. Only the house funds it; only the masks of its round (nova.maskwars.near, onyx.maskwars.near, oracle.maskwars.near) can open it; after the round, retire sends the rest home to house.maskwars.near. Bounty 0.2 NEAR. Do not send NEAR here.",
+      "evidence": {
+       "contract": "bounty.maskwars.near",
+       "race": "race-0012",
+       "state": "open",
+       "house": "house.maskwars.near",
+       "masks": "nova.maskwars.near, onyx.maskwars.near, oracle.maskwars.near",
+       "code_hash": "GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV",
+       "code": "https://github.com/plavutskyi/mask-wars/blob/main/contracts/challenges/live-safe/src/lib.rs",
+       "explorer": "https://nearblocks.io/address/vault.house.maskwars.near",
+       "deadline": "2026-11-06T19:00:00Z"
+      }
+     },
+     {
+      "code": "young_account",
+      "level": "info",
+      "text": "New account: it did not exist 24 h ago (block 229856000, 2026-11-05T17:00:00Z). Expected here: the house makes its vault again under the same name for every round.",
+      "evidence": {
+       "block_height": 229856000,
+       "block_time": "2026-11-05T17:00:00Z"
+      }
+     },
+     {
+      "code": "contract",
+      "level": "info",
+      "text": "A contract, code hash GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV.",
+      "evidence": {
+       "code_hash": "GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV"
+      }
+     },
+     {
+      "code": "rpc_agree",
+      "level": "info",
+      "text": "Two independent RPC providers, a.example and b.example, gave the same answer to all 13 reads.",
+      "evidence": {
+       "rpc": "a.example, b.example",
+       "reads": 13,
+       "cross_checked": 13
+      }
+     }
+    ],
+    "block": {
+     "height": 230000000,
+     "hash": "Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+     "time": "2026-11-06T17:00:00Z"
+    },
+    "checked_at": "2026-11-06T17:00:05Z",
+    "rpc": [
+     "https://a.example",
+     "https://b.example"
+    ]
+   }
+  },
+  {
+   "name": "the house's vault that withstood its round: warn, still the arena's target until it retires, the round said",
+   "network": "mainnet",
+   "account": "vault.house.maskwars.near",
+   "list": "repo",
+   "now_ms": 1793984405000,
+   "window_hours": 24,
+   "reader": {
+    "endpoints": [
+     "https://a.example",
+     "https://b.example"
+    ],
+    "crossCheck": true,
+    "archival": {
+     "https://a.example": "https://archive-a.example"
+    }
+   },
+   "exchanges": [
+    {"url":"https://a.example","method":"block","params":{"finality":"final"},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":230000000,"prev_height":229999999,"hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxp4vAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793984400000000000,"timestamp_nanosec":"1793984400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://b.example","method":"block","params":{"finality":"final"},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":230000000,"prev_height":229999999,"hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxp4vAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793984400000000000,"timestamp_nanosec":"1793984400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://a.example","method":"block","params":{"block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":230000000,"prev_height":229999999,"hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxp4vAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793984400000000000,"timestamp_nanosec":"1793984400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://b.example","method":"block","params":{"block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":230000000,"prev_height":229999999,"hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxp4vAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793984400000000000,"timestamp_nanosec":"1793984400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"view_account","account_id":"vault.house.maskwars.near","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"amount":"1930000000000000000000000","code_hash":"GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV","storage_usage":160000,"locked":"0","storage_paid_at":0,"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"view_account","account_id":"vault.house.maskwars.near","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"amount":"1930000000000000000000000","code_hash":"GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV","storage_usage":160000,"locked":"0","storage_paid_at":0,"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"team","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[34,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"team","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[34,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"arbiter","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[34,98,111,117,110,116,121,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"arbiter","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[34,98,111,117,110,116,121,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"bounty.maskwars.near","method_name":"governance","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,97,100,109,105,110,34,58,34,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,112,101,110,100,105,110,103,34,58,110,117,108,108,44,34,115,97,102,101,95,99,111,100,101,115,34,58,91,34,71,66,99,103,74,52,82,65,66,78,72,87,88,98,56,54,88,72,75,54,97,70,101,69,107,54,113,77,116,83,78,70,104,83,51,107,97,56,78,121,75,55,106,86,34,93,44,34,108,105,118,101,34,58,49,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"bounty.maskwars.near","method_name":"governance","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,97,100,109,105,110,34,58,34,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,112,101,110,100,105,110,103,34,58,110,117,108,108,44,34,115,97,102,101,95,99,111,100,101,115,34,58,91,34,71,66,99,103,74,52,82,65,66,78,72,87,88,98,56,54,88,72,75,54,97,70,101,69,107,54,113,77,116,83,78,70,104,83,51,107,97,56,78,121,75,55,106,86,34,93,44,34,108,105,118,101,34,58,49,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"masks","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[91,34,110,111,118,97,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,110,121,120,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,114,97,99,108,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,93],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"masks","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[91,34,110,111,118,97,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,110,121,120,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,114,97,99,108,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,93],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"get_round","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,97,114,98,105,116,101,114,34,58,34,98,111,117,110,116,121,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,98,111,117,110,116,121,34,58,34,114,97,99,101,45,48,48,49,50,34,44,34,111,112,101,110,115,95,110,115,34,58,34,49,55,57,51,57,56,49,55,48,48,48,48,48,48,48,48,48,48,48,34,44,34,97,114,109,101,100,95,110,115,34,58,34,49,55,57,51,57,55,55,50,48,48,48,48,48,48,48,48,48,48,48,34,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"get_round","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,97,114,98,105,116,101,114,34,58,34,98,111,117,110,116,121,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,98,111,117,110,116,121,34,58,34,114,97,99,101,45,48,48,49,50,34,44,34,111,112,101,110,115,95,110,115,34,58,34,49,55,57,51,57,56,49,55,48,48,48,48,48,48,48,48,48,48,48,34,44,34,97,114,109,101,100,95,110,115,34,58,34,49,55,57,51,57,55,55,50,48,48,48,48,48,48,48,48,48,48,48,34,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"bounty.maskwars.near","method_name":"get","args_base64":"eyJpZCI6InJhY2UtMDAxMiJ9","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,111,119,110,101,114,34,58,34,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,97,109,111,117,110,116,34,58,34,50,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,34,44,34,116,97,114,103,101,116,34,58,34,118,97,117,108,116,46,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,100,101,97,100,108,105,110,101,95,110,115,34,58,34,49,55,57,51,57,57,49,54,48,48,48,48,48,48,48,48,48,48,48,34,44,34,115,116,97,116,117,115,34,58,123,34,115,116,97,116,101,34,58,34,114,101,102,117,110,100,101,100,34,125,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"bounty.maskwars.near","method_name":"get","args_base64":"eyJpZCI6InJhY2UtMDAxMiJ9","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,111,119,110,101,114,34,58,34,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,97,109,111,117,110,116,34,58,34,50,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,34,44,34,116,97,114,103,101,116,34,58,34,118,97,117,108,116,46,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,100,101,97,100,108,105,110,101,95,110,115,34,58,34,49,55,57,51,57,57,49,54,48,48,48,48,48,48,48,48,48,48,48,34,44,34,115,116,97,116,117,115,34,58,123,34,115,116,97,116,101,34,58,34,114,101,102,117,110,100,101,100,34,125,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"bounty.maskwars.near","method_name":"get_safe","args_base64":"eyJpZCI6InJhY2UtMDAxMiJ9","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,115,97,102,101,34,58,34,118,97,117,108,116,46,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,109,97,115,107,115,34,58,91,34,110,111,118,97,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,110,121,120,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,114,97,99,108,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,93,44,34,109,105,110,95,108,111,111,116,34,58,34,49,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,34,44,34,111,112,101,110,101,100,95,110,115,34,58,34,49,55,57,51,57,55,55,50,48,48,48,48,48,48,48,48,48,48,48,34,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"bounty.maskwars.near","method_name":"get_safe","args_base64":"eyJpZCI6InJhY2UtMDAxMiJ9","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,115,97,102,101,34,58,34,118,97,117,108,116,46,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,109,97,115,107,115,34,58,91,34,110,111,118,97,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,110,121,120,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,114,97,99,108,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,93,44,34,109,105,110,95,108,111,111,116,34,58,34,49,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,34,44,34,111,112,101,110,101,100,95,110,115,34,58,34,49,55,57,51,57,55,55,50,48,48,48,48,48,48,48,48,48,48,48,34,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"get_owner","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[34,118,97,117,108,116,46,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"get_owner","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[34,118,97,117,108,116,46,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"block","params":{"block_id":229990000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":229990000,"prev_height":229989999,"hash":"Hx3sxhf4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxhf3AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793978400000000000,"timestamp_nanosec":"1793978400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://b.example","method":"block","params":{"block_id":229990000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":229990000,"prev_height":229989999,"hash":"Hx3sxhf4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxhf3AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793978400000000000,"timestamp_nanosec":"1793978400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://a.example","method":"block","params":{"block_id":229856000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":229856000,"prev_height":229855999,"hash":"Hx3sumzwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sumzvAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793898000000000000,"timestamp_nanosec":"1793898000000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://b.example","method":"block","params":{"block_id":229856000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":229856000,"prev_height":229855999,"hash":"Hx3sumzwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sumzvAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793898000000000000,"timestamp_nanosec":"1793898000000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"view_account","account_id":"vault.house.maskwars.near","block_id":229856000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","error":{"name":"HANDLER_ERROR","cause":{"name":"UNKNOWN_ACCOUNT","info":{"block_hash":"Hx3sumzwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":229856000,"requested_account_id":"vault.house.maskwars.near"}},"code":-32000,"message":"Server error","data":"account vault.house.maskwars.near does not exist while viewing"}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"view_account","account_id":"vault.house.maskwars.near","block_id":229856000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","error":{"name":"HANDLER_ERROR","cause":{"name":"UNKNOWN_ACCOUNT","info":{"block_hash":"Hx3sumzwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":229856000,"requested_account_id":"vault.house.maskwars.near"}},"code":-32000,"message":"Server error","data":"account vault.house.maskwars.near does not exist while viewing"}}}
+   ],
+   "expect": {
+    "account": "vault.house.maskwars.near",
+    "network": "mainnet",
+    "verdict": "warn",
+    "summary": "WARN: Arena target, by design: the MASK WARS house's vault; race-0012 ended with no break, and retire sends everything it holds home to house.maskwars.near. Do not send NEAR here.",
+    "reasons": [
+     {
+      "code": "arena_target",
+      "level": "warn",
+      "text": "Arena target, by design: the MASK WARS house's vault; race-0012 ended with no break, and retire sends everything it holds home to house.maskwars.near. Do not send NEAR here.",
+      "evidence": {
+       "contract": "bounty.maskwars.near",
+       "race": "race-0012",
+       "state": "refunded",
+       "house": "house.maskwars.near",
+       "masks": "nova.maskwars.near, onyx.maskwars.near, oracle.maskwars.near",
+       "code_hash": "GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV",
+       "code": "https://github.com/plavutskyi/mask-wars/blob/main/contracts/challenges/live-safe/src/lib.rs",
+       "explorer": "https://nearblocks.io/address/vault.house.maskwars.near"
+      }
+     },
+     {
+      "code": "arena_withstood",
+      "level": "info",
+      "text": "Withstood race-0012 on the MASK WARS arena: no mask drained the house's vault before the deadline. Only the house funds it; only the masks of its round (nova.maskwars.near, onyx.maskwars.near, oracle.maskwars.near) can open it; after the round, retire sends the rest home to house.maskwars.near. Do not send NEAR here.",
+      "evidence": {
+       "contract": "bounty.maskwars.near",
+       "race": "race-0012",
+       "state": "refunded",
+       "house": "house.maskwars.near",
+       "masks": "nova.maskwars.near, onyx.maskwars.near, oracle.maskwars.near",
+       "code_hash": "GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV",
+       "code": "https://github.com/plavutskyi/mask-wars/blob/main/contracts/challenges/live-safe/src/lib.rs",
+       "explorer": "https://nearblocks.io/address/vault.house.maskwars.near"
+      }
+     },
+     {
+      "code": "young_account",
+      "level": "info",
+      "text": "New account: it did not exist 24 h ago (block 229856000, 2026-11-05T17:00:00Z). Expected here: the house makes its vault again under the same name for every round.",
+      "evidence": {
+       "block_height": 229856000,
+       "block_time": "2026-11-05T17:00:00Z"
+      }
+     },
+     {
+      "code": "contract",
+      "level": "info",
+      "text": "A contract, code hash GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV.",
+      "evidence": {
+       "code_hash": "GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV"
+      }
+     },
+     {
+      "code": "rpc_agree",
+      "level": "info",
+      "text": "Two independent RPC providers, a.example and b.example, gave the same answer to all 13 reads.",
+      "evidence": {
+       "rpc": "a.example, b.example",
+       "reads": 13,
+       "cross_checked": 13
+      }
+     }
+    ],
+    "block": {
+     "height": 230000000,
+     "hash": "Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+     "time": "2026-11-06T17:00:00Z"
+    },
+    "checked_at": "2026-11-06T17:00:05Z",
+    "rpc": [
+     "https://a.example",
+     "https://b.example"
+    ]
+   }
+  },
+  {
+   "name": "the house's vault before its round opens: warn, waiting for today's round",
+   "network": "mainnet",
+   "account": "vault.house.maskwars.near",
+   "list": "repo",
+   "now_ms": 1793984405000,
+   "window_hours": 24,
+   "reader": {
+    "endpoints": [
+     "https://a.example",
+     "https://b.example"
+    ],
+    "crossCheck": true,
+    "archival": {
+     "https://a.example": "https://archive-a.example"
+    }
+   },
+   "exchanges": [
+    {"url":"https://a.example","method":"block","params":{"finality":"final"},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":230000000,"prev_height":229999999,"hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxp4vAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793984400000000000,"timestamp_nanosec":"1793984400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://b.example","method":"block","params":{"finality":"final"},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":230000000,"prev_height":229999999,"hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxp4vAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793984400000000000,"timestamp_nanosec":"1793984400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://a.example","method":"block","params":{"block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":230000000,"prev_height":229999999,"hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxp4vAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793984400000000000,"timestamp_nanosec":"1793984400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://b.example","method":"block","params":{"block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":230000000,"prev_height":229999999,"hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxp4vAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793984400000000000,"timestamp_nanosec":"1793984400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"view_account","account_id":"vault.house.maskwars.near","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"amount":"1930000000000000000000000","code_hash":"GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV","storage_usage":160000,"locked":"0","storage_paid_at":0,"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"view_account","account_id":"vault.house.maskwars.near","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"amount":"1930000000000000000000000","code_hash":"GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV","storage_usage":160000,"locked":"0","storage_paid_at":0,"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"team","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[34,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"team","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[34,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"arbiter","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[34,98,111,117,110,116,121,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"arbiter","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[34,98,111,117,110,116,121,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"bounty.maskwars.near","method_name":"governance","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,97,100,109,105,110,34,58,34,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,112,101,110,100,105,110,103,34,58,110,117,108,108,44,34,115,97,102,101,95,99,111,100,101,115,34,58,91,34,71,66,99,103,74,52,82,65,66,78,72,87,88,98,56,54,88,72,75,54,97,70,101,69,107,54,113,77,116,83,78,70,104,83,51,107,97,56,78,121,75,55,106,86,34,93,44,34,108,105,118,101,34,58,49,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"bounty.maskwars.near","method_name":"governance","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,97,100,109,105,110,34,58,34,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,112,101,110,100,105,110,103,34,58,110,117,108,108,44,34,115,97,102,101,95,99,111,100,101,115,34,58,91,34,71,66,99,103,74,52,82,65,66,78,72,87,88,98,56,54,88,72,75,54,97,70,101,69,107,54,113,77,116,83,78,70,104,83,51,107,97,56,78,121,75,55,106,86,34,93,44,34,108,105,118,101,34,58,49,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"masks","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[91,34,110,111,118,97,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,110,121,120,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,114,97,99,108,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,93],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"masks","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[91,34,110,111,118,97,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,110,121,120,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,114,97,99,108,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,93],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"get_round","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[110,117,108,108],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"get_round","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[110,117,108,108],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"get_owner","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[34,118,97,117,108,116,46,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"get_owner","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[34,118,97,117,108,116,46,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"block","params":{"block_id":229990000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":229990000,"prev_height":229989999,"hash":"Hx3sxhf4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxhf3AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793978400000000000,"timestamp_nanosec":"1793978400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://b.example","method":"block","params":{"block_id":229990000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":229990000,"prev_height":229989999,"hash":"Hx3sxhf4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxhf3AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793978400000000000,"timestamp_nanosec":"1793978400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://a.example","method":"block","params":{"block_id":229856000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":229856000,"prev_height":229855999,"hash":"Hx3sumzwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sumzvAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793898000000000000,"timestamp_nanosec":"1793898000000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://b.example","method":"block","params":{"block_id":229856000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":229856000,"prev_height":229855999,"hash":"Hx3sumzwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sumzvAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793898000000000000,"timestamp_nanosec":"1793898000000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"view_account","account_id":"vault.house.maskwars.near","block_id":229856000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","error":{"name":"HANDLER_ERROR","cause":{"name":"UNKNOWN_ACCOUNT","info":{"block_hash":"Hx3sumzwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":229856000,"requested_account_id":"vault.house.maskwars.near"}},"code":-32000,"message":"Server error","data":"account vault.house.maskwars.near does not exist while viewing"}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"view_account","account_id":"vault.house.maskwars.near","block_id":229856000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","error":{"name":"HANDLER_ERROR","cause":{"name":"UNKNOWN_ACCOUNT","info":{"block_hash":"Hx3sumzwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":229856000,"requested_account_id":"vault.house.maskwars.near"}},"code":-32000,"message":"Server error","data":"account vault.house.maskwars.near does not exist while viewing"}}}
+   ],
+   "expect": {
+    "account": "vault.house.maskwars.near",
+    "network": "mainnet",
+    "verdict": "warn",
+    "summary": "WARN: Arena target, by design: the MASK WARS house's vault, waiting for today's round to open. Only the house funds it; only the masks of its round (nova.maskwars.near, onyx.maskwars.near, oracle.maskwars.near) can open it; after the round, retire sends the rest home to house.maskwars.near. Do not send NEAR here.",
+    "reasons": [
+     {
+      "code": "arena_target",
+      "level": "warn",
+      "text": "Arena target, by design: the MASK WARS house's vault, waiting for today's round to open. Only the house funds it; only the masks of its round (nova.maskwars.near, onyx.maskwars.near, oracle.maskwars.near) can open it; after the round, retire sends the rest home to house.maskwars.near. Do not send NEAR here.",
+      "evidence": {
+       "contract": "bounty.maskwars.near",
+       "race": null,
+       "state": null,
+       "house": "house.maskwars.near",
+       "masks": "nova.maskwars.near, onyx.maskwars.near, oracle.maskwars.near",
+       "code_hash": "GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV",
+       "code": "https://github.com/plavutskyi/mask-wars/blob/main/contracts/challenges/live-safe/src/lib.rs",
+       "explorer": "https://nearblocks.io/address/vault.house.maskwars.near"
+      }
+     },
+     {
+      "code": "young_account",
+      "level": "info",
+      "text": "New account: it did not exist 24 h ago (block 229856000, 2026-11-05T17:00:00Z). Expected here: the house makes its vault again under the same name for every round.",
+      "evidence": {
+       "block_height": 229856000,
+       "block_time": "2026-11-05T17:00:00Z"
+      }
+     },
+     {
+      "code": "contract",
+      "level": "info",
+      "text": "A contract, code hash GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV.",
+      "evidence": {
+       "code_hash": "GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV"
+      }
+     },
+     {
+      "code": "rpc_agree",
+      "level": "info",
+      "text": "Two independent RPC providers, a.example and b.example, gave the same answer to all 11 reads.",
+      "evidence": {
+       "rpc": "a.example, b.example",
+       "reads": 11,
+       "cross_checked": 11
+      }
+     }
+    ],
+    "block": {
+     "height": 230000000,
+     "hash": "Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+     "time": "2026-11-06T17:00:00Z"
+    },
+    "checked_at": "2026-11-06T17:00:05Z",
+    "rpc": [
+     "https://a.example",
+     "https://b.example"
+    ]
+   }
+  },
+  {
+   "name": "the house's vault armed for a round the bounty contract holds on another safe: still the arena's target, warn",
+   "network": "mainnet",
+   "account": "vault.house.maskwars.near",
+   "list": "repo",
+   "now_ms": 1793984405000,
+   "window_hours": 24,
+   "reader": {
+    "endpoints": [
+     "https://a.example",
+     "https://b.example"
+    ],
+    "crossCheck": true,
+    "archival": {
+     "https://a.example": "https://archive-a.example"
+    }
+   },
+   "exchanges": [
+    {"url":"https://a.example","method":"block","params":{"finality":"final"},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":230000000,"prev_height":229999999,"hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxp4vAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793984400000000000,"timestamp_nanosec":"1793984400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://b.example","method":"block","params":{"finality":"final"},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":230000000,"prev_height":229999999,"hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxp4vAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793984400000000000,"timestamp_nanosec":"1793984400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://a.example","method":"block","params":{"block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":230000000,"prev_height":229999999,"hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxp4vAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793984400000000000,"timestamp_nanosec":"1793984400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://b.example","method":"block","params":{"block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":230000000,"prev_height":229999999,"hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxp4vAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793984400000000000,"timestamp_nanosec":"1793984400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"view_account","account_id":"vault.house.maskwars.near","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"amount":"1930000000000000000000000","code_hash":"GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV","storage_usage":160000,"locked":"0","storage_paid_at":0,"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"view_account","account_id":"vault.house.maskwars.near","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"amount":"1930000000000000000000000","code_hash":"GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV","storage_usage":160000,"locked":"0","storage_paid_at":0,"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"team","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[34,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"team","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[34,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"arbiter","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[34,98,111,117,110,116,121,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"arbiter","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[34,98,111,117,110,116,121,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"bounty.maskwars.near","method_name":"governance","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,97,100,109,105,110,34,58,34,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,112,101,110,100,105,110,103,34,58,110,117,108,108,44,34,115,97,102,101,95,99,111,100,101,115,34,58,91,34,71,66,99,103,74,52,82,65,66,78,72,87,88,98,56,54,88,72,75,54,97,70,101,69,107,54,113,77,116,83,78,70,104,83,51,107,97,56,78,121,75,55,106,86,34,93,44,34,108,105,118,101,34,58,49,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"bounty.maskwars.near","method_name":"governance","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,97,100,109,105,110,34,58,34,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,112,101,110,100,105,110,103,34,58,110,117,108,108,44,34,115,97,102,101,95,99,111,100,101,115,34,58,91,34,71,66,99,103,74,52,82,65,66,78,72,87,88,98,56,54,88,72,75,54,97,70,101,69,107,54,113,77,116,83,78,70,104,83,51,107,97,56,78,121,75,55,106,86,34,93,44,34,108,105,118,101,34,58,49,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"masks","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[91,34,110,111,118,97,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,110,121,120,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,114,97,99,108,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,93],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"masks","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[91,34,110,111,118,97,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,110,121,120,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,114,97,99,108,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,93],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"get_round","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,97,114,98,105,116,101,114,34,58,34,98,111,117,110,116,121,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,98,111,117,110,116,121,34,58,34,114,97,99,101,45,48,48,49,50,34,44,34,111,112,101,110,115,95,110,115,34,58,34,49,55,57,51,57,56,49,55,48,48,48,48,48,48,48,48,48,48,48,34,44,34,97,114,109,101,100,95,110,115,34,58,34,49,55,57,51,57,55,55,50,48,48,48,48,48,48,48,48,48,48,48,34,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"get_round","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,97,114,98,105,116,101,114,34,58,34,98,111,117,110,116,121,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,98,111,117,110,116,121,34,58,34,114,97,99,101,45,48,48,49,50,34,44,34,111,112,101,110,115,95,110,115,34,58,34,49,55,57,51,57,56,49,55,48,48,48,48,48,48,48,48,48,48,48,34,44,34,97,114,109,101,100,95,110,115,34,58,34,49,55,57,51,57,55,55,50,48,48,48,48,48,48,48,48,48,48,48,34,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"bounty.maskwars.near","method_name":"get","args_base64":"eyJpZCI6InJhY2UtMDAxMiJ9","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,111,119,110,101,114,34,58,34,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,97,109,111,117,110,116,34,58,34,50,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,34,44,34,116,97,114,103,101,116,34,58,34,118,97,117,108,116,46,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,100,101,97,100,108,105,110,101,95,110,115,34,58,34,49,55,57,51,57,57,49,54,48,48,48,48,48,48,48,48,48,48,48,34,44,34,115,116,97,116,117,115,34,58,123,34,115,116,97,116,101,34,58,34,111,112,101,110,34,125,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"bounty.maskwars.near","method_name":"get","args_base64":"eyJpZCI6InJhY2UtMDAxMiJ9","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,111,119,110,101,114,34,58,34,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,97,109,111,117,110,116,34,58,34,50,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,34,44,34,116,97,114,103,101,116,34,58,34,118,97,117,108,116,46,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,100,101,97,100,108,105,110,101,95,110,115,34,58,34,49,55,57,51,57,57,49,54,48,48,48,48,48,48,48,48,48,48,48,34,44,34,115,116,97,116,117,115,34,58,123,34,115,116,97,116,101,34,58,34,111,112,101,110,34,125,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"bounty.maskwars.near","method_name":"get_safe","args_base64":"eyJpZCI6InJhY2UtMDAxMiJ9","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,115,97,102,101,34,58,34,115,97,102,101,45,48,48,48,49,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,109,97,115,107,115,34,58,91,34,110,111,118,97,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,110,121,120,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,114,97,99,108,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,93,44,34,109,105,110,95,108,111,111,116,34,58,34,49,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,34,44,34,111,112,101,110,101,100,95,110,115,34,58,34,49,55,57,51,57,55,55,50,48,48,48,48,48,48,48,48,48,48,48,34,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"bounty.maskwars.near","method_name":"get_safe","args_base64":"eyJpZCI6InJhY2UtMDAxMiJ9","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,115,97,102,101,34,58,34,115,97,102,101,45,48,48,48,49,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,109,97,115,107,115,34,58,91,34,110,111,118,97,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,110,121,120,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,111,114,97,99,108,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34,93,44,34,109,105,110,95,108,111,111,116,34,58,34,49,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,48,34,44,34,111,112,101,110,101,100,95,110,115,34,58,34,49,55,57,51,57,55,55,50,48,48,48,48,48,48,48,48,48,48,48,34,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"get_owner","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[34,118,97,117,108,116,46,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"get_owner","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[34,118,97,117,108,116,46,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"block","params":{"block_id":229990000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":229990000,"prev_height":229989999,"hash":"Hx3sxhf4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxhf3AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793978400000000000,"timestamp_nanosec":"1793978400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://b.example","method":"block","params":{"block_id":229990000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":229990000,"prev_height":229989999,"hash":"Hx3sxhf4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxhf3AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793978400000000000,"timestamp_nanosec":"1793978400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://a.example","method":"block","params":{"block_id":229856000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":229856000,"prev_height":229855999,"hash":"Hx3sumzwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sumzvAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793898000000000000,"timestamp_nanosec":"1793898000000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://b.example","method":"block","params":{"block_id":229856000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":229856000,"prev_height":229855999,"hash":"Hx3sumzwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sumzvAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793898000000000000,"timestamp_nanosec":"1793898000000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"view_account","account_id":"vault.house.maskwars.near","block_id":229856000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","error":{"name":"HANDLER_ERROR","cause":{"name":"UNKNOWN_ACCOUNT","info":{"block_hash":"Hx3sumzwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":229856000,"requested_account_id":"vault.house.maskwars.near"}},"code":-32000,"message":"Server error","data":"account vault.house.maskwars.near does not exist while viewing"}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"view_account","account_id":"vault.house.maskwars.near","block_id":229856000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","error":{"name":"HANDLER_ERROR","cause":{"name":"UNKNOWN_ACCOUNT","info":{"block_hash":"Hx3sumzwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":229856000,"requested_account_id":"vault.house.maskwars.near"}},"code":-32000,"message":"Server error","data":"account vault.house.maskwars.near does not exist while viewing"}}}
+   ],
+   "expect": {
+    "account": "vault.house.maskwars.near",
+    "network": "mainnet",
+    "verdict": "warn",
+    "summary": "WARN: Arena target, by design: the MASK WARS house's vault, armed for race-0012. Only the house funds it; only the masks of its round (nova.maskwars.near, onyx.maskwars.near, oracle.maskwars.near) can open it; after the round, retire sends the rest home to house.maskwars.near. Do not send NEAR here.",
+    "reasons": [
+     {
+      "code": "arena_target",
+      "level": "warn",
+      "text": "Arena target, by design: the MASK WARS house's vault, armed for race-0012. Only the house funds it; only the masks of its round (nova.maskwars.near, onyx.maskwars.near, oracle.maskwars.near) can open it; after the round, retire sends the rest home to house.maskwars.near. Do not send NEAR here.",
+      "evidence": {
+       "contract": "bounty.maskwars.near",
+       "race": "race-0012",
+       "state": null,
+       "house": "house.maskwars.near",
+       "masks": "nova.maskwars.near, onyx.maskwars.near, oracle.maskwars.near",
+       "code_hash": "GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV",
+       "code": "https://github.com/plavutskyi/mask-wars/blob/main/contracts/challenges/live-safe/src/lib.rs",
+       "explorer": "https://nearblocks.io/address/vault.house.maskwars.near"
+      }
+     },
+     {
+      "code": "young_account",
+      "level": "info",
+      "text": "New account: it did not exist 24 h ago (block 229856000, 2026-11-05T17:00:00Z). Expected here: the house makes its vault again under the same name for every round.",
+      "evidence": {
+       "block_height": 229856000,
+       "block_time": "2026-11-05T17:00:00Z"
+      }
+     },
+     {
+      "code": "contract",
+      "level": "info",
+      "text": "A contract, code hash GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV.",
+      "evidence": {
+       "code_hash": "GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV"
+      }
+     },
+     {
+      "code": "rpc_agree",
+      "level": "info",
+      "text": "Two independent RPC providers, a.example and b.example, gave the same answer to all 13 reads.",
+      "evidence": {
+       "rpc": "a.example, b.example",
+       "reads": 13,
+       "cross_checked": 13
+      }
+     }
+    ],
+    "block": {
+     "height": 230000000,
+     "hash": "Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+     "time": "2026-11-06T17:00:00Z"
+    },
+    "checked_at": "2026-11-06T17:00:05Z",
+    "rpc": [
+     "https://a.example",
+     "https://b.example"
+    ]
+   }
+  },
+  {
+   "name": "a look-alike of the house's vault that answers all the same on chain: no label, a new account",
+   "network": "mainnet",
+   "account": "vault.house-maskwars.near",
+   "list": "repo",
+   "now_ms": 1793984405000,
+   "window_hours": 24,
+   "reader": {
+    "endpoints": [
+     "https://a.example",
+     "https://b.example"
+    ],
+    "crossCheck": true,
+    "archival": {
+     "https://a.example": "https://archive-a.example"
+    }
+   },
+   "exchanges": [
+    {"url":"https://a.example","method":"block","params":{"finality":"final"},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":230000000,"prev_height":229999999,"hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxp4vAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793984400000000000,"timestamp_nanosec":"1793984400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://b.example","method":"block","params":{"finality":"final"},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":230000000,"prev_height":229999999,"hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxp4vAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793984400000000000,"timestamp_nanosec":"1793984400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://a.example","method":"block","params":{"block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":230000000,"prev_height":229999999,"hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxp4vAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793984400000000000,"timestamp_nanosec":"1793984400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://b.example","method":"block","params":{"block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":230000000,"prev_height":229999999,"hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxp4vAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793984400000000000,"timestamp_nanosec":"1793984400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"view_account","account_id":"vault.house-maskwars.near","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"amount":"1930000000000000000000000","code_hash":"GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV","storage_usage":160000,"locked":"0","storage_paid_at":0,"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"view_account","account_id":"vault.house-maskwars.near","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"amount":"1930000000000000000000000","code_hash":"GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV","storage_usage":160000,"locked":"0","storage_paid_at":0,"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"block","params":{"block_id":229990000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":229990000,"prev_height":229989999,"hash":"Hx3sxhf4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxhf3AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793978400000000000,"timestamp_nanosec":"1793978400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://b.example","method":"block","params":{"block_id":229990000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":229990000,"prev_height":229989999,"hash":"Hx3sxhf4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxhf3AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793978400000000000,"timestamp_nanosec":"1793978400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://a.example","method":"block","params":{"block_id":229856000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":229856000,"prev_height":229855999,"hash":"Hx3sumzwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sumzvAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793898000000000000,"timestamp_nanosec":"1793898000000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://b.example","method":"block","params":{"block_id":229856000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":229856000,"prev_height":229855999,"hash":"Hx3sumzwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sumzvAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793898000000000000,"timestamp_nanosec":"1793898000000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"view_account","account_id":"vault.house-maskwars.near","block_id":229856000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","error":{"name":"HANDLER_ERROR","cause":{"name":"UNKNOWN_ACCOUNT","info":{"block_hash":"Hx3sumzwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":229856000,"requested_account_id":"vault.house-maskwars.near"}},"code":-32000,"message":"Server error","data":"account vault.house-maskwars.near does not exist while viewing"}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"view_account","account_id":"vault.house-maskwars.near","block_id":229856000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","error":{"name":"HANDLER_ERROR","cause":{"name":"UNKNOWN_ACCOUNT","info":{"block_hash":"Hx3sumzwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":229856000,"requested_account_id":"vault.house-maskwars.near"}},"code":-32000,"message":"Server error","data":"account vault.house-maskwars.near does not exist while viewing"}}}
+   ],
+   "expect": {
+    "account": "vault.house-maskwars.near",
+    "network": "mainnet",
+    "verdict": "warn",
+    "summary": "WARN: New account: it did not exist 24 h ago (block 229856000, 2026-11-05T17:00:00Z).",
+    "reasons": [
+     {
+      "code": "young_account",
+      "level": "warn",
+      "text": "New account: it did not exist 24 h ago (block 229856000, 2026-11-05T17:00:00Z).",
+      "evidence": {
+       "block_height": 229856000,
+       "block_time": "2026-11-05T17:00:00Z"
+      }
+     },
+     {
+      "code": "contract",
+      "level": "info",
+      "text": "A contract, code hash GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV.",
+      "evidence": {
+       "code_hash": "GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV"
+      }
+     },
+     {
+      "code": "rpc_agree",
+      "level": "info",
+      "text": "Two independent RPC providers, a.example and b.example, gave the same answer to all 5 reads.",
+      "evidence": {
+       "rpc": "a.example, b.example",
+       "reads": 5,
+       "cross_checked": 5
+      }
+     }
+    ],
+    "block": {
+     "height": 230000000,
+     "hash": "Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+     "time": "2026-11-06T17:00:00Z"
+    },
+    "checked_at": "2026-11-06T17:00:05Z",
+    "rpc": [
+     "https://a.example",
+     "https://b.example"
+    ]
+   }
+  },
+  {
+   "name": "the house's vault whose team is not the house: no label",
+   "network": "mainnet",
+   "account": "vault.house.maskwars.near",
+   "list": "repo",
+   "now_ms": 1793984405000,
+   "window_hours": 24,
+   "reader": {
+    "endpoints": [
+     "https://a.example",
+     "https://b.example"
+    ],
+    "crossCheck": true,
+    "archival": {
+     "https://a.example": "https://archive-a.example"
+    }
+   },
+   "exchanges": [
+    {"url":"https://a.example","method":"block","params":{"finality":"final"},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":230000000,"prev_height":229999999,"hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxp4vAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793984400000000000,"timestamp_nanosec":"1793984400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://b.example","method":"block","params":{"finality":"final"},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":230000000,"prev_height":229999999,"hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxp4vAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793984400000000000,"timestamp_nanosec":"1793984400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://a.example","method":"block","params":{"block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":230000000,"prev_height":229999999,"hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxp4vAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793984400000000000,"timestamp_nanosec":"1793984400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://b.example","method":"block","params":{"block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":230000000,"prev_height":229999999,"hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxp4vAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793984400000000000,"timestamp_nanosec":"1793984400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"view_account","account_id":"vault.house.maskwars.near","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"amount":"1930000000000000000000000","code_hash":"GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV","storage_usage":160000,"locked":"0","storage_paid_at":0,"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"view_account","account_id":"vault.house.maskwars.near","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"amount":"1930000000000000000000000","code_hash":"GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV","storage_usage":160000,"locked":"0","storage_paid_at":0,"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"team","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[34,101,118,101,46,110,101,97,114,34],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"team","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[34,101,118,101,46,110,101,97,114,34],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"block","params":{"block_id":229990000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":229990000,"prev_height":229989999,"hash":"Hx3sxhf4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxhf3AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793978400000000000,"timestamp_nanosec":"1793978400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://b.example","method":"block","params":{"block_id":229990000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":229990000,"prev_height":229989999,"hash":"Hx3sxhf4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxhf3AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793978400000000000,"timestamp_nanosec":"1793978400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://a.example","method":"block","params":{"block_id":229856000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":229856000,"prev_height":229855999,"hash":"Hx3sumzwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sumzvAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793898000000000000,"timestamp_nanosec":"1793898000000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://b.example","method":"block","params":{"block_id":229856000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":229856000,"prev_height":229855999,"hash":"Hx3sumzwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sumzvAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793898000000000000,"timestamp_nanosec":"1793898000000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"view_account","account_id":"vault.house.maskwars.near","block_id":229856000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","error":{"name":"HANDLER_ERROR","cause":{"name":"UNKNOWN_ACCOUNT","info":{"block_hash":"Hx3sumzwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":229856000,"requested_account_id":"vault.house.maskwars.near"}},"code":-32000,"message":"Server error","data":"account vault.house.maskwars.near does not exist while viewing"}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"view_account","account_id":"vault.house.maskwars.near","block_id":229856000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","error":{"name":"HANDLER_ERROR","cause":{"name":"UNKNOWN_ACCOUNT","info":{"block_hash":"Hx3sumzwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":229856000,"requested_account_id":"vault.house.maskwars.near"}},"code":-32000,"message":"Server error","data":"account vault.house.maskwars.near does not exist while viewing"}}}
+   ],
+   "expect": {
+    "account": "vault.house.maskwars.near",
+    "network": "mainnet",
+    "verdict": "warn",
+    "summary": "WARN: New account: it did not exist 24 h ago (block 229856000, 2026-11-05T17:00:00Z).",
+    "reasons": [
+     {
+      "code": "young_account",
+      "level": "warn",
+      "text": "New account: it did not exist 24 h ago (block 229856000, 2026-11-05T17:00:00Z).",
+      "evidence": {
+       "block_height": 229856000,
+       "block_time": "2026-11-05T17:00:00Z"
+      }
+     },
+     {
+      "code": "contract",
+      "level": "info",
+      "text": "A contract, code hash GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV.",
+      "evidence": {
+       "code_hash": "GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV"
+      }
+     },
+     {
+      "code": "rpc_agree",
+      "level": "info",
+      "text": "Two independent RPC providers, a.example and b.example, gave the same answer to all 6 reads.",
+      "evidence": {
+       "rpc": "a.example, b.example",
+       "reads": 6,
+       "cross_checked": 6
+      }
+     }
+    ],
+    "block": {
+     "height": 230000000,
+     "hash": "Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+     "time": "2026-11-06T17:00:00Z"
+    },
+    "checked_at": "2026-11-06T17:00:05Z",
+    "rpc": [
+     "https://a.example",
+     "https://b.example"
+    ]
+   }
+  },
+  {
+   "name": "the house's vault on a code the bounty contract does not list: no label",
+   "network": "mainnet",
+   "account": "vault.house.maskwars.near",
+   "list": "repo",
+   "now_ms": 1793984405000,
+   "window_hours": 24,
+   "reader": {
+    "endpoints": [
+     "https://a.example",
+     "https://b.example"
+    ],
+    "crossCheck": true,
+    "archival": {
+     "https://a.example": "https://archive-a.example"
+    }
+   },
+   "exchanges": [
+    {"url":"https://a.example","method":"block","params":{"finality":"final"},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":230000000,"prev_height":229999999,"hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxp4vAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793984400000000000,"timestamp_nanosec":"1793984400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://b.example","method":"block","params":{"finality":"final"},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":230000000,"prev_height":229999999,"hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxp4vAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793984400000000000,"timestamp_nanosec":"1793984400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://a.example","method":"block","params":{"block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":230000000,"prev_height":229999999,"hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxp4vAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793984400000000000,"timestamp_nanosec":"1793984400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://b.example","method":"block","params":{"block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":230000000,"prev_height":229999999,"hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxp4vAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793984400000000000,"timestamp_nanosec":"1793984400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"view_account","account_id":"vault.house.maskwars.near","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"amount":"1930000000000000000000000","code_hash":"GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV","storage_usage":160000,"locked":"0","storage_paid_at":0,"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"view_account","account_id":"vault.house.maskwars.near","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"amount":"1930000000000000000000000","code_hash":"GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV","storage_usage":160000,"locked":"0","storage_paid_at":0,"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"team","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[34,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"team","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[34,104,111,117,115,101,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"arbiter","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[34,98,111,117,110,116,121,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"vault.house.maskwars.near","method_name":"arbiter","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[34,98,111,117,110,116,121,46,109,97,115,107,119,97,114,115,46,110,101,97,114,34],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"call_function","account_id":"bounty.maskwars.near","method_name":"governance","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,97,100,109,105,110,34,58,34,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,112,101,110,100,105,110,103,34,58,110,117,108,108,44,34,115,97,102,101,95,99,111,100,101,115,34,58,91,34,56,74,76,111,68,112,53,98,89,87,51,72,98,118,119,100,106,113,76,77,54,81,105,88,69,101,78,115,55,102,87,107,117,65,72,77,67,119,51,68,55,88,121,110,34,93,44,34,108,105,118,101,34,58,49,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"call_function","account_id":"bounty.maskwars.near","method_name":"governance","args_base64":"e30=","block_id":230000000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"result":[123,34,97,100,109,105,110,34,58,34,109,97,115,107,119,97,114,115,46,110,101,97,114,34,44,34,112,101,110,100,105,110,103,34,58,110,117,108,108,44,34,115,97,102,101,95,99,111,100,101,115,34,58,91,34,56,74,76,111,68,112,53,98,89,87,51,72,98,118,119,100,106,113,76,77,54,81,105,88,69,101,78,115,55,102,87,107,117,65,72,77,67,119,51,68,55,88,121,110,34,93,44,34,108,105,118,101,34,58,49,125],"logs":[],"block_hash":"Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":230000000}}},
+    {"url":"https://a.example","method":"block","params":{"block_id":229990000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":229990000,"prev_height":229989999,"hash":"Hx3sxhf4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxhf3AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793978400000000000,"timestamp_nanosec":"1793978400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://b.example","method":"block","params":{"block_id":229990000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":229990000,"prev_height":229989999,"hash":"Hx3sxhf4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sxhf3AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793978400000000000,"timestamp_nanosec":"1793978400000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://a.example","method":"block","params":{"block_id":229856000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":229856000,"prev_height":229855999,"hash":"Hx3sumzwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sumzvAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793898000000000000,"timestamp_nanosec":"1793898000000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://b.example","method":"block","params":{"block_id":229856000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","result":{"author":"node0","header":{"height":229856000,"prev_height":229855999,"hash":"Hx3sumzwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","prev_hash":"Hx3sumzvAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","timestamp":1793898000000000000,"timestamp_nanosec":"1793898000000000000","epoch_id":"11111111111111111111111111111111"},"chunks":[]}}},
+    {"url":"https://a.example","method":"query","params":{"request_type":"view_account","account_id":"vault.house.maskwars.near","block_id":229856000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","error":{"name":"HANDLER_ERROR","cause":{"name":"UNKNOWN_ACCOUNT","info":{"block_hash":"Hx3sumzwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":229856000,"requested_account_id":"vault.house.maskwars.near"}},"code":-32000,"message":"Server error","data":"account vault.house.maskwars.near does not exist while viewing"}}},
+    {"url":"https://b.example","method":"query","params":{"request_type":"view_account","account_id":"vault.house.maskwars.near","block_id":229856000},"status":200,"response":{"jsonrpc":"2.0","id":"maskwars-check","error":{"name":"HANDLER_ERROR","cause":{"name":"UNKNOWN_ACCOUNT","info":{"block_hash":"Hx3sumzwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA","block_height":229856000,"requested_account_id":"vault.house.maskwars.near"}},"code":-32000,"message":"Server error","data":"account vault.house.maskwars.near does not exist while viewing"}}}
+   ],
+   "expect": {
+    "account": "vault.house.maskwars.near",
+    "network": "mainnet",
+    "verdict": "warn",
+    "summary": "WARN: New account: it did not exist 24 h ago (block 229856000, 2026-11-05T17:00:00Z).",
+    "reasons": [
+     {
+      "code": "young_account",
+      "level": "warn",
+      "text": "New account: it did not exist 24 h ago (block 229856000, 2026-11-05T17:00:00Z).",
+      "evidence": {
+       "block_height": 229856000,
+       "block_time": "2026-11-05T17:00:00Z"
+      }
+     },
+     {
+      "code": "contract",
+      "level": "info",
+      "text": "A contract, code hash GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV.",
+      "evidence": {
+       "code_hash": "GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV"
+      }
+     },
+     {
+      "code": "rpc_agree",
+      "level": "info",
+      "text": "Two independent RPC providers, a.example and b.example, gave the same answer to all 8 reads.",
+      "evidence": {
+       "rpc": "a.example, b.example",
+       "reads": 8,
+       "cross_checked": 8
+      }
+     }
+    ],
+    "block": {
+     "height": 230000000,
+     "hash": "Hx3sxp4wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+     "time": "2026-11-06T17:00:00Z"
+    },
+    "checked_at": "2026-11-06T17:00:05Z",
+    "rpc": [
+     "https://a.example",
+     "https://b.example"
+    ]
+   }
   }
  ]
 }

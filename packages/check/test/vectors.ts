@@ -220,6 +220,55 @@ function onPair(name: string, account: string, f: Fetch, more: Partial<Scenario>
   return { name, network: "mainnet", account, list: emptyMainnet, nowMs: NOW, reader: crossCheck, fetch: f, ...more };
 }
 
+// The house's vault on mainnet, where the repo's mainnet list names it: the house made it two hours ago and opened its
+// round on it (packages/race/src/house.ts), every answer as the vault and the bounty contract give it.
+const HOUSE = "house.maskwars.near";
+const VAULT = "vault.house.maskwars.near";
+const HOUSE_BOUNTY = "bounty.maskwars.near";
+const HOUSE_MASKS = ["nova.maskwars.near", "onyx.maskwars.near", "oracle.maskwars.near"];
+/** The vault's code as the bounty contract lists it (packages/network/mainnet.json, `safe_code`). */
+const SAFE_CODE = "GBcgJ4RABNHWXb86XHK6aFeEk6qMtSNFhS3ka8NyK7jV";
+const HOUSE_RACE = "race-0012";
+
+interface HouseDay {
+  /** The round's status on the bounty contract; `null`: the vault waits for its round. Default: open. */
+  status?: Record<string, unknown> | null;
+  /** The account that answers as the vault. Default: the vault. */
+  account?: string;
+  team?: string;
+  owner?: string;
+  codes?: string[];
+  /** Yesterday's vault, retired just before this one was made: its code. */
+  yesterday?: string;
+  /** The safe the bounty contract names for the vault's round, when it names another. */
+  elsewhere?: string;
+}
+
+function houseOn(n: FakeNode, day: HouseDay): void {
+  const at = day.account ?? VAULT;
+  const status = day.status === undefined ? { state: "open" } : day.status;
+  if (day.yesterday) n.setAccount(at, HEAD - 3 * DAY, { amount: NEAR.toString(), code_hash: day.yesterday, storage_usage: 150_000 }).setAccount(at, HEAD - 12_010, null);
+  n.setAccount(HOUSE_BOUNTY, 1, { amount: (5n * NEAR).toString(), code_hash: CODE_A, storage_usage: 400_000 })
+    .setAccount(at, HEAD - 12_000, { amount: ((193n * NEAR) / 100n).toString(), code_hash: SAFE_CODE, storage_usage: 160_000 })
+    .view(HOUSE_BOUNTY, "governance", () => ({ admin: "maskwars.near", pending: null, safe_codes: day.codes ?? [SAFE_CODE], live: 1 }))
+    .view(at, "team", () => day.team ?? HOUSE)
+    .view(at, "arbiter", () => HOUSE_BOUNTY)
+    .view(at, "masks", () => HOUSE_MASKS)
+    .view(at, "get_round", () => (status ? { arbiter: HOUSE_BOUNTY, bounty: HOUSE_RACE, opens_ns: "1793981700000000000", armed_ns: "1793977200000000000" } : null))
+    .view(at, "get_owner", () => day.owner ?? at)
+    .view(HOUSE_BOUNTY, "get", (a) =>
+      a["id"] === HOUSE_RACE && status ? { owner: HOUSE, amount: ((2n * NEAR) / 10n).toString(), target: at, deadline_ns: "1793991600000000000", status } : null,
+    )
+    .view(HOUSE_BOUNTY, "get_safe", (a) =>
+      a["id"] === HOUSE_RACE && status ? { safe: day.elsewhere ?? at, masks: HOUSE_MASKS, min_loot: (NEAR / 10n).toString(), opened_ns: "1793977200000000000" } : null,
+    );
+}
+
+/** A check of `account` on mainnet with the repo's mainnet list, both providers and the archive holding the house's day. */
+function onHouse(name: string, day: HouseDay = {}, account = day.account ?? VAULT): Scenario {
+  return { name, network: "mainnet", account, nowMs: NOW, reader: crossCheck, fetch: pair(({ a, b, archive }) => [a, b, archive].forEach((n) => houseOn(n, day))) };
+}
+
 /** Changes what one endpoint answers; every other request goes through. */
 const at = (urls: string[], answer: (input: string | URL | Request, init: RequestInit | undefined, f: Fetch) => Promise<Response>): Wrap => {
   return (f) => (async (input: string | URL | Request, init?: RequestInit) => (urls.includes(String(input)) ? answer(input, init, f) : f(input, init))) as Fetch;
@@ -425,6 +474,17 @@ function scenarios(): Scenario[] {
     onPair("the first node cannot be reached: the second answers alone", "plain.near", unreachable([A, ARCHIVE])(pair())),
     onPair("both nodes are down: warn, nothing on chain read", "pay.near", pair(({ a, b }) => void ((a.down = 502), (b.down = 503)))),
     onPair("one provider only: nothing is cross-checked, and the answer says so", "pay.near", pair(), { reader: { endpoints: [A], crossCheck: true, archival: {} } }),
+
+    onHouse("the house's vault in its open round: an arena target by design, warn; its new account said, not warned"),
+    onHouse("the house's vault made again over yesterday's with a newer safe code: the change said, not warned", { yesterday: CODE_A }),
+    onHouse("the house's vault a mask drained: block, framed as the arena", { status: { state: "drained", winner: HOUSE_MASKS[0], tx_hash: DRAIN_TX }, owner: HOUSE_MASKS[0]! }),
+    onHouse("the house's vault a mask took over in its open round: block, and still the arena's target", { owner: HOUSE_MASKS[1]! }),
+    onHouse("the house's vault that withstood its round: warn, still the arena's target until it retires, the round said", { status: { state: "refunded" } }),
+    onHouse("the house's vault before its round opens: warn, waiting for today's round", { status: null }),
+    onHouse("the house's vault armed for a round the bounty contract holds on another safe: still the arena's target, warn", { elsewhere: "safe-0001.maskwars.near" }),
+    onHouse("a look-alike of the house's vault that answers all the same on chain: no label, a new account", { account: "vault.house-maskwars.near" }),
+    onHouse("the house's vault whose team is not the house: no label", { team: "eve.near" }),
+    onHouse("the house's vault on a code the bounty contract does not list: no label", { codes: [CODE_A] }),
   ];
 }
 

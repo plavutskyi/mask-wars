@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { FactoryConfig } from "../src/chain.ts";
-import { allowCopyAction, copyEarnings, GAS_FUND, parseTerms, payAuthorAction, readWithdraw, stopCopyAction, takeOut, times, timesText, waitingChange, waitText, withdrawAction, withdrawn, type TxOutcome } from "../src/owner.ts";
+import { allowCopyAction, copyEarnings, fuelAction, fueled, GAS_FUND, putIn, parseTerms, payAuthorAction, readFuel, readWithdraw, stopCopyAction, takeOut, times, timesText, waitingChange, waitText, withdrawAction, withdrawn, type TxOutcome } from "../src/owner.ts";
 import { YOCTO } from "../src/near.ts";
 
 const HOUR = 3_600_000;
@@ -104,6 +104,61 @@ describe("a take-out counts only once NEAR confirms it", () => {
     }
     expect(asked).toHaveLength(2);
     expect(asked[0]).toMatchObject({ method: "tx", params: { tx_hash: "Hash1", sender_account_id: OWNER, wait_until: "FINAL" } });
+  });
+});
+
+describe("the × of a mask that feeds its own mind", () => {
+  it("winnings it spends on its mind raise nothing; NEAR sent to it and fuelled counts as put in", () => {
+    // Forged with 2 NEAR, won 1, fed 1 of it back to its mind: still 2 put in, ×0.5.
+    expect(putIn(2n * YOCTO, YOCTO, YOCTO)).toBe(2n * YOCTO);
+    expect(times(YOCTO, putIn(2n * YOCTO, YOCTO, YOCTO))).toBe(0.5);
+    // Fed 3 NEAR having won 1: 2 of them came from elsewhere, and count as put in.
+    expect(putIn(2n * YOCTO, 3n * YOCTO, YOCTO)).toBe(4n * YOCTO);
+    // An older factory names no `recycled`.
+    expect(putIn(2n * YOCTO, undefined, 0n)).toBe(2n * YOCTO);
+  });
+});
+
+describe("the mask pays for its own mind with what it won", () => {
+  const OWNER = "ann.testnet";
+  const KIRA = "kira.masks.tinygif8324.testnet";
+  const FACTORY = "masks.tinygif8324.testnet";
+  const ok = { SuccessValue: "" };
+  const tx = (o: Partial<TxOutcome> = {}): TxOutcome => ({
+    status: ok,
+    transaction: { signer_id: OWNER, receiver_id: KIRA },
+    receipts_outcome: [
+      { outcome: { executor_id: KIRA, logs: [`fuel 1902000000000000000000000 to ${FACTORY}`], status: { SuccessReceiptId: "r" } } },
+      { outcome: { executor_id: FACTORY, logs: ['EVENT_JSON:{"event":"refuel"}'], status: ok } },
+    ],
+    ...o,
+  });
+
+  it("is one call on the mask's own account, with no argument and no NEAR attached", () => {
+    expect(fuelAction()).toEqual({ type: "FunctionCall", params: { methodName: "fuel", args: {}, gas: "60000000000000", deposit: "0" } });
+  });
+
+  it("counts only once the factory took it into the tank", () => {
+    expect(readFuel(tx(), OWNER, KIRA, FACTORY)).toEqual({ state: "done", amount: 1902000000000000000000000n });
+    // The factory refused it: the NEAR came back to the mask, nothing went into the tank.
+    const refused = tx().receipts_outcome!.map((r, i) => (i === 1 ? { outcome: { ...r.outcome, status: { Failure: {} } } } : r));
+    expect(readFuel(tx({ receipts_outcome: refused }), OWNER, KIRA, FACTORY)).toEqual({ state: "failed" });
+    // A withdraw is not a fuel, and a fuel to another factory is not this mask's tank.
+    expect(readFuel(tx({ receipts_outcome: [{ outcome: { executor_id: KIRA, logs: [`withdraw 5 to ${OWNER}`], status: ok } }] }), OWNER, KIRA, FACTORY)).toEqual({ state: "failed" });
+    expect(readFuel(tx(), OWNER, KIRA, "masks.other.testnet")).toEqual({ state: "failed" });
+    expect(readWithdraw(tx(), OWNER, KIRA)).toEqual({ state: "failed" });
+    expect(readFuel(tx({ status: {} }), OWNER, KIRA, FACTORY)).toEqual({ state: "unknown" });
+  });
+
+  it("reads the transaction of the owner from the network's RPCs", async () => {
+    const real = globalThis.fetch;
+    globalThis.fetch = (async () => new Response(JSON.stringify({ result: tx() }))) as unknown as typeof fetch;
+    try {
+      const net = { id: "testnet", factory: FACTORY, rpcs: ["https://a"], explorer: "" };
+      expect(await fueled(net as never, "Hash1", OWNER, KIRA)).toEqual({ state: "done", amount: 1902000000000000000000000n });
+    } finally {
+      globalThis.fetch = real;
+    }
   });
 });
 

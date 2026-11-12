@@ -34,6 +34,12 @@ permissions:
   contents: read
   actions: read
 
+# Every step runs in bash with `-eo pipefail`, which GitHub adds only when the shell is named: a step that pipes its
+# output fails when the command before the pipe fails, not only when the last one does.
+defaults:
+  run:
+    shell: bash
+
 jobs:
   guard:
     # Names no environment and checks out no code: it sees a key only if the key is a repository secret.

@@ -16,6 +16,7 @@ import { day, longest, utc } from '@/lib/show';
 import { Countdown } from './Countdown';
 import { Delivery, Lock } from './Delivery';
 import { Earlier } from './Earlier';
+import { TakeBack } from './TakeBack';
 import { JUDGE_WORD, KIND_WORD, PLAN_SHOWN, ROLE_WORD, clockTime, entrantName, eventLine, jobMoving, jobTitle, longName, maskArt, maskName, nameFit, nearOrNull, paidOf, planCalls, refused, winnerOf } from './show';
 import s from './jobs.module.css';
 
@@ -289,6 +290,8 @@ export function JobScreen({ job, board, now, prev, next, links }: { job: Job; bo
   const moving = jobMoving(job, board, now);
   const paid = paidOf(job);
   const winner = winnerOf(job);
+  // Its client may take the job back while it is open and no mask has sealed a step on it (`cancel`).
+  const back = ['checking', 'enlisting', 'revealing', 'waiting'].includes(job.phase) && job.steps.length === 0;
   // The transactions behind the result, where an explorer shows them: the judge's verdict, the payout, the delivery
   // of the winning work. Each is a link by its name; the hash itself stays behind the step's «i».
   const verdictTx = job.events.findLast((e) => e.kind === 'verdict')?.tx ?? null;
@@ -300,6 +303,10 @@ export function JobScreen({ job, board, now, prev, next, links }: { job: Job; bo
   const winnerArt = winner?.members.map((m) => maskArt(m.mask)).find(Boolean) ?? null;
   const art = job.phase === 'paid' || job.phase === 'decided' ? winnerArt : null;
   const number = job.phase === 'paid' && paid > 0n ? paid.toString() : job.reward;
+  // Fuel is paid only for a counted step of a mind that burned it, to the job's treasury: MASK WARS's own account, which
+  // pays the masks' inference. The page names where it goes once the chain shows some.
+  const toTreasury = BigInt(job.settlement?.toTreasury ?? '0');
+  const fueled = toTreasury > 0n || BigInt(job.fuelBurned) > 0n;
 
   const judge: InfoRow[] =
     job.judge.by === 'round'
@@ -322,13 +329,13 @@ export function JobScreen({ job, board, now, prev, next, links }: { job: Job; bo
     { label: 'Phase', value: job.phase },
     { label: 'Reward', value: `${near(job.reward)} NEAR` },
     { label: 'Bond', value: `${near(job.bond)} NEAR a mask: all lost for fake work, half for a seat that counted nothing, to the company` },
-    { label: 'Fuel', value: `${near(job.fuelPerMask)} NEAR a mask × ${job.slots} slots, paid to NEAR AI for a counted step` },
+    { label: 'Fuel', value: `${near(job.fuelPerMask)} NEAR a mask × ${job.slots} slots${fueled ? `, paid for a counted step to ${job.treasury}, which pays the masks’ inference` : ''}` },
     { label: 'Client', value: job.client, href: explorer.account(job.client) },
     ...judge,
     { label: 'Spec, sha256', value: job.spec },
     ...(job.rubric ? [{ label: job.kind === 'tee_tests' ? 'Private test set, sha256' : 'Rubric, sha256', value: job.rubric }] : []),
     ...(job.secrets ? [{ label: 'Tests in the client’s secrets', value: job.secrets.profile }] : []),
-    { label: 'Open to', value: job.openTo.who === 'anyone' ? 'any mask' : job.openTo.who === 'registered' ? `masks of ${job.openTo.factories.join(', ')}` : job.openTo.masks.join(', ') },
+    { label: 'Open to', value: job.openTo.who === 'anyone' ? 'any mask' : job.openTo.who === 'registered' ? `masks forged by ${job.openTo.factories.join(', ')}` : `only the masks its client listed: ${job.openTo.masks.join(', ')}` },
     { label: 'Company fee', value: `${job.feeBps / 100}% of a paid reward` },
     { label: 'Opened', value: utc(job.openedAt), href: job.txs.open ? explorer.tx(job.txs.open) : undefined },
     ...(job.checked || job.kind === 'drain' ? [] : [{ label: 'The judge checks until', value: utc(job.checkUntil) }]),
@@ -348,7 +355,11 @@ export function JobScreen({ job, board, now, prev, next, links }: { job: Job; bo
       <section className={`${p.hero} ${s.jobHero}`} data-art={art ? '' : undefined}>
         <div className={p.heroText}>
           <p className={`${p.word} ${p.kicker}`}>
-            <Nums text={`${KIND_WORD[job.kind]} · ${job.id}${LIVE.has(job.phase) && !isFresh(board, now) ? ` · as of ${clockTime(board.readAt)}` : ''}`} />
+            <Nums text={`${KIND_WORD[job.kind]} · `} />
+            <span className={s.kickerId}>
+              <Nums text={job.id} />
+            </span>
+            {LIVE.has(job.phase) && !isFresh(board, now) ? <Nums text={` · as of ${clockTime(board.readAt)}`} /> : null}
           </p>
           <Title text={jobTitle(job)} />
           <div className={p.big}>
@@ -364,10 +375,11 @@ export function JobScreen({ job, board, now, prev, next, links }: { job: Job; bo
           {job.takes ? (
             <div className={`${s.acts} ${s.jobActs}`}>
               <Link href="/mcp/connect" className={`${p.btn} ${p.word} ${s.btn}`}>
-                Take it with your agent
+                {job.openTo.who === 'registered' ? 'Take it with a forged mask' : 'Take it with your agent'}
               </Link>
             </div>
           ) : null}
+          {back ? <TakeBack id={job.id} client={job.client} contract={job.contract} explorer={links.explorer ?? null} alone={!job.takes} /> : null}
           <blockquote className={s.brief}>
             <span className={`${p.word} ${s.briefLabel}`}>The job</span>
             <span className={s.briefText}>{job.brief}</span>
@@ -435,7 +447,7 @@ export function JobScreen({ job, board, now, prev, next, links }: { job: Job; bo
               align="start"
               label="Where the rest of the money goes"
               rows={[
-                { label: 'Fuel to NEAR AI', value: `${near(job.settlement.toNearAi)} NEAR` },
+                ...(toTreasury > 0n ? [{ label: 'Fuel to MASK WARS', value: `${near(job.settlement.toTreasury)} NEAR` }] : []),
                 { label: 'Company fee', value: `${near(job.settlement.fee)} NEAR` },
                 { label: 'Bonds to the company', value: `${near(job.settlement.forfeit)} NEAR` },
                 { label: 'Bonds back', value: `${near(job.settlement.bondsBack)} NEAR` },

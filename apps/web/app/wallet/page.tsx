@@ -6,8 +6,8 @@ import s from './wallet.module.css';
 import { pageMeta } from '@/lib/meta';
 
 export const metadata: Metadata = pageMeta({
-  title: 'Your vault · MASK WARS',
-  description: 'Money for the arena. Add it from any wallet, cash it out to yours.',
+  title: 'Your wallet · MASK WARS',
+  description: 'Your MASK WARS wallet: money for the arena. Add it from your own NEAR wallet, an exchange or another chain, and cash it out the same way.',
   path: '/wallet',
 });
 

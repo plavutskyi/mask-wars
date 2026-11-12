@@ -1,0 +1,199 @@
+/* The foot of every page: the mark, the pages, the code, the network. BRANDBOOK §2, §3, §4, §8. Tokens only.
+   Two sizes of its own: 12 for the words in Hubot, 15 for the links and lines in Mona. The mark's word is the header's. */
+
+.foot {
+  --gut: clamp(16px, 4.4vw, 64px);
+  /* Positioned, so it stands over the arena floor that stays fixed behind a long page. */
+  position: relative;
+  padding-bottom: calc(32px + env(safe-area-inset-bottom));
+  /* Ink from just under its line: the floor behind a long page sinks into the footer instead of being cut by it. */
+  background: linear-gradient(to bottom, transparent, var(--ink) 72px);
+  background: linear-gradient(to bottom, transparent calc(100lvh - 100svh), var(--ink) calc(100lvh - 100svh + 72px));
+}
+
+/* A phone's browser bar folds away and the screen grows by its height, while a one-screen page keeps the height it
+   had with the bar. This much ink stands above the footer's line, so that strip never shows the top of the footer. */
+.foot::before {
+  content: '';
+  display: block;
+  height: calc(100lvh - 100svh);
+}
+
+.in {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 48px 64px;
+  padding: 56px var(--gut) 0;
+  /* Edge to edge: where a scene ends at the footer, its floor ends on this line. */
+  border-top: 1px solid var(--line);
+}
+
+/* The mark and the word, as the header has them. */
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  white-space: nowrap;
+}
+
+.mark {
+  width: 24px;
+  height: 28px;
+  color: var(--ice);
+}
+
+.word,
+.title,
+.net,
+.tag {
+  font-family: var(--font-word);
+  font-weight: 800;
+  font-stretch: 125%;
+  text-transform: uppercase;
+}
+
+.word {
+  font-size: 17px;
+  letter-spacing: 0.05em;
+}
+
+.line {
+  margin-top: 8px;
+  font-size: 15px;
+  line-height: 24px;
+  font-weight: 500;
+  color: var(--ice-60);
+}
+
+.groups {
+  display: grid;
+  grid-template-columns: repeat(4, auto);
+  column-gap: clamp(48px, 5.6vw, 88px);
+  align-items: start;
+}
+
+.title {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: 12px;
+  line-height: 1;
+  letter-spacing: 0.14em;
+  color: var(--ice);
+}
+
+.list {
+  padding: 0;
+  list-style: none;
+}
+
+.link {
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 500;
+  white-space: nowrap;
+  color: var(--ice-60);
+  transition: color 160ms;
+}
+
+.link[aria-current='page'],
+.link:focus-visible {
+  color: var(--ice);
+}
+
+.logo,
+.link {
+  border-radius: var(--radius);
+}
+
+.out {
+  flex: none;
+  margin-left: 8px;
+  transition: transform 160ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* The network a link leaves for: a part of the product that is on chain only there. */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  height: 18px;
+  margin-left: 8px;
+  padding: 1px 5px 0 6px;
+  border: 1px solid color-mix(in srgb, var(--ice) 26%, transparent);
+  border-radius: var(--radius);
+  font-size: 10px;
+  line-height: 1;
+  letter-spacing: 0.14em;
+}
+
+/* The one quiet line under everything. */
+.base {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+  font-size: 15px;
+  line-height: 24px;
+  font-weight: 500;
+  color: var(--ice-60);
+}
+
+.net {
+  padding-top: 2px;
+  font-size: 12px;
+  line-height: 1;
+  letter-spacing: 0.14em;
+}
+
+@media (hover: hover) {
+  .link:hover {
+    color: var(--ice);
+  }
+
+  .link:hover .out {
+    transform: translate(2px, -2px);
+  }
+}
+
+/* Where the groups no longer fit beside the mark they stand under it, across the whole width. */
+@media (max-width: 1099px) {
+  .in {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 32px;
+    padding-top: 40px;
+  }
+
+  /* The third group has the longest words, the fourth one link. */
+  .groups {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.3fr) minmax(0, 0.7fr);
+    column-gap: 24px;
+  }
+}
+
+/* On a phone: two groups to a row, every link a full row for the thumb. The first column is the wider one: the
+   longest title stands in it and keeps its air at 360. */
+@media (max-width: 640px) {
+  .groups {
+    grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+    column-gap: 16px;
+    row-gap: 24px;
+  }
+
+  .link {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .out {
+    transition: none;
+  }
+}

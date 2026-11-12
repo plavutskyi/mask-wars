@@ -161,12 +161,25 @@
   text-underline-offset: 3px;
 }
 
-.takeBtn {
+.takeActs {
   flex: none;
+  display: grid;
+  gap: 12px;
+}
+
+.takeBtn {
   background: var(--money);
 }
 
-.takeBtn:disabled {
+/* The second move: the mask pays for its own mind with its prize. Same size, quieter: an outline in the prize's colour. */
+.fuelBtn {
+  background: transparent;
+  color: var(--money);
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--money) 60%, transparent);
+}
+
+.takeBtn:disabled,
+.fuelBtn:disabled {
   opacity: 0.6;
 }
 
@@ -223,7 +236,9 @@
     font-size: 15px;
   }
 
-  .takeBtn {
+  .takeActs,
+  .takeBtn,
+  .fuelBtn {
     width: 100%;
   }
 }

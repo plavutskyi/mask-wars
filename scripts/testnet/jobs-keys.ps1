@@ -1,7 +1,8 @@
 # The masks' keys on the jobs market, from the same seeds they race with (jobs-keys.mjs, packages/race/src/keys.ts):
 # for each mask one function-call key on the jobs contract ($Jobs: enlist, step, reveal, leave, judge, settle, close,
 # unstick; 2 NEAR of gas: about 30 jobs for the mask that judges and settles them, 0.07 NEAR each, many more for the
-# others) and one on the crews contract ($Crews: join, leave, enlist; 0.25 NEAR of gas). Neither
+# others) and one on the crews contract ($Crews: join, leave, enlist; 1 NEAR of gas: a crew's enlisting prepays 150
+# TGas, and the allowance does not get the unspent gas back, so 0.25 NEAR lasted only about 16 enlistings). Neither
 # attaches NEAR, so neither moves the mask's money: the bond a mask takes a job with is locked by jobs-bond.ps1. The
 # `Jobs` workflow derives the private halves from MASK_KEYS, so nothing new goes into any secret. The masks' full keys
 # stay in the keychain.
@@ -49,7 +50,7 @@ if (-not $CrewOnly) {
     Write-Host "$($account): keys on $Jobs and $Crews"
     $cmd = @('transaction', 'construct-transaction', $account, $account)
     $cmd += @('add-action', 'add-key', 'grant-function-call-access', '--allowance', '2 NEAR', '--contract-account-id', $Jobs, '--function-names', 'enlist, step, reveal, leave, judge, settle, close, unstick', 'use-manually-provided-public-key', $k.jobs)
-    $cmd += @('add-action', 'add-key', 'grant-function-call-access', '--allowance', '0.25 NEAR', '--contract-account-id', $Crews, '--function-names', 'join, leave, enlist', 'use-manually-provided-public-key', $k.crews)
+    $cmd += @('add-action', 'add-key', 'grant-function-call-access', '--allowance', '1 NEAR', '--contract-account-id', $Crews, '--function-names', 'join, leave, enlist', 'use-manually-provided-public-key', $k.crews)
     $cmd += @('skip', 'network-config', $Network, 'sign-with-keychain')
     Invoke-Near @cmd
     if ($LASTEXITCODE -ne 0) { Write-Host "$($account): these keys were not added (a key already on the mask refuses both)"; $failed += $m }

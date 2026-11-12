@@ -1,6 +1,6 @@
 # Shared vectors
 
-The same inputs and answers for `packages/core` and the Rust contract. Generated from the core: `pnpm --filter @maskwars/core vectors`.
+The inputs and answers that pin the rules of `packages/core`, byte for byte (`../README.md`). Generated from the core: `pnpm --filter @maskwars/core vectors`.
 The core test fails if the files drift from the generator. Amounts are decimal strings (u128), USDC in minimal units.
 
 | File | What it checks |

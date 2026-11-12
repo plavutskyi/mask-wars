@@ -34,7 +34,7 @@ export function Flow({ live }: { live: boolean }) {
           </li>
         ))}
       </ol>
-      {info ? <p className={s.flowNote}>{live ? 'Deposit addresses are open.' : 'Prices are live now. Deposit addresses open with season 0.'}</p> : null}
+      {info ? <p className={s.flowNote}>{live ? 'Deposit addresses are open.' : 'Prices are live now. Deposit addresses open soon.'}</p> : null}
     </div>
   );
 }

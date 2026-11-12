@@ -1,6 +1,7 @@
 {
   "network": "testnet",
-  "about": "The MASK WARS shared list. arena: live safes on the arena; what happened to each is read from the chain on every check, never from this file. reports: accounts reported with evidence, added by pull request.",
+  "about": "The MASK WARS shared list. vault: the house's vault, null while testnet names no code for it (packages/network safe_code). arena: live safes on the arena; what happened to each is read from the chain on every check, never from this file. reports: accounts reported with evidence, added by pull request.",
+  "vault": null,
   "arena": [
     {
       "contract": "tinygif8324.testnet",

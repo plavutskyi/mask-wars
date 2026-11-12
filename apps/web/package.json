@@ -16,6 +16,7 @@
     "@maskwars/arena": "workspace:*",
     "@maskwars/brand": "workspace:*",
     "@maskwars/check": "workspace:*",
+    "@maskwars/dossier": "workspace:*",
     "@maskwars/forge": "workspace:*",
     "@maskwars/hire": "workspace:*",
     "@maskwars/market": "workspace:*",

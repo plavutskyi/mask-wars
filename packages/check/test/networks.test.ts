@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { InvalidAccountError, maskCheck } from "../src/check.ts";
 import { mainnetList, sharedList, sharedLists } from "../src/index.ts";
-import { parseList } from "../src/list.ts";
+import { NETWORKS } from "@maskwars/network";
+import { parseList, withArena } from "../src/list.ts";
 import { NETWORK, endpointsFor, networkOf, readerFor } from "../src/network.ts";
 import { MAINNET_RPCS, TESTNET_RPCS } from "../src/rpc.ts";
 
@@ -56,6 +57,31 @@ describe("one shared list per network", () => {
       parseList({ ...mainnetList, arena: [{ contract: "bounty.maskwars.testnet", race: "s0-0001", safe: "safe-0001.maskwars.near", owner_at_open: "safe-0001.maskwars.near", note: "x" }] }),
     ).toThrow(/not a mainnet account/);
     expect(parseList({ ...mainnetList, reports: [{ ...report, account: "drainer.near" }] }).reports).toHaveLength(1);
+  });
+});
+
+describe("the house's vault in each list", () => {
+  it("is the network's own vault, house and bounty contract wherever the network names the vault's code, and null elsewhere", () => {
+    for (const network of ["testnet", "mainnet"] as const) {
+      const net = NETWORKS[network];
+      const vault = net.safe_code === null ? null : { contract: net.bounty, safe: net.vault, house: net.house };
+      expect(sharedLists[network].vault ?? null).toEqual(vault);
+    }
+    expect(mainnetList.vault).toEqual({ contract: "bounty.maskwars.near", safe: "vault.house.maskwars.near", house: "house.maskwars.near" });
+    expect(sharedList.vault).toBeNull();
+  });
+
+  it("must be the house's own sub-account, of the list's network, and never listed race by race", () => {
+    const vault = { contract: "bounty.maskwars.near", safe: "vault.house.maskwars.near", house: "house.maskwars.near" };
+    expect(parseList({ ...mainnetList, vault }).vault).toEqual(vault);
+    expect(parseList({ ...mainnetList, vault: undefined }).vault).toBeUndefined();
+    for (const safe of ["vault.maskwars.near", "a.vault.house.maskwars.near", "house.maskwars.near", "vaulthouse.maskwars.near"]) {
+      expect(() => parseList({ ...mainnetList, vault: { ...vault, safe } })).toThrow(/not the house's own sub-account/);
+    }
+    expect(() => parseList({ ...mainnetList, vault: { ...vault, house: "house.maskwars.testnet", safe: "vault.house.maskwars.testnet" } })).toThrow(/not a mainnet account/);
+    const race = { contract: vault.contract, race: "race-0012", safe: vault.safe, owner_at_open: vault.safe, note: "x" };
+    expect(() => parseList({ ...mainnetList, vault, arena: [race] })).toThrow(/is the house's vault: its round is read from the chain/);
+    expect(withArena(mainnetList, [{ contract: vault.contract, race: "race-0012", safe: vault.safe, by: "hand" }]).added).toEqual([]);
   });
 });
 

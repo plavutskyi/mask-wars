@@ -22,6 +22,7 @@ import { raceName, raceTitle, stageName, standing } from './names';
 import { Nums } from './Nums';
 import { ownsDeck, Pick, type PickMode, pickMode } from './Pick';
 import { nextCast, nextScene, opensLine, type Scene, sceneOf, stageCast } from './scene';
+import { ArenaTarget, nextTargetOf, targetOf } from './Target';
 import s from './stage.module.css';
 
 // The 3D arena is its own chunk with three.js inside: it is fetched only once the page has loaded and gone quiet,
@@ -285,10 +286,10 @@ export function Stage({
     ? [
         { label: 'Race', value: `${raceTitle(race.id)} · ${day(race.openedAt)}` },
         { label: 'Id', value: race.id },
-        ...(race.kind === 'safe' ? [{ label: 'Safe', value: race.target, href: accountUrl(race.target) }] : [{ label: 'Target', value: race.target }]),
-        ...(running && race.inSafe ? [{ label: 'In the safe', value: `${near(race.inSafe)} NEAR` }] : []),
+        ...(race.kind === 'safe' ? [{ label: 'Vault', value: race.target, href: accountUrl(race.target) }] : [{ label: 'Target', value: race.target }]),
+        ...(running && race.inSafe ? [{ label: 'In the vault', value: `${near(race.inSafe)} NEAR` }] : []),
         ...(running ? [{ label: 'Bounty', value: `${near(race.bounty)} NEAR`, href: race.txs.open ? txUrl(race.txs.open) : undefined }] : []),
-        ...(race.loot ? [{ label: 'From the safe', value: `${near(race.loot)} NEAR`, href: race.txs.drain ? txUrl(race.txs.drain) : undefined }] : []),
+        ...(race.loot ? [{ label: 'From the vault', value: `${near(race.loot)} NEAR`, href: race.txs.drain ? txUrl(race.txs.drain) : undefined }] : []),
         ...(race.payout ? [{ label: 'Bounty paid', value: `${near(race.payout.amount)} NEAR`, href: race.payout.tx ? txUrl(race.payout.tx) : undefined }] : []),
         ...(race.winner ? [{ label: 'Winner', value: race.winner.account, href: accountUrl(race.winner.account) }] : []),
         ...(race.phase === 'held' ? [{ label: 'Back to the team', value: `${near(race.refund?.amount ?? race.bounty)} NEAR`, href: race.refund?.tx ? txUrl(race.refund.tx) : undefined }] : []),
@@ -296,6 +297,8 @@ export function Stage({
       ]
     : [];
   const factsLabel = race?.phase === 'broken' ? 'Where the money came from' : 'The race on chain';
+  // The safe on the stage, said plainly: the arena's own target. The next round's between rounds, else the race's.
+  const target = ahead ? nextTargetOf(ahead) : race ? targetOf(race) : null;
   // In the door the sheet opens down, over the floor: above it is the header. The next round has no facts yet.
   const aside = race && !ahead ? <Info rows={facts} label={factsLabel} side="bottom" /> : null;
 
@@ -370,6 +373,7 @@ export function Stage({
       data-tone={tone}
       data-three={three.mode === 'on' ? '' : undefined}
       data-across={other ? '' : undefined}
+      data-target={target ? '' : undefined}
       data-pick={mode === 'none' || !pick ? undefined : mode === 'open' ? 'open' : picking ? 'called' : 'row'}
       style={{ '--heat': heat.toFixed(3) } as CSSProperties}
     >
@@ -382,9 +386,10 @@ export function Stage({
       </div>
 
       <Header center={center} live={live} network={race?.network ?? NETWORK} here="race" />
-      <p className={s.what} data-top="">
-        {WHAT}
-      </p>
+      <div className={s.top} data-top="">
+        <p className={s.what}>{WHAT}</p>
+        {target ? <ArenaTarget target={target} className={s.target} /> : null}
+      </div>
 
       {race?.phase === 'broken' && !ahead ? (
         <FlatBroken race={race} facts={facts} />

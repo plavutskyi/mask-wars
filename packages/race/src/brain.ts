@@ -163,6 +163,11 @@ export class BrainAttacker implements Attacker {
     this.#o = options;
   }
 
+  /** The model this mask's mind thinks with. */
+  get model(): string {
+    return this.#o.model;
+  }
+
   get spent(): MindSpend {
     return { usd: this.#spend.usd, calls: this.#spend.calls, tokens: { ...this.#spend.tokens } };
   }

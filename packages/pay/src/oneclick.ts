@@ -184,6 +184,20 @@ export class OneClick {
     return res.intent;
   }
 
+  /**
+   * Tells 1Click the transaction that paid a deposit address, so it looks for it at once instead of waiting to see it.
+   * Optional: the deposit lands either way.
+   */
+  submitDeposit(o: { txHash: string; depositAddress: string; memo?: string; nearSenderAccount?: string }): Promise<StatusResponse> {
+    return this.call("POST", "/v0/deposit/submit", {
+      txHash: o.txHash,
+      depositAddress: o.depositAddress,
+      ...(o.memo ? { memo: o.memo } : {}),
+      // A deposit from a NEAR wallet: 1Click asks who sent it.
+      ...(o.nearSenderAccount ? { nearSenderAccount: o.nearSenderAccount } : {}),
+    });
+  }
+
   submitIntent(signedData: SignedIntent): Promise<{ intentHash: string; correlationId: string }> {
     return this.call("POST", "/v0/submit-intent", { type: "swap_transfer", signedData });
   }

@@ -75,6 +75,12 @@ concurrency:
   group: season
   cancel-in-progress: false
 
+# Every step runs in bash with `-eo pipefail`, which GitHub adds only when the shell is named: a step that pipes its
+# output fails when the command before the pipe fails, not only when the last one does.
+defaults:
+  run:
+    shell: bash
+
 jobs:
   guard:
     # Every key lives in its environment only: the house's and the scheduler's in `season`, and the race's, which `race`

@@ -4,7 +4,8 @@ import { emptyJobs, readRecording, replayJobs } from '@maskwars/arena/jobs/fixtu
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PAGE_DEFAULT, PAGE_MAX, pageOf } from '../api/jobs/paging';
 import { postCalls } from './post';
-import { KIND_JUDGE, KIND_LINE, KIND_WORD, boardMoving, clockTime, entrantName, eventLine, jobMoving, jobTitle, left, paidOf } from './show';
+import { KIND_JUDGE, KIND_LINE, KIND_WORD, boardMoving, clockTime, entrantName, eventLine, jobMoving, jobTitle, left, openWord, paidOf } from './show';
+import { modeOf, waysOf } from './Ways';
 
 // The sandbox world's board, as its chain answered: the jobs and crews contracts of this repository in a local NEAR
 // sandbox, a job in every phase (packages/arena/test/fixtures/jobs-sandbox.json).
@@ -26,6 +27,18 @@ describe('how a job reads on the board and on its page', () => {
       'drain-0001': 'DUO got paid',
       'review-0001': 'DUO got paid',
     });
+  });
+
+  it('says who may take a job while its window is open: open, forged masks only, invite only, or full', () => {
+    const audit = job('audit-0006');
+    expect([openWord(audit), jobTitle(audit)]).toEqual(['Open', 'Open for masks']);
+    // A job with room that only its client's listed masks may take is not open to anyone else, and says so.
+    const listed: Job = { ...audit, takes: false, openTo: { who: 'masks', masks: ['nova.test.near'] } };
+    expect([openWord(listed), jobTitle(listed)]).toEqual(['Invite only', 'Invite only']);
+    const forged: Job = { ...audit, openTo: { who: 'registered', factories: ['masks.test.near'] } };
+    expect([openWord(forged), jobTitle(forged)]).toEqual(['Open to forged masks', 'Open to forged masks']);
+    const full: Job = { ...listed, room: false };
+    expect([openWord(full), jobTitle(full)]).toEqual(['Full', 'Every slot is taken']);
   });
 
   it('names a crew by its id and a mask alone by its own name; the money paid is the settle event’s', () => {
@@ -138,6 +151,36 @@ describe('posting a job', () => {
     const deployed = await emptyJobs('deployed').board();
     expect(postCalls({ ...deployed, market: { ...deployed.market!, bounties: [] } })).toEqual([]);
     expect(postCalls({ ...board, market: { ...board.market!, changing: true } })).toEqual([]);
+  });
+});
+
+describe('the two ways in speak only of the kinds a job can open with now', () => {
+  const lines = (kinds: Parameters<typeof modeOf>[0]) =>
+    waysOf(modeOf(kinds))
+      .flatMap((w) => w.stops.map((x) => x.line))
+      .join('\n');
+
+  it('a contract that opens only drains promises no TEE, no judge’s key and no delivery: its plans are public once revealed', async () => {
+    const fresh = postCalls(await emptyJobs('deployed').board()).map((c) => c.kind);
+    expect(fresh).toEqual(['drain']);
+    const text = lines(fresh);
+    expect(text).not.toMatch(/TEE|judge’s key|comes to you alone|nobody reads it but the judge|rubric|private test/);
+    expect(text).toContain('Each plan is sealed while the round runs, and public once revealed.');
+    expect(text).toContain('then the plan is revealed for anyone to read');
+  });
+
+  it('a contract with a judge in a TEE for a kind says its work is sealed for that judge and delivered to the client', () => {
+    const text = lines(['tee_tests', 'ai_review']);
+    expect(text).toContain('Their work is sealed: nobody reads it but the judge.');
+    expect(text).toContain('A judge in a TEE decides, the contract pays the winner by its crew’s split, and the winning work comes to you alone.');
+    expect(text).not.toMatch(/round/);
+    const both = lines(postCalls(board).map((c) => c.kind));
+    expect(both).toMatch(/drain’s plan is sealed while the round runs and public once revealed/);
+    expect(both).toMatch(/judge in a TEE decides/);
+  });
+
+  it('a contract that can open nothing yet promises neither', () => {
+    expect(lines([])).not.toMatch(/TEE|judge’s key|comes to you alone|round/);
   });
 });
 

@@ -3,23 +3,27 @@
 The wasm modules MASK WARS runs inside a TEE on OutLayer. A file's name is the SHA-256 of its bytes, and OutLayer
 refuses a file whose bytes do not match the name. The site serves them at `https://maskwars.xyz/outlayer/<file>`.
 
-The judge, the brain and MASK CHECK are built from this repository by their `build.sh`, which gives the same bytes in
+The judges, the brain and MASK CHECK are built from this repository by their `build.sh`, which gives the same bytes in
 any folder on any machine, so anyone can rebuild them and compare the SHA-256.
 
 | Module | SHA-256 | Source | What it does |
 | --- | --- | --- | --- |
 | Judge v6 | `1f8e1aca…86f7` | `services/judge` | The current judge, one for testnet and mainnet. Reads a drain from the chain and checks the revealed plan of a sealed round; on mainnet it reads through three RPC operators |
-| Brain, mainnet build | `6bafa376…e611` | `services/brain`, `build.sh --mainnet` | The mind of a forged mask, the build for mainnet. Plays a copy with its author's sealed strategy; also plays the masks of a factory that names this mind's key, for that factory's own keeper; says so when its project holds no NEAR AI key instead of trapping |
-| Brain | `ed1606cc…0100` | `services/brain`, `build.sh` | The same mind, the build for testnet. Live on `outlayer.testnet` as `mwc59801.testnet/brain` (confidential copying, `docs/spec/copy.md`) |
+| Brain, mainnet build | `3e1b05b6…1434` | `services/brain`, `build.sh --mainnet` | The mind of a forged mask, the build for mainnet, from the source on `main`. Plays a copy with its author's sealed strategy and refuses a copy whose author is not a mask name of its factory; also plays the masks of a factory that names this mind's key, for that factory's own keeper; says so when its project holds no NEAR AI key instead of trapping. Two builds in different folders gave the same bytes |
+| Brain, mainnet build | `6bafa376…e611` | `services/brain`, `build.sh --mainnet` | Earlier build for mainnet: copying and the factory's masks, before the check on a copy's author |
+| Brain | `ed1606cc…0100` | `services/brain`, `build.sh` | The same mind, the build for testnet. Live on `outlayer.testnet` as `mwc59801.testnet/brain` (confidential copying, `contracts/masks/README.md`) |
 | Brain, mainnet build | `a1922652…bae0` | `services/brain`, `build.sh --mainnet` | Earlier build for mainnet: an answer of up to 24 000 tokens, the longest run OutLayer gives, and its own manifest inside the wasm |
 | Brain | `c32820e0…f264` | `services/brain`, `build.sh` | Earlier build for testnet |
-| MASK CHECK | `e31b3442…99cf` | `services/check`, `build.sh` | The paid, signed check: allow, warn or block on an account before anyone pays it, run inside a TEE and signed there. It carries the two shared lists, so a change to either list is a new build; CI fails a commit whose file here is not its own build. This build's lists hold the mainnet safe of race 1 and the testnet safes of races 4–6 and of season rounds 1–2 |
+| MASK CHECK | `a2f508ce…bb89` | `services/check`, `build.sh` | The paid, signed check: allow, warn or block on an account before anyone pays it, run inside a TEE and signed there. It carries the two shared lists, so a change to either list is a new build; CI fails a commit whose file here is not its own build. This build reads the house's vault on mainnet as an arena target by design, once the chain confirms it is the house's, and never as an `allow`, a round it withstood included; its lists hold the mainnet safe of race 1 and the testnet safes of races 4–6 and of season rounds 1–2. Two builds in different folders gave the same bytes |
+| MASK CHECK | `e31b3442…99cf` | `services/check`, `build.sh` | Earlier build: the house's vault read like any new account, its daily remaking as warnings |
 | MASK CHECK | `1dae2166…4264` | `services/check`, `build.sh` | Earlier build: the mainnet list was still empty, so the safe broken in race 1 on mainnet read as warn, not block |
 | Brain, mainnet build | `65540964…a4fd` | `services/brain`, `build.sh --mainnet` | Earlier build for mainnet: an answer of up to 3 000 tokens, too few for a live safe |
 | Brain | `f3d6787d…1282` | `services/brain` | Earlier build for testnet |
 | Judge v5 | `b3818697…ab83` | `services/judge` | Earlier judge: the bounty contract that holds no key |
 | Judge v4 | `5048c290…08b0` | `services/judge` | Earlier judge: sealed rounds |
 | Judge v3 | `f6cf7728…434d` | `services/judge` | Earlier judge: reads a drain from the chain. Paid `race-0003` on testnet |
+| Jobs judge, tests in a TEE | `fa96e527…ed0e` | `services/judge-tests`, `build.sh` | Judges a `tee_tests` job of `jobs.tinygif8324.testnet`: opens each striker's sealed module in its TEE and runs the client's private test set on it; the work that passes the most cases wins |
+| Jobs judge, AI review in a TEE | `c28711aa…2a07` | `services/judge-review`, `build.sh` | Judges an `ai_review` job of `jobs.tinygif8324.testnet`: a NEAR AI model in a Confidential TEE scores each entrant's sealed review on the published rubric, one entrant a call |
 | Vault | `876eee0f…558b` | `services/vault` | Seals a finding so that only the team whose code was broken reads it |
 
 The two remaining judge files (`018b7143…`, `48850037…`) are the first versions of the judge.

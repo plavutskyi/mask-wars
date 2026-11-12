@@ -82,6 +82,34 @@ describe("an outside agent finds work over MCP", () => {
     expect(client.getInstructions()).toContain("These tools never sign: your own wallet signs. Your work never comes here: it is sealed on your machine.");
   });
 
+  it("says how each kind is judged: a drain by its round on chain, a TEE kind only once the contract records its judge", async () => {
+    const about = (await connect()).getInstructions()!;
+    expect(about).toContain("A drain is judged from the chain by the sealed round it follows: a mask's plan is sealed while the round runs and public once revealed.");
+    expect(about).toContain("A tee_tests or ai_review job opens only once the contract records a judge for its kind (job_rules says which kinds open now)");
+    // No line says every job's work is a box for a TEE judge: a drain's is not.
+    expect(about).not.toContain("reveal it after the work window as a box only the judge's TEE opens");
+  });
+
+  it("counts as open only the jobs any mask can take: a job kept for its client's listed masks says who may take it", async () => {
+    // The same reading, with audit-0006 kept by its client for one listed mask.
+    const exchanges = recording.exchanges.map((e) => {
+      if ((e.request as { params?: { method_name?: string } } | null)?.params?.method_name !== "list") return e;
+      const res = e.response as { result: { result: number[] } };
+      const jobs = JSON.parse(Buffer.from(res.result.result).toString("utf8")) as { id: string; terms: { open_to: unknown } }[];
+      for (const j of jobs) if (j.id === "audit-0006") j.terms.open_to = { who: "masks", masks: [ONYX] };
+      return { ...e, response: { ...res, result: { ...res.result, result: [...Buffer.from(JSON.stringify(jobs))] } } };
+    });
+    const client = await connect({ reader: replayJobs({ ...recording, exchanges }), limit: budget() });
+    const list = data<{ open: number; waiting_near: string; jobs: { id: string; open: boolean; open_to: string; headline: string }[] }>(await call(client, "list_jobs", {}));
+    expect(list).toMatchObject({ open: 1, waiting_near: "5" });
+    const audit = list.jobs.find((j) => j.id === "audit-0006")!;
+    expect(audit).toMatchObject({ open: false, open_to: `only ${ONYX}` });
+    expect(audit.headline).toContain("5/8 masks · only the masks its client listed · bond 0.5 NEAR");
+    expect(list.jobs.find((j) => j.id === "drain-0007")).toMatchObject({ open: true, open_to: "anyone" });
+    const open = data<{ jobs: { id: string }[] }>(await call(client, "list_jobs", { open: true }));
+    expect(open.jobs.map((j) => j.id)).toEqual(["drain-0007"]);
+  });
+
   it("lists the jobs: what waits for masks now, open ones first, a headline to show as is", async () => {
     const client = await connect();
     const b = await board();
@@ -109,7 +137,7 @@ describe("an outside agent finds work over MCP", () => {
       Record<string, unknown> & {
         crews: { crew: string | null; members: { name: string; payout_near: string | null; bond: Record<string, unknown> }[] }[];
         steps: { revealed: boolean; boxed: boolean; plan: string | null; counted: boolean | null; fake: boolean | null }[];
-        settlement: { state: string; payouts: { name: string; amount_near: string }[]; fee_near: string; to_near_ai_near: string; bonds_lost_near: string };
+        settlement: { state: string; payouts: { name: string; amount_near: string }[]; fee_near: string; to_treasury_near: string; bonds_lost_near: string };
         delivery: Record<string, unknown>;
       }
     >(await call(client, "get_job", { id: "review-0001" }));
@@ -117,7 +145,7 @@ describe("an outside agent finds work over MCP", () => {
     expect(job["brief"]).toBe("Review treasury proposal #42 against the published rubric: find what breaks its quorum.");
     expect(job.crews[0]).toMatchObject({ crew: "duo" });
     expect(job.crews[1]!.members[0]!.bond).toEqual({ amount_near: "0.05", by: "test.near", lost_near: "0.025", why: "idle" });
-    expect(job.settlement).toMatchObject({ state: "paid", fee_near: "0.15", to_near_ai_near: "0.07", bonds_lost_near: "0.025" });
+    expect(job.settlement).toMatchObject({ state: "paid", fee_near: "0.15", to_treasury_near: "0.07", bonds_lost_near: "0.025" });
     expect(job.settlement.payouts.map((p) => [p.name, p.amount_near])).toEqual([
       ["KIRA", "0.855"],
       ["nova.test.near", "1.995"],

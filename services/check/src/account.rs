@@ -34,6 +34,11 @@ pub fn is_testnet_name(id: &str) -> bool {
     id == "testnet" || id.ends_with(".testnet")
 }
 
+/// `child` is a direct sub-account of `parent` (`vault.house.near` of `house.near`): only `parent` can make it.
+pub fn is_sub_account_of(child: &str, parent: &str) -> bool {
+    child.strip_suffix(parent).and_then(|rest| rest.strip_suffix('.')).is_some_and(|name| !name.is_empty() && !name.contains('.'))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -64,5 +69,13 @@ mod tests {
         assert!(!is_implicit("intents.near"));
         assert!(is_mainnet_name("alice.near") && !is_mainnet_name("near"));
         assert!(is_testnet_name("alice.testnet") && is_testnet_name("testnet") && !is_testnet_name("alice.near"));
+    }
+
+    #[test]
+    fn tells_a_direct_sub_account() {
+        assert!(is_sub_account_of("vault.house.maskwars.near", "house.maskwars.near"));
+        for not in ["house.maskwars.near", "a.vault.house.maskwars.near", "vaulthouse.maskwars.near", ".house.maskwars.near", "vault.maskwars.near"] {
+            assert!(!is_sub_account_of(not, "house.maskwars.near"), "{not}");
+        }
     }
 }

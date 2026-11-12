@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { type CSSProperties, useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { acrossUrl, forgeStated, type MenuItem, menuOf, type Place, SITE } from '@/lib/site';
+import { acrossUrl, forgeStated, type JobsAnswer, jobsStated, type MenuItem, menuMore, menuOf, type Place, SITE } from '@/lib/site';
 import { Mark } from '../Mark';
 import s from './header.module.css';
 
@@ -13,10 +13,14 @@ export type { Place };
 
 const RACE: MenuItem = { place: 'race', href: '/', label: 'The race', away: null };
 
-// One question per page load: is the mask factory open on chain? Asked after the page is up, never in its way.
+/** The pages the menu has no item of its own for: a quieter second group in the open menu. */
+const MORE = menuMore();
+
+// One question per page load: is the mask factory open on chain? Asked after the page is up, never in its way. The
+// footer asks through the same two hooks, so the menu and the footer always show the same Forge and Jobs.
 let forgeAsked: Promise<boolean> | null = null;
 
-function useForgeOpen(ask: boolean): boolean {
+export function useForgeOpen(ask: boolean): boolean {
   const [open, setOpen] = useState(false);
   useEffect(() => {
     if (!ask) return;
@@ -33,6 +37,29 @@ function useForgeOpen(ask: boolean): boolean {
     };
   }, [ask]);
   return open;
+}
+
+// And one more on a site on its own: do the jobs and crews contracts stand on chain here? Until the chain answers, the
+// network's statement holds the menu, so the first frame is already right.
+let jobsAsked: Promise<JobsAnswer> | null = null;
+
+export function useJobsOpen(ask: boolean): JobsAnswer {
+  const [answer, setAnswer] = useState<JobsAnswer>(null);
+  useEffect(() => {
+    if (!ask) return;
+    let alive = true;
+    jobsAsked ??= fetch('/api/jobs-open')
+      .then((r) => (r.ok ? (r.json() as Promise<{ open?: unknown }>) : { open: null }))
+      .then((j): JobsAnswer => (typeof j.open === 'boolean' ? j.open : 'silent'))
+      .catch((): JobsAnswer => 'silent');
+    void jobsAsked.then((v) => {
+      if (alive) setAnswer(v);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [ask]);
+  return answer;
 }
 
 /** The two networks in the order the switch shows them: the one with real NEAR first. */
@@ -114,17 +141,19 @@ function Item({
 /**
  * The quiet menu: the same items in the same order on both sites. On a wide screen its links sit in the header; on a
  * narrow one, or beside the race clock, one button opens them over the page. A site on its own shows Forge only while
- * its factory is open on chain; two sites that know each other show it always: where the forge is, or on this site's
- * own page, which says itself when its factory is not open yet.
+ * its factory is open on chain, and Jobs only while its jobs and crews contracts are. Two sites that know each other
+ * show both always: Jobs leads to the site whose network holds the board, Forge to where the forge is or to this
+ * site's own page, which says itself when its factory is not open yet.
  */
 export function Menu({ here, network }: { here?: Place | undefined; network?: string | undefined }) {
   const forge = useForgeOpen(!forgeStated());
+  const jobs = useJobsOpen(!jobsStated());
   const [open, setOpen] = useState(false);
   const path = usePathname();
   const id = useId();
   const button = useRef<HTMLButtonElement>(null);
   const sheet = useRef<HTMLDivElement>(null);
-  const links = menuOf(forge);
+  const links = menuOf(forge, SITE, jobs);
 
   // A new page closes the menu.
   const [seen, setSeen] = useState(path);
@@ -207,9 +236,17 @@ export function Menu({ here, network }: { here?: Place | undefined; network?: st
                   />
                 ))}
               </nav>
-              <Link href="/break" className={s.sheetQuiet} aria-current={here === 'break' ? 'page' : undefined} onClick={() => setOpen(false)}>
-                Break my contract
-              </Link>
+              {/* The pages the items above do not name, quieter: a phone reaches each of them from here. */}
+              <nav className={s.sheetMore} aria-label="More">
+                {MORE.map((l) => (
+                  <Link key={l.path} href={l.href} className={s.sheetQuiet} aria-current={path === l.path ? 'page' : undefined} onClick={() => setOpen(false)}>
+                    {l.label}
+                  </Link>
+                ))}
+                <Link href="/break" className={s.sheetQuiet} aria-current={here === 'break' ? 'page' : undefined} onClick={() => setOpen(false)}>
+                  Break my contract
+                </Link>
+              </nav>
             </div>,
             document.body,
           )

@@ -23,7 +23,11 @@ const STAGE: Record<SwapStatus, Stage> = {
   FAILED: "failed",
 };
 
-/** A stage no swap leaves. INCOMPLETE_DEPOSIT is final for the swap; its refund follows on its own. */
+/**
+ * A stage no swap leaves, as the vault's top-up and the hire checkout follow them: INCOMPLETE_DEPOSIT ends the screen
+ * there and its refund follows on its own. Get NEAR keeps following a short deposit instead (`nearFinal`): its address
+ * still takes the rest until the quote's deadline.
+ */
 export function final(stage: Stage): boolean {
   return stage === "done" || stage === "short" || stage === "refunded" || stage === "failed";
 }

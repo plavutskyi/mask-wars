@@ -1,23 +1,25 @@
 //! MASK WARS · home. The code on each of the arena's own masks (NOVA, ONYX, ORACLE) that sends a round's winnings back
 //! to the house, so the daily round goes on with the same NEAR: house, vault, the mask that wins, house.
 //!
-//! One method, `home()`, with no arguments. Anyone may call it, and it can do only one thing: everything the mask holds
+//! One method, `home()`, with no arguments (and the read-only `contract_source_metadata` of NEP-330, which says where this
+//! code's source is). Anyone may call it, and it can do only one thing: everything the mask holds
 //! above what it keeps goes to the house, whose name is written into this code. What the mask keeps is `KEEP`, 0.4 NEAR
 //! for the gas its next claim buys up front, plus the NEAR its own storage locks (its code, its keys, its account), so
 //! after a call the mask has exactly that and a sliver: the share of the call's gas that NEAR pays a contract. At or
 //! below it nothing is sent. A deposit attached to the call adds to the balance and goes home with the rest.
 //!
-//! What it cannot do: send anywhere else (no argument is read, no other method exists), spend below `KEEP`, store
+//! What it cannot do: send anywhere else (no argument is read, no other method sends anything), spend below `KEEP`, store
 //! anything, or touch the mask's keys. The mask's own keys, the full one the owner holds and the function-call keys it
 //! plays rounds with on the bounty contract and the vault, work as before: code on an account changes what calls *to*
 //! it do, not what the account signs. The bounty contract and the vault pay a mask with plain transfers, which run no
 //! code. If the transfer to the house fails (no such account), NEAR gives it back to the mask: nothing is lost.
 //!
-//! Built without near-sdk and without `std`, for a code of a few hundred bytes: the storage it locks on each mask is
-//! well under 0.01 NEAR. Each network has its own build, with its own house: `--features mainnet` sends to
+//! Built without near-sdk and without `std`, for a code under 2 KB (1 349 bytes for 1.0.0): the storage it locks on
+//! each mask is under 0.02 NEAR. Each network has its own build, with its own house: `--features mainnet` sends to
 //! `house.maskwars.near`, `--features testnet` to `house.tinygif8324.testnet` (packages/network; a test keeps them the
-//! same). build.sh gives the same bytes anywhere; their code hash is `home_code` in packages/network, and the house's
-//! daily step calls `home()` only on a mask that runs exactly that code.
+//! same). build.sh gives the same bytes anywhere. The code on the masks is version 1.0.0, whose code hash is `home_code`
+//! in packages/network (this version adds the NEP-330 view and builds to other bytes), and the house's daily step calls
+//! `home()` only on a mask that runs exactly that code.
 
 #![cfg_attr(target_arch = "wasm32", no_std)]
 
@@ -53,10 +55,22 @@ pub const fn above(balance: u128, storage_usage: u64) -> u128 {
     balance.saturating_sub(keep)
 }
 
+/// The version of `home()`'s event: its form has not changed since 1.0.0. The code's own version is the crate's, which
+/// `contract_source_metadata` gives (NEP-330).
+macro_rules! event_version {
+    () => {
+        "1.0.0"
+    };
+}
+
+/// What `contract_source_metadata` returns (NEP-330), as build.rs wrote it for this build: the version, the public
+/// repository and, when the build ran in cargo-near's pinned image, how to build these bytes again.
+pub const SOURCE_METADATA: &str = include_str!(concat!(env!("OUT_DIR"), "/nep330.json"));
+
 /// The event `home()` logs when it sends, in the NEP-297 form: `EVENT_JSON:` and then the JSON, the amount in yoctoNEAR.
 const EVENT_HEAD: &str = concat!(
     "EVENT_JSON:{\"standard\":\"maskwars_home\",\"version\":\"",
-    env!("CARGO_PKG_VERSION"),
+    event_version!(),
     "\",\"event\":\"home\",\"data\":{\"to\":\"",
     house!(),
     "\",\"amount\":\""
@@ -107,6 +121,7 @@ mod near {
         fn promise_batch_create(account_id_len: u64, account_id_ptr: u64) -> u64;
         fn promise_batch_action_transfer(promise_index: u64, amount_ptr: u64);
         fn log_utf8(len: u64, ptr: u64);
+        fn value_return(value_len: u64, value_ptr: u64);
     }
 
     /// Sends everything above what the mask keeps to the house; below it, nothing.
@@ -129,6 +144,14 @@ mod near {
             let len = super::event(send, &mut line);
             log_utf8(len as u64, line.as_ptr() as u64);
         }
+    }
+
+    /// NEP-330: where this code's source is. A view: it reads and changes nothing.
+    #[no_mangle]
+    pub extern "C" fn contract_source_metadata() {
+        let m = super::SOURCE_METADATA.as_bytes();
+        // SAFETY: NEAR reads exactly `len` bytes of the constant.
+        unsafe { value_return(m.len() as u64, m.as_ptr() as u64) }
     }
 
     #[panic_handler]
@@ -185,6 +208,19 @@ mod tests {
         assert_eq!(event_text(u128::MAX).len(), EVENT_MAX);
         let json = event_text(NEAR).strip_prefix("EVENT_JSON:").map(str::to_string).expect("prefix");
         assert!(json.starts_with('{') && json.ends_with('}') && json.matches('"').count().is_multiple_of(2), "{json}");
+    }
+
+    #[test]
+    fn the_code_says_where_its_source_is() {
+        // NEP-330 as near-sdk writes it. A plain build (build.sh) has no build_info; the build in cargo-near's pinned
+        // image adds it (contracts/README.md).
+        let head =
+            format!(r#"{{"version":"{}","link":"https://github.com/plavutskyi/mask-wars"#, env!("CARGO_PKG_VERSION"));
+        assert!(SOURCE_METADATA.starts_with(&head), "{SOURCE_METADATA}");
+        assert!(SOURCE_METADATA.contains(r#"","standards":[{"standard":"nep330","version":"1.3.0"}],"build_info":"#));
+        if option_env!("NEP330_BUILD_INFO_BUILD_ENVIRONMENT").is_none() {
+            assert!(SOURCE_METADATA.ends_with(r#","build_info":null}"#), "{SOURCE_METADATA}");
+        }
     }
 
     /// The string value of `"key": "..."` in a network file of packages/network.

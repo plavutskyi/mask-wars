@@ -22,6 +22,9 @@ name: Live race
 # OutLayer with OUTLAYER_PAYMENT_KEY and never reads the strategy. In a round with them every sealed sweep asks for
 # min_loot, so an early seal spoils no later plan.
 #
+# `minds`, beside the drain: what each mask's mind cost in the race, from NEAR AI's bill for every answer, handed on as
+# the public artifact `minds-<bounty>` that the site shows beside what the masks took.
+#
 # Open the round right before this run; the season does both. A called run gets every key through its jobs'
 # `environment:`, never from the caller: the caller inherits, and an environment's secret wins over what it passes.
 #
@@ -31,8 +34,8 @@ name: Live race
 # - `live-race`: MASK_KEYS and KEEPER_SEED. Deployment branches `main` only, no required reviewers, or the season's daily
 #   run would wait past its commit window. Only `arm`, `drain` and `settle` name it.
 # - `outlayer`: NEAR_AI_API_KEY, which pays NEAR AI for our masks' models, and OUTLAYER_PAYMENT_KEY, which pays
-#   OutLayer to run the people's minds. Deployment branches `main` only. Only `race` names it: the job that runs the
-#   models and the sandbox never shares a runner with a mask's key.
+#   OutLayer to run the people's minds. Deployment branches `main` only. `race` names it, and `minds`, which only reads
+#   NEAR AI's bill with NEAR_AI_API_KEY: neither ever shares a runner with a mask's key.
 # - `live-race-hand`: no secret, a required reviewer. A run of `Live race` started by hand waits for the owner's yes;
 #   the season's runs do not.
 # `guard` runs first, on a runner that checks out no code: if any of those keys is still a repository secret, which
@@ -67,6 +70,10 @@ on:
       live:
         type: boolean
         default: true
+      # The striker of our crew on a drain job of this round (Jobs): it plays the plan whichever of our masks found it.
+      striker:
+        type: string
+        default: ""
     secrets:
       # A called workflow sees only the secrets named here. These four are named so that the jobs below can read them
       # from their own environments (`live-race`, `outlayer`): an environment's secret wins over one a caller passes,
@@ -89,6 +96,12 @@ env:
 # The token every job gets reads the code and nothing else. Actions are pinned to a commit, not a movable tag.
 permissions:
   contents: read
+
+# Every step runs in bash with `-eo pipefail`, which GitHub adds only when the shell is named: a step that pipes its
+# output fails when the command before the pipe fails, not only when the last one does.
+defaults:
+  run:
+    shell: bash
 
 jobs:
   guard:
@@ -175,6 +188,10 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @maskwars/race build:runner
       - name: Race
+        # The board goes to the log and to race.txt through `tee`. With pipefail (the workflow's shell) a race that
+        # exits non-zero fails this step and the run: a round with a person's mask and no OUTLAYER_PAYMENT_KEY (exit 2)
+        # is red, not a green round nobody played. What the race wrote before it failed is still handed on below.
+        id: race
         env:
           NEAR_AI_API_KEY: ${{ secrets.NEAR_AI_API_KEY }}
           CHALLENGE: ${{ inputs.challenge }}
@@ -184,7 +201,15 @@ jobs:
           BOUNTY: ${{ inputs.bounty }}
           OUTLAYER_PAYMENT_KEY: ${{ secrets.OUTLAYER_PAYMENT_KEY }}
           BRAIN_PROJECT: ${{ vars.MASKWARS_NETWORK != 'mainnet' && vars.BRAIN_PROJECT || '' }}
-        run: pnpm --filter @maskwars/race race "$CHALLENGE" --attempts "$ATTEMPTS" --result "$GITHUB_WORKSPACE/result.json" --finding "$RUNNER_TEMP/finding.json" --costs "$RUNNER_TEMP/brain-costs.json" | tee race.txt
+        run: pnpm --filter @maskwars/race race "$CHALLENGE" --attempts "$ATTEMPTS" --result "$GITHUB_WORKSPACE/result.json" --finding "$RUNNER_TEMP/finding.json" --costs "$RUNNER_TEMP/brain-costs.json" --minds "$RUNNER_TEMP/minds.json" | tee race.txt
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        # Every answer each mask's mind got, with its id on NEAR AI's bill, for the `minds` job to price. A day is enough.
+        if: always() && inputs.bounty != ''
+        with:
+          name: minds-tab
+          path: ${{ runner.temp }}/minds.json
+          retention-days: 1
+          if-no-files-found: ignore
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         # What each person's mind spent, for the keeper's settle job. Tokens and dollars only.
         if: always() && needs.arm.outputs.humans != '' && needs.arm.outputs.humans != '[]'
@@ -195,8 +220,10 @@ jobs:
           if-no-files-found: ignore
       - name: Seal the winning plan for the drain job
         # Only the winning mask's key on the bounty contract opens the box; the plain plan is deleted.
+        # After a race that failed too, on purpose: a plan a mask found before the failure (the race writes it first,
+        # its report last) is still sealed and played. With no plan the step says so and seals nothing.
         id: seal
-        if: inputs.bounty != '' && (inputs.challenge == 'live-safe' || inputs.live)
+        if: ${{ (success() || steps.race.outcome == 'failure') && inputs.bounty != '' && (inputs.challenge == 'live-safe' || inputs.live) }}
         env:
           FINDING: ${{ runner.temp }}/finding.json
           BOX: ${{ runner.temp }}/finding-box.json
@@ -208,15 +235,17 @@ jobs:
           MASK_FACTORY: ${{ vars.MASKWARS_NETWORK != 'mainnet' && vars.MASK_FACTORY || '' }}
         run: node packages/race/scripts/seal-finding.ts
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        if: steps.seal.outputs.sealed == 'true'
+        # The box goes to the drain job whenever there is one, a failed race step or not.
+        if: ${{ !cancelled() && steps.seal.outputs.sealed == 'true' }}
         with:
           name: finding-box
           path: ${{ runner.temp }}/finding-box.json
           retention-days: 1
       - name: Bounty result
-        # Names the one artifact the bounty judge on OutLayer reads; a practice race writes none.
+        # Names the one artifact the bounty judge on OutLayer reads; a practice race writes none. After a race that
+        # failed too, on purpose: an outcome it wrote before the failure is still the round's outcome.
         id: bounty
-        if: inputs.bounty != '' && inputs.challenge != 'live-safe' && !inputs.live
+        if: ${{ (success() || steps.race.outcome == 'failure') && inputs.bounty != '' && inputs.challenge != 'live-safe' && !inputs.live }}
         env:
           BOUNTY: ${{ inputs.bounty }}
           TARGET: ${{ inputs.challenge }}
@@ -224,7 +253,8 @@ jobs:
           MASK_ACCOUNTS: ${{ vars.MASKWARS_NETWORK != 'mainnet' && vars.MASK_ACCOUNTS || '' }}
         run: node packages/race/scripts/bounty-result.ts
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        if: inputs.bounty != '' && inputs.challenge != 'live-safe' && !inputs.live
+        # Whenever the step above named the result.
+        if: ${{ !cancelled() && steps.bounty.outputs.name != '' }}
         with:
           name: ${{ steps.bounty.outputs.name }}
           path: result.json
@@ -233,6 +263,40 @@ jobs:
         with:
           name: race-${{ inputs.challenge }}
           path: race.txt
+
+  minds:
+    # What each mask's mind cost in this race: NEAR AI's bill for every answer, and NEAR's price from 1Click
+    # (packages/race/scripts/minds.ts). It runs beside the drain, so the seal and the play never wait on the pricing; the
+    # race step itself ends only once its minds' calls still on their way came back (up to 300 s each). The record
+    # is public (`minds-<bounty>`): the site reads it by that name with its token for this repository's Actions and keeps
+    # it for good. NEAR_AI_API_KEY only, from the race job's own environment; it checks out the code and installs no script.
+    needs: [guard, race]
+    if: ${{ !cancelled() && needs.guard.result == 'success' && inputs.bounty != '' && needs.race.result != 'skipped' }}
+    runs-on: ubuntu-latest
+    environment: ${{ vars.MASKWARS_NETWORK == 'mainnet' && 'outlayer-mainnet' || 'outlayer' }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+      - run: pnpm install --frozen-lockfile --ignore-scripts --filter @maskwars/race...
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        continue-on-error: true
+        with:
+          name: minds-tab
+          path: ${{ runner.temp }}/tab
+      - name: Price the minds
+        env:
+          NEAR_AI_API_KEY: ${{ secrets.NEAR_AI_API_KEY }}
+        run: node packages/race/scripts/minds.ts "$RUNNER_TEMP/tab/minds.json" "$RUNNER_TEMP/minds.json"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: minds-${{ inputs.bounty }}
+          path: ${{ runner.temp }}/minds.json
+          retention-days: 90
+          if-no-files-found: ignore
 
   drain:
     # The mask's keys live here only: a clean runner that never ran the race, the models or the sandbox.
@@ -269,6 +333,7 @@ jobs:
           # A person's mask that won plays with the two keys the keeper put on it for this round.
           HUMAN_MASKS: ${{ needs.arm.outputs.humans || '[]' }}
           KEEPER_SEED: ${{ secrets.KEEPER_SEED }}
+          STRIKER: ${{ inputs.striker }}
         run: node packages/race/scripts/drain-live.ts
 
   settle:

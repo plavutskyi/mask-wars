@@ -26,11 +26,16 @@ export interface JobsConfig {
    * set: the delivery then names the project and the key to read.
    */
   readonly storage?: string | null;
+  /**
+   * The mask factory is on chain here (`sections.forge` of packages/network). A job open only to forged masks can be
+   * taken only then: until the factory's account exists nobody has such a mask, and the job is not offered to anyone.
+   */
+  readonly forge?: boolean;
 }
 
 /** The jobs of one network, as packages/network places them. */
 export function jobsConfigOf(net: Network = NET): JobsConfig {
-  return { network: net.id, contract: net.jobs, crews: net.crews, rpc: net.rpc, indexer: net.indexer, explorer: net.explorer };
+  return { network: net.id, contract: net.jobs, crews: net.crews, rpc: net.rpc, indexer: net.indexer, explorer: net.explorer, forge: net.sections.forge };
 }
 
 export const TESTNET_JOBS: JobsConfig = jobsConfigOf(NETWORKS.testnet);
@@ -62,6 +67,8 @@ export function jobsConfigFromEnv(env: Record<string, string | undefined>): Jobs
     indexer: env["MASKWARS_INDEXER"]?.trim() || base.indexer,
     explorer: local ? null : base.explorer,
     storage: env["MASKWARS_JUDGE_STORAGE"]?.trim() || null,
+    // A local chain is the jobs world of the tests, which deploys its own factory beside the jobs contract.
+    forge: local || base.forge === true,
   };
 }
 

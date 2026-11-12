@@ -752,6 +752,31 @@ pub fn build_season() -> Result<()> {
     Ok(())
 }
 
+pub fn house_wasm_path() -> PathBuf {
+    workspace_root()
+        .join("target")
+        .join("house-wasm")
+        .join("wasm32-unknown-unknown")
+        .join("release")
+        .join("maskwars_house.wasm")
+}
+
+/// Builds the house contract (`contracts/house`, its own crate) for wasm.
+pub fn build_house() -> Result<()> {
+    let root = workspace_root();
+    let status = std::process::Command::new(std::env::var("CARGO").unwrap_or_else(|_| "cargo".into()))
+        .current_dir(root.join("..").join("house"))
+        .env("RUSTFLAGS", "--cfg near -C link-arg=-s")
+        .env("CARGO_TARGET_DIR", root.join("target").join("house-wasm"))
+        .args(["build", "--release", "--target", "wasm32-unknown-unknown"])
+        .status()
+        .context("run cargo build for the house contract")?;
+    if !status.success() {
+        bail!("house wasm build failed");
+    }
+    Ok(())
+}
+
 /// Where `build_masks` puts the mask factory and the mask code.
 pub fn masks_wasm_dir() -> PathBuf {
     workspace_root().join("target").join("masks-wasm").join("wasm32-unknown-unknown").join("release")
@@ -784,12 +809,12 @@ pub fn build_masks() -> Result<()> {
 }
 
 /// Where `build_home` puts the code of `home` for `network` (`mainnet` or `testnet`): the very file contracts/home/build.sh
-/// makes, whose code hash is `home_code` in packages/network.
+/// makes from this source.
 pub fn home_wasm_path(network: &str) -> PathBuf {
     workspace_root().join("..").join("home").join("target").join("wasm").join(format!("maskwars_home-{network}.wasm"))
 }
 
-/// Builds `home` (contracts/home, its own crate) for both networks with its own script, the build a deploy uses.
+/// Builds `home` (contracts/home, its own crate) for both networks with its own script: the same bytes in any folder.
 pub fn build_home() -> Result<()> {
     let status = std::process::Command::new("bash")
         .arg(workspace_root().join("..").join("home").join("build.sh"))

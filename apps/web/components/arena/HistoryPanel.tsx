@@ -84,7 +84,7 @@ export function HistoryPanel({
       try {
         signer = await connect(FORGE_NET.rpcs);
       } catch {
-        setLine('No wallet connected.');
+        setLine('No NEAR wallet connected.');
         setPhase('idle');
         return;
       }
@@ -233,7 +233,7 @@ function HistoryOwner({ name, owner, viewers, account }: { name: string; owner: 
       try {
         signer = await connect(FORGE_NET.rpcs);
       } catch {
-        setLine('No wallet connected. Nothing was sent.');
+        setLine('No NEAR wallet connected. Nothing was sent.');
         return;
       }
       if (signer.accountId !== owner) {

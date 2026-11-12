@@ -37,5 +37,24 @@ export { type Budget, type Limiter, callerOf, createBudget, createLimiter } from
 export { PHASES, type Phase, RACE_ID, RaceReadError, RaceView, nearOf, phaseOf, readRace } from "./race.ts";
 export { loadRules } from "./rules.ts";
 export { TEE_DEPLOYMENT, TeeCheckView, type TeeDeployment, teeCheckOf } from "./tee.ts";
-export { type CheckDeps, CheckView, INSTRUCTIONS, instructionsFor, SERVER_NAME, SERVER_VERSION, type ServerDeps, TOOL_NAMES, type ToolLimits, createServer } from "./server.ts";
+export { type CheckDeps, CheckView, INSTRUCTIONS, instructionsFor, SERVER_DESCRIPTION, SERVER_NAME, SERVER_TITLE, SERVER_VERSION, type ServerDeps, serverIcons, TOOL_NAMES, type ToolLimits, createServer } from "./server.ts";
 export { JOBS_INSTRUCTIONS, JOB_BUDGET, JOB_TOOL_NAMES, type JobTools, MASK_METHODS, boardHeadline, jobHeadline, jobToolsFromEnv, jobToolsOf, jobView, registerJobTools } from "./jobs.ts";
+export {
+  HOUSE_BUDGET,
+  HOUSE_INSTRUCTIONS,
+  HOUSE_TOOL_NAMES,
+  HouseReadError,
+  HouseRoundView,
+  type HouseTools,
+  JoinView,
+  PlayView,
+  houseInstructionsFor,
+  houseRoundOf,
+  houseToolsFor,
+  joinOf,
+  planProblems,
+  playOf,
+  readHouseRound,
+  registerHouseTools,
+  sealHash,
+} from "./house.ts";

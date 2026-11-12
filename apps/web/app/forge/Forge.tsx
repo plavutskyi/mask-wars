@@ -33,6 +33,7 @@ import {
   YOCTO,
 } from '@maskwars/forge';
 import { type FactoryAnswer, FORGE_NET as NET, FORGE_STATED, forgeClosed, FUEL_MAX } from '@/lib/forge';
+import { MindName } from './MindName';
 import { connect, connected, type Signer } from './wallet';
 import s from './forge.module.css';
 
@@ -271,7 +272,7 @@ export function Forge({ origin }: { origin: string }) {
       setAccount(signer.accountId);
     } catch {
       setPhase('choose');
-      return setProblem('No wallet connected. Nothing was sent.');
+      return setProblem('No NEAR wallet connected. Nothing was sent.');
     }
     let strategy: string | null = null;
     // A copy plays its author's strategy, so it seals none of its own.
@@ -367,8 +368,8 @@ export function Forge({ origin }: { origin: string }) {
     : '';
 
   const note = (() => {
-    if (phase === 'connect') return 'Pick your wallet.';
-    if (phase === 'sign') return 'Sign the forge in your wallet.';
+    if (phase === 'connect') return 'Pick your NEAR wallet.';
+    if (phase === 'sign') return 'Sign the forge in your NEAR wallet.';
     if (phase === 'forging') return 'Forging on NEAR.';
     if (problem) return problem;
     switch (now) {
@@ -553,10 +554,9 @@ export function Forge({ origin }: { origin: string }) {
                       role="radio"
                       aria-checked={m.id === model}
                       className={s.tile}
-                      data-long={m.name.length > 14 ? '' : undefined}
                       onClick={() => setModel(m.id)}
                     >
-                      <span className={s.word}>{m.name}</span>
+                      <MindName name={m.name} />
                     </button>
                   ))}
                 </div>

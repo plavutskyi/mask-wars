@@ -7,11 +7,13 @@
     ".": "./src/index.ts",
     "./config": "./src/config.ts",
     "./format": "./src/format.ts",
+    "./minds": "./src/minds.ts",
     "./replay": "./src/replay.ts",
     "./jobs": "./src/jobs/index.ts",
     "./jobs/config": "./src/jobs/config.ts",
     "./jobs/seal": "./src/jobs/seal.ts",
-    "./jobs/fixture": "./src/jobs/fixture.ts"
+    "./jobs/fixture": "./src/jobs/fixture.ts",
+    "./guests": "./src/guests.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",

@@ -45,7 +45,7 @@ The network is a parameter. Left out, the account names it: `.testnet` reads tes
 | RPC | `rpc.mainnet.fastnear.com` and `near.drpc.org`: two independent providers | `rpc.testnet.fastnear.com`, then `rpc.testnet.near.org` if it is down |
 | How | Every read goes to both, at one block. An answer counts only when both give the same one; what one says alone is a warning | The first node answers; the second only on an outage |
 | Older blocks | FastNEAR's regular node keeps about 17 h, so the 24 h reads go to `archival-rpc.mainnet.fastnear.com`; dRPC keeps about 30 h | Testnet nodes keep the last few epochs |
-| Shared list | [`list.mainnet.json`](list.mainnet.json): empty until season 0 opens its races | [`list.json`](list.json) |
+| Shared list | [`list.mainnet.json`](list.mainnet.json): the house's vault and the safe of race 1; season 0 adds its safes as their rounds open | [`list.json`](list.json) |
 | Explorer in evidence | `nearblocks.io` | `testnet.nearblocks.io` |
 | Override | `MASKCHECK_MAINNET_RPC` | `MASKCHECK_RPC` |
 
@@ -72,19 +72,19 @@ names a safe.
 
 | Code | Level | What it means | Where it comes from |
 | --- | --- | --- | --- |
-| `arena_drained` | block | A mask drained this safe on the arena and the judge confirmed it | bounty contract `get(race)` → `state: drained`, `get_safe(race)` → this safe |
-| `arena_taken_over` | block | A mask took the safe over through its hole; the drain is not judged yet | the safe's `get_owner` ≠ its owner when the race opened |
+| `arena_drained` | block | A mask drained this safe on the arena and the judge confirmed it; on the house's vault, said as the arena it is | bounty contract `get(race)` → `state: drained`, `get_safe(race)` → this safe |
+| `arena_taken_over` | block | A mask took the safe over through its hole; the drain is not judged yet | the safe's `get_owner` ≠ its owner when the race opened (the vault: ≠ itself) |
 | `no_account` | block | A named account that does not exist: a payment cannot arrive | `view_account` → `UNKNOWN_ACCOUNT` |
 | `reported` | block / warn | Someone reported the account, with evidence | the shared list, `reports` |
-| `arena_target` | warn | The safe is in an open race right now | bounty contract `get(race)` → `open` or `judging` |
-| `young_account` | warn | The account did not exist 24 h ago | `view_account` at the block 24 h back |
-| `code_deployed`, `code_changed` | warn | A contract appeared or its code changed within 24 h | `code_hash` now and 24 h back |
+| `arena_target` | warn | The safe is in an open race right now. The house's vault: **an arena target by design**, in its round, after it, or waiting for today's: never an `allow` | bounty contract `get(race)` → `open` or `judging`; the vault: below |
+| `young_account` | warn; info on the house's vault | The account did not exist 24 h ago. The vault: said, with why: the house makes it again for every round | `view_account` at the block 24 h back |
+| `code_deployed`, `code_changed` | warn; info on the house's vault | A contract appeared or its code changed within 24 h. The vault: the same, said with why | `code_hash` now and 24 h back |
 | `unused_implicit` | warn | An implicit account nobody has used yet | `view_account` → `UNKNOWN_ACCOUNT` on a 64-hex or `0x` id |
 | `chain_unreadable` | warn | No RPC answered: nothing on chain was checked | — |
 | `rpc_disagree` | warn | Mainnet: the two providers named final heads more than 100 blocks apart, or gave different answers to the same read; the check stopped there | both providers, the same read at the same block |
 | `rpc_single` | warn | Mainnet: some reads came from one provider only, and why the other sat them out | — |
 | `history_unavailable` | warn on mainnet, info on testnet | No node keeps the block from 24 h ago: age and code changes were not checked | — |
-| `arena_withstood` | info | The safe's race ended and nobody drained it | `get(race)` → `refunded` |
+| `arena_withstood` | info | The safe's race ended and nobody drained it. On the house's vault, beside its `arena_target` | `get(race)` → `refunded` |
 | `account_age`, `contract`, `plain_account` | info | What the account is | `view_account` |
 | `rpc_agree` | info | Mainnet: both providers gave the same answer to every read | — |
 | `arena_pending`, `arena_unreadable` | info | What could not be read, said plainly | — |
@@ -92,6 +92,43 @@ names a safe.
 The 24 h point is found on chain: block time is measured over the last 10 000 blocks and the reader steps back that
 many blocks. Regular RPC nodes keep the last few epochs; if none of them still has that block, the answer says so
 (`history_unavailable`) instead of guessing.
+
+### The house's vault
+
+Every day the house (`house.maskwars.near`) makes the arena's safe again under one name, `vault.house.maskwars.near`,
+funds it and opens its round; after the round `retire` deletes it and sends all it holds home to the house. So to a
+scanner the vault keeps looking new, with code just deployed. MASK CHECK reads it as what it is: **an arena target,
+by design**.
+
+- **Told by the chain, not the name.** The list names the vault once (`vault`). The label goes only to that account,
+  and only when the chain confirms it at the check's block: its `team` is the house, its `arbiter` the bounty
+  contract, and its code hash one the bounty contract lists (`governance` → `safe_codes`). A look-alike, or the name
+  the chain does not confirm, is checked like any other account and gets no label.
+- **What it says.** That only the house funds it, only the masks of its round (read from its `masks`) can open it,
+  and after the round `retire` sends the rest home to the house; not to send NEAR there. Evidence: the round and its
+  state on the bounty contract, the safe's code (`contracts/challenges/live-safe`), the vault on the explorer.
+- **Its round now** comes from the vault itself (`get_round`, then `get` and `get_safe`), never from the list: open:
+  `arena_target`, warn, and the summary leads with "Arena target, by design"; drained: `arena_drained`, block; taken
+  over: `arena_taken_over`, block; refunded: `arena_target`, warn (the round ended with no break, and `retire` sends
+  everything it holds home to the house), with `arena_withstood`, info, beside it; no round yet: `arena_target`, warn,
+  waiting for today's round. The vault is never an `allow`: it is nobody's payee.
+- **Its new account and new code** (`young_account`, `code_deployed`, `code_changed`) are info, each with "the house
+  makes its vault again under the same name for every round". On any other account they stay warnings.
+
+The vault in an open round, as the shared vectors hold it (`test/vectors.json`, a chain in memory):
+
+```json
+{
+  "account": "vault.house.maskwars.near",
+  "verdict": "warn",
+  "summary": "WARN: Arena target, by design: the MASK WARS house's vault, live in race-0012 right now. Only the house funds it; only the masks of its round (nova.maskwars.near, onyx.maskwars.near, oracle.maskwars.near) can open it; after the round, retire sends the rest home to house.maskwars.near. Bounty 0.2 NEAR. Do not send NEAR here.",
+  "reasons": [
+    { "code": "arena_target", "level": "warn", "text": "…", "evidence": { "contract": "bounty.maskwars.near", "race": "race-0012", "state": "open", "house": "house.maskwars.near", "masks": "…", "code_hash": "GBcg…K7jV", "code": "https://github.com/plavutskyi/mask-wars/blob/main/contracts/challenges/live-safe/src/lib.rs", "explorer": "https://nearblocks.io/address/vault.house.maskwars.near", "deadline": "…" } },
+    { "code": "young_account", "level": "info", "text": "New account: it did not exist 24 h ago (…). Expected here: the house makes its vault again under the same name for every round." },
+    "…"
+  ]
+}
+```
 
 Not read yet: past interactions between this agent and the payee. That needs an index of receipts (NEAR Lake or an
 explorer API); a plain RPC node cannot answer it.
@@ -102,6 +139,10 @@ A plain file in the repo per network: [`list.json`](list.json) for testnet, [`li
 for mainnet. A list names accounts of its own network only: a `.testnet` account in the mainnet list, or a `.near` one
 in the testnet list, does not parse.
 
+- `vault`: where the house's vault is: the bounty contract, the vault and the house (`null` on testnet, which names no
+  code for it yet). It must be the house's own sub-account, and the list is checked against `packages/network`: the
+  network's `bounty`, `vault` and `house` wherever it names the vault's `safe_code`. A round on the vault is never
+  listed in `arena` (the list does not parse, `add-safe` refuses it): the check reads it from the vault.
 - `arena`: where the arena's live safes are: the bounty contract, the race id, the safe and its owner when the race
   opened. The file never says what happened to a safe. That is read from the chain on every check, so an entry cannot
   claim a drain the chain does not show. A new safe goes in right after its round opens, in the order the rounds open:
@@ -172,8 +213,8 @@ an account it has no signal for.
   `chain_unreadable`, `warn`, nothing on chain read. A keyed endpoint goes in `MASKCHECK_MAINNET_RPC`.
 - Two providers that agree can still both be wrong; two independent ones lying the same way at the same block is what
   the cross-check makes hard, not impossible.
-- No arena safes on mainnet yet: until season 0 adds them to `list.mainnet.json`, a mainnet check reads existence,
-  age, code and code changes, and reports.
+- The arena on mainnet is the house's vault and the safes `list.mainnet.json` names. Any other mainnet account gets
+  existence, age, code and code changes, and reports.
 
 ## The demo
 

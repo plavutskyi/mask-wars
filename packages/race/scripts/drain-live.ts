@@ -22,7 +22,8 @@
  * Optional: `CHALLENGE` (the library target the round runs, default live-safe), `BOUNTY_CONTRACT` and `NEAR_RPC` (by
  * default those of MASKWARS_NETWORK, packages/network), `BOUNTY_TEAM`: the teams whose rounds the mask plays,
  * comma-separated, by default the network's admin and season treasury. Whatever it says, the mask plays only a round
- * that the safe's own team opened.
+ * that the safe's own team opened. `STRIKER`: the striker of our crew on a drain job of this round (the `Jobs`
+ * workflow names it): it plays the plan whichever of our masks found it, so the crew wins the job by its split.
  *
  * If the mask already sealed in this round (an earlier job died after `commit`), it does not seal again: the salt comes
  * from its key, the plan from the same finding, and once they give the seal on chain it plays, reveals and claims.
@@ -37,7 +38,7 @@ import { openFinding, type FindingBox } from "../src/finding-box.ts";
 import { humanKey, humanRoundKeys } from "../src/keeper.ts";
 import { claimKeyOf, roundKeys, secretsOf, type MaskSecret } from "../src/keys.ts";
 import { playLive, resumeLive, sealLive, sweepRuleOf, type RoundView, type SafeRace } from "../src/live.ts";
-import { JsonRpc, view } from "../src/near-tx.ts";
+import { holdsKey, JsonRpc, view } from "../src/near-tx.ts";
 import { Plan } from "../src/plan.ts";
 
 const fail = (why: string): never => {
@@ -91,22 +92,39 @@ if (!finding) {
   process.exit(0);
 }
 
-const mask = accounts[finding.attacker] ?? fail(`${finding.attacker} has no NEAR account in MASK_ACCOUNTS`);
+// A crew on a drain job (contracts/jobs/README.md, crews): its striker plays what any of our masks found in the race.
+// The scout's mind found the plan, the race replayed it in a second clean sandbox, and the striker seals it, plays it
+// on the safe with its own keys and claims the drain, so the round pays the crew's striker and the job pays the crew by
+// its split. Only a finding of our own masks: a person's mask always plays its own plan.
+const striker = (process.env.STRIKER ?? "").trim().toUpperCase();
+if (striker && !/^[A-Z0-9_-]{1,32}$/.test(striker)) fail("STRIKER: the name of the crew's striker in MASK_ACCOUNTS");
+const playAs = striker && !humanOf(finding.attacker) && keys[finding.attacker] && keys[striker] ? striker : finding.attacker;
+if (striker && playAs !== striker) console.log(`STRIKER ${striker}: ${finding.attacker} plays its own finding (no keys for ${striker}, or a person's mask)`);
+if (playAs !== finding.attacker) console.log(`${finding.attacker} found the plan; the crew's striker ${playAs} plays it`);
+const mask = accounts[playAs] ?? fail(`${playAs} has no NEAR account in MASK_ACCOUNTS`);
 const chain = new JsonRpc(process.env.NEAR_RPC || NET.rpc[0]!);
 const race =
   (await view<SafeRace | null>(chain, bountyContract, "get_safe", { id: bountyId })) ??
   fail(`${bountyId} is not a live race on ${bountyContract}`);
-const winner = humanOf(finding.attacker);
+if (!race.masks.includes(mask)) fail(`${bountyId} does not let ${playAs} (${mask}) in`);
+const winner = humanOf(playAs);
 const { safeKey, claimKey, anyMethod } = (() => {
   try {
     // A person's mask plays with the two keys the keeper put on it for this round: set_owner and sweep on the safe.
     if (winner) return { ...humanRoundKeys(keeperSeed, winner.account, bountyId, race.safe, bountyContract), anyMethod: false };
-    const own = keys[finding.attacker] ?? fail(`${finding.attacker} has no keys in MASK_KEYS`);
+    const own = keys[playAs] ?? fail(`${playAs} has no keys in MASK_KEYS`);
     return roundKeys(own, race.safe, bountyContract);
   } catch (e) {
-    return fail(`${finding.attacker}: ${(e as Error).message}`);
+    return fail(`${playAs}: ${(e as Error).message}`);
   }
 })();
+
+// The mask plays on the safe only with its key there, and it plays after the commit window: a key found missing then
+// comes too late for this round. So it is asked now, before anything is sealed.
+const keyed = await holdsKey(chain, mask, safeKey).catch(() => null);
+if (keyed === false) {
+  fail(`${playAs} (${mask}) holds no key on ${race.safe}: nothing was sealed. Put the masks' keys on it first (scripts/testnet/season-keys.ps1 -Safe ${race.safe} -SafeOnly)`);
+}
 
 const live = {
   chain,
@@ -142,8 +160,9 @@ console.log(`sealed as #${sealed.seq}; the window closes in about ${Math.max(min
 const result = await playLive(live, sealed);
 
 const lines = [
-  `### ${finding.attacker} on ${NET.id}`,
+  `### ${playAs} on ${NET.id}`,
   "",
+  ...(playAs !== finding.attacker ? [`${finding.attacker} found the plan in the race; the crew's striker ${playAs} played it.`, ""] : []),
   `Mask: \`${mask}\`, seal #${sealed.seq}`,
   ...result.calls.map((c) => `- \`${c.method}\` ${c.ok ? "ok" : "failed"}: ${c.hash}`),
   `- \`reveal\`: ${result.revealTx ?? "not sent"}`,

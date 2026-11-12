@@ -10,7 +10,7 @@
  *   reference definitions), links and @handles, and role markers that imitate a chat transcript. One line, clipped.
  * - `asData` wraps cleaned items in a JSON array under a fixed key, so the model sees quoted strings, not prose.
  *
- * Based on the foreign-text gate of our other products (docs/reference/clean.ts). Pure: no clock, no network.
+ * Rewritten from the foreign-text gate of the author's earlier products (see the README, "Baseline"). Pure: no clock, no network.
  */
 
 export const VIEWER_MAX = 120;

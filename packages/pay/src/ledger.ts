@@ -46,12 +46,17 @@ export class Ledger {
     return out;
   }
 
-  private async view<T>(method: string, args: unknown): Promise<T> {
+  private view<T>(method: string, args: unknown): Promise<T> {
+    return this.call<T>(INTENTS, method, args);
+  }
+
+  /** A view method of any contract on NEAR mainnet, through the same RPCs: the mask factory, for the vault's masks. */
+  async call<T>(contract: string, method: string, args: unknown): Promise<T> {
     const body = JSON.stringify({
       jsonrpc: "2.0",
       id: "maskwars",
       method: "query",
-      params: { request_type: "call_function", finality: "final", account_id: INTENTS, method_name: method, args_base64: base64(utf8(JSON.stringify(args))) },
+      params: { request_type: "call_function", finality: "final", account_id: contract, method_name: method, args_base64: base64(utf8(JSON.stringify(args))) },
     });
     let last: unknown = null;
     for (const rpc of this.rpcs) {

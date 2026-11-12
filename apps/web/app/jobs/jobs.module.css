@@ -12,6 +12,11 @@
   min-height: min(460px, calc(100svh - 64px - 320px));
 }
 
+/* A job's id in the kicker moves to the next line whole: never broken at one of its dashes. */
+.kickerId {
+  display: inline-block;
+}
+
 .jobHero.jobHero {
   min-height: 0;
   padding-top: 24px;
@@ -82,6 +87,18 @@
   font-weight: 600;
   line-height: 1.35;
   color: var(--ice-60);
+  /* Two even lines on a phone, not one word left under the rest. */
+  text-wrap: balance;
+}
+
+/* The line's last word and the «i» after it wrap as one: the «i» never stands on a line alone. */
+.lineEnd {
+  white-space: nowrap;
+}
+
+.lineInfo {
+  display: inline-block;
+  margin-left: 18px;
 }
 
 .infoText {
@@ -409,11 +426,16 @@
   text-wrap: pretty;
 }
 
+/* The judge in words takes a row of its own; the three numbers stand level under it, on a desk and on a phone alike. */
 .facts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px 36px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, max-content));
+  gap: 16px 40px;
   margin: 28px 0 0;
+}
+
+.facts div:first-child {
+  grid-column: 1 / -1;
 }
 
 .facts div {
@@ -1167,8 +1189,18 @@
     min-height: 0;
   }
 
-  /* On a phone the vault gives its room to the biggest job: the number, the job and the button share the first screen. */
-  .boardArt,
+  /* The board's vault opens the page as its hero: clear of the header, large enough to read as the arena's own vault,
+     and still short enough that the number and the button share the first screen of a 640 px phone. */
+  .hero.hero {
+    padding-top: 12px;
+  }
+
+  .boardArt {
+    width: min(56vw, 30svh, 220px);
+    margin-bottom: 12px;
+  }
+
+  /* On a job's own page the art gives its room to the job: the number and the one thing to do share the first screen. */
   .jobHero.jobHero:not([data-art]) .jobArt.jobArt {
     width: min(34vw, 140px);
     margin-bottom: 4px;
@@ -1199,6 +1231,10 @@
 
   .emptyLine {
     font-size: 17px;
+  }
+
+  .lineInfo {
+    margin-left: 14px;
   }
 
   .end {
@@ -1290,7 +1326,7 @@
   }
 
   .facts {
-    gap: 14px 28px;
+    gap: 14px 24px;
     margin-top: 22px;
   }
 
@@ -1632,6 +1668,24 @@ button.wayGo.wayGo {
   font-size: 11px;
   letter-spacing: 0.12em;
   color: var(--ice-60);
+  text-wrap: balance;
+}
+
+/* As many columns as kinds a job can open with now: no empty place stands for a kind that cannot. */
+.kinds[data-n='2'] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/* One kind of work: one card across the band, its tag, its line and its judge on one row. */
+.kinds[data-n='1'] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.kinds[data-n='1'] .kind {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 32px;
+  padding: 24px 28px;
 }
 
 @media (hover: hover) {
@@ -1647,9 +1701,16 @@ button.wayGo.wayGo {
 }
 
 @media (max-width: 900px) {
-  .kinds {
+  .kinds,
+  .kinds[data-n] {
     grid-template-columns: minmax(0, 1fr);
     gap: 12px;
+  }
+
+  .kinds[data-n='1'] .kind {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: start;
+    padding: 22px 24px 24px;
   }
 }
 
@@ -1718,6 +1779,10 @@ button.wayGo.wayGo {
   display: grid;
   gap: 20px;
   width: min(760px, 100%);
+  /* Never taller than the screen: with Details open the sheet scrolls inside itself, its top always in reach. */
+  max-height: calc(100svh - 48px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 28px 32px 24px;
   border-radius: var(--radius);
   background:
@@ -1922,6 +1987,325 @@ button.wayGo.wayGo {
   margin-top: -12px;
 }
 
+/* Take it back: the client's own way out of a job no mask has sealed a step on, in a row of its own under the job's
+   action, so a refresh that changes the action never moves it. */
+.takeBack {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 16px;
+  margin-top: 16px;
+}
+
+/* With no action of the job above it, it keeps the distance the action would. */
+.takeBack[data-alone] {
+  margin-top: 28px;
+}
+
+.post .postAgain {
+  justify-self: start;
+  margin-top: -8px;
+}
+
+.takeBackLine {
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.45;
+  color: var(--ice-60);
+}
+
+/* Post with a wallet: the round's line, one line of work, the reward, the one button ------------------------------- */
+
+.postForm {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+
+.postForm > * {
+  min-width: 0;
+}
+
+.postStatus {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-height: 20px;
+  margin: 0;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  line-height: 1.35;
+  color: var(--ice-60);
+}
+
+.postStatus[data-tone='open'] {
+  color: var(--ice);
+}
+
+.postDot {
+  flex: none;
+  width: 8px;
+  height: 8px;
+  /* On the first line's middle, however the line wraps. */
+  margin-top: calc(0.675em - 4px);
+  border-radius: 50%;
+  background: var(--ice-38);
+}
+
+.postStatus[data-tone='open'] .postDot {
+  background: var(--money);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--money) 60%, transparent);
+  animation: postPulse 1.8s cubic-bezier(0.2, 0, 0, 1) infinite;
+}
+
+@keyframes postPulse {
+  70% {
+    box-shadow: 0 0 0 8px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+.postClock {
+  font-variant-numeric: tabular-nums;
+  color: var(--amber);
+  white-space: nowrap;
+}
+
+.postFields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 220px;
+  gap: 16px;
+}
+
+.postField {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+}
+
+.postLabel {
+  justify-self: start;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  color: var(--ice-60);
+}
+
+.postInput {
+  width: 100%;
+  min-width: 0;
+  height: 60px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--ice);
+  font: inherit;
+  font-size: 18px;
+  font-weight: 600;
+  outline: none;
+  transition: box-shadow 160ms;
+}
+
+.postInput::placeholder {
+  color: var(--ice-38);
+  font-weight: 500;
+}
+
+.postInput:focus-visible {
+  box-shadow: inset 0 0 0 1px var(--ice-60);
+}
+
+.postInput[aria-invalid='true'] {
+  box-shadow: inset 0 0 0 1px var(--live);
+}
+
+.postInput:disabled {
+  color: var(--ice-60);
+}
+
+/* The brief: one line that wraps, the field as tall as its words. */
+.postInput.postBrief {
+  display: block;
+  height: auto;
+  min-height: 60px;
+  padding: 16px;
+  line-height: 1.5;
+  resize: none;
+  overflow: hidden;
+  field-sizing: content;
+}
+
+.postReward {
+  position: relative;
+  display: block;
+}
+
+.postInput.postAmount {
+  padding-right: 76px;
+  font-family: var(--font-num);
+  font-size: 26px;
+  font-weight: 800;
+  font-stretch: 125%;
+  font-variant-numeric: tabular-nums;
+  color: var(--money);
+}
+
+.postReward[data-bad] .postAmount {
+  color: var(--ice);
+}
+
+.postUnit {
+  position: absolute;
+  top: 50%;
+  right: 16px;
+  transform: translateY(-50%);
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  color: var(--ice-60);
+  pointer-events: none;
+}
+
+.postGo.postGo {
+  width: 100%;
+  cursor: pointer;
+}
+
+/* Out of the window the button says when the next one opens: a plain frame, nothing to press. */
+.postGo.postGo[data-wait] {
+  background: transparent;
+  color: var(--ice);
+  box-shadow: inset 0 0 0 1px var(--line);
+  cursor: default;
+}
+
+.postGo.postGo[data-wait]:active {
+  transform: none;
+}
+
+.postGo.postGo[aria-busy='true'] {
+  background: var(--ice);
+  color: var(--ink);
+  box-shadow: none;
+  cursor: progress;
+}
+
+.postLine {
+  margin: -6px 0 0;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.45;
+  color: var(--ice-60);
+  text-wrap: pretty;
+}
+
+.postLine b {
+  font-weight: 800;
+  font-stretch: 125%;
+  white-space: nowrap;
+  color: var(--money);
+}
+
+.postLine[data-bad] {
+  color: var(--live);
+}
+
+.postAgent {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.postAgent > .postNote {
+  margin: 0;
+}
+
+.postCode.postCodeSmall {
+  max-height: 168px;
+  font-size: 12px;
+}
+
+.postCopyQuiet {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 0 18px;
+  border-radius: var(--radius);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  color: var(--ice);
+  box-shadow: inset 0 0 0 1px var(--line);
+  cursor: pointer;
+  transition: box-shadow 160ms;
+}
+
+/* The job is on chain: the mark, the job, the one way to it. */
+.postDone {
+  display: grid;
+  justify-items: start;
+  gap: 14px;
+  padding: 4px 0;
+}
+
+.postDone > * {
+  max-width: 100%;
+}
+
+.postDoneMark {
+  width: 48px;
+  height: 48px;
+  color: var(--money);
+}
+
+.postDoneTitle.postDoneTitle {
+  margin: 4px 0 0;
+  font-size: clamp(28px, 3.4vw, 40px);
+  line-height: 1;
+}
+
+.postDoneLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 16px;
+  margin: 0;
+}
+
+.postDoneId {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 15px;
+  color: var(--ice-60);
+  overflow-wrap: anywhere;
+}
+
+.postDoneMoney {
+  font-size: 26px;
+  font-weight: 800;
+  font-stretch: 125%;
+  white-space: nowrap;
+  color: var(--money);
+}
+
+.postDone > .postNote {
+  margin: 0;
+}
+
+.postDone > .postGo {
+  margin-top: 6px;
+}
+
+@media (hover: hover) {
+  .postCopyQuiet:hover {
+    box-shadow: inset 0 0 0 1px var(--ice-60);
+  }
+}
+
 @media (hover: hover) {
   .postClose:hover,
   .postKind:hover,
@@ -1975,6 +2359,41 @@ button.wayGo.wayGo {
     grid-template-columns: minmax(0, 1fr);
     row-gap: 2px;
   }
+
+  .postForm {
+    gap: 16px;
+  }
+
+  .postFields {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .postInput {
+    height: 56px;
+    font-size: 17px;
+  }
+
+  .postInput.postBrief {
+    min-height: 56px;
+    padding: 14px 16px;
+  }
+
+  .postInput.postAmount {
+    font-size: 24px;
+  }
+
+  .postGo.postGo {
+    height: 64px;
+  }
+
+  .postLine {
+    font-size: 14px;
+  }
+
+  .takeBack[data-alone] {
+    margin-top: 20px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1987,7 +2406,8 @@ button.wayGo.wayGo {
     transition: none;
   }
 
-  .postScrim {
+  .postScrim,
+  .postStatus[data-tone='open'] .postDot {
     animation: none;
   }
 }

@@ -9,9 +9,14 @@
  * - `MASK_ACCOUNTS`: our masks by name, by default the network's own (packages/network `masks`);
  * - `JOBS_CREW`: the crew our masks take jobs with, on the network's crews contract (scripts/testnet/jobs-keys.ps1
  *   -Crew forms it); without it each mask takes a job alone;
- * - `BOUNTY_TEAM`: the teams whose rounds our masks play, comma-separated, by default the network's admin and season;
+ * - `BOUNTY_TEAM`: the teams whose rounds our masks play, comma-separated, by default the network's admin, season and
+ *   house; with the network's admin they are also the accounts whose bonds our masks take (`Ours.owners`): the house
+ *   locks them on jobs from outside (scripts/jobs-sponsor.ts), taken within the network's `limits.jobs`;
+ * - `RACE_TEAMS`: the teams whose rounds this run races itself, by default the network's admin (its hand rounds). A crew
+ *   with roles takes a drain only on such a round: there its striker plays whatever any of our masks finds;
  * - `RACE=1`: when a job our masks are on follows a hand round of ours that nobody sealed in yet, write `bounty` and
- *   `challenge` (`RACE_CHALLENGE`, by default live-safe) to $GITHUB_OUTPUT, so the workflow races it now;
+ *   `challenge` (`RACE_CHALLENGE`, by default live-safe) to $GITHUB_OUTPUT, so the workflow races it now, and
+ *   `striker`, the striker of our crew on the job, who plays the plan whichever of our masks finds it;
  * - `WAIT_MINUTES`: after a pass that moved a job on, pass again at once (a settle after the verdict); after one that
  *   did not, wait for the next deadline of a job our masks are on if it comes within this long (a reveal window that
  *   opens) and pass again, until nothing comes that soon;
@@ -26,11 +31,12 @@
  */
 import { appendFile } from "node:fs/promises";
 import { Jobs, jobsConfigOf } from "@maskwars/arena/jobs";
-import { NET, bountyContracts, teams } from "@maskwars/network";
+import { maskCheck, readerFor, sharedLists } from "@maskwars/check";
+import { NET, teams } from "@maskwars/network";
 import { maskAccounts, onThisNetwork } from "../src/net.ts";
 import { type MaskSecret, secretsOf } from "../src/keys.ts";
 import { FailoverRpc, JsonRpc } from "../src/near-tx.ts";
-import { describe, keepWorking, work, type Ours } from "../src/work.ts";
+import { describe, keepWorking, oursOn, wordOf, work, type Ours } from "../src/work.ts";
 
 const fail = (why: string): never => {
   console.error(why);
@@ -62,23 +68,30 @@ const waitMinutes = Number(process.env.WAIT_MINUTES || "0");
 if (!Number.isFinite(waitMinutes) || waitMinutes < 0 || waitMinutes > 240) fail("WAIT_MINUTES: 0 to 240");
 const team = process.env.BOUNTY_TEAM ? process.env.BOUNTY_TEAM.split(",").map((t) => t.trim()).filter(Boolean) : [...teams(NET)];
 for (const t of team) onThisNetwork("BOUNTY_TEAM", t);
+const raceTeams = (process.env.RACE_TEAMS ?? "").split(",").map((t) => t.trim()).filter(Boolean);
+for (const t of raceTeams) onThisNetwork("RACE_TEAMS", t);
 
 const rpcs = [process.env.NEAR_RPC, ...NET.rpc].filter((u): u is string => Boolean(u));
 const chain = new FailoverRpc(rpcs.map((u) => new JsonRpc(u)));
 const follow = (process.env.FOLLOW_ROUND ?? "").trim() || null;
 if (follow && !/^[A-Za-z0-9_-]{1,64}$/.test(follow)) fail("FOLLOW_ROUND: a round's id on the bounty contract");
-const ours: Ours = {
-  masks,
-  signers: Object.keys(seeds),
-  bounties: bountyContracts(NET),
-  teams: team,
-  // The workflow races only the owner's hand rounds on the contract `Live race` plays: the season races its own.
-  raceBounty: NET.bounty,
-  raceTeams: [NET.admin],
-  crew,
-  follow,
+// Our own accounts are the admin and the teams: a mask takes a bond only one of them locked (jobs-bond.ps1 signs as the
+// admin, the Jobs workflow's sponsor as the house), or any bond on a job one of them opened. A bond an outsider locks
+// for our masks on a job of its own is left where it is. The workflow races only the owner's hand rounds on the
+// contract `Live race` plays: the season races its own. RACE_TEAMS names other teams whose rounds this run's masks race
+// themselves (a test team's, by hand). A job from outside is taken within the network's limits.jobs.
+const ours: Ours = oursOn(NET, { masks, signers: Object.keys(seeds), crew, teams: team, raceTeams, follow });
+// MASK CHECK on every client before our masks take its job: one reader of this network for the run.
+const checkReader = readerFor(NET.id, { env: process.env });
+const check = async (account: string) => {
+  const r = await maskCheck(account, { network: NET.id, reader: checkReader, list: sharedLists[NET.id] });
+  // A chain MASK CHECK could not read is no answer here, whatever it shows a person: no mask works on it.
+  const word = wordOf(r);
+  console.log(`MASK CHECK ${account}: ${word ?? "no answer"}, ${r.summary}`);
+  return word;
 };
-const options = { chain, jobsContract: NET.jobs, crewsContract: NET.crews, ours, seeds, log: (line: string) => console.log(line) };
+const checked = new Map<string, "allow" | "warn" | "block" | null>();
+const options = { chain, jobsContract: NET.jobs, crewsContract: NET.crews, ours, seeds, check, checked, log: (line: string) => console.log(line) };
 // One reader for the whole run, read afresh on every pass: the transactions it fetched stay with it.
 const jobs = new Jobs({ config: { ...jobsConfigOf(NET), rpc: rpcs }, ttlMs: 0 });
 const refused = new Set<string>();
@@ -105,9 +118,12 @@ await keepWorking({
     if (process.env.RACE === "1" && !raced && pass.plan.race) {
       raced = true;
       const r = pass.plan.race;
-      console.log(`race: ${r.round} on ${r.bounty}, the round job ${r.job} follows; nobody sealed in it yet`);
-      summary.push(`Race: \`${r.round}\` (${challenge}) for job \`${r.job}\``, "");
-      if (process.env.GITHUB_OUTPUT) await appendFile(process.env.GITHUB_OUTPUT, `bounty=${r.round}\nchallenge=${challenge}\njob=${r.job}\n`);
+      const striker = r.striker ? `; the crew's striker ${r.striker} plays what any of our masks finds` : "";
+      console.log(`race: ${r.round} on ${r.bounty}, the round job ${r.job} follows; nobody sealed in it yet${striker}`);
+      summary.push(`Race: \`${r.round}\` (${challenge}) for job \`${r.job}\`${striker}`, "");
+      if (process.env.GITHUB_OUTPUT) {
+        await appendFile(process.env.GITHUB_OUTPUT, `bounty=${r.round}\nchallenge=${challenge}\njob=${r.job}\nstriker=${r.striker ?? ""}\n`);
+      }
     }
   },
 }).catch((e: Error) => {

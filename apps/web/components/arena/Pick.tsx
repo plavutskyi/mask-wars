@@ -2,7 +2,9 @@
 
 import type { Who } from '@maskwars/arena';
 import { duration, near } from '@maskwars/arena/format';
+import Link from 'next/link';
 import { type CSSProperties, useEffect, useState } from 'react';
+import { Arrow } from '@/components/Arrow';
 import { type Choice, choiceName, type Entry, HELD, linkPayload, type PickView, type RoundBrief, verdictOf } from '@/lib/pick';
 import { day, timeUtc, toneOf } from '@/lib/show';
 import { raceName } from './names';
@@ -201,12 +203,24 @@ export function Pick({
     // Until when: before the round opens, its start, the one time known ahead: a pick made by then always counts.
     // Once it is open, or due any moment, picks close at its first seal, and nobody knows that minute ahead. The
     // lines are short on purpose: beside the question they fit a 360px phone whatever the digits of the time.
+    // With a pick in, the line names it and says what a right call gives; the choices stay a tap away until then.
     const start = window_.opens !== null && now < window_.opens ? window_.opens : null;
+    const pickedName = picked ? choiceName(picked, window_.masks) : null;
     return (
       <div className={s.block} data-mode="open">
-        <div className={s.ticket} role="status" aria-live="polite" aria-label={picked ? `Your pick: ${choiceName(picked, window_.masks)}` : undefined}>
+        {/* A long name (a forged mask's, or the vault holding) keeps the phone's line: the label gives up a word. */}
+        <div className={s.ticket} role="status" aria-live="polite" aria-label={pickedName ? `Your pick: ${pickedName}` : undefined} data-long={pickedName && pickedName.length > 6 ? '' : undefined}>
           <span className={s.left}>
-            <span className={s.prompt}>{picked ? 'Your pick is in' : onStage ? 'Who breaks it?' : 'Next round'}</span>
+            {pickedName ? (
+              <>
+                <span className={s.label}>
+                  <span className={s.your}>Your </span>pick:
+                </span>{' '}
+                <span className={s.value}>{pickedName}</span>
+              </>
+            ) : (
+              <span className={s.prompt}>{onStage ? 'Who breaks it?' : 'Next round'}</span>
+            )}
           </span>
           {error ? (
             <span className={s.error}>{error}</span>
@@ -214,14 +228,20 @@ export function Pick({
             <button type="button" className={s.link} onClick={link}>
               Keep it on my vault
             </button>
+          ) : picked ? (
+            // What a right call gives: a free pick pays nothing, it ranks the person among the best callers.
+            <Link href="/league#callers" className={s.rank} aria-label="Right calls rank on Best callers, in the league">
+              <span>
+                Right calls rank<span className={s.onDesk}> on Best callers</span>
+              </span>
+              <Arrow className={s.rankArrow} />
+            </Link>
           ) : (
             <span className={s.aside}>
               {start !== null ? (
                 <>
-                  {picked ? 'Locks after' : 'Free · by'} <When ms={start} now={now} /> UTC
+                  Free · by <When ms={start} now={now} /> UTC
                 </>
-              ) : picked ? (
-                'Locks at the first seal'
               ) : (
                 'Free · closes at first seal'
               )}

@@ -1,5 +1,17 @@
+import type { Metadata } from 'next';
 import Image from 'next/image';
 import { Header } from '@/components/arena/Header';
+import { CARD, SITE } from '@/lib/meta';
+
+// A page that is not there has its own title and no canonical address: the layout's would call it the home page. Its
+// card names no address either.
+const TITLE = `Not found · ${SITE}`;
+export const metadata: Metadata = {
+  title: TITLE,
+  alternates: { canonical: null },
+  openGraph: { title: TITLE, siteName: SITE, type: 'website', images: [CARD] },
+  twitter: { card: 'summary_large_image', title: TITLE, images: [{ url: CARD.url, alt: CARD.alt }] },
+};
 
 export default function NotFound() {
   return (

@@ -22,20 +22,24 @@ export function readRecording(path: string | URL): JobsRecording {
   return JSON.parse(readFileSync(path, "utf8")) as JobsRecording;
 }
 
-/** The config the recording was made with: the same contract, RPC and indexer, so every request finds its answer. */
+/**
+ * The config the recording was made with: the same contract, RPC and indexer, so every request finds its answer. The
+ * recorded world deploys its own mask factory beside the jobs contract (`forge`).
+ */
 export function recordedConfig(r: JobsRecording): JobsConfig {
-  return { network: r.network, contract: r.contract, crews: r.crews ?? null, rpc: [r.rpc], indexer: r.indexer, explorer: null };
+  return { network: r.network, contract: r.contract, crews: r.crews ?? null, rpc: [r.rpc], indexer: r.indexer, explorer: null, forge: true };
 }
 
 /**
  * A reader over a recording, on the recording's clock. `fetch` wraps the replay, to count or break requests; `storage`
- * is the judges' storage address the recording's world served (`MASKWARS_JUDGE_STORAGE`).
+ * is the judges' storage address the recording's world served (`MASKWARS_JUDGE_STORAGE`); `forge: false` reads it as a
+ * network whose mask factory is not on chain yet.
  */
-export function replayJobs(r: JobsRecording, options: { wrap?: (f: typeof fetch) => typeof fetch; ttlMs?: number; now?: () => number; storage?: string } = {}): Jobs {
+export function replayJobs(r: JobsRecording, options: { wrap?: (f: typeof fetch) => typeof fetch; ttlMs?: number; now?: () => number; storage?: string; forge?: boolean } = {}): Jobs {
   const base = replayFetch(r);
   const fetch = options.wrap ? options.wrap(base) : base;
   return new Jobs({
-    config: { ...recordedConfig(r), storage: options.storage ?? null },
+    config: { ...recordedConfig(r), storage: options.storage ?? null, forge: options.forge ?? true },
     rpc: new ChainReader({ endpoints: [r.rpc], fetch }),
     indexer: new Indexer({ base: r.indexer, fetch }),
     now: options.now ?? (() => r.recordedAt),
@@ -51,8 +55,8 @@ const EMPTY_HASH = "EmptyJobsBoardAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA";
 /**
  * What a chain answers while its board holds no job, in nearcore's own shapes, with no network. `undeployed`: the jobs
  * account does not exist, as on a network before the contract is deployed. `deployed`: the contract is there with its
- * settings and no job, as right after its deployment: it follows the network's bounty contract and has no judge yet, so
- * it opens a drain job and no other kind. Nothing here is read from a chain: it is what the tests and local screenshots
+ * settings and no job, and the crews contract it names beside it with no crew, as right after their deployment: it
+ * follows the network's bounty contract and has no judge yet, so it opens a drain job and no other kind. Nothing here is read from a chain: it is what the tests and local screenshots
  * show the empty board on.
  */
 export function emptyJobsFetch(state: "undeployed" | "deployed", config: JobsConfig = jobsConfigOf(), at = EMPTY_AT): typeof fetch {
@@ -77,6 +81,8 @@ export function emptyJobsFetch(state: "undeployed" | "deployed", config: JobsCon
     max_slots: 16,
     max_steps: 4,
   };
+  /** The crews contract the jobs contract names, deployed beside it with no crew yet. */
+  const crewSettings = { admin: "admin", factories: [], crews: 0, pending: null };
   return (async (input: string | URL | Request, init?: RequestInit) => {
     const url = String(input instanceof Request ? input.url : input);
     if (url.startsWith(config.indexer)) return json(url.endsWith("/v0/account") ? { account_txs: [], txs_count: 0 } : { transactions: [] });
@@ -85,6 +91,14 @@ export function emptyJobsFetch(state: "undeployed" | "deployed", config: JobsCon
     if (body.method === "block") return ok({ header: { height: EMPTY_HEIGHT, hash: EMPTY_HASH, timestamp_nanosec: `${BigInt(at) * 1_000_000n}` } });
     const params = body.params ?? {};
     const account = String(params["account_id"] ?? "");
+    if (state === "deployed" && account === settings.crews) {
+      if (params["request_type"] === "view_account") {
+        return ok({ amount: "5000000000000000000000000", locked: "0", code_hash: "3jYwLq7vDNsVK3UecrBgXJ9yWvDqfvFNrhoXyYhxvAvD", storage_usage: 260_000, storage_paid_at: 0, block_height: EMPTY_HEIGHT, block_hash: EMPTY_HASH });
+      }
+      if (params["request_type"] === "call_function" && params["method_name"] === "config") {
+        return ok({ result: [...Buffer.from(JSON.stringify(crewSettings))], logs: [], block_height: EMPTY_HEIGHT, block_hash: EMPTY_HASH });
+      }
+    }
     if (state === "deployed" && account === config.contract) {
       if (params["request_type"] === "view_account") {
         return ok({ amount: "10000000000000000000000000", locked: "0", code_hash: "7oJRkGfNcAkz5ZnzBnDiKaeNAYA6k28TF7UFWcoPkGCG", storage_usage: 570_000, storage_paid_at: 0, block_height: EMPTY_HEIGHT, block_hash: EMPTY_HASH });

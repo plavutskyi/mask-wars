@@ -1,5 +1,5 @@
 // Brand tokens: the single source for the interface, X cards and generation prompts.
-// Rules: docs/brand/BRANDBOOK.md. `tokens.css` next to this package is generated from here
+// Rules: BRAND.md. `tokens.css` next to this package is generated from here
 // (`pnpm --filter @maskwars/brand gen`) and a test keeps it and brand/tokens.css in step.
 
 export const color = {
@@ -38,7 +38,7 @@ export const font = {
   num: 'var(--font-mona, "Mona Sans"), system-ui, sans-serif',
 } as const;
 
-/** Type scale in px, desk / phone (BRANDBOOK §4). */
+/** Type scale in px, desk / phone (BRAND.md, "Type"). */
 export const scale = {
   number: [72, 34],
   name: [40, 17],
@@ -47,7 +47,7 @@ export const scale = {
   text: [14, 13],
 } as const;
 
-/** Motion timings in ms (BRANDBOOK §9). */
+/** Motion timings in ms (BRAND.md, "Interface and motion"). */
 export const motion = {
   press: 100,
   reduced: 200,

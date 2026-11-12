@@ -1,6 +1,6 @@
 import { accountUrl } from '@maskwars/arena/config';
 import { duration, near } from '@maskwars/arena/format';
-import { look as lookOf, mind as mindOf, nearText, STYLES, times, timesText } from '@maskwars/forge';
+import { look as lookOf, mind as mindOf, nearText, putIn, STYLES, times, timesText } from '@maskwars/forge';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { CSSProperties } from 'react';
@@ -28,14 +28,17 @@ export function PersonPage({ person }: { person: Person }) {
   const mind = mindOf(m.model);
   const style = STYLES.find((x) => x.id === m.style);
   const earned = stats?.earned ?? '0';
-  const x = times(earned, m.fuel);
+  const base = putIn(m.fuel, m.recycled, earned);
+  const x = times(earned, base);
+  const fed = BigInt(m.recycled ?? '0');
   const won = (stats?.breaks ?? 0) > 0;
   const state = stateOf(m);
   const facts: InfoRow[] = [
     { label: 'Account', value: m.account, href: accountUrl(m.account) },
     { label: 'Owner', value: m.owner, href: accountUrl(m.owner) },
     { label: 'Model, NEAR AI TEE', value: m.model },
-    { label: 'Put in', value: `${nearText(m.fuel)} NEAR` },
+    { label: 'Put in', value: `${nearText(base)} NEAR` },
+    ...(fed > 0n ? [{ label: 'Fed its mind from its account', value: `${nearText(fed)} NEAR` }] : []),
     { label: 'Left for its mind', value: `${nearText(m.brain)} NEAR, up to ${nearText(m.race_limit)} a race` },
     { label: 'Its mind spent', value: `${nearText(m.spent, 4)} NEAR in ${m.races} ${m.races === 1 ? 'race' : 'races'}` },
     { label: 'Strategy', value: m.strategy ? 'Sealed: only its mind opens it, in a TEE' : 'None' },

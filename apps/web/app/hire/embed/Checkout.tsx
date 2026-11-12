@@ -38,7 +38,7 @@ const LABEL: Record<Step, string> = { job: 'The job', target: 'The contract', te
 const PROBLEM: Record<string, string> = {
   small: 'Too small for this route. Try a bigger amount.',
   route: 'No route for this right now. Try another coin.',
-  closed: 'Hiring opens with season 0.',
+  closed: 'Hiring opens soon.',
   busy: 'Too busy right now. Try again in a minute.',
   offline: 'Cannot reach the network right now. Try again in a minute.',
   bad: 'That did not work. Try again.',
@@ -613,7 +613,7 @@ export function Checkout({ given, host: hostParam }: { given: Given; host: strin
         if (previewProblem) return previewProblem;
         // Until the quote for this amount is back, the price from the coin list says roughly what it buys.
         const out = nearOut(preview?.amountOut) ?? (previewBusy ? null : roughNear);
-        if (!catalog?.live) return out ? `≈ ${out} NEAR. Hiring opens with season 0.` : 'Hiring opens with season 0.';
+        if (!catalog?.live) return out ? `≈ ${out} NEAR. Hiring opens soon.` : 'Hiring opens soon.';
         if (out) return `${slid ? 'The price moved: ' : ''}≈ ${out} NEAR lands in ${teamName} vault.`;
         return previewBusy ? 'Prices are busy right now. Get address prices it.' : 'Pricing it.';
       }

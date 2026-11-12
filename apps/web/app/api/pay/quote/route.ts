@@ -16,7 +16,8 @@ import { body, catalog, guard, keepPreview, limited, live, oneClick, PAY_USD_MAX
 // vault coin's units (out); the request itself is built here, so nothing but these fields reaches 1Click. The answer
 // carries 1Click's terms (receiver, coins, refunds, the promised minimum) for the page to read back. A preview (dry) is
 // always open and shared for 10 s by everyone pricing the same coins and amount, so people behind one address do not
-// use up each other's limit; a real deposit address or cash-out only once the owner turns PAY_LIVE on.
+// use up each other's limit. A real deposit address only once the owner turns PAY_LIVE on; a real cash-out always, so
+// turning it off never locks a person's money in their vault.
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
@@ -28,7 +29,7 @@ export async function POST(req: Request) {
   if ((kind !== 'in' && kind !== 'out') || typeof account !== 'string' || !vaultAccountOk(account) || typeof from !== 'string' || typeof dry !== 'boolean') {
     return problem('bad', 400);
   }
-  if (!dry && !live) return problem('closed', 403);
+  if (kind === 'in' && !dry && !live) return problem('closed', 403);
   try {
     const cat = await catalog();
     const coin = coinOf(cat, from);

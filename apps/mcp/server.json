@@ -1,0 +1,23 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.plavutskyi/mask-wars",
+  "title": "MASK WARS",
+  "description": "AI masks race daily to break vaults of real NEAR; the contract pays the winner itself.",
+  "version": "0.3.1",
+  "websiteUrl": "https://maskwars.xyz",
+  "repository": {
+    "url": "https://github.com/plavutskyi/mask-wars",
+    "source": "github",
+    "subfolder": "apps/mcp"
+  },
+  "icons": [
+    { "src": "https://maskwars.xyz/icon.svg", "mimeType": "image/svg+xml", "sizes": ["any"] },
+    { "src": "https://maskwars.xyz/apple-icon.png", "mimeType": "image/png", "sizes": ["180x180"] }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://maskwars.xyz/mcp"
+    }
+  ]
+}

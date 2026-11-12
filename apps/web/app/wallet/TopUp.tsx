@@ -1,7 +1,7 @@
 'use client';
 
 import { type FormEvent, useEffect, useId, useMemo, useRef, useState } from 'react';
-import { checkQuote, coinText, fromUnits, parseDollars, pollDelay, type Progress } from '@maskwars/pay';
+import { checkQuote, coinText, dollars, fromUnits, parseDollars, pollDelay, type Progress, usdOf } from '@maskwars/pay';
 import { type CatalogState, passing, pay, PayError, type QuoteView } from './api';
 import { loadPending, type PendingTopUp, savePending, type Who } from './store';
 import { mmss, NoCoins, Note, Qr, quietFocus, Top, useCopy, useNow } from './ui';
@@ -14,7 +14,7 @@ const AMOUNTS = [10, 25, 100] as const;
 const PROBLEM: Record<string, string> = {
   small: 'Too small for this route. Try a bigger amount.',
   route: 'No route for this right now. Try another coin.',
-  closed: 'Deposits open with season 0. Your vault is ready.',
+  closed: 'Deposits open soon. Your MASK WARS wallet is ready.',
   busy: 'Too busy right now. Try again in a minute.',
   offline: 'Cannot reach the network right now. Try again in a minute.',
   bad: 'That did not work. Try again.',
@@ -218,9 +218,9 @@ export function TopUp(p: {
   // How it ended: one sentence and one button back to the vault.
   if (step === 'send' && pending && stage && ['done', 'refunded', 'short', 'failed'].includes(stage)) {
     const ended = {
-      done: `Added ${coinText(progress?.amountOut ?? pending.quote.amountOut, catalog.near.decimals)} NEAR to your vault.`,
-      refunded: `The swap did not go through. Your ${sending.symbol} is back in your vault.`,
-      short: `Less ${sending.symbol} arrived than the swap needs. It goes back to your vault.`,
+      done: `Added ${coinText(progress?.amountOut ?? pending.quote.amountOut, catalog.near.decimals)} NEAR to your MASK WARS wallet, ${dollars(usdOf(progress?.amountOut ?? pending.quote.amountOut, catalog.near.decimals, catalog.near.price))}.`,
+      refunded: `The swap did not go through. Your ${sending.symbol} is back in your MASK WARS wallet.`,
+      short: `Less ${sending.symbol} arrived than the swap needs. It goes back to your MASK WARS wallet.`,
       failed: `It did not go through. Keep this code for support: ${progress?.correlationId.slice(0, 8) ?? pending.quote.correlationId.slice(0, 8)}.`,
     }[stage as 'done' | 'refunded' | 'short' | 'failed'];
     return (
@@ -229,7 +229,7 @@ export function TopUp(p: {
           {ended}
         </p>
         <button type="button" className={`${s.btn} ${s.endBtn}`} onClick={finish} ref={quietFocus}>
-          <span className={s.word}>{stage === 'done' ? 'Done' : 'Back to vault'}</span>
+          <span className={s.word}>{stage === 'done' ? 'Done' : 'Back to wallet'}</span>
         </button>
       </div>
     );
@@ -237,9 +237,9 @@ export function TopUp(p: {
 
   const details = (() => {
     if (step === 'send' && pending) {
-      return `Send by ${new Date(pending.quote.deadline).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}; anything later comes back to your vault. Up to 1% less still goes through. 1Click by NEAR Intents swaps it to NEAR as it lands, at most 1% off the price.`;
+      return `Send by ${new Date(pending.quote.deadline).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}; anything later comes back to your MASK WARS wallet. Up to 1% less still goes through. 1Click by NEAR Intents swaps it to NEAR as it lands, at most 1% off the price.`;
     }
-    return 'You send from your own wallet or exchange. 1Click by NEAR Intents swaps it to NEAR as it lands in your vault, at most 1% off the price; if it cannot, the coin comes back to your vault as it came.';
+    return 'You send from your own wallet on that chain or from an exchange. 1Click by NEAR Intents swaps it to NEAR as it lands in your MASK WARS wallet, at most 1% off the price; if it cannot, the coin comes back to your MASK WARS wallet as it came.';
   })();
 
   const note = (() => {
@@ -251,12 +251,12 @@ export function TopUp(p: {
         return `${coin.symbol} on ${chain.name}.`;
       case 'amount':
         if (!usd) return `From $1 to $${maxUsd.toLocaleString('en-US')}.`;
-        if (!catalog.live && !previewProblem) return preview ? `≈ ${nearOut(preview)} NEAR. Deposits open with season 0.` : 'Deposits open with season 0.';
+        if (!catalog.live && !previewProblem) return preview ? `≈ ${nearOut(preview)} NEAR. Deposits open soon.` : 'Deposits open soon.';
         if (previewProblem) return previewProblem;
-        if (preview) return `${slid ? 'The price moved: ' : ''}≈ ${nearOut(preview)} NEAR lands in your vault.`;
+        if (preview) return `${slid ? 'The price moved: ' : ''}≈ ${nearOut(preview)} NEAR lands in your MASK WARS wallet.`;
         return previewBusy ? 'Prices are busy right now. Get address prices it.' : 'Pricing it.';
       case 'send':
-        if (expired) return 'Time is up for this price. Anything sent now comes back to your vault.';
+        if (expired) return 'Time is up for this price. Anything sent now comes back to your MASK WARS wallet.';
         if (stage === 'seen' || stage === 'moving') return `Your ${sending.symbol} is here. Swapping it to NEAR.`;
         return `Only ${sending.symbol} on ${sendingChain}. Waiting for it · ${mmss(left)}`;
     }

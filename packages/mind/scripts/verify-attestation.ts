@@ -7,9 +7,9 @@
  * Set NEARAI_CLOUD_API_KEY only if the keyless rate limit gets in the way.
  */
 import { allChecks, verifyModel, type Check } from "../src/attestation.ts";
-import { TEE_MODELS } from "../src/models.ts";
+import { ATTESTED_MODELS } from "../src/models.ts";
 
-const models = process.argv.slice(2).length ? process.argv.slice(2) : Object.keys(TEE_MODELS);
+const models = process.argv.slice(2).length ? process.argv.slice(2) : ATTESTED_MODELS;
 const apiKey = process.env.NEARAI_CLOUD_API_KEY;
 const mark = { pass: "ok  ", fail: "FAIL", unavailable: "n/a " } as const;
 const line = (c: Check) => `    ${mark[c.outcome]} ${c.name}${c.detail ? ` (${c.detail})` : ""}`;

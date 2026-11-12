@@ -6,6 +6,11 @@
   vertical-align: middle;
 }
 
+/* An «i» at the end of a line of words: its sheet opens from that line (the nearest positioned box), not the «i». */
+.box[data-anchor='line'] {
+  position: static;
+}
+
 /* A 44 px target around a 22 px mark: the button is the target, the ring is drawn inside it. */
 .i {
   position: relative;
@@ -102,6 +107,44 @@
   transform: none;
 }
 
+/* As wide as the line it opens from, over a card of the sheet's own colour: it stands a step darker than the card,
+   inside a brighter line, and is never taller than the screen has room for. The rest scrolls inside it. */
+.box[data-fill] .panel {
+  --sheet: var(--ink);
+  left: 0;
+  right: 0;
+  width: auto;
+  max-width: none;
+  max-height: min(560px, calc(100svh - 200px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  transform: none;
+  background: var(--sheet);
+  /* Solid ink for the first steps around the sheet, then a soft shadow: the edge of a field it half covers never
+     shows as a second outline right under its own. */
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--ice) 22%, transparent),
+    0 0 0 12px var(--ink),
+    0 20px 40px 12px var(--ink);
+}
+
+/* Such a sheet holds one list of its own, spaced by itself. */
+.panel[data-fill] {
+  gap: 0;
+}
+
+/* Facts that run past the sheet's foot fade into it: a line is never cut flat by the edge. The fade is as tall as the
+   sheet's padding less its outline and takes no room: at the end of the scroll it lies over that padding, off the
+   last line, and it never covers the outline. */
+.fade {
+  position: sticky;
+  bottom: -15px;
+  height: 15px;
+  margin-bottom: -15px;
+  background: linear-gradient(to bottom, transparent, var(--sheet, var(--ink-2)));
+  pointer-events: none;
+}
+
 @keyframes rise {
   from {
     opacity: 0;
@@ -142,6 +185,12 @@
   letter-spacing: 0;
 }
 
+/* A hash or an address that takes two lines takes two even ones: never one character left alone on the second. */
+.v[data-code] {
+  word-break: break-all;
+  text-wrap: balance;
+}
+
 /* A link keeps a finger-sized target without growing the row. */
 a.v {
   display: inline-block;
@@ -177,7 +226,8 @@ a.v {
   .panel,
   .box[data-side='top'] .panel,
   .box[data-align='start'] .panel,
-  .box[data-align='end'] .panel {
+  .box[data-align='end'] .panel,
+  .box[data-fill] .panel {
     position: fixed;
     top: auto;
     left: 16px;
@@ -189,6 +239,16 @@ a.v {
     max-height: 72svh;
     overflow-y: auto;
     padding: 20px;
+  }
+
+  .panel[data-fill] {
+    overscroll-behavior: contain;
+  }
+
+  .fade {
+    bottom: -19px;
+    height: 19px;
+    margin-bottom: -19px;
   }
 
   .row {

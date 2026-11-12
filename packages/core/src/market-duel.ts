@@ -1,5 +1,5 @@
 /**
- * Market Duel v1 (spec «Market Duel v1»).
+ * Market Duel v1 (packages/core/README.md, "Market Duel v1").
  *
  * - Basket: BTC, ETH, SOL, NEAR, ZEC.
  * - Before the bell each mask seals `primary`, `backup` (≠ primary) and `call` (its guess of the rival's coin).

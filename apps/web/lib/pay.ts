@@ -9,21 +9,48 @@ import { callerOf, createLimiter, type Limiter } from './limit';
 
 const fixtureMode = process.env.PAY_FIXTURE === '1' && process.env.VERCEL_ENV !== 'production';
 
-/** Real deposit addresses and cash-outs: on with PAY_LIVE=1, the owner's switch for season 0 on mainnet. */
+/**
+ * Money into vaults: real deposit addresses (and Fuel, below) on with PAY_LIVE=1, the owner's switch on mainnet
+ * (the money of people's vaults). A cash-out of the person's own money never waits for it: turning PAY_LIVE off
+ * closes what brings money in and never locks what is already in a vault.
+ */
 export const live = fixtureMode || process.env.PAY_LIVE === '1';
 
 /**
- * The most one top-up may bring, in dollars: limits.pay_usd_max of packages/network/mainnet.json (the vault is always on
- * mainnet). Small while season 0 is new; a cash-out of the person's own money has no such limit.
+ * The most one top-up quote may ask for, in dollars: limits.pay_usd_max of packages/network/mainnet.json (the vault is
+ * always on mainnet). It bounds the amount the page prices and shows, not the transfer: the swap is FLEX_INPUT, so a
+ * larger transfer to the same deposit address is still swapped into the person's own vault. A cash-out of the person's
+ * own money has no such limit.
  */
 export const PAY_USD_MAX = NETWORKS.mainnet.limits.pay_usd_max ?? 9_999;
 
+/** The mask factory on mainnet, where a vault's NEAR fuels a forged mask's mind (`refuel`). */
+export const FACTORY = NETWORKS.mainnet.factory;
+
+/**
+ * Whether the vault offers to fuel the person's forged masks: money moving on, so behind PAY_LIVE as deposits are, and
+ * only once the factory is on chain on mainnet (`sections.forge` in packages/network/mainnet.json). With PAY_FIXTURE=1
+ * a factory in memory stands in for it.
+ */
+export const forgeLive = fixtureMode || (live && NETWORKS.mainnet.sections.forge);
+
+/** The factory's least refuel, 0.1 NEAR in yoctoNEAR (`MIN_REFUEL` in contracts/masks/factory). */
+export const MIN_REFUEL = '100000000000000000000000';
+
 const globals = globalThis as unknown as { __maskwarsFakePay?: Promise<FakePay> };
 function fake(): Promise<FakePay> {
-  globals.__maskwarsFakePay ??= Promise.all([import('@maskwars/pay/fake'), import('@maskwars/pay/fixtures/oneclick.json')]).then(([m, f]) =>
-    m.fakePay({ tokens: f.default.tokens, stepMs: Number(process.env.PAY_FIXTURE_STEP_MS) || 4000 }),
-  );
+  globals.__maskwarsFakePay ??= Promise.all([
+    import('@maskwars/pay/fake'),
+    import('@maskwars/pay/fixtures/oneclick.json'),
+    import('@maskwars/pay/fixtures/masks.json'),
+  ]).then(([m, f, k]) => m.fakePay({ tokens: f.default.tokens, stepMs: Number(process.env.PAY_FIXTURE_STEP_MS) || 4000, factory: FACTORY, masks: k.default.masks }));
   return globals.__maskwarsFakePay;
+}
+
+/** PAY_FIXTURE=1 only: a NEAR wallet's transactions, applied to the factory and NEAR Intents in memory. */
+export async function fixtureSend(signer: string, txs: Parameters<FakePay['send']>[1]): Promise<unknown[] | null> {
+  if (!fixtureMode) return null;
+  return (await fake()).send(signer, txs);
 }
 const fakeFetch = async (input: RequestInfo | URL, init?: RequestInit) => (await fake()).fetch(input, init);
 

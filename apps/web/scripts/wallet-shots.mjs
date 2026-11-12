@@ -1,7 +1,7 @@
 // Your vault through real eyes, end to end: a passkey made in a virtual authenticator (Chrome's own WebAuthn, the
 // same ceremony a phone runs), a top-up from Solana up to its deposit address and through to the money landing, a
 // cash-out to Base signed by that passkey (half, then all of it), and every way a cash-out or a top-up can end when it
-// does not simply go through. Desk 1440×900 and phone 375×812. Checks the console, horizontal scroll and finger-sized
+// does not simply go through (a top-up refunded, failed, short). Then a NEAR wallet's vault fuels a forged mask's mind. Desk 1440×900, phone 375×812 and a small phone 360×640. Checks the console, horizontal scroll and finger-sized
 // targets on every shot.
 //
 // 1Click and NEAR Intents are simulated in memory (PAY_FIXTURE=1, packages/pay/src/fake.ts) from recorded answers:
@@ -29,7 +29,7 @@ if (!BASE) {
     cwd: app,
     stdio: 'ignore',
     detached: true,
-    env: { ...process.env, PAY_FIXTURE: '1', PAY_FIXTURE_STEP_MS: '2500', PASSKEY_RP_ID: 'localhost' },
+    env: { ...process.env, PAY_FIXTURE: '1', PAY_FIXTURE_STEP_MS: '2500', PASSKEY_RP_ID: 'localhost', NEXT_PUBLIC_PAY_TEST: '1' },
   });
   for (let i = 0; i < 120; i++) {
     try {
@@ -47,6 +47,7 @@ mkdirSync(SHOTS, { recursive: true });
 const VIEWS = [
   ['desk', { viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 }],
   ['phone', { viewport: { width: 375, height: 812 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }],
+  ['small', { viewport: { width: 360, height: 640 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true }],
 ];
 const BASE_ADDRESS = '0x71C7656EC7ab88b098defB751B7401B5f6d8976F';
 
@@ -119,9 +120,9 @@ for (const [view, opts] of VIEWS) {
   await click('Details');
   await page.getByPlaceholder('you@mail.com').fill('kira@mail.com');
   await click('Continue');
-  await page.getByText(/No vault opened/).waitFor();
+  await page.getByText(/No wallet opened/).waitFor();
   await shot('signin-new');
-  await tap('New vault');
+  await tap('Create wallet');
   await page.getByRole('button', { name: 'Add money', exact: true }).waitFor();
   await shot('vault-empty', 900);
 
@@ -132,13 +133,13 @@ for (const [view, opts] of VIEWS) {
     await click('Next');
     if (shots) await shot('add-coin');
     await click('Next');
-    await page.getByText(/NEAR lands in your vault/).waitFor();
+    await page.getByText(/NEAR lands in your MASK WARS wallet/).waitFor();
     if (shots) {
       await shot('add-amount');
       await page.getByRole('radio', { name: '$100', exact: true }).click();
-      await page.getByText(/NEAR lands in your vault/).waitFor();
+      await page.getByText(/NEAR lands in your MASK WARS wallet/).waitFor();
       await page.getByRole('radio', { name: '$25', exact: true }).click();
-      await page.getByText(/NEAR lands in your vault/).waitFor();
+      await page.getByText(/NEAR lands in your MASK WARS wallet/).waitFor();
     }
     await click('Get address');
     await page.getByText(/Waiting for it/).waitFor();
@@ -150,7 +151,7 @@ for (const [view, opts] of VIEWS) {
       await page.getByText(/Swapping it to NEAR/).waitFor({ timeout: 20000 });
       await shot('add-swapping', 300);
     }
-    await page.getByText(/Added .* NEAR to your vault/).waitFor({ timeout: 20000 });
+    await page.getByText(/Added .* NEAR to your MASK WARS wallet/).waitFor({ timeout: 20000 });
     if (shots) await shot('add-done', 1300);
     await click('Done');
   };
@@ -192,22 +193,6 @@ for (const [view, opts] of VIEWS) {
   await page.getByText(/^\$0$/).waitFor({ timeout: 10000 });
   await shot('vault-emptied', 900);
 
-  // A top-up that does not go through: 1Click refunds it to the vault.
-  await page.route('**/api/pay/status**', async (route) => {
-    const res = await forward(route);
-    const body = await res.json();
-    await route.fulfill({ response: res, json: { ...body, stage: 'refunded', status: 'REFUNDED', refunded: '25000000', refundReason: 'QUOTE_EXPIRED' } });
-  });
-  await click('Add money');
-  await click('Next');
-  await click('Next');
-  await page.getByText(/NEAR lands in your vault/).waitFor();
-  await click('Get address');
-  await page.getByText(/back in your vault/).waitFor({ timeout: 20000 });
-  await shot('add-refunded', 400);
-  await click('Back to vault');
-  await page.unroute('**/api/pay/status**');
-
   // Money again, then a cash-out whose answer is lost on the way while 1Click did take it: the page keeps following it
   // and says «Sent», instead of letting a second one start.
   await topUp(false);
@@ -245,11 +230,30 @@ for (const [view, opts] of VIEWS) {
     const p = JSON.parse(localStorage.getItem('maskwars:cashout'));
     localStorage.setItem('maskwars:cashout', JSON.stringify({ ...p, until: Date.now() + 6000 }));
   });
-  await page.reload({ waitUntil: 'networkidle' });
+  await page.reload({ waitUntil: 'load' });
   await page.getByText(/Checking it went out/).waitFor();
   await page.getByText(/It did not go out/).waitFor({ timeout: 30000 });
   await shot('out-none', 600);
-  await click('Back to vault');
+  await click('Back to wallet');
+
+  // Every way a top-up ends when it does not simply go through, walked by its cents in USDC (packages/pay/src/fake.ts):
+  // $2.13 is refunded to the vault, $2.66 fails with a code for support, $2.07 arrives short and goes back.
+  const ends = async (usd, line, name) => {
+    await click('Add money');
+    await click('Next');
+    await click('Next');
+    await page.locator('input[inputmode="decimal"]').fill(usd);
+    await page.getByText(/NEAR lands in your MASK WARS wallet/).waitFor();
+    await click('Get address');
+    await page.getByText(line).waitFor({ timeout: 30000 });
+    await shot(name, 400);
+    await click('Back to wallet');
+  };
+  await ends('2.13', /back in your MASK WARS wallet/, 'add-refunded');
+  await ends('2.66', /Keep this code for support/, 'add-failed');
+  await ends('2.07', /Less USDC arrived/, 'add-short');
+  await page.getByText(/USDC/).first().waitFor();
+  await shot('vault-coins', 900);
 
   // Another device: the same passkey opens the same vault from «Continue».
   const { credentials } = await a.cdp.send('WebAuthn.getCredentials', { authenticatorId: a.authenticatorId });
@@ -279,7 +283,7 @@ for (const [view, opts] of VIEWS) {
   const c = await device(opts, view, { synced: false });
   await c.page.goto(`${BASE}/wallet`, { waitUntil: 'networkidle' });
   await c.page.getByPlaceholder('you@mail.com').fill('kira@mail.com');
-  await c.page.getByRole('button', { name: 'New vault', exact: true }).click();
+  await c.page.getByRole('button', { name: 'Create wallet', exact: true }).click();
   await c.page.getByText(/stays on this device only/).waitFor();
   await shotOf(c.page)('one-device', 600);
   await c.context.close();
@@ -303,7 +307,7 @@ for (const [view, opts] of VIEWS) {
   await d.page.getByRole('button', { name: 'Add money', exact: true }).waitFor();
   await d.context.close();
 
-  // Before season 0: prices are live, deposit addresses are not handed out yet.
+  // Before PAY_LIVE: prices are live, deposit addresses are not handed out yet.
   const e = await device(opts, view, { credentials });
   await e.page.route('**/api/pay/catalog', async (route) => {
     const res = await forward(route);
@@ -321,7 +325,7 @@ for (const [view, opts] of VIEWS) {
   await opened3.click();
   await e.page.getByRole('button', { name: 'Next', exact: true }).click();
   await e.page.getByRole('button', { name: 'Next', exact: true }).click();
-  await e.page.getByText(/Deposits open with season 0/).waitFor();
+  await e.page.getByText(/Deposits open soon/).waitFor();
   await shotOf(e.page)('closed', 500);
   await e.context.close();
 
@@ -329,9 +333,80 @@ for (const [view, opts] of VIEWS) {
   const f = await browser.newContext(opts);
   const page4 = await f.newPage();
   await page4.goto(`${BASE.replace('localhost', '127.0.0.1')}/wallet`, { waitUntil: 'networkidle' });
-  await page4.getByText(/Here, sign in with your NEAR wallet/).waitFor();
+  await page4.getByText(/Here, sign in with your own NEAR wallet/).waitFor();
   await shotOf(page4)('no-passkey', 500);
   await f.close();
+  // A NEAR wallet's vault fuels the minds of the masks it forged (Fuel.tsx): the factory in memory holds two of them.
+  // The wallet is the test build's own (NEXT_PUBLIC_PAY_TEST=1): it sends its transactions to the fixture's chain.
+  const nw = await browser.newContext(opts);
+  await nw.addInitScript(() => {
+    const send = async (txs) => {
+      const r = await fetch('/api/pay/fixture', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ signer: 'kira.near', txs }) });
+      return (await r.json()).outcomes;
+    };
+    window.__payWallet = {
+      accountId: 'kira.near',
+      signMessage: async () => ({ accountId: 'kira.near', publicKey: `ed25519:${'2'.repeat(44)}`, signature: btoa('s'.repeat(64)) }),
+      addKey: async () => null,
+      send,
+      signOut: async () => {},
+    };
+  });
+  const np = await nw.newPage();
+  np.on('console', (m) => m.type() === 'error' && !/status of 503|status of 429/.test(m.text()) && problems.push(`${view}: console: ${m.text()}`));
+  np.on('pageerror', (e) => problems.push(`${view}: page error: ${e.message}`));
+  const nshot = shotOf(np);
+  const ntap = async (name) => np.getByRole('button', { name, exact: true }).last().click();
+  await np.goto(`${BASE}/wallet`, { waitUntil: 'networkidle' });
+  // The fixture keeps its chain between passes: the wallet first takes whatever NEAR an earlier pass left in its vault
+  // out to its own account, so every pass starts from an empty vault.
+  await np.evaluate(async () => {
+    const v = await (await fetch('/api/pay/vault?account=kira.near')).json();
+    if (v.near === '0') return;
+    const withdraw = { type: 'FunctionCall', params: { methodName: 'ft_withdraw', args: { token: 'wrap.near', receiver_id: 'kira.near', amount: v.near }, gas: '60000000000000', deposit: '1' } };
+    await window.__payWallet.send([{ receiverId: 'intents.near', actions: [withdraw] }]);
+  });
+  await np.getByRole('button', { name: 'NEAR wallet', exact: true }).first().click();
+  const minds = np.getByRole('button', { name: /2 masks/ });
+  await minds.waitFor();
+  await nshot('near-vault', 900);
+  await minds.click();
+  await nshot('fuel-mask');
+  await ntap('Next');
+  await np.getByText(/Add money first/).waitFor();
+  await nshot('fuel-empty');
+  await ntap('Add money');
+  await ntap('Next');
+  await ntap('Next');
+  await np.getByText(/NEAR lands in your MASK WARS wallet/).waitFor();
+  await ntap('Get address');
+  await np.getByText(/Added .* NEAR to your MASK WARS wallet/).waitFor({ timeout: 30000 });
+  await ntap('Done');
+  await minds.click();
+  await np.getByRole('radio', { name: /VEX/ }).click();
+  await ntap('Next');
+  await np.getByText(/NEAR into VEX’s mind/).waitFor();
+  await nshot('fuel-amount');
+  await ntap('Fuel VEX');
+  await np.getByText(/VEX’s mind took/).waitFor({ timeout: 30000 });
+  await nshot('fuel-done', 900);
+  await ntap('Done');
+  await minds.waitFor();
+  await nshot('near-vault-fueled', 900);
+  // The wallet stops at NEAR Intents' withdrawal: nothing left the vault, and the screen says so.
+  await np.route('**/api/pay/fixture', (route) =>
+    route.fulfill({ json: { outcomes: [{ status: { SuccessValue: '' }, transaction: { hash: 'a' } }, { status: { Failure: {} }, transaction: { hash: 'b' } }] } }),
+  );
+  await minds.click();
+  await ntap('Next');
+  await np.getByText(/NEAR into KIRA’s mind/).waitFor();
+  await ntap('Fuel KIRA');
+  await np.getByText(/still in your MASK WARS wallet/).waitFor({ timeout: 30000 });
+  await nshot('fuel-none', 600);
+  await np.unroute('**/api/pay/fixture');
+  await ntap('Back to wallet');
+  await nw.close();
+
   await a.context.close();
 }
 

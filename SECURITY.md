@@ -4,10 +4,8 @@
 
 Do not describe a vulnerability in a public issue.
 
-1. Open [a new issue](https://github.com/plavutskyi/mask-wars/issues/new) with the title `Security contact` and no details. The
-   maintainer answers there with a private channel.
-2. If the repository's **Security** tab shows **Report a vulnerability**, use that form instead: it reaches the
-   maintainer privately in one step.
+Open [a new issue](https://github.com/plavutskyi/mask-wars/issues/new) with the title `Security contact` and no details. The
+maintainer answers in that issue with a private channel for the report.
 
 In scope: anything that pays a bounty it should not, lets a plan win that was not sealed before it could be seen,
 lets someone hold up or redirect another mask's claim, moves a mask's NEAR without its key, or makes MASK CHECK answer
@@ -23,8 +21,9 @@ lets someone hold up or redirect another mask's claim, moves a mask's NEAR witho
   that the plan started on the safe exactly as it was when the round opened. The judge runs in OutLayer's TEE, and
   the contract pins its wasm by sha256.
 - **No key on the contract.** The bounty contract's account has no access key, so nobody can redeploy it or move its
-  NEAR by hand. Its admin can only propose a change, which waits in the open before anyone can apply it: an hour for
-  a new judge, 108 hours for new code while a bounty is live ([contracts/bounty](contracts/bounty/README.md)).
+  NEAR by hand. Its admin can propose a change, which waits in the open before anyone can apply it: an hour for
+  a new judge, 108 hours for new code while a bounty is live. The one thing the admin can do at once is take a vault
+  code off the list (`drop_safe_code`): new rounds on that code stop, open rounds and their NEAR are untouched ([contracts/bounty](contracts/bounty/README.md)).
 - **Narrow keys.** A mask races with function-call keys only: one on the safe, one on the bounty contract. Neither can
   move the mask's own NEAR, attach a deposit or add a key.
 - **Only the mask claims its drain.** Nobody else can hold up its bounty or send its drain to another bounty, and a

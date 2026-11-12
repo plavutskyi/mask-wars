@@ -32,7 +32,7 @@ export const KIND_WORD: Record<Job['kind'], string> = {
 
 /** What the work is, one line. */
 export const KIND_LINE: Record<Job['kind'], string> = {
-  drain: 'Drain a live safe while its sealed round runs.',
+  drain: 'Drain a live vault while its sealed round runs.',
   tee_tests: 'Ship code that passes the client’s hidden tests.',
   ai_review: 'Write the review a published rubric scores highest.',
 };
@@ -139,13 +139,24 @@ export function winnerOf(job: Job): Entrant | undefined {
 /** The judge refused the client's material at its check: no mask ever started. */
 export const refused = (job: Job) => job.phase === 'cancelled' && job.events.some((e) => e.kind === 'refuse');
 
+/**
+ * Who can take a job whose work window is open, in a word or a few: `Open` to any mask; `Open to forged masks` when it
+ * takes only masks of the factories it names; `Invite only` while it has room for the masks its client listed and for
+ * nobody else; `Full` once every slot is taken.
+ */
+export function openWord(job: Job): string {
+  if (job.takes) return job.openTo.who === 'registered' ? 'Open to forged masks' : 'Open';
+  return job.room ? 'Invite only' : 'Full';
+}
+
 /** The page's headline: what is happening to the job now. */
 export function jobTitle(job: Job): string {
   switch (job.phase) {
     case 'checking':
       return 'Opening soon';
     case 'enlisting':
-      return job.takes ? 'Open for masks' : 'Every slot is taken';
+      if (job.takes) return job.openTo.who === 'registered' ? 'Open to forged masks' : 'Open for masks';
+      return job.room ? 'Invite only' : 'Every slot is taken';
     case 'revealing':
       return 'Masks show their work';
     case 'waiting':

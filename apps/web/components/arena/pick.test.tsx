@@ -50,6 +50,8 @@ const show = async (pick: PickView, now = T0 + 10 * MIN, onMode?: (m: PickMode) 
 };
 const buttons = () => [...box.querySelectorAll('button')].map((b) => b.textContent?.trim());
 const pressed = () => [...box.querySelectorAll('button[aria-pressed="true"]')].map((b) => b.textContent?.trim());
+/** The words of the line over the choices, as they read. */
+const line = () => box.querySelector('[role="status"]')?.textContent?.replace(/\s+/g, ' ').trim() ?? '';
 
 describe('before the round opens', () => {
   it('asks who breaks it, free, and says by when: the round’s start, the one time known ahead', async () => {
@@ -64,12 +66,40 @@ describe('before the round opens', () => {
     expect(modes.at(-1)).toBe('open');
   });
 
-  it('with a pick in: it is lit, still theirs to change, and the line says when it locks', async () => {
+  it('with a pick in: it is lit, still theirs to change, and the line names it', async () => {
     await show({ ...ahead, mine: { key: NEXT_KEY, choice: ORACLE.account, at: T0 - 4 * 60 * MIN } }, T0 - 3 * 60 * MIN);
     expect(pressed()).toEqual(['ORACLE']);
-    expect(box.textContent).toContain('Your pick is in');
-    expect(box.textContent).toContain('Locks after 18:04 UTC');
+    expect(line()).toContain('Your pick: ORACLE');
+    expect(box.querySelector('[role="status"]')?.getAttribute('aria-label')).toBe('Your pick: ORACLE');
+    // The line that says a pick is in without saying which is gone.
+    expect(box.textContent).not.toContain('Your pick is in');
     expect(buttons()).toEqual(['ONYX', 'ORACLE', 'NOVA', 'Vault holds']);
+  });
+
+  it('the picked choice is the one marked on, and every other one stays a live button', async () => {
+    await show({ ...ahead, mine: { key: NEXT_KEY, choice: NOVA.account, at: T0 - 4 * 60 * MIN } }, T0 - 3 * 60 * MIN);
+    const all = [...box.querySelectorAll<HTMLButtonElement>('button')];
+    expect(all.filter((b) => b.hasAttribute('data-on')).map((b) => b.textContent?.trim())).toEqual(['NOVA']);
+    // Its own mask's colour: the tone the stage gives that mask.
+    expect(all[2]!.dataset.tone).toBe('violet');
+    expect(all.every((b) => !b.disabled)).toBe(true);
+    expect(box.querySelector('[role="group"]')?.hasAttribute('data-picked')).toBe(true);
+  });
+
+  it('with a pick in, the line says what a right call gives: a place among the best callers, in the league', async () => {
+    await show({ ...ahead, mine: { key: NEXT_KEY, choice: HELD, at: T0 - 4 * 60 * MIN } }, T0 - 3 * 60 * MIN);
+    expect(line()).toContain('Your pick: Vault holds');
+    const rank = box.querySelector('a') as HTMLAnchorElement;
+    expect(rank.getAttribute('href')).toBe('/league#callers');
+    expect(rank.textContent).toContain('Right calls rank');
+    expect(rank.getAttribute('aria-label')).toBe('Right calls rank on Best callers, in the league');
+    // No prize is promised: the picks are free and the table is all a right call gives.
+    expect(box.textContent).not.toMatch(/NEAR|win|prize|reward/i);
+  });
+
+  it('before a pick the line promises nothing and links nowhere', async () => {
+    await show(ahead, T0 - 3 * 60 * MIN);
+    expect(box.querySelector('a')).toBeNull();
   });
 
   it('past its minute and not on chain yet: no time is promised, picks close at the first seal', async () => {
@@ -98,19 +128,19 @@ describe('the round open, no seal yet', () => {
     await act(async () => (box.querySelectorAll('button')[1] as HTMLButtonElement).click());
     expect(fetchMock).toHaveBeenCalledWith('/api/pick', expect.objectContaining({ method: 'POST', body: JSON.stringify({ key: ROUND_ID, choice: ORACLE.account }) }));
     expect(pressed()).toEqual(['ORACLE']);
-    expect(box.textContent).toContain('Your pick is in');
-    expect(box.textContent).toContain('Locks at the first seal');
+    expect(line()).toContain('Your pick: ORACLE');
     expect(box.textContent).not.toContain('UTC');
 
     fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ pick: mine(HELD) }), { status: 200 }));
     await act(async () => (box.querySelectorAll('button')[3] as HTMLButtonElement).click());
     expect(pressed()).toEqual(['Vault holds']);
+    expect(line()).toContain('Your pick: Vault holds');
   });
 
   it('a pick made before the round opened is still lit once it is open', async () => {
     await show({ ...open, mine: { key: NEXT_KEY, choice: NOVA.account, at: T0 - 60 * MIN } }, T0 + 2 * MIN);
     expect(pressed()).toEqual(['NOVA']);
-    expect(box.textContent).toContain('Locks at the first seal');
+    expect(line()).toContain('Your pick: NOVA');
   });
 
   it('a pick the server refuses is not shown as made', async () => {
@@ -127,7 +157,7 @@ describe('the round open, no seal yet', () => {
     await act(async () => (box.querySelectorAll('button')[0] as HTMLButtonElement).click());
     expect(pressed()).toEqual([]);
     expect(box.textContent).toContain('First seal is in');
-    expect(box.textContent).not.toContain('Your pick is in');
+    expect(box.textContent).not.toContain('Your pick');
   });
 });
 

@@ -6,6 +6,7 @@ members = ["mask", "factory", "stub", "sandbox", "legacy/factory-v1", "legacy/ma
 edition = "2021"
 license = "MIT"
 publish = false
+repository = "https://github.com/plavutskyi/mask-wars"
 
 [workspace.dependencies]
 near-sdk = "5.30"

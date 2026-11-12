@@ -1,9 +1,10 @@
 [package]
 name = "maskwars-season"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2021"
 license = "MIT"
 publish = false
+repository = "https://github.com/plavutskyi/mask-wars"
 description = "MASK WARS season treasury: holds the sponsors' NEAR and opens a sealed round on schedule, each on a fresh safe from global code."
 
 [lib]
@@ -14,6 +15,15 @@ near-sdk = "5.30"
 
 [dev-dependencies]
 near-sdk = { version = "5.30", features = ["unit-testing"] }
+
+# The build anyone can repeat (contracts/README.md, "Source on chain"): `cargo near build reproducible-wasm` runs this
+# command in this image, and the code names the image, the command, the commit and this folder in
+# `contract_source_metadata` (NEP-330).
+[package.metadata.near.reproducible_build]
+image = "sourcescan/cargo-near:0.22.0-rust-1.97.0"
+image_digest = "sha256:b193c8640a27172f83136a0f0aab2a9bf9d09f6ba0e6afd187addfaa9b92bae0"
+passed_env = []
+container_build_command = ["cargo", "near", "build", "non-reproducible-wasm", "--locked", "--no-abi"]
 
 [profile.release]
 codegen-units = 1

@@ -24,6 +24,19 @@ const TESTS_KEY = "x25519:6c8fed6f2acd4093f45f4921108f6234ab86cf6b1b4ef2c1c8668b
 const REVIEW_KEY = "x25519:7c8a393f8708112b7cd720c8f66296a659ccb3a5c7594692a5599a76dd47514d";
 const CLIENT_KEY = "x25519:42575d5c8a93833255e09f04054a4f6246d36ed163c1c7f80c1fc9a58a0e912d";
 
+/** The recording with the `open_to` of some jobs changed in the contract's `list` answer, and nothing else. */
+function withOpenTo(change: Record<string, unknown>): typeof recording {
+  const exchanges = recording.exchanges.map((e) => {
+    const req = e.request as { params?: { method_name?: string } } | null;
+    if (req?.params?.method_name !== "list") return e;
+    const res = e.response as { result: { result: number[] } };
+    const jobs = JSON.parse(Buffer.from(res.result.result).toString("utf8")) as { id: string; terms: { open_to: unknown } }[];
+    for (const j of jobs) if (j.id in change) j.terms.open_to = change[j.id];
+    return { ...e, response: { ...res, result: { ...res.result, result: [...Buffer.from(JSON.stringify(jobs))] } } };
+  });
+  return { ...recording, exchanges };
+}
+
 function counting(opts: { ttlMs?: number; now?: () => number } = {}) {
   const calls: string[] = [];
   let down: RegExp | null = null;
@@ -117,7 +130,7 @@ describe("the jobs board of the sandbox world, from recorded answers", () => {
       [2, ONYX, "striker", true, true, false, false, null],
     ]);
     expect(j.steps.every((s) => s.sealTx && s.revealTx && s.revealedAt! > s.sealedAt && /^[0-9a-f]{64}$/.test(s.digest!))).toBe(true);
-    expect(j.settlement).toMatchObject({ state: "paid", fee: milli(150).toString(), toNearAi: milli(70).toString(), forfeit: milli(25).toString(), bondsBack: milli(125).toString() });
+    expect(j.settlement).toMatchObject({ state: "paid", fee: milli(150).toString(), toTreasury: milli(70).toString(), forfeit: milli(25).toString(), bondsBack: milli(125).toString() });
     expect(BigInt(j.settlement!.back!)).toBeGreaterThan(milli(400));
     expect(j.delivery).toMatchObject({ at: "delivery/jobs.test.near/review-0001", key: CLIENT_KEY, project: "maskwars.testnet/review" });
     expect(j.delivery!.sha256).toMatch(/^[0-9a-f]{64}$/);
@@ -146,7 +159,7 @@ describe("the jobs board of the sandbox world, from recorded answers", () => {
   it("reads a job nobody won: the fake box's whole bond to the company, the mask that left paying for its seconds", async () => {
     const j = (await replayJobs(recording).job("review-0003"))!;
     expect(j.verdict).toMatchObject({ winner: null, counted: [], fake: [0] });
-    expect(j.settlement).toMatchObject({ state: "closed", payouts: [], fee: "0", toNearAi: "0", forfeit: milli(20).toString() });
+    expect(j.settlement).toMatchObject({ state: "closed", payouts: [], fee: "0", toTreasury: "0", forfeit: milli(20).toString() });
     expect(BigInt(j.settlement!.back!)).toBeGreaterThan(NEAR);
     const [farm, rook] = j.entrants.flatMap((e) => e.members);
     expect([farm!.mask.account, farm!.left, farm!.bond]).toEqual([FARM, false, { amount: milli(20).toString(), by: "test.near", lost: milli(20).toString(), why: "fake" }]);
@@ -183,7 +196,7 @@ describe("the jobs board of the sandbox world, from recorded answers", () => {
     ]);
     expect(j.steps.find((s) => s.mask.account === FARM)).toMatchObject({ counted: false, fake: true });
     // Fuel the job will cover: the trio's 0.025 + 0.06 + 0.03; FARM burned 0.08 for nothing and its own tank pays.
-    expect(j.settlement!.toNearAi).toBe(milli(115).toString());
+    expect(j.settlement!.toTreasury).toBe(milli(115).toString());
     expect(j.entrants[1]!.members[0]).toMatchObject({ burned: milli(80).toString(), covered: "0", payout: null, bond: { lost: milli(80).toString(), why: "fake", by: "test.near" } });
     expect(j.entrants[0]!.members.map((m) => [m.mask.name, m.bond.by, m.bond.lost])).toEqual([
       ["JUNO", "bob.test.near", "0"],
@@ -221,6 +234,52 @@ describe("the jobs board of the sandbox world, from recorded answers", () => {
     expect(held.retryAt).toBeGreaterThan(board.readAt);
     expect(held.retryAt! - board.readAt).toBeLessThan(25 * 60_000);
     expect(held.events.filter((e) => e.kind === "judge").map((e) => e.note)).toEqual(["the judge could not judge: NEAR AI answered 503: 1 of 1 entrants waits for its back-off"]);
+  });
+
+  it("counts a job as open to an outside agent only when it is: one limited to its client's listed masks is not", async () => {
+    // The same reading, with the two open jobs limited by their client: audit-0006 to three listed masks, drain-0007 to
+    // the masks of a factory. Nothing else in the chain's answers changes.
+    const limited = withOpenTo({
+      "audit-0006": { who: "masks", masks: [NOVA, ONYX, ROOK] },
+      "drain-0007": { who: "registered", factories: ["masks.test.near"] },
+    });
+    const board = await replayJobs(limited).board();
+    const audit = board.jobs.find((j) => j.id === "audit-0006")!;
+    const drain = board.jobs.find((j) => j.id === "drain-0007")!;
+    // audit-0006 still has room for its listed masks, and nobody else may take it.
+    expect(audit).toMatchObject({ phase: "enlisting", room: true, takes: false, openTo: { who: "masks", masks: [NOVA, ONYX, ROOK] } });
+    expect(drain).toMatchObject({ phase: "enlisting", room: true, takes: true, openTo: { who: "registered", factories: ["masks.test.near"] } });
+    // What waits for outside agents is drain-0007's alone, and it is the biggest open job.
+    expect(board.open).toBe(1);
+    expect(board.waiting).toBe((5n * NEAR).toString());
+    expect(board.waitingFuel).toBe(milli(600).toString());
+    expect(board.biggest?.id).toBe("drain-0007");
+    // The board lists the job outside agents can take first; audit-0006 stands with the other running jobs.
+    expect(board.jobs[0]!.id).toBe("drain-0007");
+    // On a network whose mask factory is not on chain yet nobody has a forged mask: the same job is offered to nobody.
+    const unforged = await replayJobs(limited, { forge: false }).board();
+    expect(unforged.jobs.find((j) => j.id === "drain-0007")).toMatchObject({ room: true, takes: false });
+    expect(unforged).toMatchObject({ open: 0, biggest: null });
+  });
+
+  it("reads the factory's presence from the network: mainnet has it on chain, testnet has none, and each config says so", () => {
+    expect(jobsConfigOf(NETWORKS.mainnet).forge).toBe(NETWORKS.mainnet.sections.forge);
+    expect(jobsConfigOf(NETWORKS.mainnet).forge).toBe(true);
+    expect(jobsConfigOf(NETWORKS.testnet).forge).toBe(false);
+    expect(jobsConfigFromEnv({ MASKWARS_NETWORK: "mainnet" }).forge).toBe(true);
+    expect(jobsConfigFromEnv({ MASKWARS_JOBS_CONTRACT: "jobs.test.near" }).forge).toBe(true);
+  });
+
+  it("has nothing open when every job with room is for its client's listed masks, or names no factory", async () => {
+    const board = await replayJobs(
+      withOpenTo({
+        "audit-0006": { who: "masks", masks: [NOVA] },
+        "drain-0007": { who: "registered", factories: [] },
+      }),
+    ).board();
+    expect(board.jobs.filter((j) => j.room).map((j) => j.id).sort()).toEqual(["audit-0006", "drain-0007"]);
+    expect(board.jobs.some((j) => j.takes)).toBe(false);
+    expect(board).toMatchObject({ open: 0, waiting: "0", waitingFuel: "0", biggest: null });
   });
 
   it("names a factory's mask by its name and anyone else by the whole account, so nobody passes for another", async () => {

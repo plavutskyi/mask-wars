@@ -2,10 +2,16 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   CLAIM_GRACE_MINUTES,
+  JOB_BOND_STORAGE,
+  JOBS_TICK_MINUTES,
   NETWORKS,
   SECTIONS,
+  MAX_LIVE_JOBS_PER_MASK,
   bountyContracts,
   codeHashHex,
+  houseKeeps,
+  houseOutMost,
+  jobsTicksIn,
   networkOf,
   onNetwork,
   otherNetwork,
@@ -63,6 +69,79 @@ describe("the two networks", () => {
     expect(() => parseNetwork({ ...raw, house: "house.someone.near" })).toThrow("is not under maskwars.near");
   });
 
+  it("jobs from outside: a real reward, a few a round, one live job a client, and a place of every mask kept for our own", () => {
+    for (const id of ["testnet", "mainnet"] as const) {
+      const j = NETWORKS[id].limits.jobs;
+      expect(yocto(j.min_reward)).toBe(NEAR / 2n);
+      // A job posted on /jobs asks 0.05 NEAR a mask; the house never locks more than 0.1 for one.
+      expect(yocto(j.max_bond)).toBe(NEAR / 10n);
+      expect([j.per_round, j.per_client, j.seats]).toEqual([2, 1, 2]);
+      expect(j.seats).toBeLessThan(MAX_LIVE_JOBS_PER_MASK);
+    }
+    const raw = JSON.parse(readFileSync(new URL("../mainnet.json", import.meta.url), "utf8"));
+    const jobs = (change: Record<string, unknown>) => parseNetwork({ ...raw, limits: { ...raw.limits, jobs: { ...raw.limits.jobs, ...change } } });
+    expect(() => jobs({ min_reward: "0.05" })).toThrow("limits.jobs.min_reward");
+    expect(() => jobs({ max_bond: "0.005" })).toThrow("limits.jobs.max_bond");
+    expect(() => jobs({ max_bond: "0.6" })).toThrow("limits.jobs.max_bond");
+    expect(() => jobs({ seats: 4 })).toThrow("fewer than the 4 live places");
+    expect(() => jobs({ per_client: 3 })).toThrow("per_client: no more than seats");
+    expect(() => jobs({ per_round: 0 })).toThrow("whole numbers of jobs");
+    expect(() => parseNetwork({ ...raw, limits: { ...raw.limits, jobs: undefined } })).toThrow("limits.jobs");
+  });
+
+  it("the house's bonds on jobs from outside: an absolute cap, never above what the limits allow, and short windows", () => {
+    for (const id of ["testnet", "mainnet"] as const) {
+      const n = NETWORKS[id];
+      const j = n.limits.jobs;
+      // Every mask on `seats` jobs from outside, each bond 0.1 NEAR with its record's 0.004: 3 x 2 x 0.104.
+      expect(houseOutMost(n)).toBe(yocto("0.624"));
+      expect(yocto(JOB_BOND_STORAGE)).toBe(400n * 10n ** 19n);
+      expect(yocto(j.max_out)).toBe(yocto("0.624"));
+      expect(yocto(j.max_out)).toBeLessThanOrEqual(houseOutMost(n));
+      // A bond waits an hour at most, a reveal lasts an hour at most, and two runs of the site's clock fall inside it.
+      expect([j.max_work_minutes, j.max_reveal_minutes, j.max_appeal_minutes, j.reveal_runs]).toEqual([60, 60, 60, 2]);
+    }
+    const raw = JSON.parse(readFileSync(new URL("../mainnet.json", import.meta.url), "utf8"));
+    const jobs = (change: Record<string, unknown>) => parseNetwork({ ...raw, limits: { ...raw.limits, jobs: { ...raw.limits.jobs, ...change } } });
+    expect(() => jobs({ max_out: "0.625" })).toThrow("limits.jobs.max_out");
+    expect(() => jobs({ max_out: "0" })).toThrow("limits.jobs.max_out");
+    expect(() => jobs({ max_out: undefined })).toThrow("limits.jobs.max_out");
+    // A lower bond or fewer seats lowers what the cap may be.
+    expect(() => jobs({ seats: 1, per_client: 1 })).toThrow("limits.jobs.max_out");
+    expect(jobs({ seats: 1, per_client: 1, max_out: "0.312" }).limits.jobs.max_out).toBe("0.312");
+    // A work window of three days, the contract's longest, is never one the house's bond waits through.
+    expect(() => jobs({ max_work_minutes: 4320 })).toThrow("limits.jobs.max_work_minutes");
+    expect(() => jobs({ max_work_minutes: 39 })).toThrow("limits.jobs.max_work_minutes");
+    expect(() => jobs({ max_work_minutes: undefined })).toThrow("limits.jobs.max_work_minutes");
+    expect(() => jobs({ max_reveal_minutes: 1440 })).toThrow("limits.jobs.max_reveal_minutes");
+    expect(() => jobs({ max_reveal_minutes: 29 })).toThrow("limits.jobs.max_reveal_minutes");
+    expect(() => jobs({ max_appeal_minutes: 1440 })).toThrow("limits.jobs.max_appeal_minutes");
+    expect(() => jobs({ reveal_runs: 0 })).toThrow("limits.jobs.reveal_runs");
+    expect(() => jobs({ reveal_runs: undefined })).toThrow("limits.jobs.reveal_runs");
+  });
+
+  it("the site's clock: its runs of the Jobs workflow, counted from the house's slot", () => {
+    const round = NETWORKS.mainnet.round;
+    const at = (hh: number, mm: number, day = 13) => Date.UTC(2026, 10, day, hh, mm);
+    const hhmm = (t: number) => new Date(t).toISOString().slice(11, 16);
+    expect(JOBS_TICK_MINUTES).toEqual([...JOBS_TICK_MINUTES].sort((a, b) => a - b));
+    // A job posted on /jobs reveals from 18:44 to 19:14: the clock runs at 18:49, 18:59 and 19:09 then.
+    expect(jobsTicksIn(round, at(18, 44), at(19, 14)).map(hhmm)).toEqual(["18:49", "18:59", "19:09"]);
+    expect(jobsTicksIn(round, at(18, 49), at(18, 59)).map(hhmm)).toEqual(["18:49", "18:59"]);
+    // No run between 22:29 and the next day's 18:09.
+    expect(jobsTicksIn(round, at(22, 30), at(18, 8, 14))).toEqual([]);
+    expect(jobsTicksIn(round, at(22, 29), at(18, 9, 14)).map(hhmm)).toEqual(["22:29", "18:09"]);
+    expect(jobsTicksIn(round, at(3, 0), at(3, 30))).toEqual([]);
+    expect(jobsTicksIn(round, at(19, 0), at(18, 0))).toEqual([]);
+  });
+
+  it("the house keeps what its next round needs beside the vault, whatever bonds it locks", () => {
+    // mainnet: the deposit 0.25, the gas 0.1 and three guests at 0.051.
+    expect(houseKeeps(NETWORKS.mainnet)).toBe(yocto("0.503"));
+    // testnet: the same, with five guests (three masks, two agents).
+    expect(houseKeeps(NETWORKS.testnet)).toBe(yocto("0.605"));
+  });
+
   it("MASKWARS_NETWORK: testnet when unset, mainnet when it says so, and nothing else", () => {
     expect(networkOf(undefined)).toBe("testnet");
     expect(networkOf("")).toBe("testnet");
@@ -88,8 +167,8 @@ describe("the two networks", () => {
 describe("which parts are on chain on which network", () => {
   const raw = (net: NetworkId) => JSON.parse(readFileSync(new URL(`../${net}.json`, import.meta.url), "utf8"));
 
-  it("mainnet has the arena; the season, the forge and the jobs are not there yet", () => {
-    expect(NETWORKS.mainnet.sections).toEqual({ arena: true, season: false, forge: false, jobs: false });
+  it("mainnet has the arena and the forge of people's masks; the season and the jobs are not there yet", () => {
+    expect(NETWORKS.mainnet.sections).toEqual({ arena: true, season: false, forge: true, jobs: false });
   });
 
   it("testnet has the arena, the season and the jobs market; the factory of people's masks is not on chain yet", () => {
@@ -211,6 +290,21 @@ describe("mainnet's small sums", () => {
     expect(l.pay_usd_max).toBe(100);
     expect(l.hire_usd_max).toBe(250);
   });
+  it("Get NEAR takes 25 basis points for the team on mainnet, nothing on testnet, and never more than 1%", () => {
+    expect(NETWORKS.mainnet.get_near).toEqual({ fee_bps: 25, fee_to: NETWORKS.mainnet.admin });
+    expect(NETWORKS.testnet.get_near).toBeUndefined();
+    const over = { ...NETWORKS.mainnet, get_near: { fee_bps: 101, fee_to: "maskwars.near" } };
+    expect(() => parseNetwork(over)).toThrow(/fee_bps/);
+    const testnetFee = { ...NETWORKS.mainnet, get_near: { fee_bps: 25, fee_to: "maskwars.testnet" } };
+    expect(() => parseNetwork(testnetFee)).toThrow(/fee_to/);
+  });
+  it("a swap between any two coins takes at most 1% for MASK WARS, on mainnet only, with a dollar limit", () => {
+    expect(NETWORKS.mainnet.swap).toEqual({ fee_bps: 25, fee_to: NETWORKS.mainnet.admin, usd_max: 100 });
+    expect(NETWORKS.testnet.swap).toBeUndefined();
+    expect(() => parseNetwork({ ...NETWORKS.mainnet, swap: { fee_bps: 101, fee_to: "maskwars.near", usd_max: 100 } })).toThrow(/swap.fee_bps/);
+    expect(() => parseNetwork({ ...NETWORKS.mainnet, swap: { fee_bps: 25, fee_to: "maskwars.testnet", usd_max: 100 } })).toThrow(/swap.fee_to/);
+    expect(() => parseNetwork({ ...NETWORKS.mainnet, swap: { fee_bps: 25, fee_to: "maskwars.near", usd_max: 0.5 } })).toThrow(/swap.usd_max/);
+  });
   it("a day of the season moves at most a bounty and a safe, once", () => {
     expect(l.season.max_per_day).toBe(1);
     expect(yocto(l.season.max_prize) + yocto(l.season.max_safe_fund)).toBeLessThanOrEqual(3n * NEAR);
@@ -312,6 +406,29 @@ describe.each(["testnet", "mainnet"] as const)("%s: the house's daily round", (n
     expect(() => parseNetwork({ ...f, limits: { ...f.limits, house_max: "2" } })).toThrow("house_max");
     const { round: _, ...none } = f;
     expect(() => parseNetwork(none)).toThrow("round");
+  });
+
+  it("guests: three people's masks beside ours, and two outside agents on testnet only, each adding its storage to the deposit", () => {
+    // Outside agents come to mainnet later, with an entry stake of their own: until then the house seats none there.
+    expect(NETWORKS.mainnet.guests).toEqual({ masks: 3, agents: 0, deposit: "0.051" });
+    expect(NETWORKS.testnet.guests).toEqual({ masks: 3, agents: 2, deposit: "0.051" });
+    for (const n of [NETWORKS.mainnet, NETWORKS.testnet]) {
+      // The bounty contract keeps 4000 bytes for each mask of a round (0.04 NEAR), the bounty pays a mask's first claim
+      // to the judge (0.01), and the mask's account id is stored in the round.
+      const all = Object.keys(n.masks).length + n.guests.masks + n.guests.agents;
+      expect(all).toBeLessThanOrEqual(16);
+      expect(n.round.reveal_minutes).toBeGreaterThanOrEqual(3 * (all + 1));
+      const full = yocto(n.round.deposit) + 5n * yocto(n.guests.deposit);
+      expect(yocto(n.round.safe) + full + yocto(n.round.gas)).toBeLessThanOrEqual(yocto(n.limits.house_max));
+    }
+    const f = raw();
+    expect(() => parseNetwork({ ...f, guests: { ...f.guests, agents: 14 } })).toThrow("16 at most");
+    // Ours alone fit 20 minutes of turns; with five guests they would not.
+    expect(() => parseNetwork({ ...f, round: { ...f.round, reveal_minutes: 20 } })).toThrow("reveal window");
+    expect(() => parseNetwork({ ...f, guests: { ...f.guests, deposit: "0.3" } })).toThrow("deposit_max");
+    expect(() => parseNetwork({ ...f, guests: { ...f.guests, masks: 1.5 } })).toThrow("whole numbers");
+    const { guests: _, ...none } = f;
+    expect(() => parseNetwork(none)).toThrow("guests");
   });
 });
 

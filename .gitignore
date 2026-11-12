@@ -14,10 +14,3 @@ target/
 Thumbs.db
 /tmp/
 /.scratch/
-
-# X: live site shots are re-taken for each thread
-brand/x/threads/*/shots/
-
-# Working copies of agents and their local data: never part of the repository or of a site upload
-.claude/worktrees/
-.claude/data/

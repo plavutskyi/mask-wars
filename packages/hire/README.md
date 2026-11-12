@@ -26,7 +26,7 @@ the same script without pinning: always the newest.
 | Money | `hireRequest` is the vault top-up from `@maskwars/pay` (`topUpRequest`): 1Click `FLEX_INPUT`, a coin from a network → NEAR on the vault's account in NEAR Intents, refunds to the same account |
 | Check | `checkHire` runs on the server before an address is issued and again in the checkout: everything from `checkQuote` (coins, recipient and refund are the vault, the minimum is within 1% and no lower than shown), the lower bound of the deposit is no higher than the shown amount, the amount to send is within 5% of the agreed dollars, the promised NEAR is no lower than 90%. The server also checks the fee (`feeHeld`) |
 | Events | `hire:open`, `hire:deposit`, `hire:dropped`, `hire:progress`, `hire:funded`, `hire:refunded`, `hire:failed`, `hire:close` on the element. The checkout sends them only to the host's origin; the element accepts them only from its own frame and the checkout origin |
-| React | `@maskwars/hire/react`: `<HireButton … onFunded={…} />` is the same element, with events as callbacks |
+| React | Any React 19 app: `maskwars.xyz/hire` → React gives one file, `HireSwarm`, that loads the same pinned script once and passes `hire:funded` to `onFunded` (`apps/web/app/hire/Embed.tsx`, a test compiles it). Inside this repo: `@maskwars/hire/react`, `<HireButton … onFunded={…} />`, the same element with every event as a callback |
 
 ## Events are not proof of payment
 
@@ -56,12 +56,18 @@ in a private Vercel Blob under the deposit address (`hire/open/<deposit>.<closes
 an hourly limit for all pages together and for each page separately; after the address closes, unpaid tickets are
 deleted and paid ones move to `hire/funded/`.
 
-## Current limitation
+## Where the money lands
 
-The jobs contract is not wired into hire, so hire money is the team's NEAR in its vault in NEAR Intents with the job's
-note beside it (id, fingerprint and deposit in the site's private storage). The team can withdraw it at any time
-through `/wallet`; the checkout says so. The receiver is set in one function, `hireRequest`, and `checkHire` reads that
-receiver back from the quote.
+Hire money is the team's NEAR in its own vault in NEAR Intents, noted for the job (id, fingerprint and deposit in the
+site's private storage). The team can withdraw it at any time through `/wallet`; the checkout says so. The receiver is
+set in one function, `hireRequest`, and `checkHire` reads that receiver back from the quote.
+
+The jobs contract is on mainnet (`jobs.maskwars.near`, no key, no job as of 12 Nov 2026), but no hire locks its
+money on a job today: hire money lands in the team's vault as above, and `sections.jobs` in
+`packages/network/mainnet.json` is still `false`. When that part is switched on, a NEAR wallet's vault moves
+that NEAR into the job's `open` the way `/wallet` fuels a mask: `spendTransactions` in `@maskwars/pay`, one approval. A
+job's `open` also takes what only the team has (the spec's hash, and for a reviewed or tested job its rubric, reference
+work sealed for the judge and its own key): the jobs board's "Post a job" names each of them.
 
 ## Checks
 

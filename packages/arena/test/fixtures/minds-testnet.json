@@ -1,0 +1,56 @@
+[
+  {
+    "v": 1,
+    "network": "testnet",
+    "race": "race-0003",
+    "at": 1793990400000,
+    "near": {
+      "usd": 3.7,
+      "at": "2026-11-11T19:51:00.000Z"
+    },
+    "masks": [
+      {
+        "account": "nova.tinygif8324.testnet",
+        "name": "NOVA",
+        "model": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+        "answers": 1,
+        "billed": 1,
+        "unanswered": 0,
+        "tokens": {
+          "prompt": 16378,
+          "completion": 3040,
+          "cached": 0
+        },
+        "usd": 0.008562
+      },
+      {
+        "account": "onyx.tinygif8324.testnet",
+        "name": "ONYX",
+        "model": "z-ai/glm-5.3-flash",
+        "answers": 0,
+        "billed": 0,
+        "unanswered": 1,
+        "tokens": {
+          "prompt": 0,
+          "completion": 0,
+          "cached": 0
+        },
+        "usd": 0
+      },
+      {
+        "account": "oracle.tinygif8324.testnet",
+        "name": "ORACLE",
+        "model": "Qwen/Qwen3.8-27B-abliterated",
+        "answers": 2,
+        "billed": 2,
+        "unanswered": 0,
+        "tokens": {
+          "prompt": 32756,
+          "completion": 25541,
+          "cached": 16320
+        },
+        "usd": 0.03543155
+      }
+    ]
+  }
+]

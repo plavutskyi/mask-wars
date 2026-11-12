@@ -109,6 +109,16 @@ export function takeOut(state: AccountState | null): bigint {
   return amount > keep ? amount - keep : 0n;
 }
 
+/**
+ * What the × divides by: everything people put into the mask (`fuel`), and whatever the mask fed its own mind
+ * (`recycled`) beyond what it really earned in the arena. Winnings it spends on its mind raise nothing; NEAR sent to its
+ * account and fuelled from there counts as put in, as a refuel would.
+ */
+export function putIn(fuel: bigint | string, recycled: bigint | string | undefined, earned: bigint | string): bigint {
+  const over = BigInt(recycled ?? 0) - BigInt(earned);
+  return BigInt(fuel) + (over > 0n ? over : 0n);
+}
+
 /** Earned ÷ everything put in, e.g. 1.45. `null` before anything was put in. */
 export function times(earned: bigint | string, fuel: bigint | string): number | null {
   const f = BigInt(fuel);
@@ -239,36 +249,72 @@ export interface TxOutcome {
 }
 
 export function readWithdraw(tx: TxOutcome, owner: string, mask: string): Withdrawn {
+  return readOwnerMove(tx, owner, mask, "withdraw", owner);
+}
+
+/**
+ * What NEAR says about an owner's `fuel`: the mask paying for its own mind. `done` with the amount the mask's own log
+ * names (`fuel <yocto> to <factory>`) once every receipt went through, the factory's `refuel` included; `failed` when
+ * any of them failed (the NEAR is then back on the mask), or it is not the owner's call on this mask.
+ */
+export function readFuel(tx: TxOutcome, owner: string, mask: string, factory: string): Withdrawn {
+  return readOwnerMove(tx, owner, mask, "fuel", factory);
+}
+
+/** One of the owner's two moves on the mask's account, by the line the mask's code logs for it: `<move> <yocto> to <to>`. */
+function readOwnerMove(tx: TxOutcome, owner: string, mask: string, move: "withdraw" | "fuel", to: string): Withdrawn {
   const status = tx.status ?? {};
   if ("Failure" in status) return { state: "failed" };
   if (!("SuccessValue" in status) && !("SuccessReceiptId" in status)) return { state: "unknown" };
   if (tx.transaction?.signer_id !== owner || tx.transaction?.receiver_id !== mask) return { state: "failed" };
   const receipts = tx.receipts_outcome ?? [];
   if (receipts.some((r) => r.outcome?.status && "Failure" in r.outcome.status)) return { state: "failed" };
+  const pattern = new RegExp(`^${move} (\\d+) to (\\S+)$`);
   const line = receipts
     .filter((r) => r.outcome?.executor_id === mask)
     .flatMap((r) => r.outcome?.logs ?? [])
-    .map((l) => /^withdraw (\d+) to (\S+)$/.exec(l))
-    .find((m) => m?.[2] === owner);
+    .map((l) => pattern.exec(l))
+    .find((m) => m?.[2] === to);
   return line ? { state: "done", amount: BigInt(line[1]!) } : { state: "failed" };
+}
+
+/** The owner's call on the mask's own account that makes the mask pay for its own mind: everything `withdraw` would pay
+ * them goes into the mask's tank in the factory instead. A copy pays its author's share first, in the same call. */
+export function fuelAction() {
+  return {
+    type: "FunctionCall" as const,
+    params: { methodName: "fuel", args: {}, gas: "60000000000000", deposit: "0" },
+  };
 }
 
 /** The owner's withdraw in transaction `hash`, as the first RPC that knows it says, at the final block. */
 export async function withdrawn(net: Network, hash: string, owner: string, mask: string, timeoutMs = 15_000): Promise<Withdrawn> {
+  const tx = await finalTx(net, hash, owner, timeoutMs);
+  return tx ? readWithdraw(tx, owner, mask) : { state: "unknown" };
+}
+
+/** The owner's `fuel` in transaction `hash`: the mask's prize gone into its own tank in `net.factory`. */
+export async function fueled(net: Network, hash: string, owner: string, mask: string, timeoutMs = 15_000): Promise<Withdrawn> {
+  const tx = await finalTx(net, hash, owner, timeoutMs);
+  return tx ? readFuel(tx, owner, mask, net.factory) : { state: "unknown" };
+}
+
+/** Transaction `hash` of `signer` at the final block, from the first RPC that knows it; `null` while none does. */
+async function finalTx(net: Network, hash: string, signer: string, timeoutMs: number): Promise<TxOutcome | null> {
   const body = JSON.stringify({
     jsonrpc: "2.0",
     id: "maskwars-forge",
     method: "tx",
-    params: { tx_hash: hash, sender_account_id: owner, wait_until: "FINAL" },
+    params: { tx_hash: hash, sender_account_id: signer, wait_until: "FINAL" },
   });
   for (const url of net.rpcs) {
     try {
       const res = await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body, signal: AbortSignal.timeout(timeoutMs) });
       const out = (await res.json()) as { result?: TxOutcome };
-      if (out.result) return readWithdraw(out.result, owner, mask);
+      if (out.result) return out.result;
     } catch {
       // the next RPC
     }
   }
-  return { state: "unknown" };
+  return null;
 }

@@ -68,8 +68,8 @@ public chain every move shows, so the plan is sealed first. The full rules and t
    A mask's first claim in a race may attach nothing: the judge's 0.01 NEAR then comes out of the bounty. This is for a
    mask that holds only function-call keys, which NEAR never lets attach NEAR. Every later claim of that mask attaches
    the fee itself.
-6. The judge ([services/judge](../../services/judge), `src/chain.rs`) reads the chain through two RPC sources that must
-   agree, and confirms only when:
+6. The judge ([services/judge](../../services/judge), `src/chain.rs`) reads the chain through RPC sources that must
+   agree, three on mainnet and two on testnet, and confirms only when:
    - every transaction of the plan is signed by the mask, went to the safe and is exactly the call the plan names,
      succeeded, in order, between the end of the commit window and the deadline;
    - the safe was locked to this round by this contract (`get_round` on the safe: this contract, this bounty, the end

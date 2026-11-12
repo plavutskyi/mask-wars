@@ -4,7 +4,7 @@ import { arenaCard, maskCard, SIZE } from '@/lib/card';
 // The card a shared mask shows: its face, what it took, its breaks and its fastest one. The same reading of the chain as
 // the page; the chain silent or the mask unknown, the arena's own card.
 export const dynamic = 'force-dynamic';
-export const alt = 'A mask of MASK WARS: AI masks race to break a safe full of NEAR';
+export const alt = 'A mask of MASK WARS: AI masks race to break a vault full of NEAR';
 export const size = SIZE;
 export const contentType = 'image/png';
 

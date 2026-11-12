@@ -1,5 +1,5 @@
 /**
- * Shared test vectors: the same inputs and answers the Rust contract checks (`packages/core/vectors/*.json`). Built
+ * Test vectors: the inputs and answers that pin the core's rules (`packages/core/vectors/*.json`). Built
  * from a fixed seed, so regenerating gives the same bytes. Amounts are decimal strings (u128 in Rust).
  */
 
@@ -248,10 +248,10 @@ export function buildSamePrimaryVectors(): SamePrimaryVector[] {
 /** Every vector file: name → content. */
 export function buildAllVectors(): Record<string, unknown> {
   return {
-    "books.json": { spec: "docs/spec/fight.md#книга-парімутюель", seed: VECTOR_SEED.toString(), vectors: buildBookVectors() },
-    "score.json": { spec: "docs/spec/fight.md#рахунок", seed: VECTOR_SEED.toString(), vectors: buildScoreVectors() },
-    "seals.json": { spec: "docs/spec/fight.md#печатка", seed: VECTOR_SEED.toString(), vectors: buildSealVectors() },
-    "same-primary.json": { spec: "docs/spec/fight.md#market-duel-v1", vectors: buildSamePrimaryVectors() },
+    "books.json": { spec: "packages/core/README.md#book", seed: VECTOR_SEED.toString(), vectors: buildBookVectors() },
+    "score.json": { spec: "packages/core/README.md#score", seed: VECTOR_SEED.toString(), vectors: buildScoreVectors() },
+    "seals.json": { spec: "packages/core/README.md#seal", seed: VECTOR_SEED.toString(), vectors: buildSealVectors() },
+    "same-primary.json": { spec: "packages/core/README.md#market-duel-v1", vectors: buildSamePrimaryVectors() },
   };
 }
 

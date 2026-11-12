@@ -40,7 +40,10 @@ export interface Completion {
   /** sha256 of the exact response bytes received. */
   readonly responseHash: string;
   readonly usage: Usage;
+  /** At the provider's list price, from the usage it reported. */
   readonly costUsd: number;
+  /** The provider's id for this answer on its bill: NEAR AI's `inference-id` header. */
+  readonly inferenceId?: string;
   readonly signature: ResponseSignature | null;
   /** True only when the signature was checked against the hashes and a known TEE signer. */
   readonly signatureVerified: boolean;
@@ -52,14 +55,30 @@ export interface Provider {
   complete(request: CompletionRequest): Promise<Completion>;
 }
 
+/** What the provider counted for an answer, and its id on the provider's bill. */
+export interface Billed {
+  readonly model: string;
+  readonly usage: Usage;
+  readonly costUsd: number;
+  readonly inferenceId?: string;
+  /**
+   * The answer was cut off on its way (out of time after the provider took the call): its tokens are not known, so
+   * `usage` and `costUsd` are zero and only the bill, by `inferenceId`, can price it.
+   */
+  readonly cut?: true;
+}
+
 export class ProviderError extends Error {
   readonly code: "timeout" | "http" | "shape" | "network";
   readonly status: number | undefined;
-  constructor(code: ProviderError["code"], message: string, status?: number) {
+  /** An answer came and is billed, but is of no use (no content, another model): what was counted for it. */
+  readonly billed: Billed | undefined;
+  constructor(code: ProviderError["code"], message: string, status?: number, billed?: Billed) {
     super(message);
     this.name = "ProviderError";
     this.code = code;
     this.status = status;
+    this.billed = billed;
   }
 }
 

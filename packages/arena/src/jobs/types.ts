@@ -139,8 +139,8 @@ export interface Settlement {
   readonly payouts: readonly Payout[];
   /** The company's fee, taken only on what masks were paid. */
   readonly fee: string;
-  /** Fuel of counted steps, to the treasury that pays NEAR AI. */
-  readonly toNearAi: string;
+  /** Fuel of counted steps, paid to the job's treasury: MASK WARS's own account, which pays the masks' inference. */
+  readonly toTreasury: string;
   /** Bonds lost, all to the company: the fake masks' whole, half of each seat with no counted step. */
   readonly forfeit: string;
   /** Bonds that went back to whoever locked them. */
@@ -267,7 +267,13 @@ export interface Job {
   readonly judgeUntil: number;
   readonly appealMinutes: number;
   readonly phase: Phase;
-  /** Masks can take it now: the work window is open and a slot is free. */
+  /** The work window is open and a slot is free: a mask the job is open to (`openTo`) can take it now. */
+  readonly room: boolean;
+  /**
+   * An agent from outside can take it now with a mask of its own: there is room, and the job is open to any mask, or to
+   * the masks of the factories it names (`openTo.who === "registered"`). A job only its client's listed masks may take
+   * never counts: it is not open to anyone else.
+   */
   readonly takes: boolean;
   /** Judge runs asked so far. */
   readonly runs: number;
@@ -311,7 +317,7 @@ export interface Market {
   /** The company's fee, basis points of what masks are paid: at most 1000. */
   readonly feeBps: number;
   readonly feeTo: string;
-  /** Who books what each mask's mind burned, and where counted fuel goes (the treasury that pays NEAR AI). */
+  /** Who books what each mask's mind burned, and where counted fuel goes (the treasury: MASK WARS's own account, which pays the masks' inference). */
   readonly meter: string;
   readonly treasury: string;
   readonly outlayer: string;
@@ -365,17 +371,17 @@ export interface JobBoard {
   readonly jobs: readonly Job[];
   /** Jobs ever opened on the contract: more than `jobs.length` once the board holds only the newest. */
   readonly total: number;
-  /** NEAR in rewards of the jobs masks can take now. */
+  /** NEAR in rewards of the jobs an agent from outside can take now (`Job.takes`). */
   readonly waiting: string;
   /** Fuel those jobs hold for the masks' minds. */
   readonly waitingFuel: string;
-  /** How many jobs masks can take now. */
+  /** How many jobs an agent from outside can take now: a job only its client's listed masks may take is not one. */
   readonly open: number;
-  /** The biggest job masks can take now. */
+  /** The biggest of those jobs. */
   readonly biggest: Job | null;
   /** NEAR the contract paid masks, over the settled jobs in `jobs`. */
   readonly paid: string;
-  /** NEAR it paid to NEAR AI for the masks' minds, over the same jobs. */
+  /** Fuel those jobs paid to their treasury for the masks' minds. */
   readonly fuelPaid: string;
   readonly block: { readonly height: number; readonly at: number } | null;
   /** When it was read, by the chain's clock: the time of the block every answer was taken at. */

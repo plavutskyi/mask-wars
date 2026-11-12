@@ -47,7 +47,7 @@ const SETTLE_MS = 3 * 60_000;
 const PROBLEM: Record<string, string> = {
   small: 'Too small to send there. Try a bigger amount.',
   route: 'No route for this right now. Try another coin.',
-  closed: 'Cash-outs open with season 0.',
+  closed: 'Cash-outs open soon.',
   busy: 'Too busy right now. Try again in a minute.',
   offline: 'Cannot reach the network right now. Try again in a minute.',
   signature: 'That signature did not hold. Nothing moved.',
@@ -265,7 +265,7 @@ export function CashOut(p: {
         signed = await signWithPasskey({ id: p.who.id, key: p.who.key, account: p.who.account }, intent.payload, p.rpId);
       } else if (intent.standard === 'nep413') {
         const w = (await nearConnected()) ?? (await nearSignIn());
-        if (w.accountId !== p.who.account) return fail(`Your wallet is signed in as ${w.accountId}. Switch it to ${p.who.account}.`);
+        if (w.accountId !== p.who.account) return fail(`Your own NEAR wallet is signed in as ${w.accountId}. Switch it to ${p.who.account}.`);
         const sig = await w.signMessage({ message: intent.payload.message, recipient: intent.payload.recipient, nonce: nonceBytes(intent.payload) });
         signed = signedNep413(intent.payload, sig);
         if (!(await pay.keyRegistered(p.who.account, sig.publicKey))) {
@@ -276,7 +276,7 @@ export function CashOut(p: {
             await new Promise((r) => setTimeout(r, 2000));
             ok = await pay.keyRegistered(p.who.account, sig.publicKey).catch(() => false);
           }
-          if (!ok) return fail('Your wallet did not add its key. Nothing moved.');
+          if (!ok) return fail('Your own NEAR wallet did not add its key. Nothing moved.');
         }
       } else {
         return fail(PROBLEM.bad!);
@@ -325,7 +325,7 @@ export function CashOut(p: {
   };
 
   const details =
-    'The money leaves your vault in NEAR Intents and 1Click delivers it as the coin you pick, at most 1% off the price; fees are in the price. If it cannot be delivered, it comes back to your vault. Check the address: a transfer to the wrong one cannot be undone.';
+    'The money leaves your MASK WARS wallet in NEAR Intents and 1Click delivers it as the coin you pick, at most 1% off the price; fees are in the price. If it cannot be delivered, it comes back to your MASK WARS wallet. Check the address: a transfer to the wrong one cannot be undone.';
 
   // How it ended: one sentence, from what was sent, whatever the vault holds now.
   if (end) {
@@ -339,17 +339,17 @@ export function CashOut(p: {
           Sent {coinText(pr?.amountOut ?? j.deal.amountOut, j.coin.decimals)} {j.coin.symbol} to <span className={s.nowrap}>{to}</span> on {j.chain.name}.
         </>
       ) : kind === 'back' ? (
-        `It did not go through. Your ${fromName} is back in your vault.`
+        `It did not go through. Your ${fromName} is back in your MASK WARS wallet.`
       ) : kind === 'failed' ? (
         `It did not go through. Keep this code for support: ${(pr?.correlationId ?? j.deal.correlationId).slice(0, 8)}.`
       ) : kind === 'none' ? (
-        `It did not go out. Your ${fromName} is still in your vault.`
+        `It did not go out. Your ${fromName} is still in your MASK WARS wallet.`
       ) : kind === 'away' ? (
         <>
-          It left your vault and is on its way to <span className={s.nowrap}>{to}</span> on {j.chain.name}. If it cannot land, it comes back to your vault.
+          It left your MASK WARS wallet and is on its way to <span className={s.nowrap}>{to}</span> on {j.chain.name}. If it cannot land, it comes back to your MASK WARS wallet.
         </>
       ) : (
-        'Cannot tell yet how it ended. Whatever did not go out is still in your vault.'
+        'Cannot tell yet how it ended. Whatever did not go out is still in your MASK WARS wallet.'
       );
     return (
       <div className={`${s.form} ${s.ended}`} role="status">
@@ -363,7 +363,7 @@ export function CashOut(p: {
             </a>
           ) : null}
           <button type="button" className={s.btn} onClick={p.onClose} ref={quietFocus}>
-            <span className={s.word}>{kind === 'done' ? 'Done' : 'Back to vault'}</span>
+            <span className={s.word}>{kind === 'done' ? 'Done' : 'Back to wallet'}</span>
           </button>
         </div>
       </div>
@@ -378,7 +378,7 @@ export function CashOut(p: {
     const unsure = job?.sent === 'unsure' && stage !== 'seen' && stage !== 'moving';
     const shownOut = job?.deal.amountOut ?? deal?.amountOut ?? g.seen;
     const ends = job ? new Date(job.until).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-    const unsureDetails = `Sending it got no answer, so it may still go through until ${ends}. This page follows 1Click and your vault until then and starts no new cash-out before it settles. If it does not go through, nothing leaves your vault.`;
+    const unsureDetails = `Sending it got no answer, so it may still go through until ${ends}. This page follows 1Click and your MASK WARS wallet until then and starts no new cash-out before it settles. If it does not go through, nothing leaves your MASK WARS wallet.`;
     const note =
       phase === 'track'
         ? unsure
@@ -386,8 +386,8 @@ export function CashOut(p: {
           : `On its way to ${g.chain.name}.`
         : {
             quote: 'Locking the price.',
-            sign: p.who.kind === 'passkey' ? 'Confirm with your passkey.' : 'Sign in your wallet.',
-            key: 'Once only: let your wallet sign for your vault.',
+            sign: p.who.kind === 'passkey' ? 'Confirm with your passkey.' : 'Sign in your own NEAR wallet.',
+            key: 'Once only: let your own NEAR wallet sign for your MASK WARS wallet.',
             send: 'Sending.',
           }[phase ?? 'quote'];
     return (
@@ -399,7 +399,7 @@ export function CashOut(p: {
           info={info}
           onInfo={() => setInfo((v) => !v)}
           back={phase === 'track' ? p.onClose : null}
-          backLabel="Vault"
+          backLabel="Wallet"
         />
         <div className={s.row} key="go">
           <div className={s.going}>
@@ -431,7 +431,7 @@ export function CashOut(p: {
     if (problem) return problem;
     switch (step) {
       case 'from':
-        return 'Which coin in your vault to send.';
+        return 'Which coin in your MASK WARS wallet to send.';
       case 'chain':
         return 'Where your money goes.';
       case 'coin':
@@ -440,7 +440,7 @@ export function CashOut(p: {
         if (!recipient.trim()) return `Your ${chain.name} address.`;
         return addressGood ? `Arrives at ${to}.` : `That is not a ${chain.name} address.`;
       default:
-        if (over) return 'More than your vault holds.';
+        if (over) return 'More than your MASK WARS wallet holds.';
         if (units <= 0n) return 'Pick an amount.';
         if (previewProblem) return previewProblem;
         if (preview) return `${slid ? 'The price moved: ' : ''}≈ ${coinText(preview.amountOut, coin.decimals)} ${coin.symbol} arrives at ${to}.`;
@@ -563,7 +563,7 @@ export function CashOut(p: {
                 }}
               />
             </label>
-            <div className={s.chips} data-n={SHARES.length} role="radiogroup" aria-label="Share of the vault">
+            <div className={s.chips} data-n={SHARES.length} role="radiogroup" aria-label="Share of your MASK WARS wallet">
               {SHARES.map(([label, pct]) => (
                 <button
                   key={label}

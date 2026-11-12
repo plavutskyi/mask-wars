@@ -87,6 +87,38 @@ function waitsForGuard(j: Job): boolean {
   return implicit || j.cond.includes("needs.guard.result == 'success'");
 }
 
+// A step with no shell named runs as `bash -e`: in `race … | tee race.txt` only tee's exit counted, so a race that
+// exited 2 (a person's mask in the round and no payment key for its mind) left a green step and a round nobody played.
+// With the shell named, GitHub runs every step as `bash -eo pipefail`.
+describe("a step that pipes its output fails when the command before the pipe fails", () => {
+  it("every workflow names bash as its steps' shell, and no step picks another", () => {
+    for (const f of files) {
+      expect(text(f), f).toContain("\ndefaults:\n  run:\n    shell: bash\n\njobs:\n");
+      expect(text(f).match(/^\s*shell:.*$/gm)?.map((l) => l.trim()), f).toEqual(["shell: bash"]);
+      // Nothing turns it off again inside a step.
+      expect(text(f), f).not.toMatch(/set \+o pipefail|set \+e\b/);
+    }
+  });
+
+  it("a failed race is a red step, and what it wrote before failing is still sealed, uploaded and settled", () => {
+    const race = block(text("live-race.yml"), "race");
+    expect(race).toContain("      - name: Race\n");
+    expect(race).toContain("        id: race\n");
+    expect(race).toMatch(/\n {8}run: pnpm --filter @maskwars\/race race [^\n]* \| tee race\.txt\n/);
+    // On purpose, not by a green step that hid the failure: the plan a mask found is sealed and its box handed on.
+    expect(race).toContain("        if: ${{ (success() || steps.race.outcome == 'failure') && inputs.bounty != '' && (inputs.challenge == 'live-safe' || inputs.live) }}\n");
+    expect(race).toContain("        if: ${{ !cancelled() && steps.seal.outputs.sealed == 'true' }}\n");
+    expect(race).toContain("        if: ${{ (success() || steps.race.outcome == 'failure') && inputs.bounty != '' && inputs.challenge != 'live-safe' && !inputs.live }}\n");
+    expect(race).toContain("        if: ${{ !cancelled() && steps.bounty.outputs.name != '' }}\n");
+    // The log is kept whatever happened.
+    expect(race).toMatch(/if: always\(\)\n {8}with:\n {10}name: race-\$\{\{ inputs\.challenge \}\}\n {10}path: race\.txt\n/);
+    // The jobs after the race do not wait for it to be green: the minds are priced, a sealed plan is played, and the
+    // keeper takes the race keys back from the people's masks.
+    for (const name of ["minds", "drain", "settle"]) expect(job("live-race.yml", name).cond, name).toContain("!cancelled()");
+    expect(job("live-race.yml", "drain").cond).toContain("needs.race.outputs.sealed == 'true'");
+  });
+});
+
 describe("the masks' keys and the minds' payment key live in environments only", () => {
   it("every job that reads a key names the key's environment, and nothing else reads one but guard", () => {
     const readers: string[] = [];
@@ -118,12 +150,21 @@ describe("the masks' keys and the minds' payment key live in environments only",
         "season.yml/open/HOUSE_KEY",
         "season.yml/open/SCHEDULER_KEY",
         "season.yml/guard/HOUSE_KEY",
+        "jobs.yml/sponsor/HOUSE_KEY",
+        "jobs.yml/guard/HOUSE_KEY",
       ]),
     );
-    // The house's key signs in one job of one workflow, and nowhere else; the guards only look.
-    expect(readers.filter((r) => r.endsWith("/HOUSE_KEY")).sort()).toEqual(["ci.yml/keys/HOUSE_KEY", "season.yml/guard/HOUSE_KEY", "season.yml/open/HOUSE_KEY"]);
-    // The models' key pays in the race job and nowhere else.
-    expect(readers.filter((r) => r.endsWith("/NEAR_AI_API_KEY") && !/\/(guard|keys)\//.test(r)).sort()).toEqual(["live-race.yml/race/NEAR_AI_API_KEY"]);
+    // The house's key signs in two jobs, both in the house's own environment: the day's round (season.yml/open) and the
+    // masks' bonds on jobs from outside (jobs.yml/sponsor). Nowhere else; the guards only look.
+    expect(readers.filter((r) => r.endsWith("/HOUSE_KEY")).sort()).toEqual([
+      "ci.yml/keys/HOUSE_KEY",
+      "jobs.yml/guard/HOUSE_KEY",
+      "jobs.yml/sponsor/HOUSE_KEY",
+      "season.yml/guard/HOUSE_KEY",
+      "season.yml/open/HOUSE_KEY",
+    ]);
+    // The models' key pays in the race job; the minds job only reads NEAR AI's bill with it, in the same environment.
+    expect(readers.filter((r) => r.endsWith("/NEAR_AI_API_KEY") && !/\/(guard|keys)\//.test(r)).sort()).toEqual(["live-race.yml/minds/NEAR_AI_API_KEY", "live-race.yml/race/NEAR_AI_API_KEY"]);
   });
 
   it("no job with a mask's key ever runs the race: the models and the sandbox never share a runner with one", () => {
@@ -148,7 +189,7 @@ describe("the masks' keys and the minds' payment key live in environments only",
     const want: Record<string, string[]> = {
       "live-race.yml": race,
       "keeper.yml": ["MASK_KEYS", "KEEPER_SEED"],
-      "jobs.yml": race,
+      "jobs.yml": ["HOUSE_KEY", ...race],
       "season.yml": ["HOUSE_KEY", "SCHEDULER_KEY", ...race],
     };
     for (const [f, keys] of Object.entries(want)) {
@@ -190,10 +231,11 @@ describe("the masks' keys and the minds' payment key live in environments only",
     for (const j of jobsOf(text("season.yml")).filter((j) => j.name !== "guard")) {
       expect(j.secrets.filter((s) => s !== "HOUSE_KEY" && s !== "SCHEDULER_KEY"), `season.yml/${j.name}`).toEqual([]);
     }
-    // The jobs' own jobs sign with the masks' keys and nothing else: the keeper's seed and the minds' payment key are
-    // named only by guard, which checks they are not repository secrets.
+    // The jobs' own jobs sign with the masks' keys and nothing else, but `sponsor`, which signs with the house's key and
+    // nothing else: the keeper's seed and the minds' payment key are named only by guard, which checks they are not
+    // repository secrets. No job of the jobs holds both the house's key and the masks' seeds.
     for (const j of jobsOf(text("jobs.yml")).filter((j) => j.name !== "guard")) {
-      expect(j.secrets.filter((s) => s !== "MASK_KEYS"), `jobs.yml/${j.name}`).toEqual([]);
+      expect(j.secrets.filter((s) => s !== (j.name === "sponsor" ? "HOUSE_KEY" : "MASK_KEYS")), `jobs.yml/${j.name}`).toEqual([]);
     }
   });
 
@@ -243,7 +285,10 @@ describe("the masks' keys and the minds' payment key live in environments only",
     expect(call.slice(call.indexOf("    secrets:"))).not.toContain("required: true");
     // The house's key opens the round and goes no further: the race, which runs the models and the sandbox, never
     // names it, so no job of it can read it even from a caller that inherits.
-    for (const f of files.filter((f) => f !== "season.yml" && f !== "ci.yml")) expect(text(f), f).not.toContain("HOUSE_KEY");
+    for (const f of files.filter((f) => !["season.yml", "ci.yml", "jobs.yml"].includes(f))) expect(text(f), f).not.toContain("HOUSE_KEY");
+    // In the jobs, only `sponsor` reads it, and guard looks: the race the jobs call never sees it.
+    expect(block(text("jobs.yml"), "race")).not.toContain("HOUSE_KEY");
+    expect(job("jobs.yml", "sponsor").environment).toBe(onNetwork("season"));
     expect(text("live-race.yml")).not.toContain("SCHEDULER_KEY");
   });
 
@@ -260,18 +305,56 @@ describe("the masks' keys and the minds' payment key live in environments only",
     expect(job("keeper.yml", "hand").environment).toBe("live-race-hand");
     const jobsHand = job("jobs.yml", "hand");
     expect(jobsHand.environment).toBe("live-race-hand");
-    expect(jobsHand.cond).toBe("github.event_name == 'workflow_dispatch'");
-    expect(job("jobs.yml", "take").needs).toEqual(["guard", "hand"]);
-    expect(job("jobs.yml", "take").cond).toContain("needs.hand.result != 'failure'");
+    // The site's clock starts the jobs too, with `tick`: its run is the schedule's and waits for nobody's yes.
+    expect(jobsHand.cond).toBe("github.event_name == 'workflow_dispatch' && !inputs.tick");
+    expect(job("jobs.yml", "sponsor").needs).toEqual(["guard", "hand"]);
+    expect(job("jobs.yml", "take").needs).toEqual(["guard", "hand", "sponsor"]);
+    for (const name of ["sponsor", "take"]) expect(job("jobs.yml", name).cond, name).toContain("needs.hand.result != 'failure'");
   });
 
   it("the jobs run on schedule only once the owner turns them on, and race only a round the pass named", () => {
     const t = text("jobs.yml");
     expect(t).toMatch(/schedule:\n(\s+#.*\n)*\s+- cron: "[^"]+"\n\s+workflow_dispatch:/);
-    expect(job("jobs.yml", "take").cond).toContain("(github.event_name == 'workflow_dispatch' || vars.JOBS_LIVE == 'true')");
+    // By the owner's hand at any time; on schedule and on the site's tick only once JOBS_LIVE is on. The masks take
+    // their jobs whatever the house's step did.
+    for (const name of ["sponsor", "take"]) {
+      expect(job("jobs.yml", name).cond, name).toContain("((github.event_name == 'workflow_dispatch' && !inputs.tick) || vars.JOBS_LIVE == 'true')");
+      expect(job("jobs.yml", name).cond, name).not.toContain("needs.sponsor.result");
+    }
+    expect(t).toContain("      tick:\n        description: \"Sent by the site's clock: run as the schedule does\"\n        type: boolean\n        default: false\n");
+    expect(block(t, "sponsor")).toContain("        run: node packages/race/scripts/jobs-sponsor.ts\n");
     expect(job("jobs.yml", "race").cond).toBe("${{ !cancelled() && needs.take.outputs.bounty != '' }}");
     // Alongside the race: a reveal window that opens while the race runs is not missed.
     expect(job("jobs.yml", "finish").needs).toEqual(["guard", "take"]);
     expect(t).toMatch(/concurrency:\n\s+group: jobs\n\s+cancel-in-progress: false/);
+  });
+
+  // `tick` makes a run started by hand the schedule's own: it skips the owner's yes (`hand`). Whoever can start a
+  // workflow can set it, on any branch, and a branch's copy of this file names the same environments. So every job
+  // here that holds a key runs from `main` only, whatever started the run and whatever its inputs say.
+  it("the jobs that hold the house's key or the masks' seeds run from main only, whoever started the run", () => {
+    const t = text("jobs.yml");
+    const holders = jobsOf(t).filter((j) => j.name !== "guard" && j.secrets.some((s) => s === "HOUSE_KEY" || s === "MASK_KEYS"));
+    expect(holders.map((j) => j.name).sort()).toEqual(["finish", "sponsor", "take"]);
+    for (const j of holders) {
+      const cond = j.cond.trim();
+      // One condition, its parts joined by `&&` and the ref among them: no `||` beside it lets a run through.
+      expect(cond, j.name).toMatch(/^\$\{\{ !cancelled\(\) && github\.ref == 'refs\/heads\/main' && .* \}\}$/);
+      let depth = 0;
+      let top = "";
+      for (const c of cond) {
+        if (c === "(") depth += 1;
+        else if (c === ")") depth -= 1;
+        else if (depth === 0) top += c;
+      }
+      expect(top, j.name).not.toContain("||");
+    }
+    // No other job names a secret. The race is called with every secret inherited, and starts only on a round `take`
+    // named: `take` ran from main, or it named none.
+    expect(jobsOf(t).filter((j) => j.secrets.length > 0).map((j) => j.name).sort()).toEqual(["finish", "guard", "sponsor", "take"]);
+    expect(job("jobs.yml", "race").needs).toEqual(["take"]);
+    expect(job("jobs.yml", "race").cond).toContain("needs.take.outputs.bounty != ''");
+    // The site's clock, the one sender of `tick`, asks for a run of main.
+    expect(readFileSync(new URL("../../../apps/web/lib/jobs-tick.ts", import.meta.url), "utf8")).toContain("body: JSON.stringify({ ref: 'main', inputs: { tick: 'true' } })");
   });
 });

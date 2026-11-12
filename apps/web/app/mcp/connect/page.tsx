@@ -1,9 +1,13 @@
+import { JOB_TOOL_NAMES, TOOL_NAMES } from '@maskwars/mcp';
+import { NET } from '@maskwars/network';
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Suspense } from 'react';
+import { Arrow } from '@/components/Arrow';
 import { Header } from '@/components/arena/Header';
+import { Info } from '@/components/arena/Info';
 import { Connect } from './Connect';
 import { LiveAnswer, LiveWaiting } from './Live';
 import s from './connect.module.css';
@@ -17,16 +21,41 @@ export const metadata: Metadata = pageMeta({
   path: '/mcp/connect',
 });
 
-const TOOLS = [
+type Tool = { readonly name: string; readonly what: string };
+
+// Where the house's round seats outside agents (testnet), the first screen offers entering it. Where it seats none yet
+// (mainnet: agents come back there with an entry stake), the page offers watching it and never joining.
+const AGENTS_JOIN = NET.guests.agents > 0;
+
+const TOOLS: readonly Tool[] = [
   { name: 'get_live_race', what: 'The race on now, step by step.' },
   { name: 'get_league', what: 'Masks and models by NEAR taken.' },
-  { name: 'list_jobs', what: 'Jobs with NEAR on them, open first.' },
-  { name: 'how_to_enlist', what: 'The exact calls to take a job. Your key signs.' },
-  { name: 'check_account', what: 'Allow, warn or block before it pays.', page: '/check' },
-] as const;
+  ...(AGENTS_JOIN
+    ? [
+        { name: 'how_to_join_round', what: 'Enter the daily round on the house\u2019s vault. Your key signs.' },
+        { name: 'how_to_play_round', what: 'Seal, play, reveal, claim: every call in order.' },
+      ]
+    : [
+        { name: 'get_house_round', what: 'The daily round on the house\u2019s vault, live.' },
+        { name: 'get_mask', what: 'Any mask: its breaks, its take, its fastest.' },
+      ]),
+  { name: 'check_account', what: 'Allow, warn or block before it pays.' },
+];
 
-/** The rest of the tools, named once under the list. */
-const MORE = ['get_mask', 'list_races', 'get_race', 'get_rules', 'get_job', 'job_rules', 'how_to_enlist_crew', 'seal_step', 'reveal_step', 'job_result', 'job_delivery', 'how_to_open_job'] as const;
+/** Joining the house round is never named where it seats no agent. */
+const UNNAMED: readonly string[] = AGENTS_JOIN ? [] : ['how_to_join_round', 'how_to_play_round'];
+
+/** The rest of the server's tools by name, behind the «i» under the list: the arena's first, then the jobs board's. */
+const REST = (TOOL_NAMES as readonly string[]).filter((name) => !TOOLS.some((t) => t.name === name) && !UNNAMED.includes(name));
+const JOB_NAMES: readonly string[] = JOB_TOOL_NAMES;
+const MORE = [
+  { title: 'The arena', names: REST.filter((name) => !JOB_NAMES.includes(name)) },
+  { title: 'Jobs', names: REST.filter((name) => JOB_NAMES.includes(name)) },
+].filter((group) => group.names.length);
+
+const LEDE = AGENTS_JOIN
+  ? 'It watches every race live on NEAR, enters the daily round with its own key, and asks MASK CHECK before it pays anyone.'
+  : 'It watches every race live on NEAR, the daily round on the house\u2019s vault included, and asks MASK CHECK before it pays anyone.';
 
 /** The endpoint on the host this page is served from: the live site, a preview or a local server. */
 async function endpoint(): Promise<string> {
@@ -54,7 +83,7 @@ export default async function ConnectPage() {
               <br />
               agent in
             </h1>
-            <p className={s.lede}>It watches every race live on NEAR, takes jobs with its own key, and asks MASK CHECK before it pays anyone.</p>
+            <p className={s.lede}>{LEDE}</p>
           </section>
           <Suspense fallback={<LiveWaiting />}>
             <LiveAnswer />
@@ -66,17 +95,7 @@ export default async function ConnectPage() {
             {TOOLS.map((t) => (
               <li key={t.name} className={s.tool}>
                 <span className={s.name}>{t.name}</span>
-                <span className={s.what}>
-                  {t.what}
-                  {'page' in t ? (
-                    <>
-                      {' '}
-                      <Link href={t.page} className={s.try}>
-                        Try it
-                      </Link>
-                    </>
-                  ) : null}
-                </span>
+                <span className={s.what}>{t.what}</span>
               </li>
             ))}
             {listing ? (
@@ -91,8 +110,27 @@ export default async function ConnectPage() {
               </li>
             ) : null}
           </ul>
+          {/* The one tool a person can try without an agent: the door to MASK CHECK, a button of its own. */}
+          <Link href="/check" className={s.check}>
+            <span className={s.word}>Try MASK CHECK</span>
+            <Arrow className={s.checkArrow} />
+          </Link>
+          {/* The other tools' names are technical text: one plain line here, the names one tap away behind «i». */}
           <p className={s.note}>
-            Plus {MORE.join(', ')}. <span className={s.keep}>Every tool only reads.</span> No keys, ever.
+            {TOOL_NAMES.length} tools in all. <span className={s.keep}>Every tool only reads.</span>{' '}
+            <span className={s.keep}>
+              No keys, ever.
+              <span className={s.more}>
+                <Info rows={[]} label="The other tools" anchor="line" align="start" side="top" fill>
+                  {MORE.map((group) => (
+                    <span key={group.title} className={s.group}>
+                      <span className={s.groupTitle}>{group.title}</span>
+                      <span className={s.groupNames}>{group.names.join(', ')}</span>
+                    </span>
+                  ))}
+                </Info>
+              </span>
+            </span>
           </p>
         </section>
       </div>

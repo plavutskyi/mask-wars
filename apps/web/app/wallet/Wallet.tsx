@@ -1,12 +1,14 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { type FormEvent, useCallback, useEffect, useId, useRef, useState } from 'react';
-import { coinText, dollars } from '@maskwars/pay';
+import { coinText, dollars, usdOf } from '@maskwars/pay';
 import { autofillSupported, createVault, openVault, PasskeyError, passkeysSupported, type PasskeyVault } from '@maskwars/pay/passkey';
 import { passkeyHost } from '@/lib/site';
-import { type CatalogState, type CatalogView, pay, type VaultView } from './api';
+import { type CatalogState, type CatalogView, type MasksView, pay, type VaultView } from './api';
 import { CashOut } from './CashOut';
+import { faceOf, Fuel, maskName } from './Fuel';
 import { catalogDelay } from './settle';
 import { nearConnected, nearSignIn } from './near';
 import { loadKnown, loadPending, loadPendingOut, loadWho, rememberKnown, saveWho, type Who } from './store';
@@ -14,9 +16,9 @@ import { TopUp } from './TopUp';
 import { Note, shortAddress, Top, useCopy } from './ui';
 import s from './wallet.module.css';
 
-type Screen = 'home' | 'add' | 'out';
+type Screen = 'home' | 'add' | 'out' | 'fuel';
 
-const LEDE = 'Money for the arena. In from any wallet, out to yours.';
+const LEDE = 'Your MASK WARS wallet: money for the arena. Add it from any chain, cash out to any.';
 
 /** The number on screen rises to a new value instead of jumping, unless the person asked for less motion. */
 function useRising(target: number | null): number | null {
@@ -49,6 +51,8 @@ export function Wallet({ rpId }: { rpId: string }) {
   const [vault, setVault] = useState<VaultView | null>(null);
   const [vaultDown, setVaultDown] = useState(false);
   const [screen, setScreen] = useState<Screen>('home');
+  const [masks, setMasks] = useState<MasksView | null>(null);
+  const [fuelFirst, setFuelFirst] = useState<string | null>(null);
   const [ringing, setRinging] = useState(false);
   const [waiting, setWaiting] = useState(false);
 
@@ -103,6 +107,26 @@ export function Wallet({ rpId }: { rpId: string }) {
     return () => clearInterval(t);
   }, [who, refresh]);
 
+  // The masks a NEAR wallet forged, while the server says Fuel is open (PAY_LIVE and the factory on chain): the vault can
+  // fuel their minds. A passkey vault has none. Closed, the answer has no masks and neither Minds nor Fuel shows.
+  // An answer for an account that is no longer signed in is dropped: its masks must never stand under another vault.
+  const signedIn = useRef<string | null>(null);
+  signedIn.current = who?.account ?? null;
+  const readMasks = useCallback(async (account: string): Promise<MasksView | null> => {
+    try {
+      const m = await pay.masks(account);
+      if (signedIn.current !== account) return null;
+      setMasks(m);
+      return m;
+    } catch {
+      return null;
+    }
+  }, []);
+  useEffect(() => {
+    setMasks(null);
+    if (who?.kind === 'near') void readMasks(who.account);
+  }, [who, readMasks]);
+
   const signIn = (w: Who) => {
     saveWho(w);
     setVault(null);
@@ -135,7 +159,7 @@ export function Wallet({ rpId }: { rpId: string }) {
   return (
     <div className={s.body} data-in={who ? '' : undefined}>
       <section className={s.stage}>
-        <h1 className={s.hidden}>Your vault</h1>
+        <h1 className={s.hidden}>Your MASK WARS wallet</h1>
         {who ? (
           <p className={s.title} data-money="" aria-live="polite">
             <span className={`${s.side} ${s.sideA}`}>
@@ -155,7 +179,7 @@ export function Wallet({ rpId }: { rpId: string }) {
         ) : (
           <p className={s.title} aria-hidden>
             <span className={`${s.side} ${s.sideA} ${s.word} ${s.titleWord}`}>Your</span>
-            <span className={`${s.side} ${s.sideB} ${s.word} ${s.titleWord}`}>Vault</span>
+            <span className={`${s.side} ${s.sideB} ${s.word} ${s.titleWord}`}>Wallet</span>
           </p>
         )}
         {!who && ready ? <p className={s.stageLede}>{LEDE}</p> : null}
@@ -172,6 +196,19 @@ export function Wallet({ rpId }: { rpId: string }) {
           <TopUp who={who} coins={coins} onWaiting={setWaiting} onLanded={landed} onClose={() => setScreen('home')} />
         ) : screen === 'out' ? (
           <CashOut who={who} rpId={rpId} coins={coins} vault={vault} onRefresh={() => refresh(who.account)} onClose={() => setScreen('home')} />
+        ) : screen === 'fuel' && who.kind === 'near' && masks?.open && masks.masks.length ? (
+          <Fuel
+            who={who}
+            masks={masks}
+            vault={vault}
+            first={fuelFirst}
+            onRefresh={async () => {
+              const [v, m] = await Promise.all([refresh(who.account), readMasks(who.account)]);
+              return { vault: v, masks: m };
+            }}
+            onAdd={() => setScreen('add')}
+            onClose={() => setScreen('home')}
+          />
         ) : (
           <Home
             who={who}
@@ -179,8 +216,13 @@ export function Wallet({ rpId }: { rpId: string }) {
             down={vaultDown}
             coins={coins}
             settling={loadPendingOut(who.account) !== null}
+            masks={who.kind === 'near' && masks?.open ? masks : null}
             onAdd={() => setScreen('add')}
             onOut={() => setScreen('out')}
+            onFuel={(name) => {
+              setFuelFirst(name);
+              setScreen('fuel');
+            }}
             onSignOut={signOut}
           />
         )}
@@ -196,8 +238,11 @@ function Home(p: {
   coins: CatalogState;
   /** A cash-out is still settling: its screen stays one tap away, even when it emptied the vault. */
   settling: boolean;
+  /** The person's forged masks, once the factory is on chain; `null` for a passkey vault or before it is. */
+  masks: MasksView | null;
   onAdd: () => void;
   onOut: () => void;
+  onFuel: (name: string | null) => void;
   onSignOut: () => void;
 }) {
   const id = useId();
@@ -206,15 +251,15 @@ function Home(p: {
   const { catalog } = p.coins;
   const has = (p.vault?.usd ?? 0) >= 0.01 || p.settling;
   const names = catalog?.chains.map((c) => c.name) ?? [];
-  const where = names.length > 1 ? `${names.slice(0, -1).join(', ')} or ${names.at(-1)}` : 'any wallet';
+  const where = names.length > 1 ? `${names.slice(0, -1).join(', ')} or ${names.at(-1)}` : 'any chain';
   const details =
     p.who.kind === 'passkey'
-      ? `Your vault is ${p.who.account}, an account in NEAR Intents that only your passkey opens. Nobody else holds a key to it, this site included.`
-      : `Your vault is ${p.who.account} in NEAR Intents. Your NEAR wallet signs every move out of it.`;
+      ? `Your MASK WARS wallet is ${p.who.account}, an account in NEAR Intents that only your passkey opens. Nobody else holds a key to it, this site included.`
+      : `Your MASK WARS wallet is ${p.who.account} in NEAR Intents. Your own NEAR wallet signs every move out of it.`;
   const note = p.coins.down
-    ? 'The coins did not load. Your vault is safe.'
+    ? 'The coins did not load. Your money has not moved.'
     : p.down
-      ? 'Cannot read your vault right now. It is safe; try again in a minute.'
+      ? 'Cannot read your MASK WARS wallet right now. Your money has not moved; try again in a minute.'
       : !catalog
         ? 'Loading the coins on offer.'
         : `In from ${where}. Out to any of them.`;
@@ -222,7 +267,7 @@ function Home(p: {
     <div className={s.form}>
       <Top
         id={id}
-        label="Vault"
+        label="Wallet"
         details={details}
         info={info}
         onInfo={() => setInfo((v) => !v)}
@@ -250,17 +295,57 @@ function Home(p: {
           </button>
         )}
       </div>
+      {p.masks && p.masks.masks.length > 0 ? <Minds masks={p.masks} price={p.vault?.nearPrice ?? catalog?.near.price ?? 0} onFuel={p.onFuel} /> : null}
       <Note id={id} info={info} details={details} bad={p.down || p.coins.down}>
         {note}
       </Note>
+      <GetNearLink />
     </div>
+  );
+}
+
+/**
+ * The person's forged masks under the vault's two buttons: one bar, the faces, what their minds hold and the way to
+ * fuel them. One mask goes straight to its amount; several ask which first.
+ */
+function Minds({ masks, price, onFuel }: { masks: MasksView; price: number; onFuel: (name: string | null) => void }) {
+  const list = masks.masks;
+  const one = list.length === 1 ? list[0]! : null;
+  // Each mind in whole cents down, as its own tile shows it, so the sum is the sum of what the person sees.
+  const usd = dollars(list.reduce((n, m) => n + Math.floor(usdOf(m.brain, 24, price) * 100 + 1e-6), 0) / 100);
+  return (
+    <button type="button" className={s.minds} onClick={() => onFuel(one?.name ?? null)}>
+      <span className={s.faces} aria-hidden>
+        {list.slice(0, 3).map((m) => (
+          <span key={m.name} className={s.maskFace}>
+            <Image src={faceOf(m.look)} alt="" fill sizes="40px" className={s.maskFaceImg} />
+          </span>
+        ))}
+      </span>
+      <span className={s.mindsText}>
+        <span className={`${s.word} ${s.mindsName}`}>{one ? maskName(one.name) : `${list.length} masks`}</span>
+        <span className={s.mindsTank}>
+          {usd} in {one ? 'its mind' : 'their minds'}
+        </span>
+      </span>
+      <span className={`${s.word} ${s.mindsGo}`}>Fuel</span>
+    </button>
+  );
+}
+
+/** For NEAR in a wallet of one's own rather than in the vault: /near, from any coin on any network. */
+function GetNearLink() {
+  return (
+    <Link href="/near" className={s.getNear}>
+      Need NEAR in your own NEAR wallet? <span>Get NEAR</span>
+    </Link>
   );
 }
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 /**
- * `ask`: «Continue» opens the vault of a passkey the person already has. `fresh`: that opened nothing, and «New vault»
+ * `ask`: «Continue» opens the vault of a passkey the person already has. `fresh`: that opened nothing, and «Create wallet»
  * makes one under the email. `local`: the passkey just made would live on this device only, so no vault was made from it;
  * another device or a NEAR wallet is the way on.
  */
@@ -301,10 +386,10 @@ function SignIn({ rpId, onIn }: { rpId: string; onIn: (w: Who) => void }) {
     setProblem(
       {
         cancelled: 'Nothing changed. Try again when you are ready.',
-        unsupported: 'This browser cannot use passkeys. Try Safari or Chrome, or a NEAR wallet.',
-        domain: 'Passkeys for your vault work on maskwars.xyz only.',
-        exists: 'This device already has a vault passkey. Continue opens it.',
-        unknown: 'That passkey did not open a vault. Try again.',
+        unsupported: 'This browser cannot use passkeys. Try Safari or Chrome, or your own NEAR wallet.',
+        domain: 'Passkeys for your MASK WARS wallet work on maskwars.xyz only.',
+        exists: 'This device already has a passkey for a MASK WARS wallet. Continue opens it.',
+        unknown: 'That passkey did not open a MASK WARS wallet. Try again.',
       }[problem],
     );
   };
@@ -340,7 +425,7 @@ function SignIn({ rpId, onIn }: { rpId: string; onIn: (w: Who) => void }) {
     return null;
   };
 
-  // «Continue»: the passkey picker first. Only an explicit «New vault» makes a passkey, so an email that already has a
+  // «Continue»: the passkey picker first. Only an explicit «Create wallet» makes a passkey, so an email that already has a
   // vault never gets a second, empty one.
   const open = async () => {
     if (phase !== 'idle') return;
@@ -396,7 +481,7 @@ function SignIn({ rpId, onIn }: { rpId: string; onIn: (w: Who) => void }) {
     } catch {
       setPhase('idle');
       setRound((n) => n + 1);
-      setProblem('No wallet connected. Nothing changed.');
+      setProblem('No NEAR wallet connected. Nothing changed.');
     }
   };
 
@@ -414,21 +499,21 @@ function SignIn({ rpId, onIn }: { rpId: string; onIn: (w: Who) => void }) {
   const bad = Boolean(problem) || badEmail || mode === 'local';
   const details =
     mode === 'local'
-      ? 'A vault needs a passkey that syncs to your other devices, so a lost phone never locks your money. This one would live on this device alone. Make it on another device (your phone, through its QR code), or use a NEAR wallet.'
-      : 'Your vault is your own account in NEAR Intents, opened by a passkey: Face ID, a fingerprint or your screen lock. Only a passkey that syncs to your other devices makes one. Nobody else holds a key, this site included, and your email stays with your passkey.';
+      ? 'A MASK WARS wallet needs a passkey that syncs to your other devices, so a lost phone never locks your money. This one would live on this device alone. Make it on another device (your phone, through its QR code), or sign in with your own NEAR wallet.'
+      : 'Your MASK WARS wallet is your own account in NEAR Intents, opened by a passkey: Face ID, a fingerprint or your screen lock. Only a passkey that syncs to your other devices makes one. Nobody else holds a key, this site included, and your email stays with your passkey.';
   const note = (() => {
     if (phase === 'create') return mode === 'local' ? 'Make it on your other device: scan the code with your phone.' : 'Save the passkey when your device asks.';
     if (phase === 'open') return 'Pick your passkey.';
     if (phase === 'second') return 'Once more to open it on this device.';
-    if (phase === 'near') return 'Pick your NEAR wallet.';
+    if (phase === 'near') return 'Pick your own NEAR wallet.';
     if (mode === 'local') return 'This passkey stays on this device only.';
     if (problem) return problem;
-    if (passkeys === false) return 'Passkeys for your vault work on maskwars.xyz. Here, sign in with your NEAR wallet.';
+    if (passkeys === false) return 'Passkeys for your MASK WARS wallet work on maskwars.xyz. Here, sign in with your own NEAR wallet.';
     if (badEmail) return email.trim() ? 'That email does not look right.' : 'Type your email first.';
-    if (mode === 'fresh') return 'No vault opened. New here? Tap New vault.';
+    if (mode === 'fresh') return 'No wallet opened. New here? Tap Create wallet.';
     return 'A passkey opens it: Face ID or a fingerprint. No seed phrase, no app.';
   })();
-  const primary = passkeys === false ? 'Connect' : busy ? 'Opening' : mode === 'local' ? 'Another device' : mode === 'fresh' ? 'New vault' : 'Continue';
+  const primary = passkeys === false ? 'Connect' : busy ? 'Opening' : mode === 'local' ? 'Another device' : mode === 'fresh' ? 'Create wallet' : 'Continue';
 
   return (
     <form className={s.form} onSubmit={submit} noValidate>
@@ -444,7 +529,7 @@ function SignIn({ rpId, onIn }: { rpId: string; onIn: (w: Who) => void }) {
             <>
               {mode === 'ask' ? (
                 <button type="button" className={s.back} onClick={() => void create()} disabled={busy}>
-                  New vault
+                  Create wallet
                 </button>
               ) : mode === 'fresh' ? (
                 <button type="button" className={s.back} onClick={() => void open()} disabled={busy}>
@@ -494,6 +579,7 @@ function SignIn({ rpId, onIn }: { rpId: string; onIn: (w: Who) => void }) {
       <Note id={id} info={info} details={details} bad={bad}>
         {note}
       </Note>
+      <GetNearLink />
     </form>
   );
 }

@@ -67,7 +67,7 @@ export function Lab(props: { state?: string | undefined; quality?: string | unde
       <Arena3D
         state={state}
         vault={{ amount: 3, unit: 'NEAR' }}
-        target="Live safe"
+        target="Live vault"
         masks={CASTS[cast]!}
         attempts={attempts}
         winner={2}

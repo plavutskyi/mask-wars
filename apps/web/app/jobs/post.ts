@@ -4,13 +4,14 @@
 // it to replace.
 import { type JobBoard, type Kind, type OpenInput, nearCliCommand, openAction, openCost, openableKinds } from '@maskwars/arena/jobs';
 import { near } from '@maskwars/arena/format';
+import { type Network, yocto } from '@maskwars/network';
+import { DRAIN, type DrainSheet, type HouseRound } from './drain';
 import { KIND_WORD } from './show';
 
 const NEAR = 10n ** 24n;
-const part = (n: bigint, of: bigint) => ((NEAR * n) / of).toString();
 
 /** A starting point a client edits: a job of 1 NEAR for four masks, a day to work, an hour to reveal and to appeal. */
-const START = { reward: NEAR.toString(), fuelPerMask: part(1n, 20n), slots: 4, workMinutes: 24 * 60, revealMinutes: 60, appealMinutes: 60 } as const;
+const START = { reward: NEAR.toString(), fuelPerMask: DRAIN.fuelPerMask, slots: DRAIN.slots, workMinutes: 24 * 60, revealMinutes: 60, appealMinutes: 60 } as const;
 
 export interface PostCall {
   kind: Kind;
@@ -41,7 +42,7 @@ function template(kind: Kind, board: JobBoard): { input: OpenInput; fill: PostCa
   if (kind === 'drain') {
     return {
       input: { ...base, kind, round: { bounty: board.market?.bounties[0] ?? '', id: 'THE-ROUND-ID' } },
-      fill: [...common, { name: 'THE-ROUND-ID', what: 'the sealed round whose safe the masks break' }, numbers],
+      fill: [...common, { name: 'THE-ROUND-ID', what: 'the sealed round whose vault the masks break' }, numbers],
     };
   }
   const sealed = [
@@ -101,4 +102,31 @@ export function postCalls(board: JobBoard): PostCall[] {
       fill,
     };
   });
+}
+
+/**
+ * The sheet that posts a drain with the person's own NEAR wallet: on the house's round of the day, wherever the
+ * contract opens drains on the house's bounty contract and the house's round runs on schedule. Elsewhere `null`: the
+ * sheet hands out the call for an agent to sign, as for every other kind. `house` is the round as the server read it
+ * now, `null` when the chain did not answer: the sheet reads it again when it opens.
+ */
+export function drainSheet(board: JobBoard, net: Pick<Network, 'bounty' | 'round' | 'masks' | 'limits'>, house: HouseRound | null, explorer: string | null): DrainSheet | null {
+  const { contract, market } = board;
+  if (!board.deployed || !contract || !market || !net.round.live) return null;
+  if (!openableKinds(market).includes('drain') || !market.bounties.includes(net.bounty)) return null;
+  const cost = openCost('0', DRAIN.fuelPerMask, DRAIN.slots, market.judgeFee);
+  const { first_minute, every_minutes, commit_minutes } = net.round;
+  return {
+    minReward: yocto(net.limits.jobs.min_reward).toString(),
+    // The bond a job posted here asks of each mask is its fuel (`bond` left out): MASK WARS locks it for each of them.
+    arena: { masks: Object.keys(net.masks), bond: DRAIN.fuelPerMask },
+    network: board.network,
+    contract,
+    bounty: net.bounty,
+    explorer,
+    costs: { fuel: cost.fuel, judge: cost.judge, storage: (BigInt(cost.reserve) + BigInt(cost.record)).toString() },
+    feeBps: market.feeBps,
+    house: house && house.bounty === net.bounty ? house : null,
+    schedule: { first_minute, every_minutes, commit_minutes },
+  };
 }

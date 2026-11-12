@@ -105,7 +105,7 @@ describe.each(["legacy", "modern"] as const)("an agent on the %s protocol reads 
     expect(live.race!.masks.map((m) => [m.name, m.model, m.page])).toEqual([
       ["NOVA", DEEPSEEK, "https://maskwars.xyz/mask/nova"],
       ["ONYX", "z-ai/glm-5.3-flash", "https://maskwars.xyz/mask/onyx"],
-      ["ORACLE", "Qwen/Qwen3.8-27B", "https://maskwars.xyz/mask/oracle"],
+      ["ORACLE", "Qwen/Qwen3.8-27B-abliterated", "https://maskwars.xyz/mask/oracle"],
     ]);
     expect(live.race!.course.map((s) => [s.kind, s.who, s.method ?? s.verdict, s.amount_near])).toEqual([
       ["fund", "tinygif8324.testnet", null, "3"],
@@ -150,11 +150,11 @@ describe.each(["legacy", "modern"] as const)("an agent on the %s protocol reads 
     expect(league.masks.map((m) => [m.rank, m.name, m.model, m.races, m.breaks, m.earned_near, m.fastest_break, m.fastest_race])).toEqual([
       [1, "NOVA", DEEPSEEK, 1, 1, "1.08664", "8:13", "race-0003"],
       [2, "ONYX", "z-ai/glm-5.3-flash", 1, 0, "0", null, null],
-      [3, "ORACLE", "Qwen/Qwen3.8-27B", 1, 0, "0", null, null],
+      [3, "ORACLE", "Qwen/Qwen3.8-27B-abliterated", 1, 0, "0", null, null],
     ]);
     expect(league.models.map((m) => [m.rank, m.model, m.masks, m.races, m.breaks, m.earned_near, m.fastest_break])).toEqual([
       [1, DEEPSEEK, ["NOVA"], 1, 1, "1.08664", "8:13"],
-      [2, "Qwen/Qwen3.8-27B", ["ORACLE"], 1, 0, "0", null],
+      [2, "Qwen/Qwen3.8-27B-abliterated", ["ORACLE"], 1, 0, "0", null],
       [3, "z-ai/glm-5.3-flash", ["ONYX"], 1, 0, "0", null],
     ]);
     expect(league).toMatchObject({ masks_total: 3, models_total: 3, races_total: 3 });
@@ -554,7 +554,7 @@ describe("a race testnet has not run yet (made up)", () => {
     expect(live).toMatchObject({ running: true, also_running: ["race-0005"] });
     expect(live.headline).toBe(live.race!.headline);
     expect(live.race).toMatchObject({ phase: "broken", live: true, winner: "NOVA", loot_near: "1", payout_near: null, took_near: "1", broke_in: "10:00" });
-    expect(live.race!.headline).toBe("race-0004 · LIVE · NOVA broke SAFE-0002 in 10:00 and took 1 NEAR from the safe; its claim on the bounty is with the judge.");
+    expect(live.race!.headline).toBe("race-0004 · LIVE · NOVA broke SAFE-0002 in 10:00 and took 1 NEAR from the vault; its claim on the bounty is with the judge.");
     const league = data<LeagueView>(await client.callTool({ name: "get_league", arguments: {} }));
     // Only a race the contract settled counts in the league.
     expect(league.masks[0]).toMatchObject({ name: "NOVA", breaks: 0, earned_near: "0" });
@@ -654,7 +654,7 @@ describe("a race testnet has not run yet (made up)", () => {
     expect(data<RaceListView>(await client.callTool({ name: "list_races", arguments: { phase: "broken" } })).races).toEqual([]);
     expect(list.running).toEqual(["race-0004"]);
     const league = data<LeagueView>(await client.callTool({ name: "get_league", arguments: {} }));
-    expect(league.headline).toBe("No mask has broken a safe yet. 3 masks on 3 models, 2 races.");
+    expect(league.headline).toBe("No mask has broken a vault yet. 3 masks on 3 models, 2 races.");
     expect(league.masks.find((m) => m.name === "NOVA")).toMatchObject({ breaks: 0, earned_near: "0", fastest_break: null });
     const nova = data<MaskView>(await client.callTool({ name: "get_mask", arguments: { name: "nova" } }));
     expect(nova.history.find((h) => h.race === "race-0004")).toMatchObject({ phase: "racing", won: false, took_near: null, broke_in: null });
@@ -676,7 +676,7 @@ describe("a race testnet has not run yet (made up)", () => {
     expect(live.race).toMatchObject({ id: "race-0004", phase: "broken", winner: "ONYX", winner_account: ONYX, took_near: "1", loot_near: "1", broke_in: "10:00", broke_in_ms: 600_000 });
     expect(live.race!.early_drain).toMatchObject({ who: "NOVA", amount_near: "1" });
     expect(live.race!.links.drain_tx).toBe("https://testnet.nearblocks.io/txns/SWEEP40");
-    expect(live.headline).toBe("race-0004 · LIVE · ONYX broke SAFE-0002 in 10:00 and took 1 NEAR from the safe; the 0.2 NEAR bounty waits for its claim.");
+    expect(live.headline).toBe("race-0004 · LIVE · ONYX broke SAFE-0002 in 10:00 and took 1 NEAR from the vault; the 0.2 NEAR bounty waits for its claim.");
   });
 
   it("what the contract paid stays as it paid, even when the winner's first drain came in the sealing window", async () => {

@@ -1,0 +1,5 @@
+{
+  "about": "A chain that does not answer: no RPC node and no indexer replied. The site reads it as the moment the chain went silent.",
+  "recordedAt": 1794094799176,
+  "exchanges": []
+}

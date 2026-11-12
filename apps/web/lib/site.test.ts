@@ -1,6 +1,8 @@
+import { existsSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { NETWORKS, SECTIONS, type NetworkId, type Section } from '@maskwars/network';
 import { describe, expect, it } from 'vitest';
-import { acrossOf, acrossPath, acrossUrl, awayFor, elsewhere, forgeStated, jobsShown, linkTo, maskElsewhere, menuOf, passkeyHost, sectionOf, siblingOf, siteOrigin, type Site } from './site';
+import { acrossOf, acrossPath, acrossUrl, awayFor, CODE_URL, elsewhere, footerOf, footerOn, forgeStated, type JobsAnswer, jobsShown, jobsStated, linkTo, maskElsewhere, menuMore, menuOf, passkeyHost, sectionOf, siblingOf, siteOrigin, type Site } from './site';
 
 // The rules are proved on pictures written out here, not on the network files: what is on chain where changes (one
 // word in packages/network/<network>.json), the rules do not. The last block holds the real files to the same rules.
@@ -171,30 +173,52 @@ describe('a site with no sibling named', () => {
   it('asks its factory, and shows Forge only while it is open', () => {
     const test = alone(FORGE_ON_TESTNET.test);
     expect(forgeStated(test)).toBe(false);
-    expect(menuOf(false, test).map((i) => i.place)).toEqual(['league', 'jobs', 'agents', 'vault']);
-    expect(menuOf(true, test).map((i) => i.place)).toEqual(['forge', 'league', 'jobs', 'agents', 'vault']);
+    expect(menuOf(false, test).map((i) => i.place)).toEqual(['league', 'jobs', 'agents', 'vault', 'near']);
+    expect(menuOf(true, test).map((i) => i.place)).toEqual(['forge', 'league', 'jobs', 'agents', 'vault', 'near']);
     for (const item of menuOf(true, test)) expect(item.away).toBeNull();
   });
 
-  it('shows Jobs only while its own network has the jobs contract', () => {
+  it('asks its chain whether jobs run here, and until it answers keeps to what its network states', () => {
     // maskwars.xyz on mainnet alone: the arena is on chain, the jobs contract is not yet.
     const main = alone(JOBS_ON_TESTNET.main);
-    expect(jobsShown(main)).toBe(false);
-    expect(menuOf(false, main).map((i) => i.place)).toEqual(['league', 'agents', 'vault']);
-    expect(jobsShown(alone(JOBS_ON_TESTNET.test))).toBe(true);
-    expect(jobsShown(alone(ALL_ON_BOTH.main))).toBe(true);
-    expect(menuOf(false, alone(ALL_ON_BOTH.main)).map((i) => i.place)).toEqual(['league', 'jobs', 'agents', 'vault']);
+    expect(jobsStated(main)).toBe(false);
+    expect(jobsShown(null, main)).toBe(false);
+    expect(menuOf(false, main).map((i) => i.place)).toEqual(['league', 'agents', 'vault', 'near']);
+    expect(jobsShown(null, alone(JOBS_ON_TESTNET.test))).toBe(true);
+    expect(jobsShown(null, alone(ALL_ON_BOTH.main))).toBe(true);
+    expect(menuOf(false, alone(ALL_ON_BOTH.main)).map((i) => i.place)).toEqual(['league', 'jobs', 'agents', 'vault', 'near']);
+  });
+
+  it('shows Jobs only while the chain says the jobs and crews contracts are there, whatever the network states', () => {
+    // The statement says the contracts are on chain, the chain says they are not: Jobs leaves the menu.
+    const test = alone(JOBS_ON_TESTNET.test);
+    expect(jobsShown(false, test)).toBe(false);
+    expect(menuOf(false, test, false).map((i) => i.place)).toEqual(['league', 'agents', 'vault', 'near']);
+    // The contracts went on chain before the statement was changed: Jobs comes in.
+    const main = alone(JOBS_ON_TESTNET.main);
+    expect(jobsShown(true, main)).toBe(true);
+    expect(menuOf(true, main, true).map((i) => i.place)).toEqual(['forge', 'league', 'jobs', 'agents', 'vault', 'near']);
+    expect(menuOf(false, main, true).find((i) => i.place === 'jobs')).toEqual({ place: 'jobs', label: 'Jobs', href: '/jobs', away: null });
+  });
+
+  it('keeps to the statement when no RPC answers: contracts that are there are only out of reach', () => {
+    expect(jobsShown('silent', alone(JOBS_ON_TESTNET.test))).toBe(true);
+    expect(jobsShown('silent', alone(JOBS_ON_TESTNET.main))).toBe(false);
+    expect(menuOf(false, alone(JOBS_ON_TESTNET.main), 'silent').map((i) => i.place)).toEqual(['league', 'agents', 'vault', 'near']);
   });
 });
 
 describe('the menu of two sites that know each other', () => {
-  const ORDER = ['forge', 'league', 'jobs', 'agents', 'vault'];
+  const ORDER = ['forge', 'league', 'jobs', 'agents', 'vault', 'near'];
 
-  it('is the same items in the same order on both sites, whatever is on chain where and whatever the factory answers', () => {
+  it('is the same items in the same order on both sites, whatever is on chain where and whatever the chain answers', () => {
     for (const pair of [JOBS_ON_TESTNET, FORGE_ON_TESTNET, ALL_ON_BOTH, ARENA_ONLY]) {
       for (const site of Object.values(pair)) {
         expect(forgeStated(site)).toBe(true);
-        for (const factoryOpen of [false, true]) expect(menuOf(factoryOpen, site).map((i) => i.place)).toEqual(ORDER);
+        expect(jobsStated(site)).toBe(true);
+        for (const factoryOpen of [false, true]) {
+          for (const jobs of [null, 'silent', false, true] as const) expect(menuOf(factoryOpen, site, jobs).map((i) => i.place)).toEqual(ORDER);
+        }
       }
       expect(menuOf(false, pair.main).map((i) => i.label)).toEqual(menuOf(false, pair.test).map((i) => i.label));
     }
@@ -206,14 +230,15 @@ describe('the menu of two sites that know each other', () => {
       { place: 'league', label: 'League', href: '/league', away: null },
       { place: 'jobs', label: 'Jobs', href: `${TEST_AT}/jobs`, away: 'testnet' },
       { place: 'agents', label: 'Agents', href: '/mcp/connect', away: null },
-      { place: 'vault', label: 'Vault', href: '/wallet', away: null },
+      { place: 'vault', label: 'Wallet', href: '/wallet', away: null },
+      { place: 'near', label: 'Get NEAR', href: '/near', away: null },
     ]);
   });
 
   it('on the site that has every part that is on chain, nothing is marked', () => {
     for (const pair of [JOBS_ON_TESTNET, FORGE_ON_TESTNET]) {
       for (const item of menuOf(false, pair.test)) expect(item.away, item.place).toBeNull();
-      expect(menuOf(false, pair.test).map((i) => i.href)).toEqual(['/forge', '/league', '/jobs', '/mcp/connect', '/wallet']);
+      expect(menuOf(false, pair.test).map((i) => i.href)).toEqual(['/forge', '/league', '/jobs', '/mcp/connect', '/wallet', '/near']);
     }
   });
 
@@ -226,6 +251,112 @@ describe('the menu of two sites that know each other', () => {
 
   it('marks nothing once every part is on both networks', () => {
     for (const site of Object.values(ALL_ON_BOTH)) for (const item of menuOf(false, site)) expect(item.away, `${site.network} ${item.place}`).toBeNull();
+  });
+});
+
+describe('the footer', () => {
+  const links = (site: Site, forgeOpen = false, jobs: JobsAnswer = null) => footerOf(forgeOpen, site, jobs).flatMap((g) => g.links);
+  const labels = (site: Site, forgeOpen = false, jobs: JobsAnswer = null) => footerOf(forgeOpen, site, jobs).map((g) => [g.title, ...g.links.map((l) => l.label)]);
+  const paths = (site: Site, forgeOpen = false, jobs: JobsAnswer = null) => links(site, forgeOpen, jobs).map((l) => l.path);
+
+  it('names every page a visitor can open, in three short groups', () => {
+    expect(labels(ALL_ON_BOTH.main)).toEqual([
+      ['Play', 'The race', 'League', 'Forge', 'Jobs'],
+      ['Money', 'Get NEAR', 'Swap', 'Wallet'],
+      ['Agents & trust', 'Connect an agent', 'MASK CHECK', 'Hire the swarm', 'Private minds'],
+    ]);
+    expect(paths(ALL_ON_BOTH.main)).toEqual(['/', '/league', '/forge', '/jobs', '/near', '/swap', '/wallet', '/mcp/connect', '/check', '/hire', '/verified']);
+  });
+
+  it('every link is a page of this site that exists', () => {
+    const app = fileURLToPath(new URL('../app', import.meta.url));
+    for (const path of paths(ALL_ON_BOTH.main)) {
+      expect(path.startsWith('/'), path).toBe(true);
+      expect(existsSync(`${app}${path === '/' ? '' : path}/page.tsx`), path).toBe(true);
+    }
+  });
+
+  it('has the four pages nothing else on the site leads to, on either network and on a site on its own', () => {
+    for (const site of [...Object.values(JOBS_ON_TESTNET), ...Object.values(ARENA_ONLY), alone(ARENA_ONLY.main)]) {
+      for (const page of ['/swap', '/check', '/hire', '/verified']) {
+        expect(links(site, false, false).find((l) => l.path === page), `${site.network} ${page}`).toMatchObject({ href: page, away: null });
+      }
+    }
+  });
+
+  it('shows Forge and Jobs exactly while the menu shows them, and leads where the menu leads, whatever the chain answered', () => {
+    const pictures = [JOBS_ON_TESTNET, FORGE_ON_TESTNET, ALL_ON_BOTH, ARENA_ONLY].flatMap((p) => [p.main, p.test, alone(p.main), alone(p.test)]);
+    for (const site of pictures) {
+      for (const forgeOpen of [false, true]) {
+        for (const jobs of [null, true, false, 'silent'] as const) {
+          const menu = menuOf(forgeOpen, site, jobs);
+          const foot = links(site, forgeOpen, jobs);
+          for (const place of ['forge', 'jobs'] as const) {
+            const item = menu.find((i) => i.place === place) ?? null;
+            const link = foot.find((l) => l.path === `/${place}`) ?? null;
+            const where = `${site.network} sibling=${site.sibling} forgeOpen=${forgeOpen} jobs=${jobs} ${place}`;
+            expect(link !== null, where).toBe(item !== null);
+            if (item && link) expect({ href: link.href, away: link.away }, where).toEqual({ href: item.href, away: item.away });
+          }
+        }
+      }
+    }
+  });
+
+  it('a site on its own with its factory shut and no jobs contracts has neither, and both once the chain says so', () => {
+    const site = alone(ARENA_ONLY.main);
+    expect(labels(site, false, false)).toEqual([
+      ['Play', 'The race', 'League'],
+      ['Money', 'Get NEAR', 'Swap', 'Wallet'],
+      ['Agents & trust', 'Connect an agent', 'MASK CHECK', 'Hire the swarm', 'Private minds'],
+    ]);
+    expect(paths(site, true, true).slice(0, 4)).toEqual(['/', '/league', '/forge', '/jobs']);
+  });
+
+  it('sends a part that is on chain only on the other network to the other site, as the menu does; the rest stays here', () => {
+    const { main } = JOBS_ON_TESTNET;
+    expect(links(main).find((l) => l.path === '/jobs')).toEqual({ label: 'Jobs', path: '/jobs', href: `${TEST_AT}/jobs`, away: 'testnet' });
+    for (const l of links(main)) if (l.path !== '/jobs') expect(l, l.path).toMatchObject({ href: l.path, away: null });
+  });
+
+  it('holds on the two sites as packages/network states them: no link points at a page this network sends away unmarked', () => {
+    for (const site of Object.values(sites(NETWORKS))) {
+      for (const l of links(site)) {
+        const away = elsewhere(l.path, '', site);
+        expect(l.href, `${site.network} ${l.path}`).toBe(away ?? l.path);
+        expect(l.away !== null, `${site.network} ${l.path}`).toBe(away !== null);
+      }
+    }
+  });
+
+  it('links the code in the public repository', () => {
+    expect(CODE_URL).toBe('https://github.com/plavutskyi/mask-wars');
+  });
+
+  it('closes every page but the hire checkout’s frame and window and the lab', () => {
+    for (const p of ['/', '/league', '/forge', '/jobs', '/jobs/job-0007', '/near', '/swap', '/wallet', '/mcp/connect', '/check', '/hire', '/verified', '/break', '/race/race-0002', '/mask/nova', '/contract/safe-0001.maskwars.near', '/nothing-here', '/hired', '/hire/embedded', '/laboratory']) {
+      expect(footerOn(p), p).toBe(true);
+    }
+    for (const p of ['/hire/embed', '/hire/embed/', '/hire/prove', '/lab', '/lab/arena']) expect(footerOn(p), p).toBe(false);
+  });
+});
+
+describe('the open menu’s second group', () => {
+  it('is the pages the footer names and the menu has no item for', () => {
+    for (const site of [...Object.values(JOBS_ON_TESTNET), ...Object.values(ALL_ON_BOTH), alone(ARENA_ONLY.main)]) {
+      expect(menuMore(site), site.network).toEqual([
+        { label: 'Swap', path: '/swap', href: '/swap', away: null },
+        { label: 'MASK CHECK', path: '/check', href: '/check', away: null },
+        { label: 'Hire the swarm', path: '/hire', href: '/hire', away: null },
+        { label: 'Private minds', path: '/verified', href: '/verified', away: null },
+      ]);
+    }
+  });
+
+  it('with the race and the menu’s own items, reaches every page of the footer', () => {
+    const site = ALL_ON_BOTH.main;
+    const reached = new Set(['/', ...menuOf(true, site, true).map((i) => i.href), ...menuMore(site).map((l) => l.href)]);
+    for (const l of footerOf(true, site, true).flatMap((g) => g.links)) expect(reached.has(l.href), l.path).toBe(true);
   });
 });
 
@@ -340,7 +471,7 @@ describe('the two sites as packages/network states them', () => {
   it('each menu item is marked exactly when its part is on chain only on the other network', () => {
     for (const site of Object.values(real)) {
       const menu = menuOf(false, site);
-      expect(menu.map((i) => i.place)).toEqual(['forge', 'league', 'jobs', 'agents', 'vault']);
+      expect(menu.map((i) => i.place)).toEqual(['forge', 'league', 'jobs', 'agents', 'vault', 'near']);
       for (const item of menu) {
         const part = item.place === 'forge' || item.place === 'jobs' ? item.place : null;
         const away = part ? onlyThere(part, site.network) : null;

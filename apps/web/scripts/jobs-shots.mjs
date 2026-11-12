@@ -5,7 +5,8 @@
 //
 //   sandbox     the recorded answers of the sandbox world (packages/arena/test/fixtures/jobs-sandbox.json): the real
 //               jobs and crews contracts in a local NEAR sandbox. Every number on those shots is one that chain answered.
-//   undeployed  the network's jobs account does not exist yet: what the site shows until the contract is deployed.
+//   undeployed  the network's jobs account does not exist yet: /jobs and every job page are not found, and the
+//               menu shows no Jobs. Checked by status, with no picture.
 //   deployed    the contract is on chain with no job: what the site shows right after.
 //   live        with --live <rpc> <indexer>: a sandbox world that is running now (packages/arena/jobs-world).
 //
@@ -48,7 +49,7 @@ async function start(port, env) {
   const base = `http://localhost:${port}`;
   for (let i = 0; i < 120; i++) {
     try {
-      if ((await fetch(`${base}/jobs`)).ok) return base;
+      if ((await fetch(`${base}/api/jobs`)).ok) return base;
     } catch {
       /* not yet */
     }
@@ -91,7 +92,6 @@ const SHOTS = [
   [SANDBOX, '/jobs/review-0004', 'job-decided-review-0004-sandbox', {}],
   [SANDBOX, '/jobs/review-0001', 'job-paid-review-0001-sandbox', {}],
   [SANDBOX, '/jobs/review-0003', 'job-closed-review-0003-sandbox', {}],
-  [UNDEPLOYED, '/jobs', 'board-empty-undeployed', {}],
   [DEPLOYED, '/jobs', 'board-empty-deployed', { open: [['Post a job', '-post']] }],
   // Checked on every screen, with no picture kept: the rest of the sandbox world's jobs.
   [SANDBOX, '/jobs/drain-0007', 'job-open-drain-0007-sandbox', { check: true }],
@@ -103,6 +103,13 @@ const SHOTS = [
 ];
 
 const report = [];
+// Where the jobs contract is not on chain there is no jobs section: its pages are not found, /api/jobs-open says so.
+for (const path of ['/jobs', '/jobs/break-safe-0004']) {
+  const status = (await fetch(UNDEPLOYED + path)).status;
+  report.push({ view: 'http', path, name: 'undeployed', scroll: 0, wide: [], small: [], cut: [], action: null, problems: status === 404 ? [] : [`${path} answered ${status}, not 404`] });
+}
+const gate = await (await fetch(`${UNDEPLOYED}/api/jobs-open`)).json();
+if (gate.open !== false) report.push({ view: 'http', path: '/api/jobs-open', name: 'undeployed', scroll: 0, wide: [], small: [], cut: [], action: null, problems: [`/api/jobs-open answered ${JSON.stringify(gate)}`] });
 const browser = await chromium.launch();
 for (const [view, { keep, context }] of Object.entries(VIEWS)) {
   const ctx = await browser.newContext(context);

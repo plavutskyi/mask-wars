@@ -57,7 +57,7 @@ export function CopyOwner({
     try {
       signer = await connect(FORGE_NET.rpcs);
     } catch {
-      setLine('No wallet connected. Nothing was sent.');
+      setLine('No NEAR wallet connected. Nothing was sent.');
       return null;
     }
     if (signer.accountId !== owner) {

@@ -1,4 +1,4 @@
-// Ядро ліги: бої, дисципліни, пули, печатки, рейтинг. Без мережі, без годинника, без випадковості.
+// The league core of the first design: fights, disciplines, pools, seals, rating. No network, no clock, no randomness.
 export * from "./errors.ts";
 export * from "./ids.ts";
 export * from "./math.ts";

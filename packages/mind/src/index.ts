@@ -1,4 +1,5 @@
-// Розум і голос масок: рішення в TEE, ручні рядки, журнал. Ціни передаються параметром, мережа лише в провайдерах.
+// The masks' minds and voices: decisions on Private TEE models, hand-written lines, the journal. Prices come in as a
+// parameter; only the providers touch the network.
 export * from "./masks.ts";
 export * from "./market.ts";
 export * from "./decision.ts";

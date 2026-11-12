@@ -1,4 +1,4 @@
-// Confidential copying through real eyes, on testnet: the demo stack of docs/spec/copy.md, every number read from the
+// Confidential copying through real eyes, on testnet: the demo stack of confidential copying (contracts/masks/README.md), every number read from the
 // chain. ANN's LYRA is open to copies at 20%; BOB's ECHO copies it, raced a sealed round and won; BOB shares ECHO's
 // history with himself and CAT; EVE holds a view key but no view.
 //

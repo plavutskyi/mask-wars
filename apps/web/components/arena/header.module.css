@@ -36,10 +36,12 @@
 
 .logo {
   display: flex;
+  flex: none;
   align-items: center;
   gap: 10px;
   min-height: 44px;
   min-width: 44px;
+  white-space: nowrap;
 }
 
 .mark {
@@ -185,6 +187,7 @@ a.netCell::after {
   display: inline-flex;
   align-items: center;
   min-height: 44px;
+  white-space: nowrap;
   font-size: 13px;
   letter-spacing: 0.1em;
   color: var(--ice-60);
@@ -237,7 +240,7 @@ a.netCell::after {
 }
 
 /* Beside the race clock the links need the whole width of a laptop; without it, a tablet's is enough. */
-@media (max-width: 1279px) {
+@media (max-width: 1311px) {
   .head[data-center] .links {
     display: none;
   }
@@ -247,8 +250,18 @@ a.netCell::after {
   }
 }
 
-/* Only with all of it at once, the race clock, LIVE and the Forge link, do the links reach the clock on a laptop:
-   they stand closer under 1536, and under 1366 they go behind the one button. Every other header keeps its links. */
+/* LIVE beside the links takes room from them: beside the race clock they go behind the one button under 1504. */
+@media (max-width: 1503px) {
+  .head[data-center]:has(.live) .links {
+    display: none;
+  }
+
+  .head[data-center]:has(.live) .toggle {
+    display: grid;
+  }
+}
+
+/* With all of it at once, the race clock, LIVE and the Forge link, the links stand closer under 1536. */
 @media (max-width: 1535px) {
   .head[data-center]:has(.live):has(.link[data-place='forge']) .links,
   .head[data-center]:has(.live):has(.link[data-place='forge']) .right {
@@ -256,19 +269,32 @@ a.netCell::after {
   }
 }
 
-@media (max-width: 1365px) {
-  .head[data-center]:has(.live):has(.link[data-place='forge']) .links {
+/* Forge and Jobs both in the menu make it six items wide. Beside the race clock ("Next round 01:51:41" is the widest)
+   the six go behind the one button under 1600, and with LIVE under 1760: at 1366 and 1440 the clock stood on the word
+   Forge. Nothing comes within 32 px of the clock (measured on the home page of mainnet with both links in the menu). */
+@media (max-width: 1599px) {
+  .head[data-center]:has(.link[data-place='forge']):has(.link[data-place='jobs']) .links {
     display: none;
   }
 
-  .head[data-center]:has(.live):has(.link[data-place='forge']) .toggle {
+  .head[data-center]:has(.link[data-place='forge']):has(.link[data-place='jobs']) .toggle {
+    display: grid;
+  }
+}
+
+@media (max-width: 1759px) {
+  .head[data-center]:has(.live):has(.link[data-place='forge']):has(.link[data-place='jobs']) .links {
+    display: none;
+  }
+
+  .head[data-center]:has(.live):has(.link[data-place='forge']):has(.link[data-place='jobs']) .toggle {
     display: grid;
   }
 }
 
 /* An item marked with the other network is wider by that network's name. Beside the race clock the links then stand
-   closer, and go behind the one button sooner: one marked item under 1366, with LIVE under 1536; two marked items
-   under 1560, with LIVE under 1700. Nothing ever reaches the clock. */
+   closer, and go behind the one button sooner: one marked item under 1648, with LIVE under 1808; two marked items
+   under 1840, with LIVE under 1980. Nothing ever comes within 32 px of the clock (measured with Get NEAR in the menu). */
 @media (max-width: 1919px) {
   .head[data-center]:has(.links[data-away]) .links,
   .head[data-center]:has(.links[data-away]) .right {
@@ -276,7 +302,7 @@ a.netCell::after {
   }
 }
 
-@media (max-width: 1699px) {
+@media (max-width: 1979px) {
   .head[data-center]:has(.live):has(.links[data-away='2']) .links {
     display: none;
   }
@@ -286,7 +312,7 @@ a.netCell::after {
   }
 }
 
-@media (max-width: 1559px) {
+@media (max-width: 1839px) {
   .head[data-center]:has(.links[data-away='2']) .links {
     display: none;
   }
@@ -296,7 +322,7 @@ a.netCell::after {
   }
 }
 
-@media (max-width: 1535px) {
+@media (max-width: 1807px) {
   .head[data-center]:has(.live):has(.links[data-away]) .links {
     display: none;
   }
@@ -306,7 +332,7 @@ a.netCell::after {
   }
 }
 
-@media (max-width: 1365px) {
+@media (max-width: 1647px) {
   .head[data-center]:has(.links[data-away]) .links {
     display: none;
   }
@@ -317,9 +343,9 @@ a.netCell::after {
 }
 
 /* The switch between the two networks is wider than the plain mark was. Where the links would reach it they go
-   behind the one button: under 1024; with a marked item and LIVE under 1140; with two marked items under 1200, and
-   with LIVE beside them under 1240. */
-@media (max-width: 1239px) {
+   behind the one button: under 1160; with a marked item and LIVE under 1264; with two marked items under 1336, and
+   with LIVE beside them under 1364. */
+@media (max-width: 1363px) {
   .head:has(.nets):has(.live):has(.links[data-away='2']) .links {
     display: none;
   }
@@ -329,7 +355,7 @@ a.netCell::after {
   }
 }
 
-@media (max-width: 1199px) {
+@media (max-width: 1335px) {
   .head:has(.nets):has(.links[data-away='2']) .links {
     display: none;
   }
@@ -339,7 +365,7 @@ a.netCell::after {
   }
 }
 
-@media (max-width: 1139px) {
+@media (max-width: 1263px) {
   .head:has(.nets):has(.live):has(.links[data-away]) .links {
     display: none;
   }
@@ -349,7 +375,7 @@ a.netCell::after {
   }
 }
 
-@media (max-width: 1023px) {
+@media (max-width: 1159px) {
   .head:has(.nets) .links {
     display: none;
   }
@@ -370,6 +396,16 @@ a.netCell::after {
 @media (max-width: 1023px) {
   .head[data-center] .nets {
     display: none;
+  }
+}
+
+@media (max-width: 935px) {
+  .head:has(.live) .links {
+    display: none;
+  }
+
+  .head:has(.live) .toggle {
+    display: grid;
   }
 }
 
@@ -503,16 +539,37 @@ a.netCell::after {
   padding: 1px 10px 0;
 }
 
-.sheetQuiet {
-  display: inline-flex;
-  align-items: center;
-  align-self: flex-start;
-  min-height: 44px;
+/* Under the menu's own items, the pages it has no item for: quieter, two to a row, each a full row for the thumb. */
+.sheetMore {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 16px;
   flex: none;
-  font-size: 15px;
+  animation: fade 360ms 280ms cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+.sheetQuiet {
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  min-width: 44px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--ice-60);
   transition: color 160ms;
+}
+
+.sheetQuiet[aria-current='page'] {
+  color: var(--ice);
+}
+
+/* On a wide screen they stand in one line. */
+@media (min-width: 761px) {
+  .sheetMore {
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: 40px;
+  }
 }
 
 @media (hover: hover) {
@@ -527,7 +584,8 @@ a.netCell::after {
     animation: none;
   }
 
-  .sheetLink {
+  .sheetLink,
+  .sheetMore {
     animation: fade 200ms linear both;
   }
 

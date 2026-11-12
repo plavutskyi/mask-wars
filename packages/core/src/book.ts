@@ -1,5 +1,5 @@
 /**
- * Book: one parimutuel pool over outcomes `0..n-1` (spec «Книга»). A fight has `main` and `last_call` (2 outcomes
+ * Book: one parimutuel pool over outcomes `0..n-1` (packages/core/README.md, "Book"). A fight has `main` and `last_call` (2 outcomes
  * each); the season pool WHO'S UNDER is a 6-outcome book bound to a mask, not to a fight.
  *
  *   T = all stakes, W = stakes on the winner

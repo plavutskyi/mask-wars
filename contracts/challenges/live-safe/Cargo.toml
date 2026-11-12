@@ -1,9 +1,12 @@
 [package]
 name = "live-safe"
-version = "0.1.0"
+# The code's version, as `contract_source_metadata` gives it (NEP-330). 1.6.0 adds `about`; the events stay 1.5.0.
+version = "1.6.0"
 edition.workspace = true
+license.workspace = true
 publish.workspace = true
-description = "Live training target for MASK WARS races on testnet. The hole in this safe is planted on purpose."
+repository.workspace = true
+description = "MASK WARS arena target: a safe the house funds, only the masks of its round can open, and that goes home after the round. Its hole is planted on purpose."
 
 [lib]
 crate-type = ["cdylib", "rlib"]
@@ -13,3 +16,11 @@ near-sdk = { workspace = true }
 
 [dev-dependencies]
 near-sdk = { workspace = true, features = ["unit-testing"] }
+
+# The build anyone can repeat: `cargo near build reproducible-wasm` runs this command in this image, and the code it
+# gives names the image, the command, the commit and this folder in `contract_source_metadata` (build_info).
+[package.metadata.near.reproducible_build]
+image = "sourcescan/cargo-near:0.22.0-rust-1.97.0"
+image_digest = "sha256:b193c8640a27172f83136a0f0aab2a9bf9d09f6ba0e6afd187addfaa9b92bae0"
+passed_env = []
+container_build_command = ["cargo", "near", "build", "non-reproducible-wasm", "--locked", "--no-abi"]

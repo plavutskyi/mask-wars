@@ -5,7 +5,7 @@
  * (house.test.ts); the tests of the script put it behind HTTP (house-open.test.ts).
  */
 import { createHash } from "node:crypto";
-import { NETWORKS } from "@maskwars/network";
+import { NETWORKS, slotAt } from "@maskwars/network";
 import { codeHashOf, houseConfig, type HouseConfig } from "../src/house.ts";
 import { base58Encode, NearKey, type Chain } from "../src/near-tx.ts";
 
@@ -67,6 +67,8 @@ export const CFG: HouseConfig = { ...houseConfig(NETWORKS.mainnet, JUDGE), safeC
 export const HOME_CODE = NETWORKS.mainnet.home_code!;
 /** A plain account's code hash: no code at all. */
 export const NO_CODE = "11111111111111111111111111111111";
+/** The house contract's code hash, as the house's account shows it once the owner deploys it (any code but none). */
+export const HOUSE_CONTRACT_CODE = "BXZUSkhd8jYUxKCFreADDAVCTY1bG58jGXNgKy6xztTA";
 /** What a mask stores once it runs home: its account, its keys and the code. */
 export const MASK_BYTES = 1_700;
 /** What a mask keeps when its winnings go home: 0.4 NEAR and the stake of what it stores. */
@@ -109,7 +111,13 @@ export function readTx(base64: string) {
     const tag = b[at++];
     if (tag === 0) actions.push({ kind: "createAccount" });
     else if (tag === 1) actions.push({ kind: "deployContract", code: Buffer.from(bytes()) });
-    else if (tag === 2) actions.push({ kind: "functionCall", method: bytes().toString(), args: JSON.parse(bytes().toString()), gas: u64(), deposit: u128() });
+    else if (tag === 2) {
+      const method = bytes().toString();
+      // `make_vault` on the house contract takes the vault's wasm itself as its input; every other call takes JSON.
+      const raw = Buffer.from(bytes());
+      const args = method === "make_vault" ? { wasm: raw } : JSON.parse(raw.toString());
+      actions.push({ kind: "functionCall", method, args, gas: u64(), deposit: u128() });
+    }
     else if (tag === 3) actions.push({ kind: "transfer", deposit: u128() });
     else throw new Error(`action ${tag} is not one the house sends`);
   }
@@ -196,6 +204,11 @@ export class FakeNear implements Chain {
   private houseDue: { amount: bigint; reads: number }[] = [];
   /** What else happens on chain right after a step lands: a payment to a mask, say. */
   onLanded: ((step: string, receiver: string) => void) | null = null;
+  /**
+   * The house contract (contracts/house) on the house's own account, once a test deploys it: its day. Each step is
+   * then a call on the house, which checks it as the contract does and passes it on.
+   */
+  contract: { lastRound: number; lastSlot: bigint; made: bigint } | null = null;
 
   /** Puts a mask on chain holding `above` more than it keeps, running `code` (home by default). */
   mask(id: string, above: bigint, code = HOME_CODE): this {
@@ -255,7 +268,8 @@ export class FakeNear implements Chain {
       }
       const a = p.account_id === HOUSE ? this.house : p.account_id === VAULT ? this.vault : null;
       if (!a) return missing();
-      return { amount: a.amount.toString(), code_hash: "codeHash" in a ? a.codeHash : "1".repeat(32), storage_usage: "storage" in a ? a.storage : 165_500 };
+      const code = "codeHash" in a ? a.codeHash : p.account_id === HOUSE && this.contract ? HOUSE_CONTRACT_CODE : NO_CODE;
+      return { amount: a.amount.toString(), code_hash: code, storage_usage: "storage" in a ? a.storage : 165_500 };
     }
     if (p.request_type === "view_access_key_list") return { keys: Array.from({ length: this.vault?.keys ?? 0 }, () => ({})) };
     const args = JSON.parse(Buffer.from(p.args_base64!, "base64").toString()) as Record<string, string>;
@@ -264,6 +278,11 @@ export class FakeNear implements Chain {
   }
 
   view(contract: string, method: string, args: Record<string, string>, missing: () => never): unknown {
+    if (contract === HOUSE) {
+      const c = this.contract;
+      if (!c) throw new Error("query: CONTRACT_EXECUTION_ERROR CodeDoesNotExist");
+      if (method === "day") return { last_round: c.lastRound, last_slot_ns: c.lastSlot.toString(), made_slot_ns: c.made.toString() };
+    }
     if (contract === VAULT) {
       const v = this.vault ?? missing();
       if (v.codeHash !== CODE && v.codeHash !== OLD_CODE) throw new Error("query: CONTRACT_EXECUTION_ERROR wasm execution failed with error: MethodResolveError(MethodNotFound)");
@@ -290,11 +309,65 @@ export class FakeNear implements Chain {
     throw new Error(`no view ${contract}.${method}`);
   }
 
+  /**
+   * A call on the house contract as the contract passes it on: the step it makes and the transaction it sends, or why
+   * the contract refuses it. `after` is what the contract records once that transaction went through.
+   */
+  throughHouse(tx: ReturnType<typeof readTx>): { step: string; inner: ReturnType<typeof readTx>; after: () => void } | string {
+    const c = this.contract;
+    if (!c) return "CodeDoesNotExist";
+    const call = tx.actions[0];
+    if (tx.actions.length !== 1 || call?.kind !== "functionCall" || call.deposit !== 0n) return "one call on the house, nothing attached";
+    const a = call.args;
+    const fc = (method: string, args: Record<string, any>, deposit = 0n): Decoded => ({ kind: "functionCall", method, args, gas: 0n, deposit });
+    const to = (receiver: string, ...actions: Decoded[]) => ({ signer: tx.signer, receiver, actions });
+    const slotNs = (() => {
+      const s = slotAt({ first_minute: CFG.round.firstMinute, every_minutes: CFG.round.everyMinutes }, Number(this.now / 1_000_000n));
+      return s === null ? 0n : BigInt(s) * 1_000_000n;
+    })();
+    const none = () => {};
+    switch (call.method) {
+      case "home":
+        if (!CFG.masks.includes(a.mask)) return "home: only one of the round's masks";
+        return { step: "home", inner: to(a.mask, fc("home", {})), after: none };
+      case "unstick":
+      case "settle":
+      case "refund":
+        return { step: call.method, inner: to(BOUNTY, fc(call.method, a)), after: none };
+      case "retire":
+        // From the call on, the vault that stood is no longer one made in this slot.
+        c.made = 0n;
+        return { step: "retire", inner: to(VAULT, fc("retire", {})), after: none };
+      case "make_vault": {
+        const wasm = a.wasm as Buffer;
+        if (codeHashOf(wasm) !== CFG.safeCode) return "the wasm is not the vault's code: its hash differs";
+        const init = fc("new", { owner: VAULT, masks: [...CFG.masks], arbiter: BOUNTY, team: HOUSE });
+        const inner = to(VAULT, { kind: "createAccount" }, { kind: "transfer", deposit: CFG.round.safe }, { kind: "deployContract", code: wasm }, init);
+        return { step: "create", inner, after: () => void (c.made = slotNs) };
+      }
+      case "open_round": {
+        const m = /^race-(\d{4,9})$/.exec(a.id);
+        if (!m) return "the round's id is race-<n>";
+        const n = Number(m[1]);
+        if (n <= c.lastRound) return "the round's number must come after the last round's";
+        if (slotNs === 0n) return "no slot has come yet";
+        if (c.lastSlot === slotNs) return "this slot has its round";
+        if (c.made !== slotNs) return "no vault made in this slot: make_vault first";
+        const args = { id: a.id, safe: VAULT, masks: [...CFG.masks], min_loot: CFG.round.minLoot.toString(), hours: CFG.round.hours, commit_minutes: CFG.round.commitMinutes, reveal_minutes: CFG.round.revealMinutes, safe_code: CFG.safeCode, judge_version: JUDGE };
+        return { step: "open", inner: to(BOUNTY, fc("open_safe", args, CFG.round.deposit)), after: () => void Object.assign(c, { lastRound: n, lastSlot: slotNs }) };
+      }
+    }
+    return `the house contract has no method ${call.method}`;
+  }
+
   /** One transaction: checked and applied the way the chain and the contracts would, or refused. */
   send(base64: string): unknown {
-    const tx = readTx(base64);
+    const signed = readTx(base64);
+    const via = signed.receiver === HOUSE ? this.throughHouse(signed) : null;
+    if (typeof via === "string") return this.answer(via);
+    const tx = via ? via.inner : signed;
     const call = tx.actions.find((a) => a.kind === "functionCall");
-    const step = tx.actions[0]!.kind === "createAccount" ? "create" : call?.kind === "functionCall" ? (call.method === "open_safe" ? "open" : call.method) : "?";
+    const step = via ? via.step : tx.actions[0]!.kind === "createAccount" ? "create" : call?.kind === "functionCall" ? (call.method === "open_safe" ? "open" : call.method) : "?";
     // The mask a home step went to: a test of a lost or failed home names the mask.
     const key = step === "home" ? `home:${tx.receiver}` : step;
     if (this.dieBefore !== null && this.landed.length >= this.dieBefore) {
@@ -308,7 +381,9 @@ export class FakeNear implements Chain {
     }
     const failure = this.apply(step, tx);
     if (failure === null) {
-      this.landed.push({ step, ...tx });
+      via?.after();
+      // What landed is the transaction the house signed: through the house contract, a call on the house.
+      this.landed.push({ step, ...signed });
       this.onLanded?.(step, tx.receiver);
     }
     if (this.dieAfter !== null && this.landed.length >= this.dieAfter) {
@@ -316,6 +391,11 @@ export class FakeNear implements Chain {
       throw new Error(GONE);
     }
     if (this.lost.delete(step) || this.lost.delete(key)) throw new Error("fetch failed: the RPC timed out");
+    return this.answer(failure, step);
+  }
+
+  /** The node's answer to a transaction that failed with `failure`, or went through. */
+  answer(failure: string | null, step = "?"): unknown {
     if (failure !== null) {
       const status = { Failure: { ActionError: { kind: { FunctionCallError: { ExecutionError: failure } } } } };
       return { status, receipts_outcome: [{ outcome: { status, logs: [] } }] };

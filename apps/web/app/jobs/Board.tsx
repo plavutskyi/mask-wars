@@ -1,4 +1,4 @@
-import { type Job, type JobBoard, KINDS, LIVE, isFresh } from '@maskwars/arena/jobs';
+import { type Job, type JobBoard, LIVE, isFresh } from '@maskwars/arena/jobs';
 import { near } from '@maskwars/arena/format';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -11,10 +11,11 @@ import { World } from '@/components/arena/World';
 import p from '@/components/arena/page.module.css';
 import { utc } from '@/lib/show';
 import { Countdown } from './Countdown';
+import type { DrainSheet } from './drain';
 import { PostJob } from './PostJob';
 import { Ways } from './Ways';
 import { type PostCall, postCalls } from './post';
-import { KIND_JUDGE, KIND_LINE, KIND_WORD, PHASE_WORD, boardMoving, clockTime, entrantName, paidOf, refused, winnerOf } from './show';
+import { KIND_JUDGE, KIND_LINE, KIND_WORD, PHASE_WORD, boardMoving, clockTime, entrantName, openWord, paidOf, refused, winnerOf } from './show';
 import s from './jobs.module.css';
 
 /** Where the job stands, in a few words, with its clock while one runs. */
@@ -22,7 +23,7 @@ function Status({ job, now }: { job: Job; now: number }) {
   if (job.phase === 'enlisting') {
     return (
       <>
-        {job.takes ? 'Open' : 'Full'} · <Countdown ms={job.workUntil - now} className={s.clock} />
+        {openWord(job)} · <Countdown ms={job.workUntil - now} className={s.clock} />
       </>
     );
   }
@@ -68,6 +69,7 @@ function Featured({ job, now }: { job: Job; now: number }) {
           <span>
             <b>{job.masks}</b>/{job.slots} masks
           </span>
+          {job.openTo.who === 'registered' ? <span>forged masks only</span> : null}
           <span>
             <b>{near(job.bond)}</b> NEAR bond
           </span>
@@ -111,10 +113,11 @@ function Row({ job, now }: { job: Job; now: number }) {
 }
 
 /**
- * The board's one action. While the contract can open a job, "Post a job" hands the client the call that opens one.
- * Until then nothing on the page offers to post: the one thing a visitor can do today is connect an agent.
+ * The board's one action. While the contract can open a job, "Post a job" opens one: with the person's own wallet on
+ * the house's round of the day, or as the call an agent signs. Until then nothing on the page offers to post: the one
+ * thing a visitor can do today is connect an agent.
  */
-function Acts({ calls }: { calls: PostCall[] }) {
+function Acts({ calls, drain }: { calls: PostCall[]; drain: DrainSheet | null }) {
   if (!calls.length) {
     return (
       <div className={s.acts}>
@@ -126,7 +129,7 @@ function Acts({ calls }: { calls: PostCall[] }) {
   }
   return (
     <div className={s.acts}>
-      <PostJob calls={calls} className={`${p.btn} ${p.word} ${s.btn}`}>
+      <PostJob calls={calls} drain={drain} resume className={`${p.btn} ${p.word} ${s.btn}`}>
         Post a job
       </PostJob>
       <Link href="/mcp/connect" className={s.quiet}>
@@ -144,13 +147,13 @@ function Pager() {
         To the race
       </Link>
       <Link href="/hire" className={`${p.pagerLink} ${s.endLink}`}>
-        Fund a vault from any chain <Arrow className={s.fwd} />
+        Fund a job from any chain <Arrow className={s.fwd} />
       </Link>
     </nav>
   );
 }
 
-export function Board({ board, now }: { board: JobBoard; now: number }) {
+export function Board({ board, now, drain = null }: { board: JobBoard; now: number; drain?: DrainSheet | null }) {
   const live = board.jobs.some((j) => LIVE.has(j.phase));
   const fresh = isFresh(board, now);
   const moving = boardMoving(board, now);
@@ -160,7 +163,9 @@ export function Board({ board, now }: { board: JobBoard; now: number }) {
     { label: 'Rewards waiting', value: `${near(board.waiting)} NEAR` },
     { label: 'Fuel for the masks’ minds', value: `${near(board.waitingFuel)} NEAR` },
     { label: 'Paid to masks so far', value: `${near(board.paid)} NEAR` },
-    { label: 'Paid to NEAR AI for their minds', value: `${near(board.fuelPaid)} NEAR` },
+    // Fuel is paid only for a counted step of a mind that burned it, to the jobs' treasury (MASK WARS, which pays the
+    // masks' inference): the line stands once the chain shows some.
+    ...(BigInt(board.fuelPaid) > 0n ? [{ label: 'Fuel paid for their minds', value: `${near(board.fuelPaid)} NEAR to MASK WARS` }] : []),
     ...(board.total > board.jobs.length ? [{ label: 'Jobs shown', value: `the newest ${board.jobs.length} of ${board.total}` }] : []),
     ...(board.market ? [{ label: 'Company fee', value: `${board.market.feeBps / 100}% of a paid reward` }] : []),
     ...(board.contract ? [{ label: 'Jobs contract', value: board.contract }] : []),
@@ -169,19 +174,21 @@ export function Board({ board, now }: { board: JobBoard; now: number }) {
     { label: 'Network', value: `NEAR ${board.network}` },
   ];
 
-  if (!board.deployed || board.jobs.length === 0) {
-    const state = !board.deployed ? 'closed' : calls.length ? 'open' : 'waiting';
+  // The page answers only where the jobs contract is on chain (page.tsx): an empty board is a deployed contract with no job.
+  if (board.jobs.length === 0) {
+    // The kinds of work a job can open with on this contract now, and nothing it cannot.
+    const kinds = calls.map((c) => c.kind);
+    const state = kinds.length ? 'open' : 'waiting';
     const kicker = state === 'open' ? 'Jobs · none yet' : 'Jobs · not open yet';
-    const line = {
-      closed: `The board opens with its contract on NEAR ${board.network}.`,
-      waiting: 'The contract is on chain. The board opens with its first judge.',
-      open: 'The board is empty. The first job opens it.',
-    }[state];
-    const why = {
-      closed: 'The jobs contract is not on chain yet. Once it is, every job opened on it shows here, read from the chain: its reward, its judge, the masks on it and every step. Nothing on this page is made up.',
-      waiting: 'The jobs contract is on chain and can open no job yet: it has no judge and follows no round. Every job opened on it will show here, read from the chain.',
-      open: 'The jobs contract is on chain and holds no job yet. Every job opened on it shows here, read from the chain: its reward, its judge, the masks on it and every step.',
-    }[state];
+    const line = state === 'open' ? 'The board is empty. The first job opens it.' : 'The contract is on chain. No job can open on it yet.';
+    const why =
+      state === 'open'
+        ? 'The jobs contract is on chain and holds no job yet. Every job opened on it shows here, read from the chain: its reward, its judge, the masks on it and every step.'
+        : board.market?.changing
+          ? 'The jobs contract is on chain, and new code waits to apply on it: no job opens until it has. Every job opened on it will show here, read from the chain.'
+          : 'The jobs contract is on chain and can open no job yet: it follows no round and has no judge. Every job opened on it will show here, read from the chain.';
+    // The «i» ends the line: it stays beside the line's last word and never drops to a line of its own.
+    const cut = line.lastIndexOf(' ');
     return (
       <main className={p.page}>
         <World />
@@ -191,12 +198,19 @@ export function Board({ board, now }: { board: JobBoard; now: number }) {
             <p className={`${p.word} ${p.kicker}`}>{kicker}</p>
             <h1 className={`${p.word} ${p.title}`}>Masks for hire</h1>
             <div className={p.big}>
-              <span className={s.emptyLine}>{line}</span>
-              <Info rows={board.contract ? [{ label: 'Jobs contract', value: board.contract }, { label: 'Network', value: `NEAR ${board.network}` }] : []} label="Why there are no jobs" align="start">
-                <span className={s.infoText}>{why}</span>
-              </Info>
+              <span className={s.emptyLine}>
+                {line.slice(0, cut)}{' '}
+                <span className={s.lineEnd}>
+                  {line.slice(cut + 1)}
+                  <span className={s.lineInfo}>
+                    <Info rows={board.contract ? [{ label: 'Jobs contract', value: board.contract }, { label: 'Network', value: `NEAR ${board.network}` }] : []} label="Why there are no jobs" align="start">
+                      <span className={s.infoText}>{why}</span>
+                    </Info>
+                  </span>
+                </span>
+              </span>
             </div>
-            <Acts calls={calls} />
+            <Acts calls={calls} drain={drain} />
           </div>
           <div className={s.boardArt} aria-hidden>
             <Image src="/art/vault.webp" alt="" fill priority fetchPriority="high" sizes="(max-width: 900px) 70vw, 40vw" quality={85} className={p.heroVault} />
@@ -208,10 +222,11 @@ export function Board({ board, now }: { board: JobBoard; now: number }) {
             Two ways in
           </h2>
           <Ways
-            soon={state === 'closed' ? 'Opens with the contract' : 'Opens with the first judge'}
+            kinds={kinds}
+            soon="Not open yet"
             post={
               calls.length ? (
-                <PostJob calls={calls} className={`${p.word} ${s.wayGo}`}>
+                <PostJob calls={calls} drain={drain} className={`${p.word} ${s.wayGo}`}>
                   Post a job <Arrow className={s.wayArrow} />
                 </PostJob>
               ) : null
@@ -219,22 +234,24 @@ export function Board({ board, now }: { board: JobBoard; now: number }) {
           />
         </section>
 
-        <section className={s.band} aria-labelledby="kinds">
-          <h2 id="kinds" className={`${p.word} ${p.h2}`}>
-            Three kinds of work
-          </h2>
-          <ul className={s.kinds}>
-            {KINDS.map((k) => (
-              <li key={k} className={s.kind} data-kind={k}>
-                <span className={`${p.word} ${s.tag}`} data-kind={k}>
-                  {KIND_WORD[k]}
-                </span>
-                <span className={s.kindLine}>{KIND_LINE[k]}</span>
-                <span className={`${p.word} ${s.kindJudge}`}>{KIND_JUDGE[k]}</span>
-              </li>
-            ))}
-          </ul>
-        </section>
+        {kinds.length ? (
+          <section className={s.band} aria-labelledby="kinds">
+            <h2 id="kinds" className={`${p.word} ${p.h2}`}>
+              {kinds.length === 1 ? 'The work' : `${kinds.length === 2 ? 'Two' : 'Three'} kinds of work`}
+            </h2>
+            <ul className={s.kinds} data-n={kinds.length}>
+              {kinds.map((k) => (
+                <li key={k} className={s.kind} data-kind={k}>
+                  <span className={`${p.word} ${s.tag}`} data-kind={k}>
+                    {KIND_WORD[k]}
+                  </span>
+                  <span className={s.kindLine}>{KIND_LINE[k]}</span>
+                  <span className={`${p.word} ${s.kindJudge}`}>{KIND_JUDGE[k]}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
 
         <Pager />
       </main>
@@ -264,7 +281,7 @@ export function Board({ board, now }: { board: JobBoard; now: number }) {
             <Info rows={facts} label="The jobs on chain" align="start" />
           </div>
           <p className={p.sub}>{open ? `waiting for masks in ${board.open} open ${board.open === 1 ? 'job' : 'jobs'}` : 'paid to masks so far'}</p>
-          <Acts calls={calls} />
+          <Acts calls={calls} drain={drain} />
         </div>
         <div className={s.boardArt} aria-hidden>
           <Image src="/art/vault.webp" alt="" fill priority fetchPriority="high" sizes="(max-width: 900px) 70vw, 40vw" quality={85} className={p.heroVault} />

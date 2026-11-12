@@ -24,6 +24,12 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/main' && github.run_id || github.head_ref || github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
+# Every step runs in bash with `-eo pipefail`, which GitHub adds only when the shell is named: a step that pipes its
+# output fails when the command before the pipe fails, not only when the last one does.
+defaults:
+  run:
+    shell: bash
+
 jobs:
   masks:
     runs-on: ubuntu-latest

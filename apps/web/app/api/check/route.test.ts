@@ -14,11 +14,23 @@ const recorded = (network: string) =>
   (JSON.parse(readFileSync(new URL(`../../../../../packages/check/test/recorded/${network}.json`, import.meta.url), 'utf8')) as { exchanges: Exchange[] }).exchanges;
 const answers = new Map([...recorded('mainnet'), ...recorded('testnet')].map((e) => [keyOf(e.url, e.method, e.params), e]));
 
+// The house's vault in its open round, as the vectors shared with the TEE module hold it (packages/check/test/vectors.json),
+// served by the two providers the site reads mainnet from. One chain with its own head: while a test reads it, nothing
+// else answers.
+type Vector = { name: string; exchanges: Exchange[]; expect: { verdict: string; summary: string; reasons: { code: string; level: string }[] } };
+const VAULT_IN_ROUND = "the house's vault in its open round: an arena target by design, warn; its new account said, not warned";
+const vaultRound = (JSON.parse(readFileSync(new URL('../../../../../packages/check/test/vectors.json', import.meta.url), 'utf8')) as { vectors: Vector[] }).vectors.find(
+  (v) => v.name === VAULT_IN_ROUND,
+)!;
+const PROVIDER: Record<string, string> = { 'https://a.example': 'https://rpc.mainnet.fastnear.com', 'https://b.example': 'https://near.drpc.org' };
+const vaultChain = new Map(vaultRound.exchanges.map((e) => [keyOf(PROVIDER[e.url] ?? e.url, e.method, e.params), e]));
+let world: Map<string, Exchange> = answers;
+
 let route: typeof import('./route');
 beforeAll(async () => {
   vi.stubGlobal('fetch', (async (input: string | URL | Request, init?: RequestInit) => {
     const { method, params } = JSON.parse(String(init?.body)) as { method: string; params: unknown };
-    const hit = answers.get(keyOf(String(input), method, params));
+    const hit = world.get(keyOf(String(input), method, params));
     if (!hit) throw new TypeError('fetch failed (not recorded)');
     return new Response(JSON.stringify(hit.response), { status: hit.status, headers: { 'content-type': 'application/json' } });
   }) as typeof fetch);
@@ -62,6 +74,28 @@ describe('/api/check', () => {
     const wrong = await post({ account: 'alice.near', network: 'testnet' });
     expect(wrong.status).toBe(400);
     expect(await wrong.json()).toEqual({ error: 'alice.near is a mainnet name; this check reads testnet' });
+  });
+
+  it("reads the house's vault, by the repo's mainnet list, as an arena target by design, never as a hole", async () => {
+    world = vaultChain;
+    try {
+      const res = await get('account=vault.house.maskwars.near', '198.51.100.12');
+      expect(res.status).toBe(200);
+      const r = await res.json();
+      expect(r).toMatchObject({ account: 'vault.house.maskwars.near', network: 'mainnet', verdict: 'warn', summary: vaultRound.expect.summary });
+      expect(r.summary).toMatch(/^WARN: Arena target, by design: /);
+      // The same reasons the TEE module gives from the same chain; only the providers' names differ.
+      expect(r.reasons.slice(0, 3)).toEqual(vaultRound.expect.reasons.slice(0, 3));
+      expect(r.reasons.map((x: { code: string; level: string }) => [x.code, x.level])).toEqual([
+        ['arena_target', 'warn'],
+        ['young_account', 'info'],
+        ['contract', 'info'],
+        ['rpc_agree', 'info'],
+      ]);
+      expect(r.tee).toEqual({ signed: false, why: 'MASK CHECK is not published in its TEE yet: the site read this answer itself' });
+    } finally {
+      world = answers;
+    }
   });
 
   it('gives one caller 30 checks a minute on both networks together', async () => {

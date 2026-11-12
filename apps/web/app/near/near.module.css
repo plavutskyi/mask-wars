@@ -1,0 +1,1597 @@
+/* Get NEAR: the empty arena, the number on the left, one card on the right. BRANDBOOK §1, §3, §4, §8, §9.
+   Tokens only. NEAR is the only green on the screen. */
+
+.screen {
+  --gut: clamp(16px, 4.4vw, 64px);
+  position: relative;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  isolation: isolate;
+  overflow: clip;
+  background: var(--ink);
+  caret-color: var(--ice);
+}
+
+.screen ::selection {
+  background: var(--ice);
+  color: var(--ink);
+}
+
+.world {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+}
+
+/* The arena's floor holds the page; its sky darkens towards the words. */
+.world::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(70% 60% at 30% 40%, var(--ink) 0%, transparent 70%),
+    linear-gradient(to bottom, var(--ink) 0%, transparent 30%, transparent 70%, var(--ink) 100%);
+  opacity: 0.86;
+}
+
+.worldImg {
+  object-fit: cover;
+  object-position: center 62%;
+}
+
+.word {
+  font-family: var(--font-word);
+  font-weight: 800;
+  font-stretch: 125%;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+}
+
+.grow {
+  flex: 1;
+}
+
+/* ---- Layout ---- */
+
+.layout {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(400px, 460px);
+  align-items: center;
+  column-gap: clamp(48px, 7vw, 128px);
+  width: min(1240px, 100%);
+  margin: 0 auto;
+  padding: calc(104px + env(safe-area-inset-top)) var(--gut) 56px;
+}
+
+/* ---- The number ---- */
+
+.hero {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* Get NEAR and Swap: two tabs above the title, one place on the site. */
+.tabs {
+  display: inline-flex;
+  align-self: flex-start;
+  gap: 4px;
+  margin: 0 0 clamp(18px, 3svh, 28px);
+  padding: 4px;
+  border-radius: var(--radius);
+  box-shadow: inset 0 0 0 1px var(--line);
+  background: color-mix(in srgb, var(--ink) 60%, transparent);
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: var(--radius);
+  font-family: var(--font-word);
+  font-size: 13px;
+  font-weight: 800;
+  font-stretch: 125%;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ice-60);
+  text-decoration: none;
+  transition:
+    color 160ms,
+    background 160ms;
+}
+
+.tab[aria-current='page'] {
+  background: var(--ice);
+  color: var(--ink);
+}
+
+.title {
+  margin: 0;
+  font-size: clamp(48px, 6.4vw, 104px);
+  line-height: 0.9;
+  letter-spacing: 0;
+  color: var(--ice);
+}
+
+.lede {
+  max-width: 32ch;
+  margin: 20px 0 0;
+  font-size: 18px;
+  line-height: 1.45;
+  font-weight: 500;
+  color: var(--ice-60);
+  text-wrap: balance;
+}
+
+.result {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: clamp(36px, 7svh, 72px);
+}
+
+.kicker {
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  color: var(--ice-60);
+}
+
+.big {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0 0.28em;
+  min-width: 0;
+  font-family: var(--font-num);
+  font-weight: 800;
+  font-stretch: 125%;
+  line-height: 1;
+}
+
+.bigNum {
+  font-size: clamp(64px, 7.2vw, 120px);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--money);
+  transition:
+    color 240ms,
+    opacity 240ms;
+}
+
+/* A long number (a meme coin's millions) steps down a size instead of leaving the screen. */
+.bigNum[data-size='m'] {
+  font-size: clamp(52px, 5.6vw, 92px);
+}
+
+.bigNum[data-size='l'] {
+  font-size: clamp(40px, 4.2vw, 68px);
+}
+
+.bigUnit {
+  font-size: clamp(24px, 2.4vw, 40px);
+  letter-spacing: 0.02em;
+  color: var(--ice);
+}
+
+.result[data-dim] .bigNum {
+  opacity: 0.38;
+}
+
+.result[data-ended='refunded'] .bigNum,
+.result[data-ended='short'] .bigNum,
+.result[data-ended='failed'] .bigNum {
+  color: var(--ice);
+  opacity: 0.3;
+}
+
+.result[data-ended='done'] .bigNum {
+  animation: land 700ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+@keyframes land {
+  12% {
+    transform: scale(1.04);
+  }
+}
+
+.heroLine {
+  min-height: 24px;
+  font-size: 17px;
+  line-height: 1.4;
+  font-weight: 500;
+  color: var(--ice-60);
+  overflow-wrap: anywhere;
+}
+
+.heroLine b {
+  font-weight: 700;
+  color: var(--ice);
+}
+
+/* ---- The card ---- */
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  padding: 20px;
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--ink-2) 86%, transparent);
+  box-shadow:
+    inset 0 0 0 1px var(--line),
+    0 48px 120px -24px rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  animation: enter 420ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+@keyframes enter {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+}
+
+/* The line the card opens with. The «i» on it opens its facts from this line, over the card. */
+.top {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+}
+
+.top + .top,
+.chips + .top {
+  margin-top: 8px;
+}
+
+.label {
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  color: var(--ice-60);
+}
+
+.info {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin: -6px -10px;
+  font-family: var(--font-num);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ice-60);
+  transition: color 160ms;
+}
+
+.info::before {
+  content: '';
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+
+.info[aria-expanded='true'] {
+  color: var(--ice);
+}
+
+.back {
+  min-height: 44px;
+  margin: -6px -8px -6px 0;
+  padding: 0 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ice-60);
+  transition: color 160ms;
+}
+
+.clock {
+  font-family: var(--font-num);
+  font-size: 15px;
+  font-weight: 700;
+  font-stretch: 125%;
+  font-variant-numeric: tabular-nums;
+  color: var(--ice);
+}
+
+/* Details behind «i»: short facts, never a paragraph. They open in the «i»'s own sheet, over the card. */
+.details {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.fact {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  gap: 12px;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.fact dt {
+  color: var(--ice-38);
+  font-weight: 600;
+}
+
+.fact dd {
+  margin: 0;
+  color: var(--ice);
+  overflow-wrap: anywhere;
+}
+
+/* What is sent: the dollars typed, and the coin they go out as. */
+.sendRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 80px;
+  padding: 8px 8px 8px 16px;
+  border-radius: var(--radius);
+  background: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--line);
+  transition: box-shadow 160ms;
+}
+
+.sendRow:focus-within {
+  box-shadow: inset 0 0 0 1px var(--ice-38);
+}
+
+.amount {
+  display: flex;
+  align-items: baseline;
+  min-width: 0;
+  color: var(--ice);
+  cursor: text;
+}
+
+.amount[data-bad] {
+  color: var(--live);
+}
+
+.cur,
+.num {
+  font-family: var(--font-num);
+  font-size: 44px;
+  line-height: 1;
+  font-weight: 800;
+  font-stretch: 125%;
+  letter-spacing: -0.01em;
+}
+
+.cur {
+  margin-right: 2px;
+  opacity: 0.6;
+}
+
+.num {
+  width: auto;
+  field-sizing: content;
+  min-width: 1ch;
+  max-width: 7ch;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  outline: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.coinBtn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 60px;
+  padding: 0 12px 0 16px;
+  border-radius: var(--radius);
+  background: var(--ink-2);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--ice-60);
+  text-align: left;
+  transition:
+    box-shadow 160ms,
+    transform 100ms;
+}
+
+.coinBtnText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.coinBtnText b {
+  font-family: var(--font-num);
+  font-size: 18px;
+  line-height: 1.1;
+  font-weight: 800;
+  font-stretch: 125%;
+  color: var(--ice);
+  white-space: nowrap;
+}
+
+.coinBtnText span {
+  font-size: 13px;
+  line-height: 1.2;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.chips {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  grid-auto-flow: column;
+  gap: 8px;
+}
+
+.chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  border-radius: var(--radius);
+  box-shadow: inset 0 0 0 1px var(--line);
+  font-family: var(--font-num);
+  font-size: 15px;
+  font-weight: 700;
+  font-stretch: 125%;
+  color: var(--ice-60);
+  transition:
+    box-shadow 160ms,
+    color 160ms,
+    transform 100ms;
+}
+
+.chip[aria-checked='true'] {
+  box-shadow: inset 0 0 0 1px var(--ice);
+  color: var(--ice);
+}
+
+.input {
+  width: 100%;
+  min-width: 0;
+  height: 60px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--ice);
+  font: inherit;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  outline: none;
+  transition: box-shadow 160ms;
+}
+
+.input::placeholder {
+  color: var(--ice-38);
+  font-weight: 500;
+}
+
+.input:focus-visible {
+  box-shadow: inset 0 0 0 1px var(--ice-38);
+}
+
+.input[data-bad] {
+  box-shadow: inset 0 0 0 1px var(--live);
+}
+
+.toRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 20px;
+  margin: -2px 0 2px;
+}
+
+.toLine {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 20px;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ice-60);
+}
+
+.toLine[data-bad] {
+  color: var(--live);
+}
+
+.toLine[data-good] {
+  color: var(--ice);
+}
+
+/* A receiver a link put here: amber until the person says it is theirs (§3: amber marks what needs a look). */
+.toLine[data-link] {
+  color: var(--amber);
+}
+
+.input[data-link] {
+  box-shadow: inset 0 0 0 1px var(--amber);
+}
+
+.mine {
+  flex: none;
+  min-height: 44px;
+  margin: -12px -4px -12px 0;
+  padding: 0 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ice);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* The receiver from the person's own NEAR wallet: a quiet word beside «To». */
+.useWallet {
+  min-height: 44px;
+  margin: -6px -4px -6px 0;
+  padding: 0 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ice);
+  transition: opacity 160ms;
+}
+
+.useWallet:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+/* Paying from a wallet in this browser: the first choice when there is one, copying stays beside it. */
+.walletBtn {
+  gap: 10px;
+}
+
+.walletIcon {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius);
+}
+
+.walletList {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 8px;
+}
+
+.paid {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 4px 6px 4px 14px;
+  border-radius: var(--radius);
+  box-shadow: inset 0 0 0 1px var(--line);
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--ice);
+}
+
+.paid a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 8px;
+  font-weight: 700;
+  color: var(--ice);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* The fee, on the card itself: what the price already holds. */
+.terms {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 0 4px;
+  padding: 10px 0 0;
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ice-60);
+}
+
+.terms span:last-child {
+  font-family: var(--font-num);
+  font-weight: 600;
+  color: var(--ice);
+}
+
+.tick {
+  flex: none;
+  color: var(--money);
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 64px;
+  padding: 0 16px;
+  border-radius: var(--radius);
+  background: var(--ice);
+  color: var(--ink);
+  font-size: 15px;
+  text-align: center;
+  transition:
+    transform 100ms cubic-bezier(0.2, 0, 0, 1),
+    opacity 240ms;
+}
+
+.btn .word {
+  letter-spacing: 0.06em;
+}
+
+.go {
+  min-height: 68px;
+  font-size: 16px;
+}
+
+.btn:active,
+.chip:active,
+.coinBtn:active,
+.coinRow:active {
+  transform: scale(0.97);
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.btn[aria-busy='true']:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.quiet {
+  background: transparent;
+  color: var(--ice);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.note {
+  margin: 2px 0 0;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ice-60);
+  text-wrap: balance;
+}
+
+.note[data-bad] {
+  color: var(--live);
+}
+
+.loading {
+  display: grid;
+  gap: 12px;
+  place-items: center;
+  min-height: 360px;
+  align-content: center;
+}
+
+.pulse {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin: 0 10px 1px 0;
+  border-radius: 50%;
+  background: var(--ice);
+  vertical-align: middle;
+  animation: breathe 1600ms ease-in-out infinite;
+}
+
+@keyframes breathe {
+  0%,
+  100% {
+    opacity: 0.15;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* ---- The deposit ---- */
+
+.deposit {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 18px;
+  padding: 14px;
+  border-radius: var(--radius);
+  background: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--line);
+  outline: none;
+}
+
+.depositText:only-child {
+  grid-column: 1 / -1;
+}
+
+.qr {
+  display: block;
+  width: 132px;
+  height: 132px;
+  border-radius: var(--radius);
+}
+
+.qrPaper {
+  fill: var(--ice);
+}
+
+.qrInk {
+  fill: var(--ink);
+}
+
+.depositText {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sendAmount {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0 8px;
+  min-height: 44px;
+  text-align: left;
+  font-family: var(--font-num);
+  font-size: 18px;
+  font-weight: 800;
+  font-stretch: 125%;
+  color: var(--ice);
+}
+
+.sendAmount b {
+  font-size: 32px;
+  line-height: 1.05;
+  font-weight: 800;
+}
+
+.copyGlyph {
+  align-self: center;
+  color: var(--ice-38);
+  transition: color 160ms;
+}
+
+.sendAmount:hover .copyGlyph {
+  color: var(--ice);
+}
+
+.sendOn {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ice-60);
+}
+
+/* The coin's contract under «Send only USDT on Arbitrum»: a finger-sized target that sits like a line of text. */
+.sendCoinLink {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0 8px;
+  min-height: 44px;
+  margin: -10px 0 -8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ice-60);
+  transition: color 160ms;
+}
+
+.sendCoinWhat {
+  color: var(--ice-60);
+}
+
+.sendCoinWhat + span {
+  text-decoration: underline;
+  text-decoration-color: var(--ice-38);
+  text-underline-offset: 3px;
+}
+
+.addr {
+  max-width: 100%;
+  margin-top: 4px;
+  font-family: var(--font-num);
+  font-size: 15px;
+  line-height: 1.4;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ice);
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+.qrToggle {
+  display: none;
+  min-height: 44px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ice-60);
+}
+
+.memo {
+  min-height: 44px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--amber);
+}
+
+/* Four marks under the deposit: sent, arrived, swapped, landed. */
+.track {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.trackStep {
+  padding-top: 10px;
+  border-top: 2px solid var(--line);
+  font-family: var(--font-word);
+  font-size: 11px;
+  font-weight: 800;
+  font-stretch: 125%;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ice-38);
+  transition:
+    border-color 320ms,
+    color 320ms;
+}
+
+.trackStep[data-done] {
+  border-top-color: var(--ice);
+  color: var(--ice-60);
+}
+
+.trackStep[data-now] {
+  border-top-color: var(--ice);
+  color: var(--ice);
+  animation: now 1600ms ease-in-out infinite;
+}
+
+@keyframes now {
+  50% {
+    border-top-color: var(--ice-38);
+  }
+}
+
+/* ---- How it ended ---- */
+
+.ended {
+  gap: 12px;
+  padding: 28px 20px 20px;
+}
+
+.endLine {
+  margin: 0 0 8px;
+  font-size: 22px;
+  line-height: 1.35;
+  font-weight: 600;
+  color: var(--ice);
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+
+.endRow {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 8px;
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+/* ---- The coin picker ---- */
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(6, 5, 12, 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: fade 200ms ease-out;
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+
+.picker {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  width: min(760px, 100%);
+  height: min(640px, 100%);
+  overflow: hidden;
+  border-radius: var(--radius);
+  background: var(--ink-2);
+  box-shadow:
+    inset 0 0 0 1px var(--line),
+    0 48px 160px rgba(0, 0, 0, 0.8);
+  animation: enter 280ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.pickHead {
+  display: flex;
+  align-items: center;
+  padding: 10px 10px 4px 20px;
+}
+
+.close {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  color: var(--ice-60);
+  transition: color 160ms;
+}
+
+.search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 52px;
+  margin: 6px 16px 14px;
+  padding: 0 14px;
+  border-radius: var(--radius);
+  background: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--ice-60);
+  transition: box-shadow 160ms;
+}
+
+.search:focus-within {
+  box-shadow: inset 0 0 0 1px var(--ice-38);
+}
+
+.searchInput {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: 0;
+  background: none;
+  color: var(--ice);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 500;
+  outline: none;
+}
+
+.searchInput::placeholder {
+  color: var(--ice-38);
+}
+
+.pickBody {
+  display: grid;
+  grid-template-columns: 208px minmax(0, 1fr);
+  min-height: 0;
+  border-top: 1px solid var(--line);
+}
+
+.nets {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 8px;
+  border-right: 1px solid var(--line);
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+
+.net {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+  min-height: 44px;
+  padding: 0 12px 0 10px;
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+  color: var(--ice-60);
+  white-space: nowrap;
+  transition:
+    background-color 160ms,
+    color 160ms;
+}
+
+.net[aria-pressed='true'] {
+  background: rgba(238, 241, 255, 0.07);
+  color: var(--ice);
+}
+
+.netCount {
+  margin-left: -2px;
+  font-family: var(--font-num);
+  font-size: 12px;
+  color: var(--ice-38);
+}
+
+.coins {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 6px 8px 16px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+
+.coinsHead {
+  margin: 0;
+  padding: 10px 12px 6px;
+  font-family: var(--font-word);
+  font-size: 11px;
+  font-weight: 800;
+  font-stretch: 125%;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ice-38);
+}
+
+.coinList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* A row: the coin to pick, and its «i» beside it; the contract opens underneath. */
+.coinItem {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px;
+  align-items: center;
+  border-radius: var(--radius);
+  transition: background-color 160ms;
+}
+
+.coinItem[data-open] {
+  background: rgba(238, 241, 255, 0.04);
+}
+
+.coinRow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-height: 64px;
+  padding: 0 4px 0 12px;
+  border-radius: var(--radius);
+  text-align: left;
+  transition:
+    background-color 160ms,
+    transform 100ms;
+}
+
+.coinInfo {
+  margin: 0;
+  width: 44px;
+  height: 64px;
+}
+
+.coinFacts {
+  grid-column: 1 / -1;
+  padding: 0 12px 12px 62px;
+  animation: enter 200ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* ---- A coin's logo, its network at the corner ---- */
+
+.mark {
+  position: relative;
+  display: inline-block;
+  flex: none;
+  width: var(--mark);
+  height: var(--mark);
+}
+
+.markCoin {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  user-select: none;
+}
+
+.markCoin[data-letter] {
+  background: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--line);
+  font-family: var(--font-num);
+  font-size: calc(var(--mark) * 0.42);
+  font-weight: 800;
+  color: var(--ice-60);
+}
+
+.markChain {
+  position: absolute;
+  right: calc(var(--mark) * -0.08);
+  bottom: calc(var(--mark) * -0.08);
+  width: calc(var(--mark) * 0.44);
+  height: calc(var(--mark) * 0.44);
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--ink-2);
+  user-select: none;
+}
+
+/* The coin beside the big number, sized with its symbol. */
+.bigUnit {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.3em;
+}
+
+.bigUnit .mark {
+  --mark: 1.05em !important;
+  align-self: center;
+}
+
+.bigUnit .markChain {
+  box-shadow: 0 0 0 2px var(--ink);
+}
+
+.chainMark {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  user-select: none;
+}
+
+.netAll {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--ice-60);
+}
+
+/* ---- Which coin it is, exactly: name, network, contract ---- */
+
+.facts {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.factsName {
+  font-size: 14px;
+  line-height: 1.4;
+  font-weight: 600;
+  color: var(--ice);
+}
+
+.factsOn {
+  font-weight: 500;
+  color: var(--ice-60);
+}
+
+.factsNative {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ice-60);
+}
+
+.facts:not([data-compact]) .factsNative {
+  padding-top: 4px;
+}
+
+.factsRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 18px;
+}
+
+.factsCopy,
+.factsLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.factsCopy {
+  color: var(--ice);
+}
+
+.factsId {
+  font-family: var(--font-num);
+  font-size: 14px;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.factsLink {
+  color: var(--ice-60);
+  text-decoration: underline;
+  text-decoration-color: var(--ice-38);
+  text-underline-offset: 3px;
+  transition: color 160ms;
+}
+
+.facts[data-compact] .factsCopy,
+.facts[data-compact] .factsLink {
+  min-height: 32px;
+}
+
+.coinItem:has(> [aria-current='true']) {
+  box-shadow: inset 0 0 0 1px var(--ice-38);
+}
+
+.coinName {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.coinName b {
+  font-family: var(--font-num);
+  font-size: 16px;
+  font-weight: 800;
+  font-stretch: 125%;
+  color: var(--ice);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.coinName span {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ice-60);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.coinPrice {
+  font-family: var(--font-num);
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ice-60);
+}
+
+.empty {
+  margin: 0;
+  padding: 24px 12px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ice-60);
+}
+
+/* ---- Focus and hover ---- */
+
+.btn:focus-visible,
+.tab:focus-visible,
+.chip:focus-visible,
+.coinBtn:focus-visible,
+.info:focus-visible,
+.back:focus-visible,
+.sendAmount:focus-visible,
+.qrToggle:focus-visible,
+.memo:focus-visible,
+.mine:focus-visible,
+.useWallet:focus-visible,
+.paid a:focus-visible,
+.close:focus-visible,
+.net:focus-visible,
+.coinRow:focus-visible,
+.factsCopy:focus-visible,
+.factsLink:focus-visible,
+.sendCoinLink:focus-visible,
+.deposit:focus-visible {
+  outline: 2px solid var(--ice);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .btn:not(:disabled):hover {
+    opacity: 0.9;
+  }
+  .quiet:not(:disabled):hover {
+    opacity: 1;
+    box-shadow: inset 0 0 0 1px var(--ice-38);
+  }
+  .tab:not([aria-current='page']):hover,
+  .chip:hover,
+  .back:hover,
+  .info:hover,
+  .close:hover,
+  .net:hover,
+  .qrToggle:hover {
+    color: var(--ice);
+  }
+  .coinBtn:hover {
+    box-shadow: inset 0 0 0 1px var(--ice-38);
+  }
+  .coinRow:hover {
+    background: rgba(238, 241, 255, 0.05);
+  }
+  .factsLink:hover,
+  .sendCoinLink:hover {
+    color: var(--ice);
+  }
+  .factsCopy:hover .copyGlyph {
+    color: var(--ice);
+  }
+}
+
+/* ---- Narrower screens: one column, the number above the card ---- */
+
+@media (max-width: 1023px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+    justify-items: center;
+    row-gap: 32px;
+    width: min(560px, 100%);
+    padding-top: calc(96px + env(safe-area-inset-top));
+  }
+
+  .hero {
+    width: 100%;
+    align-items: center;
+    text-align: center;
+  }
+
+  .tabs {
+    align-self: center;
+  }
+
+  .lede {
+    margin-top: 14px;
+  }
+
+  .result {
+    align-items: center;
+    margin-top: 28px;
+  }
+
+  .big {
+    justify-content: center;
+  }
+
+  .card {
+    width: 100%;
+  }
+}
+
+@media (max-width: 760px) {
+  .layout {
+    row-gap: 20px;
+    padding: calc(76px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom));
+  }
+
+  .title {
+    font-size: clamp(38px, 11vw, 48px);
+  }
+
+  .lede {
+    margin-top: 10px;
+    font-size: 15px;
+  }
+
+  /* While money is moving the address matters more than the pitch: the line under the title steps aside. */
+  .layout[data-moving] .lede {
+    display: none;
+  }
+
+  .trackStep {
+    font-size: 10px;
+    font-stretch: 100%;
+    letter-spacing: 0.04em;
+  }
+
+  .result {
+    gap: 4px;
+    margin-top: 18px;
+  }
+
+  .kicker {
+    font-size: 12px;
+  }
+
+  .bigNum {
+    font-size: clamp(48px, 15vw, 60px);
+  }
+
+  .bigNum[data-size='m'] {
+    font-size: clamp(36px, 11vw, 46px);
+  }
+
+  .bigNum[data-size='l'] {
+    font-size: clamp(28px, 8.4vw, 36px);
+  }
+
+  .tabs {
+    margin-bottom: 14px;
+  }
+
+  .bigUnit {
+    font-size: 22px;
+  }
+
+  .heroLine {
+    font-size: 15px;
+  }
+
+  .card {
+    padding: 14px;
+    gap: 8px;
+  }
+
+  .sendRow {
+    min-height: 72px;
+    padding-left: 14px;
+  }
+
+  .cur,
+  .num {
+    font-size: 36px;
+  }
+
+  .coinBtn {
+    min-height: 56px;
+    padding: 0 8px 0 12px;
+  }
+
+  .coinBtnText b {
+    font-size: 16px;
+  }
+
+  .input {
+    height: 56px;
+    font-size: 16px;
+  }
+
+  .btn {
+    min-height: 60px;
+    font-size: 14px;
+  }
+
+  .go {
+    min-height: 64px;
+    font-size: 15px;
+  }
+
+  .fact {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+
+  .deposit {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    padding: 12px 14px;
+  }
+
+  .qr {
+    display: none;
+    justify-self: center;
+    width: 180px;
+    height: 180px;
+  }
+
+  .qr[data-shown] {
+    display: block;
+  }
+
+  .qrToggle {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .sendAmount b {
+    font-size: 28px;
+  }
+
+  .addr {
+    font-size: 14px;
+  }
+
+  .endLine {
+    font-size: 18px;
+  }
+
+  .endRow {
+    grid-auto-flow: row;
+  }
+
+  .scrim {
+    padding: 0;
+  }
+
+  .picker {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .pickBody {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .nets {
+    flex-direction: row;
+    gap: 6px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 10px 16px;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+    scrollbar-width: none;
+  }
+
+  .net {
+    min-height: 44px;
+    box-shadow: inset 0 0 0 1px var(--line);
+  }
+
+  .net[aria-pressed='true'] {
+    box-shadow: inset 0 0 0 1px var(--ice-38);
+  }
+
+  .coins {
+    padding: 4px 8px 24px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .picker,
+  .scrim,
+  .result[data-ended='done'] .bigNum {
+    animation: none;
+  }
+
+  .trackStep[data-now],
+  .pulse {
+    animation-duration: 4000ms;
+  }
+}

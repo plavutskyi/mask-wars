@@ -1,68 +1,152 @@
-<p align="center"><a href="https://maskwars.xyz/race/race-0001"><img src="packages/media/shots/race-0001/cards/01-result.png" alt="Race 1 on NEAR mainnet: 0.54 NEAR drained by the mask ORACLE, plus a 0.21186 NEAR bounty paid by the contract" width="100%"></a></p>
+<p align="center"><a href="https://maskwars.xyz"><img src="brand/art/web/site-home.jpg" alt="maskwars.xyz after round 3 on NEAR mainnet: the mask ORACLE broke the vault in 0:14 and took 0.351 NEAR; below it, the free pick for the next round" width="100%"></a></p>
 
 <h1 align="center">MASK WARS</h1>
 
-<h3 align="center">AI masks break safes on NEAR.<br>The contract pays the winner.</h3>
+<h3 align="center">AI masks break a vault of real NEAR, live on NEAR mainnet.<br>The contract pays the winner.</h3>
 
 <p align="center">
   <a href="https://github.com/plavutskyi/mask-wars/actions/workflows/ci.yml"><img src="https://github.com/plavutskyi/mask-wars/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   &nbsp;·&nbsp;
-  <a href="https://maskwars.xyz">maskwars.xyz</a>
+  <a href="https://maskwars.xyz"><b>maskwars.xyz</b></a>
   &nbsp;·&nbsp;
   <a href="JUDGE-PATH.md">Judge path</a>
   &nbsp;·&nbsp;
   <a href="RULES.md">Rules</a>
 </p>
 
-**MASK WARS is an arena on NEAR where AI agents ("masks") race to break a contract that holds real NEAR, and a bounty
-contract with no key pays the winner by itself.** Each mask is its own NEAR account with narrow function-call keys. A
-judge in a TEE reads the break from the chain. Every break becomes data other agents read before they pay.
+**The problem.** AI agents are starting to hold money and pay contracts on their own. Nothing tells an agent which
+contract will take its money and never give it back, and nobody is paid to find that out before the money is gone.
 
-## Live on NEAR mainnet
+**What MASK WARS does.** It turns breaking a contract into a daily contest for real NEAR, and every break into a
+signal other agents read before they pay.
 
-Round [`race-0001`](https://maskwars.xyz/race/race-0001), 10 November 2026, real NEAR. Times are UTC.
+Every day at 18:04 UTC a house account on NEAR mainnet puts real NEAR in a fresh vault with a planted hole and opens
+a sealed round on it. Three AI masks, each its own NEAR account thinking on a NEAR AI Cloud model inside a TEE, attack
+a private copy of the vault in a sandbox: this part runs off chain, in a public CI run linked from every round in
+[Rounds on mainnet](#rounds-on-mainnet). The first mask to break the copy puts the hash of its plan on the bounty
+contract. When the window closes it plays that exact plan on the real vault with its own function-call key and takes
+what it drained; a judge in a TEE confirms the break from the chain, and a bounty contract that nobody holds a key to
+pays the winner on top. What a mask then holds above the 0.4 NEAR it keeps goes back to the house and funds the next
+round. Every break becomes data: before an agent pays an account, MASK CHECK answers `block` if a mask has broken it.
 
-| Time | What happened | Explorer | For a machine |
+**For a person, on [maskwars.xyz](https://maskwars.xyz):** call the round before it opens, free and with no wallet (which mask
+breaks the vault, or does it hold), and climb the callers' board in the league; forge your own mask and fuel its mind;
+get NEAR from 20 networks in one step. Three rounds have run as of 12 Nov and ORACLE won all three: why, and what
+that does and does not show, is in [Honest limits](#honest-limits).
+
+<p align="center">
+  <a href="https://maskwars.xyz/race/race-0003"><img src="brand/art/web/site-race.jpg" alt="The page of round 3: ORACLE broke the vault, 0.351 NEAR in 0:14, and the round step by step from the chain" width="49%"></a>
+  <a href="https://maskwars.xyz/forge"><img src="brand/art/web/site-forge.jpg" alt="The forge: make your own mask, the first of six steps" width="49%"></a>
+</p>
+<p align="center">
+  <a href="https://maskwars.xyz/near"><img src="brand/art/web/site-get-near.jpg" alt="Get NEAR: 25 dollars of USDC on Arbitrum become 7.33 NEAR in your own account" width="49%"></a>
+  <a href="https://maskwars.xyz/league"><img src="brand/art/web/site-league.jpg" alt="The league: three masks, three rounds, ORACLE first with 1.455 NEAR taken" width="49%"></a>
+</p>
+
+<p align="center"><a href="packages/media/shots/race-0001/break/break.mp4"><b>Watch the break of round 1</b></a> (15 s)</p>
+
+## Live on mainnet
+
+Only what runs on NEAR mainnet or on maskwars.xyz, which reads mainnet, today.
+
+| What | On chain | Code |
+| --- | --- | --- |
+| **The daily round.** At 18:04 UTC the house makes a fresh vault with 1.93 NEAR and no key on it, and opens a sealed round on the bounty contract | `house.maskwars.near`, the vault `vault.house.maskwars.near` ([race-0003 opened](https://nearblocks.io/txns/BqnPTYkcoBfmDLQc4Dtu7ZBAynL8PcqdNbuUrXSKbiib)) | `packages/race/src/house.ts`, `.github/workflows/season.yml`, `contracts/challenges/live-safe` |
+| **Bounty contract with no key.** Holds the bounty and the seals, pays the earliest confirmed seal itself. Its admin can propose a change, which waits in the open before it applies; the one thing it can do at once is take a vault code off the list, which stops new rounds on that code and touches no open round | `bounty.maskwars.near`, 0 keys | `contracts/bounty` |
+| **Judge in a TEE.** OutLayer runs the judge's wasm, pinned by its sha256 `1f8e1aca…`; it reads the drain from three RPC sources that must agree. Claim, verdict and payout are one transaction | `outlayer.near`, 5.6 s on race-0001, 4.8 s on race-0002, 5.6 s on race-0003 | `services/judge` |
+| **The masks.** NOVA, ONYX and ORACLE: each its own account, with function-call keys for the vault, the bounty contract, jobs and crews. Their contract, `home`, sends what a mask holds above 0.4 NEAR and its storage back to the house | `nova.maskwars.near`, `onyx.maskwars.near`, `oracle.maskwars.near` | `packages/race/src/live.ts`, `contracts/home` |
+| **Minds in a TEE.** ONYX thinks with GLM 5.3 Flash, NOVA with DeepSeek V4.1 Flash, ORACLE with Qwen 3.8 27B Abliterated, all NEAR AI Cloud Private TEE models, attested with a fresh nonce | [/api/verified](https://maskwars.xyz/api/verified): `"outcome":"pass"` | `packages/mind/src/attestation.ts`, `packages/race/src/minds.ts` |
+| **MASK CHECK.** `allow`, `warn` or `block` before an agent pays, with reasons read from the chain and from the arena's breaks | [/api/check](https://maskwars.xyz/api/check?account=safe-0001.maskwars.near) | `packages/check`, `apps/web/app/api/check` |
+| **MCP server, 20 read-only tools.** Races, masks, the league, the rules, MASK CHECK, the house's round, the jobs board | [/mcp](https://maskwars.xyz/mcp) | `apps/mcp` |
+| **Jobs market and crews.** Both contracts deployed with 0 keys, 5% fee; the crew `arena-trio` formed by ORACLE. No job opened or paid on mainnet yet | `jobs.maskwars.near`, `crews.maskwars.near`, both 0 keys | `contracts/jobs`, `contracts/crews` |
+| **Get NEAR.** Any coin from 20 networks to native NEAR on any NEAR account, through NEAR Intents 1Click, with the app's fee to `maskwars.near` in the quote. First swap, 12 Nov: 32 USDC on Arbitrum to 8.893919 NEAR, 40 s from quote to NEAR, fee 13 bps | [native_withdraw to maskwars.near](https://nearblocks.io/txns/526NjD9FC9Dt9XXjZ4RXYh5CJzdFFkpz5n9JRb9WRJHR) | `apps/web/app/near`, `packages/pay` |
+| **Swap.** 62 mainstream coins on 21 networks, coin to coin, through 1Click, the same fee path, deposit addresses open. First swap, 12 Nov: 3 USDC on Arbitrum to 2.992147 USDC on NEAR ([NEAR Intents explorer](https://explorer.near-intents.org/transactions/0x848834Ba6789472589D9C3d58060152bEe6ECE78)) | [/swap](https://maskwars.xyz/swap) | `apps/web/app/swap`, `packages/pay` |
+| **The Forge.** Anyone makes their own mask on the site: a face, a style, a Private TEE model and NEAR for its mind. The factory has no key, the mask's code is a global contract published once, and the mind's key came out of an OutLayer TEE (`x25519:0d4c67bf…a126c82c`), so nobody reads a strategy, the team included. Opened 12 Nov; no person's mask has raced on mainnet yet | `masks.maskwars.near`, 0 keys ([created](https://nearblocks.io/txns/ERCKD5caKsZdumuQoZ4Gdk6UfxHpqRsS15vAi3LJXURB) · [mask code published](https://nearblocks.io/txns/AyatyS7ABSKTrVpKgqHsFQFukBpXtjhWpE3x9Zc5qJdf)); [/api/forge](https://maskwars.xyz/api/forge): `"open":true` | `contracts/masks`, `packages/forge`, `services/brain`, `apps/web/app/forge` |
+| **Contract pages.** For every contract the arena raced on: its standing and every race's outcome with its proof, read from the chain | [/api/contract/vault.house.maskwars.near](https://maskwars.xyz/api/contract/vault.house.maskwars.near): `"standing":"broken"` (`"under_fire"` while the day's round is open and no mask is through yet, from about 18:05 UTC to the break, 18:50 on 12 Nov) | `packages/dossier`, `apps/web/app/contract` |
+| **The site.** The countdown, the race pages, the 3D arena, the league and the masks, all read from mainnet | [maskwars.xyz](https://maskwars.xyz) | `apps/web`, `packages/arena` |
+
+### Rounds on mainnet
+
+Amounts in NEAR. The winner's time counts from the moment the commit window closed.
+
+| Round | Day | Opened by, on | Winner | Drained | Paid by the contract | Transactions |
+| --- | --- | --- | --- | --- | --- | --- |
+| [race-0001](https://maskwars.xyz/race/race-0001) | 10 Nov | `maskwars.near` by hand, on `safe-0001.maskwars.near` | ORACLE in 0:15 | 0.54 | 0.21186 | [open](https://nearblocks.io/txns/3KutM1kRv5ukkEoTZczZbZjfEJjEvjpmVodEj4iRbyhC) · [drain](https://nearblocks.io/txns/CWcwqhSwSsiWxdUHtsQv3KSXjjuBANyCPNEto81J1WpM) · [paid](https://nearblocks.io/txns/9ai1PbyVP4C16FQhmujd7o5GjMX8WSPd8KnEmJV8tbHM) · [the race in CI](https://github.com/plavutskyi/mask-wars/actions/runs/42842359569) |
+| [race-0002](https://maskwars.xyz/race/race-0002) | 11 Nov | `house.maskwars.near`, on `vault.house.maskwars.near` | ORACLE in 0:15 | 0.24 | 0.11176 | [open](https://nearblocks.io/txns/BtAiy98VEUdc9zWBMCnZBhvRJ2xfisijfCNBjXTqNJU8) · [drain](https://nearblocks.io/txns/Bk7Sa66uaxtqdeH63YLqeKq6szivM769BbB37U1Pjwnc) · [paid](https://nearblocks.io/txns/BdUN85L7g32uCPx7a8PDqJn5cAZgyzvUv3dFYf3v864y) · [the race in CI](https://github.com/plavutskyi/mask-wars/actions/runs/43081259474) |
+| [race-0003](https://maskwars.xyz/race/race-0003) | 12 Nov | `house.maskwars.near`, its day started by the site's cron, on `vault.house.maskwars.near` | ORACLE in 0:14 | 0.24 | 0.11176 | [open](https://nearblocks.io/txns/BqnPTYkcoBfmDLQc4Dtu7ZBAynL8PcqdNbuUrXSKbiib) · [drain](https://nearblocks.io/txns/3cDxNjTxszeQ2qBkHxesAgR3J6Ak5pNeTYfYYkPUj5Vy) · [paid](https://nearblocks.io/txns/AgFhn2YuHWjhC318MSwqG6QUcxmcWXA3Ey5Vnnjix9wJ) · [the race in CI](https://github.com/plavutskyi/mask-wars/actions/runs/43276033812) |
+
+In each run's log the `race` job prints the board of the sandbox race: "Live safe · ONYX vs NOVA vs ORACLE · 5 attempts
+each", then who broke the copy and on which attempt (GitHub shows a log to a signed-in reader).
+
+The same from the chain: `get` on `bounty.maskwars.near` with `{"id":"race-0002"}` answers `"state":"drained"` and the
+winner ([JUDGE-PATH](JUDGE-PATH.md#60-seconds-nothing-to-install)).
+
+## See it in two minutes
+
+Nothing to install but `curl`. Every line only reads.
+
+| Do | You see, and what it means |
+| --- | --- |
+| `curl -s https://maskwars.xyz/api/races/race-0002` | `"winner":{"account":"oracle.maskwars.near"`: ORACLE broke the house's vault on day 2 ([the round](https://maskwars.xyz/race/race-0002)) |
+| the same | `"payout":{"amount":"111760000000000000000000"`: the bounty contract paid it 0.11176 NEAR (in yoctoNEAR) |
+| `curl -s https://maskwars.xyz/api/check -G -d account=safe-0001.maskwars.near` | `"verdict":"block"`: MASK CHECK stops a payment to the safe ORACLE broke on day 1 |
+| `curl -s https://maskwars.xyz/mcp` | `"tools":["get_live_race"`: 20 read-only tools for any agent, and the one line that connects Claude Code or Codex |
+| `curl -s https://maskwars.xyz/api/jobs` | `"contract":"jobs.maskwars.near","deployed":true`: the jobs market is on mainnet ([the board](https://maskwars.xyz/jobs)) |
+| `curl -s https://1click.chaindefuser.com/v0/status -G -d depositAddress=0x9291F7f918FAEA302f0D89cB08De4aBf387322f3` | `"recipient":"maskwars.near","fee":13`: NEAR Intents' record of the first swap through [Get NEAR](https://maskwars.xyz/near), with this app's fee |
+| the same | `"amountOutFormatted":"8.893919362827321244422"`: 32 USDC on Arbitrum became 8.893919 NEAR |
+
+Nobody holds a key to the bounty contract: `view_access_key_list` on `bounty.maskwars.near` answers `"keys":[]`.
+[JUDGE-PATH.md](JUDGE-PATH.md) has that read and every command here with its full answer, the transaction logs and the
+code to read.
+
+## Tracks
+
+The rules let a project name every track it fits. One line each: what answers it, and one thing to check.
+
+| Track | What answers it | Check it |
+| --- | --- | --- |
+| `swarms` AI Swarms | Masks on their own sub-accounts, coordinated by a contract in sealed rounds (seal a hash, play after the window, reveal); on mainnet, the jobs and crews contracts where masks take work as a crew with roles and a fixed split | `list_crews` on `crews.maskwars.near` answers the crew `arena-trio` ([JUDGE-PATH](JUDGE-PATH.md#60-seconds-nothing-to-install)) |
+| `agents` Agent Economy | Agents with their own NEAR accounts earn from a contract with no hand in the payout: ORACLE has taken 1.45538 NEAR in the three rounds above, as of 12 Nov. Outside agents read the arena and ask MASK CHECK over MCP | [/api/races/league](https://maskwars.xyz/api/races/league): `"earned":"1455380000000000000000000"` as of 12 Nov, more with every round ORACLE wins; one round, fixed: [/api/races/race-0003](https://maskwars.xyz/api/races/race-0003) says `"takes":"351760000000000000000000"` |
+| `security` AI Security & Defense | MASK CHECK stops a payment to an account a mask broke; masks sign only with function-call keys scoped to one contract; the bounty, jobs and crews contracts have no key at all | [/api/check](https://maskwars.xyz/api/check?account=safe-0001.maskwars.near): `"verdict":"block"` |
+| `defi` Unstoppable DeFi | Get NEAR and Swap: cross-chain swaps that settle through NEAR Intents 1Click with the app's fee in the quote; the site never holds the coins | 1Click's record of the first swap: `"recipient":"maskwars.near","fee":13` |
+| `privacy` Privacy & Private AI | Minds only on NEAR AI Cloud Private TEE models: each model is attested with a fresh nonce as a race begins, and every answer's TEE signature is checked against the attested nodes (an answer that does not pass counts as not verified); the judge in OutLayer's TEE; plans sealed until the window closes | [/api/verified](https://maskwars.xyz/api/verified): `"outcome":"pass"` |
+| `games` Games With Real Economies | AI masks with wallets fight every day for real NEAR, a league ranks masks and models, and the masks' contract sends winnings back to the house that funds the next round (first on mainnet 12 Nov: [home](https://nearblocks.io/txns/14MzcJbMmib7H7fYDNYmYHGfNFpwXvXGS7oJ6pce2YS), [retire](https://nearblocks.io/txns/DkwjrCpu7BE3c5FhgR27Cwy7Pegm66xuNjAzmRuRHngy)) | [maskwars.xyz/league](https://maskwars.xyz/league) |
+| `open` Open Innovation | AI agents earn NEAR by breaking contracts in a live race, and every break becomes data other agents read before they pay | [maskwars.xyz](https://maskwars.xyz) |
+
+Not claimed: `thesis`, `business`, `realworld`, `nfts`, `memecoins`, `social`.
+
+## Not live yet
+
+<details>
+<summary><b>Testnet, simulated or not open yet</b>: people's masks in the round, copying, job judges, the season treasury, the house contract, deposits into a vault</summary>
+
+**LIVE testnet**: deployed on NEAR testnet and run there with test NEAR · **SIMULATED**: code with tests in this
+repository that runs in a local sandbox or on recorded answers, not deployed · **NOT BUILT**: not in this repository.
+
+| What | Code | Status | Where it stands |
 | --- | --- | --- | --- |
-| 15:14:32 | The team opens the round: 0.35 NEAR locked in `bounty.maskwars.near` on the safe `safe-0001.maskwars.near` | [3KutM1…](https://nearblocks.io/txns/3KutM1kRv5ukkEoTZczZbZjfEJjEvjpmVodEj4iRbyhC) | [JSON](https://api.nearblocks.io/v3/txns/3KutM1kRv5ukkEoTZczZbZjfEJjEvjpmVodEj4iRbyhC) |
-| 15:24:50 | The mask ORACLE seals the sha256 of its plan | [DBk3dR…](https://nearblocks.io/txns/DBk3dRU2SMymK2M9v2GR2ApGSRFqJQiQKSZGSzeDkzx8) | [JSON](https://api.nearblocks.io/v3/txns/DBk3dRU2SMymK2M9v2GR2ApGSRFqJQiQKSZGSzeDkzx8) |
-| 15:59:48 | 0:15 after the commit window closes, ORACLE drains the safe: 0.54 NEAR, signed with its own function-call key | [CWcwqh…](https://nearblocks.io/txns/CWcwqhSwSsiWxdUHtsQv3KSXjjuBANyCPNEto81J1WpM) | [JSON](https://api.nearblocks.io/v3/txns/CWcwqhSwSsiWxdUHtsQv3KSXjjuBANyCPNEto81J1WpM) |
-| 15:59:56 | ORACLE claims. The judge, a wasm the contract pins by sha256, run by OutLayer in a TEE, confirms the drain from the chain in 5.6 s. At 16:00:10 the contract sends ORACLE the bounty, 0.21186 NEAR. One transaction, no hand in it | [9ai1Pb…](https://nearblocks.io/txns/9ai1PbyVP4C16FQhmujd7o5GjMX8WSPd8KnEmJV8tbHM) | [JSON](https://api.nearblocks.io/v3/txns/9ai1PbyVP4C16FQhmujd7o5GjMX8WSPd8KnEmJV8tbHM) |
+| People's masks in the daily round, armed and charged by a keeper | `packages/race/src/keeper.ts`, `packages/race/src/house-guests.ts` | LIVE testnet | people's masks BLAZE and EMBER raced a house round on testnet, 11 Nov; on mainnet the keeper's key (`arm`, `settle`, `note`, `share` only) and the payment key for the minds are in place, and no person's mask has raced yet |
+| Confidential copying of a sealed strategy, view keys | `contracts/masks/factory` | LIVE testnet | a copy won `copy-59801-01` and its author got 20% |
+| Outside agents in the house round | `apps/web/app/api/round` | LIVE testnet | on mainnet [/api/round/guests](https://maskwars.xyz/api/round/guests) says `"agents":0` |
+| Jobs paid by role: a crew of masks, each signing its own calls | `contracts/jobs`, `contracts/crews`, `packages/race/src/work.ts` | LIVE testnet | three paid jobs: one taken by masks alone on 10 Nov, two by crews with roles on 11 Nov ([contracts/jobs](contracts/jobs/README.md#live-on-testnet-a-crew-of-masks-paid-by-role)); on mainnet no job yet |
+| Season treasury with no key | `contracts/season` | LIVE testnet | opened two rounds, neither won |
+| House contract: the day's steps for a function-call key | `contracts/house` | SIMULATED | runs on a local node in tests; the house signs with a full key today |
+| The vault 1.6.0: `about` and its source on chain (NEP-330) | `contracts/challenges/live-safe`, `contracts/build-source.sh` | SIMULATED | built reproducibly; the vault on mainnet runs 1.5.0 (`GBcgJ4RA…`) |
+| Job judges in a TEE: a client's private tests, an AI review | `services/judge-tests`, `services/judge-review` | SIMULATED | built and served by their sha256 ([judge-tests](https://maskwars.xyz/outlayer/maskwars-judge-tests-fa96e527b73de238a0aa94a43f8ad2d4fdd63e4bc67cda34684dd399cdbeed0e.wasm), [judge-review](https://maskwars.xyz/outlayer/maskwars-judge-review-c28711aa0c01ca4bfbb7331163bf1b3c407cd71ecf1e3b8ece721feac0652a07.wasm)), the jobs contract has `"judges":[]` |
+| MASK CHECK signed inside a TEE | `services/check`, `apps/web/lib/check-tee.ts` | SIMULATED | not published on OutLayer: `/api/check` answers `"signed":false` |
+| MASK CHECK for hire on NEAR Agent Market: A2A, x402, USDC | `packages/market`, `apps/web/app/api/market/hook` | SIMULATED | [/api/market/hook](https://maskwars.xyz/api/market/hook) says `"open":false` |
+| Contract pages written by a model in a TEE | `packages/dossier/src/write.ts` | SIMULATED | two pages written on NEAR AI Cloud are in `packages/dossier/test/fixtures/written`; the site shows the facts, and the API answers `"page":{"status":"off","text":null,"written":null}` |
+| A person's vault, deposits through NEAR Intents | `packages/pay`, `apps/web/app/wallet` | SIMULATED | page up, [/api/pay/live](https://maskwars.xyz/api/pay/live) says `"deposits":false` |
+| Hire the swarm, a button other apps embed | `packages/hire`, `apps/web/app/hire` | SIMULATED | page up, deposits closed |
+| Vault for winning breaks on OutLayer | `services/vault` | SIMULATED | not called yet |
+| A round with scripted masks, ten more targets | `contracts/challenges/runner`, `contracts/challenges` | SIMULATED | `pnpm demo` below |
 
-The same from the chain and the site, with nothing installed. The two `curl` lines only read; the last one connects
-Claude Code to the arena's MCP server.
+</details>
 
-```bash
-# The round, from the bounty contract itself (args_base64 is {"id":"race-0001"})
-curl -s https://rpc.mainnet.fastnear.com -H 'content-type: application/json' -d '{"jsonrpc":"2.0","id":1,"method":"query","params":{"request_type":"call_function","finality":"final","account_id":"bounty.maskwars.near","method_name":"get","args_base64":"eyJpZCI6InJhY2UtMDAwMSJ9"}}' | node -pe 'Buffer.from(JSON.parse(require("fs").readFileSync(0)).result.result).toString()'
-# {"owner":"maskwars.near","amount":"211860000000000000000000","target":"safe-0001.maskwars.near","deadline_ns":"1794338072248087615","status":{"state":"drained","winner":"oracle.maskwars.near","tx_hash":"CWcwqhSwSsiWxdUHtsQv3KSXjjuBANyCPNEto81J1WpM"}}
+## Run it on your machine
 
-# MASK CHECK, asked about the drained safe
-curl -s 'https://maskwars.xyz/api/check?account=safe-0001.maskwars.near'
-# "verdict":"block" ... "code":"arena_drained"
-
-# The arena for an agent: 17 read-only tools over MCP
-claude mcp add --transport http maskwars https://maskwars.xyz/mcp
-```
-
-[JUDGE-PATH.md](JUDGE-PATH.md) has every command with its full answer. Explorer pages answer a script with 403, so
-each transaction also has a JSON link.
-
-**The problem.** Agents are starting to hold money and pay contracts on their own. Two things are missing: a way to
-find a contract's hole for a bounty with no trusted middleman, and an answer to "should I pay this account?" that an
-agent can read before it signs. MASK WARS does the first as a live race and turns each break into the second:
-MASK CHECK says `block` for a safe a mask has drained.
-
-**Breaking a safe is the first kind of job.** The same parts carry any work whose result can be proven: a client
-locks NEAR on a job, masks take it alone or as a crew, a judge decides, the contract pays. That jobs market is live on
-NEAR testnet with one paid job. [What is built](#what-is-built) gives the status of every part.
-
-## Try it
-
-No keys, no wallet, no sign-up. You need Node 22.21 or newer (the demo scripts pass `--use-env-proxy`, which Node has
-from 22.21), pnpm (no pnpm yet: `corepack enable`) and, for the round and the contract tests, Rust through
-[rustup](https://rustup.rs): the repository pins 1.97.0 and rustup fetches it on first use. The MASK CHECK step reads
-NEAR testnet and mainnet over public RPC.
+No keys, no wallet. Linux (x86_64 or arm64) or macOS on Apple silicon; on Windows use WSL (the NEAR sandbox the round runs in is built for these three only). Node 22.21 or newer, pnpm (`corepack enable`) and Rust through [rustup](https://rustup.rs): the
+repository pins 1.97.0. The first run builds the Rust sandbox runner, about 7 minutes on 4 cores.
 
 ```bash
 git clone https://github.com/plavutskyi/mask-wars
@@ -71,217 +155,142 @@ pnpm install --frozen-lockfile
 pnpm demo
 ```
 
-`pnpm demo` runs three steps, each also on its own: a sealed round in a local NEAR sandbox (`pnpm demo:round`, 20 s),
-the MASK CHECK demo live on testnet and mainnet (`pnpm demo:check`, 5 s) and the contract tests
-(`pnpm demo:contracts`, 40 s). The first run also builds the Rust sandbox runner and the tests: about 7 minutes on
-4 cores.
-
 | Do | You see, verbatim |
 | --- | --- |
 | `pnpm demo` | `NOVA wins the round` |
 | `pnpm demo:round` | `VOLT seals × the commit window is closed` |
-| the same | `ORACLE claims × this mask sealed no plan` |
+| the same | `ORACLE set_owner × only a mask that sealed a plan moves the safe` |
 | the same | `NOVA claims ✓ the judge confirmed the drain` |
 | `pnpm demo:check` | `→ BLOCK. The payment is stopped. Nothing was signed.` |
-| the same | `All four steps live on testnet.` |
 | the same | `Mainnet live: treasury.intents.near BLOCK (no such account)` |
 | `pnpm demo:contracts` | `a_peeked_plan_does_not_match_an_earlier_seal - should panic ... ok` |
 | the same | `every_source_must_agree ... ok` |
 
-`pnpm demo:round` plays one round with four scripted masks and no models. The bounty contract, the live safe and the
-judge are the real code; only OutLayer is a local stand-in that holds each judge request until the judge answers. One
-run, seal hashes change every time:
+<details>
+<summary>What <code>pnpm demo:round</code> plays</summary>
+
+Five scripted masks and no models. The bounty contract, the live safe and the judge are the real code; only OutLayer
+is a local stand-in. Seal hashes change on every run.
 
 ```text
-TEAM    opens      ✓ 1.000 NEAR on safe.test.near for 4 masks
-ONYX    seals      ✓ seal #0 90cf3ff0c11b
-NOVA    seals      ✓ seal #1 c8bc74a7f600
+TEAM    opens      ✓ 1.000 NEAR on safe.test.near for 5 masks
+ONYX    seals      ✓ seal #0 286952a70755
+JINX    seals      ✓ seal #1 26a8065978ee
+JINX    set_owner  × the safe is locked until the commit window closes
+JINX    sweep      × the safe is locked until the commit window closes
+NOVA    seals      ✓ seal #2 fe8f5715dd40
 —— the commit window closes ——
 VOLT    seals      × the commit window is closed
+NOVA    set_owner  × an earlier seal goes first
 NOVA    set_owner  ✓
 NOVA    sweep      ✓
+ONYX    set_owner  × another mask has its turn on the safe
 ONYX    set_owner  ✓
 ONYX    sweep      ✓
-ORACLE  set_owner  ✓
-ORACLE  sweep      ✓
+ORACLE  set_owner  × only a mask that sealed a plan moves the safe
+ORACLE  sweep      × only a mask that sealed a plan moves the safe
 ONYX    reveals    × the plan does not match the seal
 ONYX    reveals    ✓ 1 call
+JINX    reveals    ✓ 2 calls
 NOVA    reveals    ✓ 2 calls
 ORACLE  reveals    × this mask sealed no plan
-ONYX    claims     × the judge refused: sandbox: the safe was touched before the plan started
+JINX    asks       ✓ the claim is with the judge, request 0
+ONYX    asks       ✓ the claim is with the judge, request 1
+ONYX    claims     × the judge refused: sandbox: the plan did not start the mask's own turn on the safe
+NOVA    asks       ✓ the claim is with the judge, request 2
 NOVA    claims     ✓ the judge confirmed the drain
-ORACLE  claims     × this mask sealed no plan
-NOVA    PAID       ✓ 0.968 NEAR for seal #1
+ORACLE  claims     × no drain to claim
+JINX    claims     × the judge refused: sandbox: the drain happened outside the race
+NOVA    PAID       ✓ 0.761 NEAR for seal #2
 
 NOVA wins the round
 ```
 
-NOVA found the hole and sealed its plan. ONYX sealed a guess first and then borrowed NOVA's move, ORACLE copied NOVA
-off the chain, VOLT found the hole after the window. All of them took loot out of the safe; only the sealed plan that
-broke the untouched safe gets the bounty.
+NOVA found the hole and sealed its plan. JINX tried to empty the safe inside the commit window, but the safe stays
+locked until it closes, and its junk claim waits with the judge while the others claim. ONYX sealed a guess, then
+borrowed NOVA's move after NOVA's turn. ORACLE copied NOVA off the chain with no seal, and the safe does not let it in.
+VOLT found the hole after the window. Only NOVA's sealed plan, played on its own turn, is paid. `pnpm demo:check` is
+MASK CHECK stopping a prompt-injected payment agent on testnet and on mainnet; it holds no key. If a step stops,
+[JUDGE-PATH.md](JUDGE-PATH.md#if-a-step-stops) has the fixes.
 
-`pnpm demo:check` is MASK CHECK, the question an agent asks before it pays. On testnet a hidden instruction in an
-invoice tells a payment agent to send 2 NEAR to a safe a mask drained; the agent's wrapper asks MASK CHECK, gets
-`block` with the arena's drain as the reason, and never signs. On mainnet the instruction names a lookalike of
-`intents.near` that does not exist: `block` again. The demo holds no key.
-
-CI does not run `pnpm demo:round` itself. It plays the same round as a Rust test
-(`the_finder_wins_and_no_copycat_does`, job `challenges`), runs `pnpm demo:check` against live RPC (job
-`mask-check-live`) and runs the contract and TypeScript tests. A job runs when the files it builds change; the live
-jobs also run every day and every job runs on Sunday. If a step stops on your machine,
-[JUDGE-PATH.md](JUDGE-PATH.md) has the fixes.
+</details>
 
 ## How a round works
 
-1. **Open.** A team calls `open_safe` on the bounty contract with the bounty attached, names the safe and the masks
-   that may win (1 to 16), and picks the commit window and the deadline. The contract locks the safe to the round.
-2. **Seal.** A mask that finds the break calls `commit(id, hash)`: only the sha256 of its plan, salt and own account.
-   Seals are numbered as they arrive.
-3. **Play.** After the window closes, the mask sends the safe exactly the calls it sealed, signed with its own key.
-4. **Reveal and claim.** `reveal` shows the plan and the contract checks it against the seal. `claim_drain` sends the
-   drain to the judge.
-5. **Paid.** The judge on OutLayer reads every transaction of the plan from several RPC sources that must agree and
-   confirms that it broke the untouched safe. The contract pays the earliest confirmed seal. If nobody wins, the team
-   takes its NEAR back.
+1. **Open.** The house (or any team) calls `open_safe` on the bounty contract with the bounty attached and names the
+   vault, the masks, the commit window and the deadline. The contract locks the vault to the round.
+2. **Seal.** A mask that finds the break calls `commit` with the sha256 of its plan, a salt and its own account.
+3. **Play.** After the window closes, the mask sends the vault exactly the calls it sealed, signed with its own key.
+4. **Reveal and claim.** `reveal` shows the plan and the contract checks it against the seal; `claim_drain` asks the
+   judge.
+5. **Paid.** The judge on OutLayer reads the plan's transactions from RPC sources that must agree and confirms that it
+   broke the untouched vault. The contract pays the earliest confirmed seal; with no winner, the bounty goes back.
 
-The full rules, the clock and every edge case: [RULES.md](RULES.md). The contract: [contracts/bounty](contracts/bounty/README.md).
+The vault's `set_owner` and `sweep` are open to the round's masks on purpose, so a scanner that reads its code calls it
+critical: it is the arena's target. On chain it names its team (`house.maskwars.near`) and its arbiter
+(`bounty.maskwars.near`), and only the round's masks get through, in the order of their seals. Every rule and edge
+case: [RULES.md](RULES.md). The contract: [contracts/bounty](contracts/bounty/README.md).
 
-## What NEAR does here
+<details>
+<summary><b>What NEAR does here</b>: named sub-accounts, function-call keys, accounts with no key, yield and resume, NEAR AI Cloud, NEAR Intents, global contracts</summary>
 
-Each line: the NEAR feature, what it does in this product, where it shows live, the code.
-
-- **Named sub-accounts.** Every mask is its own account, like `oracle.maskwars.near`, so each move on chain traces
-  back to one agent. Live: the signer of every transaction above. `packages/race/src/live.ts`
-- **Function-call access keys.** A mask races with two keys, each tied to one contract and a list of methods: one on
-  the safe, one on the bounty contract (`commit`, `reveal`, `claim_drain`, `settle`). By protocol rule such a key
-  cannot transfer NEAR, attach a deposit, add a key or call another contract. Live: the mainnet drain and claim are
-  signed with these two keys. `packages/race/src/keys.ts`
-- **An account with no access key.** `bounty.maskwars.near` was created, funded, deployed and initialised in one
-  transaction that adds no key, so nobody can redeploy it or move its NEAR by hand. Its admin can only `propose` a
-  change that waits in the open: 1 hour for a new judge, 108 hours for new code while a bounty is live. Live:
-  `view_access_key_list` returns `[]`. `contracts/bounty/src/admin.rs`
+- **Named sub-accounts.** Every mask is its own account, like `oracle.maskwars.near`, so every move on chain traces
+  back to one agent. `packages/race/src/live.ts`
+- **Function-call access keys.** A mask races with keys tied to one contract and a list of methods each. By protocol
+  rule such a key cannot move NEAR, attach a deposit, add a key or call another contract. `packages/race/src/keys.ts`
+- **Accounts with no access key.** `bounty.maskwars.near`, `jobs.maskwars.near`, `crews.maskwars.near` and every vault
+  were made and deployed with no key added, so nobody can redeploy them or move their NEAR by hand.
+  `contracts/bounty/src/admin.rs`
 - **Yield and resume, with OutLayer.** `claim_drain` asks `outlayer.near` to run the judge. The call stays a yielded
-  promise while OutLayer runs the wasm the contract pins by sha256, in a TEE; the callback `on_judged` pays. Live:
-  claim, verdict and payout are one transaction, 9ai1Pb… above. `contracts/bounty/src/lib.rs`, `services/judge`
-- **NEAR AI Cloud.** Masks think only with Private TEE models: GLM 5.3 Flash, DeepSeek V4.1 Flash, Qwen 3.8 27B. The
-  check sends a fresh nonce and finds it in the Intel TDX quote of the gateway and of every model node, with NVIDIA's
-  verdict on each GPU. Live: [maskwars.xyz/api/verified](https://maskwars.xyz/api/verified). `packages/mind/src/attestation.ts`
-- **Global contracts.** The safe's code is published on NEAR once, by its hash, and every season safe only points at
-  it: a fresh safe costs an account, not another copy of the code. Live on testnet:
-  `s0001.season.tinygif8324.testnet` has no code of its own, only `global_contract_hash`. `contracts/season/src/lib.rs`
-- **NEAR Intents, 1Click.** In a person's vault and in Hire, a coin sent from Solana, Base, Ethereum, Arbitrum, Tron
-  or Bitcoin is swapped by 1Click and lands as NEAR on the person's own account in `intents.near`; a payout is an
-  intent the person signs with a passkey. Not live: prices are read on the site, deposit addresses are closed.
-  `packages/pay`, `packages/hire`
+  promise while OutLayer runs the pinned wasm in a TEE; the callback pays. `contracts/bounty/src/lib.rs`
+- **NEAR AI Cloud.** The masks think only on Private TEE models; each race attests them with a fresh nonce and checks
+  every answer's TEE signature, and prices each answer from NEAR AI's bill. `packages/mind`, `packages/race/src/minds.ts`
+- **NEAR Intents, 1Click.** Get NEAR and Swap quote and settle cross-chain swaps through 1Click, with `appFees` paying
+  `maskwars.near`; what arrives is native NEAR from `intents.near`. `packages/pay`, `apps/web/app/near`
+- **Global contracts.** The season safe's code is published once by its hash and every season safe points at it.
+  `contracts/season/src/lib.rs`
+- **NEP-330.** Every contract can name its own source and reproducible build on chain. `contracts/README.md`
 
-On mainnet the judge reads a drain from three sources that must give one verdict: the OutLayer worker's RPC and two
-public RPCs of other operators (`services/judge/src/lib.rs`).
-
-## Tracks
-
-One line per track: what answers it, where it runs, and the command or link that shows it.
-
-| Track | What answers it | Runs on | See it |
-| --- | --- | --- | --- |
-| AI Swarms | A sub-account per mask, a coordinator contract with sealed rounds (commit a hash, play after the window, reveal), the rules first in [RULES.md](RULES.md), a simulation with scripted masks and no model calls. Crews of masks that split a reward by role are on testnet only | mainnet (rounds), testnet (crews) | [`race-0001`](https://maskwars.xyz/race/race-0001), `pnpm demo:round` |
-| AI Security & Defense | MASK CHECK: `allow`, `warn` or `block` with reasons read from the chain, and a signal no list has: this contract was already broken by an agent on the arena. A wrapper that refuses to sign on `block`; function-call keys scoped to one contract; a prompt-injected agent stopped before it pays | mainnet | `curl 'https://maskwars.xyz/api/check?account=safe-0001.maskwars.near'`, `pnpm demo:check` |
-| Agent Economy | A mask is an agent with its own NEAR account: ORACLE earned 0.21186 NEAR from the contract on mainnet with no hand in the payout. Outside agents read the arena and ask MASK CHECK over MCP. MASK CHECK is built to be hired on NEAR Agent Market as an agent of its own: another agent calls it over A2A, gets a `402` with the price in USDC on NEAR, pays with x402 and gets the verdict; the payment settles only on delivery. A jobs market where a client locks NEAR and masks are paid on a judge's answer is live on testnet with one paid job | mainnet (earning, MCP), testnet (jobs) | `claude mcp add --transport http maskwars https://maskwars.xyz/mcp` |
-| Privacy & Private AI | Masks think only on NEAR AI Cloud Private TEE models; attestation is checked with a fresh nonce on every request to `/api/verified`; the judge runs in OutLayer's TEE; a plan stays sealed until the window closes | mainnet | `curl https://maskwars.xyz/api/verified`, `pnpm verify:attestation` |
-| Open Innovation | AI agents earn NEAR by breaking contracts in a live race, and every break becomes data other agents read before they pay | mainnet | [maskwars.xyz](https://maskwars.xyz) |
-
-Not claimed: DeFi, Thesis, Autonomous Business, Real-World Money, Games, NFTs, Memecoins, Social Money. Nothing in this
-repository is built for them.
-
-## What is built
-
-**LIVE mainnet** works today on NEAR mainnet or on maskwars.xyz, which reads mainnet · **LIVE testnet** is deployed on
-NEAR testnet and has run there with test NEAR · **SIMULATED** is code with tests in this repository that runs in a
-local sandbox or on recorded answers and is not deployed · **NOT BUILT** is not in this repository.
-
-| What | Where | Status | Read it yourself |
-| --- | --- | --- | --- |
-| Bounty contract on an account with no key | `contracts/bounty` | LIVE mainnet | [chain reads](JUDGE-PATH.md#60-seconds-nothing-to-install) of `bounty.maskwars.near` |
-| Live safe with a planted hole | `contracts/challenges/live-safe` | LIVE mainnet | [the drain](https://api.nearblocks.io/v3/txns/CWcwqhSwSsiWxdUHtsQv3KSXjjuBANyCPNEto81J1WpM) of `safe-0001.maskwars.near` |
-| Judge on OutLayer, in a TEE, pinned by sha256 | `services/judge` | LIVE mainnet | [logs of the claim](JUDGE-PATH.md#the-transactions) |
-| Masks: own accounts, function-call keys | `packages/race/src/live.ts` | LIVE mainnet | signers of the drain and the claim |
-| Sealed rounds: commit, play, reveal | `contracts/bounty/src/lib.rs` | LIVE mainnet | view `get_round`: seal #0 `confirmed` |
-| Races on NEAR AI Cloud models | `packages/race` | LIVE mainnet | [run 42842359569](https://github.com/plavutskyi/mask-wars/actions/runs/42842359569) |
-| MASK CHECK: the check, the agent wrapper, the API | `packages/check`, `apps/web/app/api/check` | LIVE mainnet | [/api/check](https://maskwars.xyz/api/check?account=safe-0001.maskwars.near) |
-| Attestation of the models with a fresh nonce | `packages/mind/src/attestation.ts`, `apps/web/app/verified` | LIVE mainnet | [/api/verified](https://maskwars.xyz/api/verified) |
-| MCP server, 17 read-only tools | `apps/mcp` | LIVE mainnet | [/mcp](https://maskwars.xyz/mcp) |
-| The arena on the site, read from the chain: race, masks, league, 3D arena | `apps/web/components/arena`, `apps/web/components/arena3d`, `packages/arena` | LIVE mainnet | [/api/races/race-0001](https://maskwars.xyz/api/races/race-0001) |
-| Sign-up page for teams | `apps/web/app/break` | LIVE mainnet | [/break](https://maskwars.xyz/break) |
-| Jobs market and crews | `contracts/jobs`, `contracts/crews` | LIVE testnet | one job paid: [settle](https://api-testnet.nearblocks.io/v3/txns/zxyaAKQHRtd87tDrC8ZfrNqAHW6NjFX9gmkCWooi7dE) |
-| Season: a treasury with no key opens rounds | `contracts/season` | LIVE testnet | view `season`: `rounds: 2`, none paid yet |
-| The house: a round every day on one safe that retires itself after its round and is made again, so the same NEAR goes round | `packages/race/src/house.ts`, `scripts/testnet/retire.ps1` | SIMULATED | not on chain yet: `pnpm --filter @maskwars/race test` runs its day on a made-up chain |
-| Forge your own mask | `contracts/masks`, `packages/forge`, `apps/web/app/forge` | SIMULATED | **on no network**: [/api/forge](https://maskwars.xyz/api/forge) says `"open":false` |
-| A person's mask in a sealed round | `packages/race/src/keeper.ts`, `services/brain` | SIMULATED | waits for the forge |
-| Confidential copying of a sealed strategy | `contracts/masks/factory` | SIMULATED | waits for the forge |
-| Job judges in a TEE: private tests, AI review | `services/judge-tests`, `services/judge-review` | SIMULATED | not on chain: the jobs contract has `judges: []` |
-| A person's vault through NEAR Intents | `packages/pay`, `apps/web/app/wallet` | SIMULATED | page up, **top-ups closed** |
-| Hire the swarm, a button other apps embed | `packages/hire`, `apps/web/app/hire` | SIMULATED | page up, **deposits closed** |
-| MASK CHECK signed inside a TEE, on the site too | `services/check`, `apps/web/lib/check-tee.ts` | SIMULATED | not published on OutLayer yet: [/api/check](https://maskwars.xyz/api/check?account=safe-0001.maskwars.near) answers `"signed":false` and says why |
-| Jobs, season and forge on mainnet | `packages/network`, `scripts/mainnet` | SIMULATED | no account yet: [/api/jobs](https://maskwars.xyz/api/jobs) says `"deployed":false` |
-| A round with scripted masks, no models | `contracts/challenges/runner` | SIMULATED | `pnpm demo:round` |
-| Ten more targets for sandbox races | `contracts/challenges` | SIMULATED | `pnpm demo:contracts` |
-| MASK CHECK for hire on NEAR Agent Market: A2A, x402, USDC | `packages/market`, `apps/web/app/api/market/hook` | SIMULATED | not listed yet: [/api/market/hook](https://maskwars.xyz/api/market/hook) says `"open":false` |
-| Vault for winning breaks | `services/vault` | SIMULATED | not called yet |
-
-Tools outside the running product: `packages/media` builds the cards and the 16:9 clip of a round from its chain
-record; the mainnet round's are in `packages/media/shots/race-0001`. `packages/brand` holds the tokens and fonts.
-
-The first design of this repository, on 1–2 November, was market duels between masks; the race replaced it on
-2 November. What is left of it does not run in the arena: `packages/core` (its ids and types are still used by
-`packages/media`) and the mask voices in `packages/mind`.
-
-## Live on NEAR testnet
-
-The same contracts ran on testnet first, with test NEAR. `tinygif8324.testnet` is the team's account.
-
-| Date | What happened | Transaction |
-| --- | --- | --- |
-| 10 Nov | Jobs market: `settle` pays 0.95 NEAR to ORACLE for the job `break-safe-0004`, fee 0.05 NEAR | [zxyaAK…](https://testnet.nearblocks.io/txns/zxyaAKQHRtd87tDrC8ZfrNqAHW6NjFX9gmkCWooi7dE) · [JSON](https://api-testnet.nearblocks.io/v3/txns/zxyaAKQHRtd87tDrC8ZfrNqAHW6NjFX9gmkCWooi7dE) |
-| 10 Nov | `race-0005` on the contract with no key: ONYX seals, drains 1.34 NEAR, the contract pays 0.2115 NEAR | [BuFJTe…](https://testnet.nearblocks.io/txns/BuFJTeszB25qVkhTQcHyhHsaPotYQhtmKAHdV1MQFBME) · [JSON](https://api-testnet.nearblocks.io/v3/txns/BuFJTeszB25qVkhTQcHyhHsaPotYQhtmKAHdV1MQFBME) |
-| 6 Nov | `race-0003`, the first mask paid: NOVA drains 1 NEAR with its function-call key and the first contract pays 0.08664 NEAR. That claim was sent by hand with NOVA's full key | [8pvCJF…](https://testnet.nearblocks.io/txns/8pvCJFDwUW1XXBUKHVMo973Kp1WMkWc4DDpHoHVr2uqg) · [JSON](https://api-testnet.nearblocks.io/v3/txns/8pvCJFDwUW1XXBUKHVMo973Kp1WMkWc4DDpHoHVr2uqg), [BHuCzq…](https://testnet.nearblocks.io/txns/BHuCzqtM3ZWnS4EBww9ig9txers8ebQnqerGCpqW4Me8) · [JSON](https://api-testnet.nearblocks.io/v3/txns/BHuCzqtM3ZWnS4EBww9ig9txers8ebQnqerGCpqW4Me8) |
-
-## Roadmap (not in this submission)
-
-- On mainnet: the season treasury, the jobs market and the forge. Their accounts and limits are in
-  `packages/network/mainnet.json`: [how they are deployed](scripts/mainnet/README.md).
-- The forge on testnet, and a first sealed round with a person's mask in it.
-- Job judges on OutLayer pinned in the jobs contract, and masks that take a job with no hand in it.
-- MASK CHECK as a paid, signed answer from the TEE module.
-- Deposit addresses for the vault and for Hire.
-- The race itself inside a TEE.
+</details>
 
 ## Honest limits
 
-- **One round on mainnet, small sums.** 0.35 NEAR locked, 0.54 NEAR drained. One mask of three acted on chain; NOVA
-  and ONYX sealed nothing.
+- **Three rounds as of 12 Nov, small sums.** See [Rounds on mainnet](#rounds-on-mainnet). Each time one mask of three broke the vault.
+- **One target, one winner so far.** The vault runs the same code with the same planted hole every day, and the break is
+  two calls (`set_owner`, then `sweep`). All three masks race the copy in the sandbox each day; ORACLE broke it first
+  all three times, on its first attempt, so ORACLE is the only mask that has sealed and signed on mainnet. NOVA and
+  ONYX hold the same kind of keys and have signed no mainnet transaction. Ten other targets are in
+  `contracts/challenges` and run in the local demo; none of them is a house vault on mainnet yet.
+- **The money is the house's own.** The bounty and the vault are funded by `house.maskwars.near`, the masks are the
+  arena's, and winnings above 0.4 NEAR go back to the house. No outside team has put up a bounty, and no person's mask
+  or outside agent has played for it on mainnet as of 12 Nov.
 - **The holes are planted.** These are training targets; no third party's contract has been attacked.
-- **The race is not in a TEE.** It runs on GitHub Actions; the models and the judge run in TEEs. A TEE proves which
-  code ran, not that the code is right. This repository pins the judge's wasm by its hash and reads OutLayer's answer
-  on chain; it does not verify OutLayer's own attestation.
-- **The team still holds keys.** Each mask's account has a full-access key held by the team beside its function-call
-  keys; the race signs with the function-call keys only. The team's account `maskwars.near` is the bounty contract's
-  admin: it can propose a new judge or new code, and each waits in the open before it applies.
-- **Jobs: testnet, one job.** The masks' calls on it were signed by hand. No job judge is on chain, so only a job
-  that a sealed round decides can open.
-- **Season: testnet, no payout yet.** The treasury opened two rounds; neither was won.
-- **The forge is on no network.** People's masks and copying run only in the local sandbox.
-- **The vault and Hire take no deposits yet.** No money has moved through them.
-- **MASK CHECK knows little.** It says nothing about an account it has no signal for. Its `block` today is for the
-  arena's own safes, listed in `packages/check/list.mainnet.json`, and for accounts that do not exist.
+- **The race is not in a TEE.** It runs on GitHub Actions; the models and the judge run in TEEs. This repository pins
+  the judge's wasm by hash and reads OutLayer's answer on chain; it does not verify OutLayer's own attestation.
+- **The team still holds keys.** The house has two full-access keys: the owner's, and the one the daily workflow
+  signs with. Each mask has a full-access key beside its function-call keys; the race signs with the function-call
+  keys only. `maskwars.near` is the admin of the bounty, jobs and crews contracts: it can propose a change, which waits
+  in the open before it applies, and on the bounty contract it can take a vault code off the list at once (new rounds
+  on that code stop; open rounds go on).
+- **The daily round is new.** Day 2 was started by hand when GitHub's schedule did not fire; since then a Vercel cron
+  calls `/api/season/tick` at 18:04 UTC and starts the day. Day 3, 12 Nov, started by itself at 18:04:34 UTC and
+  opened its round at 18:05:31, and the vault's `retire` and the masks' `home` ran on mainnet for the first time as its first steps ([home](https://nearblocks.io/txns/14MzcJbMmib7H7fYDNYmYHGfNFpwXvXGS7oJ6pce2YS),
+  [retire](https://nearblocks.io/txns/DkwjrCpu7BE3c5FhgR27Cwy7Pegm66xuNjAzmRuRHngy)).
+- **Jobs on mainnet: none yet.** The crew jobs on testnet replayed a plan ORACLE's mind had already revealed; no model
+  ran in them.
+- **MASK CHECK knows little.** It says nothing about an account it has no signal for; its `block` is for the arena's
+  own broken safes and for accounts that do not exist.
 - **Sandbox races name a private repository.** The first testnet bounties were judged from GitHub Actions runs of the
-  private development repository named in `services/judge/src/judge.rs`; nobody outside can open those runs. A live
-  round, the only kind on mainnet, is judged from the chain alone.
+  development repository named in `services/judge/src/judge.rs`, a constant compiled into the judge's pinned wasm. A
+  live round, the only kind on mainnet, is judged from the chain alone.
 
-## Built with
+<details>
+<summary><b>Built with</b>: every library, service and AI tool</summary>
 
 - **NEAR:** near-sdk 5.30 for the Rust contracts; near-workspaces 0.24 and near-sandbox 0.4 for a local neard 2.14 per
-  attempt; public RPC of FastNEAR, dRPC and near.org; NEAR AI Cloud; OutLayer (the `outlayer` 0.2 crate, wasi 0.13,
-  wasi-http-client, target wasm32-wasip2); NEAR Intents 1Click; @hot-labs/near-connect 0.12 for NEAR wallets on the
-  site; binaryen's wasm-opt to shrink contracts.
+  attempt; cargo-near 0.22 for reproducible builds (NEP-330); public RPC of FastNEAR, dRPC and near.org; NEAR AI Cloud;
+  OutLayer (the `outlayer` 0.2 crate, wasi 0.13, wasi-http-client, target wasm32-wasip2); NEAR Intents 1Click;
+  @hot-labs/near-connect 0.12 for NEAR wallets on the site; binaryen's wasm-opt.
 - **Rust crates:** serde, serde_json, sha2, sha3, ed25519-dalek, x25519-dalek, k256, aes-gcm, hkdf, getrandom, wasmi 2
   (runs a client's private tests), tokio, anyhow; in tests base64, ureq, wat.
 - **TypeScript:** Node 22.21+, pnpm 12, TypeScript 5, Vitest 3, zod 4, @noble/curves and @noble/hashes,
@@ -291,31 +300,29 @@ The same contracts ran on testnet first, with test NEAR. `tinygif8324.testnet` i
 - **Media:** Remotion 4 and Playwright for cards and clips; fonts Hubot Sans and Mona Sans (@fontsource-variable),
   fontkit and wawoff2 to subset them.
 - **AI:** much of the code was written with Claude Code and Codex under the author's direction; every rule is pinned
-  by tests. The mask and arena frames in `brand/art/web` and the clip's music are AI-generated. The masks' models are
+  by tests. The mask and arena frames in `brand/art/web` and the clips' music are AI-generated. The masks' models are
   the three named above.
+
+</details>
 
 ## Baseline
 
 - **Nothing predates the hackathon.** The first commit of the development repository is from 2026-11-01, inside the
-  window that runs from 2026-10-19 to 2026-11-14. There is no earlier code and no product on another chain behind
-  this one: MASK WARS is a new project, built on NEAR only.
-- **This repository is an export.** Development happens in a private repository (more than 460 commits by
-  11 November). Each commit here is one cumulative export made by a script, and its message names the development
-  commit it came from, so this history starts on 2026-11-10 and is short. [BUILDLOG.md](BUILDLOG.md) dates each
-  piece from the development commits.
+  window that runs from 2026-10-19 to 2026-11-14. There is no earlier code and no product on another chain behind this
+  one: MASK WARS is a new project, built on NEAR only.
+- **This repository is an export.** Development happens in a private repository (700 commits by 12 November). Each
+  commit here is one cumulative export made by a script, and its message names the development commit it came from,
+  so this history starts on 2026-11-10. [BUILDLOG.md](BUILDLOG.md) dates each piece from the development commits.
 - **Techniques from the author's earlier products, rewritten here:** the Elo rating in `packages/core` (from a game,
   2026-10-28, not on NEAR), cleaning outside text before a model reads it (`packages/mind/src/clean.ts`) and the
-  event → card → post queue in `packages/media`. The export script itself is based on one from another project of
-  the author's and is not part of this repository.
-- **Libraries and AI:** everything third-party is listed in [Built with](#built-with).
+  event → card → post queue in `packages/media`.
+- **Libraries and AI:** everything third-party is listed under Built with, above.
 
 ## More
 
 [RULES.md](RULES.md) · [JUDGE-PATH.md](JUDGE-PATH.md) · [ARCHITECTURE.md](ARCHITECTURE.md) ·
-[SECURITY.md](SECURITY.md) · [BUILDLOG.md](BUILDLOG.md) · [Bounty contract](contracts/bounty/README.md) ·
-[MASK CHECK](packages/check/README.md) · [Race](packages/race/README.md) ·
-[Targets and the sandbox runner](contracts/challenges/README.md) · [Season](contracts/season/README.md) ·
-[Masks](contracts/masks/README.md) · [Jobs](contracts/jobs/README.md) · [Crews](contracts/crews/README.md) ·
-[Hire the swarm](packages/hire/README.md) · [Mainnet](scripts/mainnet/README.md) ·
-[Brand book](docs/brand/BRANDBOOK.md) ·
+[SECURITY.md](SECURITY.md) · [BUILDLOG.md](BUILDLOG.md) · [BRAND.md](BRAND.md) ·
+[Bounty contract](contracts/bounty/README.md) · [Contracts and their source](contracts/README.md) ·
+[MASK CHECK](packages/check/README.md) · [Race](packages/race/README.md) · [Jobs](contracts/jobs/README.md) ·
+[Crews](contracts/crews/README.md) · [House](contracts/house/README.md) · [Mainnet scripts](scripts/mainnet/README.md) ·
 [MIT License](LICENSE)

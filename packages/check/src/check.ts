@@ -7,7 +7,7 @@
 // `allow` means only that no signal against the account was found. It says nothing about keys, servers or anything
 // else that is not on the chain.
 import { accountOk, isImplicit, isMainnetName, isTestnetName } from "./account.ts";
-import type { ArenaEntry, Evidence, SharedList } from "./list.ts";
+import type { ArenaEntry, Evidence, HouseVault, SharedList } from "./list.ts";
 import { NETWORK, type Network } from "./network.ts";
 import { type AccountInfo, type BlockInfo, ChainError, type ChainReader, NO_CODE, blockTime, hostOf } from "./rpc.ts";
 
@@ -19,7 +19,7 @@ export type ReasonCode =
   | "unused_implicit" // an implicit account nobody has used yet
   | "arena_drained" // a mask drained this safe on the arena and the judge confirmed it
   | "arena_taken_over" // a mask took the safe over through its hole; the drain may not be claimed yet
-  | "arena_target" // the safe is in an open race right now
+  | "arena_target" // the safe is in an open race right now, or it is the house's vault: an arena target by design
   | "arena_withstood" // the safe's race ended and nobody drained it
   | "arena_pending" // the list names a race the chain does not show yet
   | "arena_unreadable" // the bounty contract did not answer the arena's questions
@@ -169,7 +169,134 @@ async function arenaReasons(reader: ChainReader, entry: ArenaEntry, at: { block_
   return out;
 }
 
-async function historyReasons(reader: ChainReader, accountId: string, head: BlockInfo, now: AccountInfo, windowHours: number): Promise<Reason[]> {
+/** The code every safe of the arena runs, the house's vault included: what a mask may do to it, in the open. */
+export const SAFE_CODE_URL = "https://github.com/plavutskyi/mask-wars/blob/main/contracts/challenges/live-safe/src/lib.rs";
+
+/** The house's vault as the chain shows it, once the chain confirmed the account is the vault. */
+interface VaultOnChain {
+  /** The masks the vault lets in: exactly the masks of its round. */
+  masks: unknown[];
+  /** The round it is armed for, its id on the bounty contract; `null` until its round opens. */
+  race: string | null;
+}
+
+const isObject = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
+
+/**
+ * Whether the account the list names as the house's vault, running `codeHash`, is the vault right now: read from the
+ * chain, not taken from the name. Its `team` is the house, its `arbiter` the bounty contract, and it runs a code that
+ * contract lists in `safe_codes`. `null` for anything less, and the account is then checked like any other: a
+ * look-alike never gets the vault's label.
+ */
+async function houseVault(reader: ChainReader, v: HouseVault, codeHash: string, at: { block_id: number }): Promise<VaultOnChain | null> {
+  try {
+    if ((await reader.view<unknown>(v.safe, "team", {}, at)) !== v.house) return null;
+    if ((await reader.view<unknown>(v.safe, "arbiter", {}, at)) !== v.contract) return null;
+    const governance = await reader.view<unknown>(v.contract, "governance", {}, at);
+    const codes = isObject(governance) ? governance["safe_codes"] : null;
+    if (!Array.isArray(codes) || !codes.includes(codeHash)) return null;
+    const masks = await reader.view<unknown>(v.safe, "masks", {}, at);
+    if (!Array.isArray(masks)) return null;
+    const round = await reader.view<unknown>(v.safe, "get_round", {}, at);
+    if (round === null) return { masks, race: null };
+    const race = isObject(round) ? round["bounty"] : null;
+    return typeof race === "string" && race !== "" ? { masks, race } : null;
+  } catch (error) {
+    if (error instanceof ChainError && error.kind === "contract") return null;
+    throw error;
+  }
+}
+
+/**
+ * The house's vault, confirmed on chain: an arena target by design, whatever its round. The house makes it again under
+ * the same name for every round, so what it holds now is read from its own round (`get_round`, then the bounty
+ * contract's `get` and `get_safe`), never from a list: open, the vault is a target right now (warn); drained, a mask
+ * won it (block); refunded, it withstood (info) and stays a target until it retires (warn); no round yet, it waits for
+ * today's (warn). So the vault is never an `allow`: it is nobody's payee.
+ */
+async function vaultReasons(reader: ChainReader, v: HouseVault, vault: VaultOnChain, codeHash: string, at: { block_id: number }, explorer: string): Promise<Reason[]> {
+  const { race } = vault;
+  let bounty: BountyView | null = null;
+  if (race !== null) {
+    try {
+      const b = await reader.view<BountyView | null>(v.contract, "get", { id: race }, at);
+      const on = b ? await reader.view<SafeRaceView | null>(v.contract, "get_safe", { id: race }, at) : null;
+      if (b && on && on.safe === v.safe) bounty = b;
+    } catch (error) {
+      if (!(error instanceof ChainError && error.kind === "contract")) throw error;
+    }
+  }
+  const status: unknown = bounty?.status;
+  const state = isObject(status) && typeof status["state"] === "string" ? status["state"] : null;
+  const masks = vault.masks.join(", ");
+  const design = `Only the house funds it; only the masks of its round (${masks}) can open it; after the round, retire sends the rest home to ${v.house}.`;
+  const base = { contract: v.contract, race, state, house: v.house, masks, code_hash: codeHash, code: SAFE_CODE_URL, explorer: `${explorer}/address/${v.safe}` };
+  if (bounty && state === "drained") {
+    const s = bounty.status;
+    return [
+      {
+        code: "arena_drained",
+        level: "block",
+        text: `Drained on the MASK WARS arena, by design: mask ${s.winner} won ${race} on the house's vault, and the judge confirmed the drain on chain. ${design} Do not send NEAR here.`,
+        evidence: { ...base, winner: s.winner ?? null, tx_hash: s.tx_hash ?? null, tx: s.tx_hash ? `${explorer}/txns/${s.tx_hash}` : null },
+      },
+    ];
+  }
+  const owner = await reader.view<string>(v.safe, "get_owner", {}, at).catch((error: unknown) => {
+    if (error instanceof ChainError && error.kind === "contract") return null;
+    throw error;
+  });
+  const out: Reason[] = [];
+  if (owner && owner !== v.safe) {
+    out.push({
+      code: "arena_taken_over",
+      level: "block",
+      text: `Taken over on the MASK WARS arena, by design: the house's vault is owned by ${owner} now, not by itself. A mask of its round got in through the planted hole; the drain is not judged yet. Do not send NEAR here.`,
+      evidence: { ...base, owner, owner_at_open: v.safe },
+    });
+  }
+  if (bounty && state === "refunded") {
+    // Withstood, and still nobody's payee: until the house retires it, it is the arena's, and what it holds goes home.
+    out.push({
+      code: "arena_target",
+      level: "warn",
+      text: `Arena target, by design: the MASK WARS house's vault; ${race} ended with no break, and retire sends everything it holds home to ${v.house}. Do not send NEAR here.`,
+      evidence: base,
+    });
+    out.push({
+      code: "arena_withstood",
+      level: "info",
+      text: `Withstood ${race} on the MASK WARS arena: no mask drained the house's vault before the deadline. ${design} Do not send NEAR here.`,
+      evidence: base,
+    });
+  } else if (bounty && (state === "open" || state === "judging")) {
+    out.push({
+      code: "arena_target",
+      level: "warn",
+      text: `Arena target, by design: the MASK WARS house's vault, live in ${race} right now. ${design} Bounty ${near(bounty.amount)} NEAR. Do not send NEAR here.`,
+      evidence: { ...base, deadline: iso(new Date(Number(BigInt(bounty.deadline_ns) / 1_000_000n))) },
+    });
+  } else {
+    const now = race === null ? "waiting for today's round to open" : `armed for ${race}`;
+    out.push({ code: "arena_target", level: "warn", text: `Arena target, by design: the MASK WARS house's vault, ${now}. ${design} Do not send NEAR here.`, evidence: base });
+  }
+  return out;
+}
+
+/** What a new account or new code on the house's vault is: the house makes the vault again for every round. */
+const REMADE = " Expected here: the house makes its vault again under the same name for every round.";
+
+async function historyReasons(
+  reader: ChainReader,
+  accountId: string,
+  head: BlockInfo,
+  now: AccountInfo,
+  windowHours: number,
+  /** The account is the house's vault, confirmed on chain: a new account and new code are said, not warned about. */
+  remade = false,
+): Promise<Reason[]> {
+  const fresh: Level = remade ? "info" : "warn";
+  const why = remade ? REMADE : "";
   // Where every read is cross-checked, a window nobody could read is a warning: without it a new account or new code
   // would pass as an old one, and one provider can bring that about by saying it no longer keeps the block.
   const unread: Level = reader.crossCheck ? "warn" : "info";
@@ -191,16 +318,15 @@ async function historyReasons(reader: ChainReader, accountId: string, head: Bloc
     throw error;
   }
   if (!then) {
-    return [{ code: "young_account", level: "warn", text: `New account: it did not exist ${windowHours} h ago (block ${ref.height}, ${since.block_time}).`, evidence: since }];
+    return [{ code: "young_account", level: fresh, text: `New account: it did not exist ${windowHours} h ago (block ${ref.height}, ${since.block_time}).${why}`, evidence: since }];
   }
   const out: Reason[] = [{ code: "account_age", level: "info", text: `The account already existed ${windowHours} h ago (block ${ref.height}, ${since.block_time}).`, evidence: since }];
   if (then.codeHash !== now.codeHash) {
     if (then.codeHash === NO_CODE) {
-      out.unshift({ code: "code_deployed", level: "warn", text: `A contract was deployed here within the last ${windowHours} h.`, evidence: { ...since, code_hash: now.codeHash } });
-    } else if (now.codeHash === NO_CODE) {
-      out.unshift({ code: "code_changed", level: "warn", text: `The contract's code was removed within the last ${windowHours} h.`, evidence: { ...since, code_hash_before: then.codeHash, code_hash_now: now.codeHash } });
+      out.unshift({ code: "code_deployed", level: fresh, text: `A contract was deployed here within the last ${windowHours} h.${why}`, evidence: { ...since, code_hash: now.codeHash } });
     } else {
-      out.unshift({ code: "code_changed", level: "warn", text: `The contract's code changed within the last ${windowHours} h.`, evidence: { ...since, code_hash_before: then.codeHash, code_hash_now: now.codeHash } });
+      const what = now.codeHash === NO_CODE ? "was removed" : "changed";
+      out.unshift({ code: "code_changed", level: fresh, text: `The contract's code ${what} within the last ${windowHours} h.${why}`, evidence: { ...since, code_hash_before: then.codeHash, code_hash_now: now.codeHash } });
     }
   }
   return out;
@@ -271,8 +397,12 @@ export async function maskCheck(accountId: string, options: CheckOptions): Promi
           : { code: "no_account", level: "block", text: `No such account on ${network}: a payment cannot arrive.` },
       );
     } else {
-      for (const entry of list.arena.filter((e) => e.safe === id)) reasons.push(...(await arenaReasons(reader, entry, at, NETWORK[network].explorer)));
-      reasons.push(...(await historyReasons(reader, id, head, account, windowHours)));
+      const explorer = NETWORK[network].explorer;
+      // The house's vault is told by the chain, not by its name: only once the chain confirms it does it get its label.
+      const vault = list.vault?.safe === id ? await houseVault(reader, list.vault, account.codeHash, at) : null;
+      if (list.vault && vault) reasons.push(...(await vaultReasons(reader, list.vault, vault, account.codeHash, at, explorer)));
+      else for (const entry of list.arena.filter((e) => e.safe === id)) reasons.push(...(await arenaReasons(reader, entry, at, explorer)));
+      reasons.push(...(await historyReasons(reader, id, head, account, windowHours, vault !== null)));
       reasons.push(
         account.codeHash === NO_CODE
           ? { code: "plain_account", level: "info", text: "A plain account: no contract code." }

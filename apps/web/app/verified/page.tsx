@@ -102,7 +102,8 @@ function Board({ results, now = Date.now() }: { results?: readonly ModelVerifica
         </p>
       </section>
 
-      <section className={s.models} aria-label="Models">
+      {/* An even number of models goes two by two: no card is left alone on a row. */}
+      <section className={s.models} aria-label="Models" data-even={MODELS.length % 2 === 0 ? '' : undefined}>
         {MODELS.map((id) => (
           <Model key={id} id={id} v={results?.find((r) => r.model === id)} now={now} quiet={silent !== null} />
         ))}

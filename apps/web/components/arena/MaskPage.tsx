@@ -1,4 +1,5 @@
 import type { MaskStats } from '@maskwars/arena';
+import type { SeasonThought } from '@maskwars/arena/minds';
 import { accountUrl } from '@maskwars/arena/config';
 import { duration, near } from '@maskwars/arena/format';
 import Image from 'next/image';
@@ -9,12 +10,24 @@ import { Mark } from '../Mark';
 import { Header } from './Header';
 import { Info, type InfoRow } from './Info';
 import { raceName } from './names';
+import { MaskMind, Times } from './Thought';
 import { Nums } from './Nums';
 import { titleEm } from './title';
 import { World } from './World';
 import s from './page.module.css';
 
-export function MaskPage({ mask: m, rank, network }: { mask: MaskStats; rank: number; network: string }) {
+export function MaskPage({
+  mask: m,
+  rank,
+  network,
+  season = null,
+}: {
+  mask: MaskStats;
+  rank: number;
+  network: string;
+  /** Its mind over the races whose record is kept (lib/minds.ts): the price of its thinking and the season's ×. */
+  season?: SeasonThought | null;
+}) {
   const art = artOf(m.who);
   const best = m.fastestRace ?? m.history.find((h) => h.won)?.id ?? m.history[0]?.id ?? null;
   const targets = [...new Set(m.history.filter((h) => h.won && h.targetCode).map((h) => `${h.target.split('.')[0]}: ${h.targetCode}`))];
@@ -47,6 +60,7 @@ export function MaskPage({ mask: m, rank, network }: { mask: MaskStats; rank: nu
               {near(m.earned)}
               <span className={`${s.word} ${s.unit}`}>NEAR</span>
             </span>
+            {season && season.answers > 0 ? <Times x={season.x} label="on what its mind cost" /> : null}
             <Info rows={facts} label={`${m.who.name} on chain`} align="start" />
           </div>
           <dl className={s.stats}>
@@ -63,6 +77,7 @@ export function MaskPage({ mask: m, rank, network }: { mask: MaskStats; rank: nu
               <dd>{m.races}</dd>
             </div>
           </dl>
+          <MaskMind name={m.who.name} season={season} model={m.who.model} races={m.races} />
         </div>
         <div className={s.heroArt} aria-hidden>
           {art ? <Image src={art} alt="" fill priority fetchPriority="high" sizes="(max-width: 900px) 70vw, 44vw" quality={85} className={s.heroMask} /> : <Mark className={s.heroMark} />}

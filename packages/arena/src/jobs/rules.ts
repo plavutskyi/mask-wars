@@ -43,6 +43,11 @@ export const RULES = {
   /** An appeal's run may be asked again for this long after the appeal window. */
   appealGraceHours: 6,
   maxWorkMinutes: 3 * 24 * 60,
+  /** A drain waits this long for its round's outcome before anyone may close it unjudged. */
+  drainRoundHours: 37,
+  /** The longest a job lives by its own windows, from its opening to the last run of an appeal (`MAX_JOB_HOURS`): the
+   *  check, three days of work, a day of reveals, the judge's grace, a day of appeals and their grace. */
+  maxJobHours: 6 + 3 * 24 + 24 + 12 + 24 + 6,
   /** The longest the judge may ask to be left alone after what it calls was down. */
   maxRetryWaitMinutes: 60,
   /** An `ai_review` bar: points of 100 a work needs to win, at most. */

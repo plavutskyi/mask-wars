@@ -2,6 +2,9 @@ name: CI
 
 # Each job runs only when the files it builds or reads change, so a change to the site does not wait for the Rust
 # sandbox. `ci-ok` sums the run up: green when every job passed or was not needed. It is the one check to require.
+# The three live probes (mask-check-live, arena-live, pay-live) read NEAR testnet and NEAR Intents' 1Click, services
+# outside this repository. Through .github/workflows/live.sh a service that does not answer (exit 4, or no answer in 10 minutes)
+# is a warning on the run; an answer that is wrong (any other exit) fails the job and `ci-ok` like any test.
 on:
   push:
     branches: [main]
@@ -22,6 +25,12 @@ permissions:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/main' && github.run_id || github.head_ref || github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+# Every step runs in bash with `-eo pipefail`, which GitHub adds only when the shell is named: a step that pipes its
+# output fails when the command before the pipe fails, not only when the last one does.
+defaults:
+  run:
+    shell: bash
 
 jobs:
   # The keys that sign and pay (MASK_KEYS, KEEPER_SEED, HOUSE_KEY, SCHEDULER_KEY, OUTLAYER_PAYMENT_KEY, NEAR_AI_API_KEY)
@@ -70,6 +79,7 @@ jobs:
       challenges: ${{ steps.pick.outputs.challenges }}
       bounty: ${{ steps.pick.outputs.bounty }}
       season: ${{ steps.pick.outputs.season }}
+      house: ${{ steps.pick.outputs.house }}
       jobs: ${{ steps.pick.outputs.jobs }}
       home: ${{ steps.pick.outputs.home }}
       outlayer: ${{ steps.pick.outputs.outlayer }}
@@ -116,6 +126,9 @@ jobs:
               - contracts/challenges/**
               - contracts/masks/catalog.json
               - contracts/masks/factory/src/**
+              - contracts/nep330.mjs
+              - contracts/*/Cargo.toml
+              - contracts/masks/*/Cargo.toml
               - services/brain/*.json
               - services/check/deployment.json
               - services/check/src/lib.rs
@@ -132,13 +145,15 @@ jobs:
             contracts:
               - *ci
               - contracts/**
-            # The sandbox runner builds the bounty contract, the season treasury and home next to its workspace and
-            # takes the judge by path; its test of home reads home_code and the house from the network files.
+            # The sandbox runner builds the bounty contract, the season treasury, the house contract and home next to
+            # its workspace and takes the judge by path; its test of home reads home_code and the house from the
+            # network files.
             challenges:
               - *ci
               - contracts/challenges/**
               - contracts/bounty/**
               - contracts/season/**
+              - contracts/house/**
               - contracts/home/**
               - packages/network/*.json
               - services/judge/**
@@ -157,6 +172,12 @@ jobs:
               - *ci
               - contracts/season/**
               - *live-safe
+            # The house, and the two crates whose build.rs must stay the house's own (its tests compare them).
+            house:
+              - *ci
+              - contracts/house/**
+              - contracts/home/build.rs
+              - contracts/masks/mask/build.rs
             judge:
               - *ci
               - services/judge/**
@@ -215,6 +236,7 @@ jobs:
             echo "challenges=$(on challenges)"
             echo "bounty=$(on bounty)"
             echo "season=$(on season)"
+            echo "house=$(on house)"
             echo "jobs=$(on jobs)"
             echo "home=$(on home)"
             echo "outlayer=$modules"
@@ -241,6 +263,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.check == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
@@ -250,11 +273,11 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: The arena's bounty contract
-        run: pnpm --filter @maskwars/check check tinygif8324.testnet
+        run: ./.github/workflows/live.sh pnpm --filter @maskwars/check check tinygif8324.testnet
       - name: The arena's live safe
-        run: pnpm --filter @maskwars/check check safe-0001.tinygif8324.testnet
+        run: ./.github/workflows/live.sh pnpm --filter @maskwars/check check safe-0001.tinygif8324.testnet
       - name: The demo, live
-        run: pnpm demo:check
+        run: ./.github/workflows/live.sh pnpm demo:check
 
   # The arena read from testnet itself, with no keys: every race, its course, the drain and the payout. Fails when
   # race-0003 does not read as NOVA's paid drain (exit 1) or when neither RPC nor the indexer answers (exit 4).
@@ -262,6 +285,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.arena == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
@@ -271,7 +295,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: The arena, live
-        run: pnpm --filter @maskwars/arena live
+        run: ./.github/workflows/live.sh pnpm --filter @maskwars/arena live
 
   # Money in and out through NEAR Intents' 1Click, with no money: the coins a vault takes, a top-up from Solana up to
   # its deposit address, a cash-out up to the intent a passkey signs, read through the page's own check. Prints what
@@ -280,6 +304,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.pay == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
@@ -289,7 +314,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: 1Click, live
-        run: pnpm --filter @maskwars/pay live --record
+        run: ./.github/workflows/live.sh pnpm --filter @maskwars/pay live --record
         env:
           ONE_CLICK_API_KEY: ${{ secrets.ONE_CLICK_API_KEY }}
 
@@ -362,6 +387,36 @@ jobs:
           path: |
             maskwars_season.wasm
             safes/*.wasm
+
+  # The house contract: its rules natively, and its code built the same way anywhere: build.sh gives the same bytes
+  # from another folder. The code the owner deploys on house.maskwars.near is the reproducible build of the `source`
+  # job, made in the public clone (contracts/README.md, "Source on chain"). Two days of the circle on its function-call
+  # key alone run in the real sandbox in the `challenges` job (runner/tests/house.rs).
+  house:
+    needs: changes
+    if: needs.changes.outputs.house == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: dtolnay/rust-toolchain@f08ac54821369508305fcb9e0121ec6e30ae9ada # 1.97.0
+        with:
+          targets: wasm32-unknown-unknown
+          components: clippy
+      - run: cargo test --locked
+        working-directory: contracts/house
+      - run: cargo clippy --locked --all-targets -- -D warnings
+        working-directory: contracts/house
+      - name: The build, and the same bytes again from another folder
+        run: |
+          contracts/house/build.sh
+          mkdir -p "$RUNNER_TEMP/elsewhere"
+          (cd contracts/house && cp -r src build.rs Cargo.toml Cargo.lock rust-toolchain.toml build.sh "$RUNNER_TEMP/elsewhere/")
+          "$RUNNER_TEMP/elsewhere/build.sh"
+          cmp contracts/house/target/wasm/maskwars_house.wasm "$RUNNER_TEMP/elsewhere/target/wasm/maskwars_house.wasm"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: maskwars-house-wasm
+          path: contracts/house/target/wasm/maskwars_house.wasm
 
   challenges:
     needs: changes
@@ -537,9 +592,11 @@ jobs:
             contracts/jobs/target/wasm/maskwars_crews.wasm
 
   # home, the code on the arena's own masks that sends their winnings to the house and nowhere else (contracts/home): its
-  # unit tests for each network, its build with its own script, the same bytes again from another folder, a line of
-  # sizes, and those bytes checked against the code hash packages/network names and the file the repository serves for
-  # the owner's deploy. The sandbox runs the very same files in the `challenges` job (runner/tests/home.rs).
+  # unit tests for each network, its build with its own script, the same bytes again from another folder and a line of
+  # sizes. The code on the masks is `home_code` of packages/network: the file the repository serves under its sha256 must
+  # be there and be those bytes. A new home reaches the masks as the reproducible build of the `source` job, made in the
+  # public clone (contracts/README.md, "Source on chain"). The sandbox runs this build in the `challenges` job
+  # (runner/tests/home.rs).
   home:
     needs: changes
     if: needs.changes.outputs.home == 'true'
@@ -558,38 +615,42 @@ jobs:
         run: |
           contracts/home/build.sh
           mkdir -p "$RUNNER_TEMP/elsewhere"
-          (cd contracts/home && cp -r src Cargo.toml Cargo.lock rust-toolchain.toml build.sh "$RUNNER_TEMP/elsewhere/")
+          (cd contracts/home && cp -r src build.rs Cargo.toml Cargo.lock rust-toolchain.toml build.sh "$RUNNER_TEMP/elsewhere/")
           "$RUNNER_TEMP/elsewhere/build.sh"
           for net in mainnet testnet; do
             cmp "contracts/home/target/wasm/maskwars_home-$net.wasm" "$RUNNER_TEMP/elsewhere/target/wasm/maskwars_home-$net.wasm"
           done
-      - name: Sizes, fingerprints, home_code and the files the repository serves
+      - name: Sizes, and the code on the masks served under its sha256
         run: |
           python3 - <<'PY' | tee -a "$GITHUB_STEP_SUMMARY"
-          import hashlib, json, os, sys
+          import glob, hashlib, json, sys
           a = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
+          def code_hash(digest):
+              n, code = int.from_bytes(digest, "big"), ""
+              while n:
+                  n, r = divmod(n, 58)
+                  code = a[r] + code
+              # base58 writes each leading zero byte as a 1.
+              return "1" * (len(digest) - len(digest.lstrip(b"\0"))) + code
           bad = False
           print("### home on the masks\n")
           for net in ("mainnet", "testnet"):
               data = open(f"contracts/home/target/wasm/maskwars_home-{net}.wasm", "rb").read()
               digest = hashlib.sha256(data).digest()
-              sha = digest.hex()
-              n, code = int(sha, 16), ""
-              while n:
-                  n, r = divmod(n, 58)
-                  code = a[r] + code
-              # base58 writes each leading zero byte as a 1.
-              code = "1" * (len(digest) - len(digest.lstrip(b"\0"))) + code
+              print(f"- {net}, this build: {len(data)} bytes, stake {len(data) / 100000:.4f} NEAR a mask, sha256 `{digest.hex()}`, code hash `{code_hash(digest)}`")
               named = json.load(open(f"packages/network/{net}.json"))["home_code"]
-              served = f"apps/web/public/contracts/maskwars-home-{net}-{sha}.wasm"
-              same = os.path.exists(served) and open(served, "rb").read() == data
-              print(f"- {net}: {len(data)} bytes, stake {len(data) / 100000:.4f} NEAR a mask, sha256 `{sha}`, code hash `{code}`")
-              if named != code:
-                  print(f"  - home_code of packages/network/{net}.json is {named}, not this build")
+              served = [f for f in glob.glob(f"apps/web/public/contracts/maskwars-home-{net}-*.wasm")]
+              on = [f for f in served if code_hash(hashlib.sha256(open(f, "rb").read()).digest()) == named]
+              for f in served:
+                  sha = hashlib.sha256(open(f, "rb").read()).hexdigest()
+                  if not f.endswith(f"-{sha}.wasm"):
+                      print(f"  - {f} is not served under its own sha256 ({sha})")
+                      bad = True
+              if not on:
+                  print(f"  - home_code of packages/network/{net}.json is {named}, and no file in apps/web/public/contracts is that code")
                   bad = True
-              if not same:
-                  print(f"  - {served} is not this build: run contracts/home/build.sh and copy the wasm there under its sha256")
-                  bad = True
+              else:
+                  print(f"  - on the masks: `{named}`, served as {on[0]}")
           sys.exit(1 if bad else 0)
           PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -597,11 +658,47 @@ jobs:
           name: maskwars-home-wasm
           path: contracts/home/target/wasm/*.wasm
 
+  # Every contract carries its source (NEP-330): built by `cargo near build reproducible-wasm` in the image its
+  # Cargo.toml pins, as a deploy builds it, each must say its version, the commit and how to build those bytes again. The
+  # commit here is not on the public repository, so these bytes are a check and never a deploy: the deploy's are built
+  # in the public clone by the same script (contracts/README.md, "Source on chain").
+  source:
+    needs: changes
+    if: needs.changes.outputs.contracts == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          # cargo-near builds from a clone of the repository at HEAD, never from the working folder.
+          fetch-depth: 0
+      - uses: dtolnay/rust-toolchain@f08ac54821369508305fcb9e0121ec6e30ae9ada # 1.97.0
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+      - name: cargo-near 0.22.0, the release checked by its sha256
+        run: |
+          cd "$RUNNER_TEMP"
+          curl -sSfL -o cargo-near.tgz https://github.com/near/cargo-near/releases/download/cargo-near-v0.22.0/cargo-near-x86_64-unknown-linux-gnu.tar.gz
+          echo "9429064e30a427e96523f539cb255f3688d2345e5000d7d4e4873a8247247d1a  cargo-near.tgz" | sha256sum -c -
+          tar xzf cargo-near.tgz
+          install cargo-near-x86_64-unknown-linux-gnu/cargo-near "$HOME/.cargo/bin/"
+          cargo near --version
+      - name: Every contract, built as a deploy builds it, says where its source is
+        run: contracts/build-source.sh --any-remote
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: maskwars-source-wasm
+          path: out/source/*.wasm
+
   # The one check to require on main: green when every job above passed or was not needed by the change, red when one
-  # failed or was cancelled.
+  # failed or was cancelled. The live probes are among them: a probe passes when the outside service does not answer
+  # (live.sh) and fails only on a wrong answer.
   ci-ok:
     if: always()
-    needs: [keys, changes, typescript, mask-check-live, arena-live, pay-live, contracts, season, jobs, challenges, outlayer, bounty, home]
+    needs: [keys, changes, typescript, mask-check-live, arena-live, pay-live, contracts, source, season, house, jobs, challenges, outlayer, bounty, home]
     runs-on: ubuntu-latest
     steps:
       - name: Every job passed or was not needed

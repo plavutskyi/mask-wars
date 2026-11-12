@@ -1,0 +1,25 @@
+{
+  "name": "@maskwars/dossier",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run",
+    "write": "node --use-env-proxy --disable-warning=UNDICI-EHPA scripts/write.ts",
+    "shots": "node scripts/shots.mjs",
+    "record": "node --use-env-proxy --disable-warning=UNDICI-EHPA scripts/record.ts"
+  },
+  "dependencies": {
+    "@maskwars/arena": "workspace:*",
+    "@maskwars/check": "workspace:*",
+    "@maskwars/mind": "workspace:*",
+    "zod": "^4.6.7"
+  },
+  "files": [
+    "src"
+  ]
+}

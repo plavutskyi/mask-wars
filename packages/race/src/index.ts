@@ -1,4 +1,4 @@
-// Перегони AI-зломщиків: формат завдання, план нападника, пісочниця, агенти, перегони й публічний журнал.
+// The race of AI breakers: the task format, the attacker's plan, the sandbox, the agents, the race and its public journal.
 export * from "./plan.ts";
 export * from "./challenge.ts";
 export * from "./outcome.ts";

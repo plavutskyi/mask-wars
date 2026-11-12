@@ -576,7 +576,7 @@ describe("a round with the people's masks: every sealed sweep asks for min_loot"
     chain.available = 5n * NEAR;
     const lines: string[] = [];
     const sealed = await seal(chain, lines);
-    // The sandbox plan sweeps 3 NEAR, the safe could pay out 5: the seal asks for the round's 1 NEAR of min_loot.
+    // The sandbox plan sweeps 2.5 NEAR, the safe could pay out 5: the seal asks for the round's 1 NEAR of min_loot.
     expect(sealed.calls).toEqual([
       { method: "set_owner", args: { new_owner: NOVA } },
       { method: "sweep", args: { to: NOVA, amount: NEAR.toString() } },
@@ -588,10 +588,10 @@ describe("a round with the people's masks: every sealed sweep asks for min_loot"
   });
 
   it("an earlier seal under the arena's own rule would spoil the later plan; under min_loot it does not", async () => {
-    // The safe pays out 3.02 NEAR. Seal #0 under the arena's own rule sweeps all of it but the margin: a later sealed
-    // sweep of min_loot would find 0.03 NEAR and fail.
+    // The safe pays out 2.52 NEAR and the plan sweeps 2.5. Seal #0 under the arena's own rule takes all of it but the
+    // margin: a later sealed sweep of min_loot would find 0.03 NEAR and fail.
     const greedy = new FakeTestnet();
-    greedy.available = 302n * NEAR / 100n;
+    greedy.available = 252n * NEAR / 100n;
     const all = await sealLive({
       ...live(greedy, []),
       challenge: await challenge("live-safe"),
@@ -600,12 +600,12 @@ describe("a round with the people's masks: every sealed sweep asks for min_loot"
     });
     await playLive(live(greedy, []), all);
     expect(greedy.available).toBe(SWEEP_MARGIN);
-    // Under min_loot the same plan takes 1 NEAR and leaves 2.02: two more seals of 1 NEAR each still pay.
+    // Under min_loot the same plan takes 1 NEAR and leaves 1.52: the next seal of 1 NEAR still pays.
     const fair = new FakeTestnet();
-    fair.available = 302n * NEAR / 100n;
+    fair.available = 252n * NEAR / 100n;
     const sealed = await seal(fair);
     await playLive({ ...live(fair, []), sweep: "min_loot" }, sealed);
-    expect(fair.available).toBe(202n * NEAR / 100n);
+    expect(fair.available).toBe(152n * NEAR / 100n);
   });
 
   it("resumes its seal whatever the safe holds by then: the sweep is min_loot, not a cut of the safe", async () => {

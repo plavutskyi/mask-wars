@@ -96,18 +96,18 @@ export function eventLine(e: RaceEvent, team?: string): string {
   const who = theTeam ? 'The team' : (e.who?.name ?? 'Someone');
   switch (e.kind) {
     case 'fund':
-      return 'The safe is loaded';
+      return 'The vault is loaded';
     case 'open':
       return 'The vault opens';
     case 'seal':
       return `${who} seals a plan`;
     case 'move':
       if (!e.ok) return `${who} is turned away`;
-      if (e.method === 'set_owner') return `${who} takes over the safe`;
+      if (e.method === 'set_owner') return `${who} takes over the vault`;
       if (e.method === 'sweep') return `${who} tries to sweep it`;
-      return `${who} probes the safe`;
+      return `${who} probes the vault`;
     case 'drain':
-      return `${who} drains the safe`;
+      return `${who} drains the vault`;
     case 'reveal':
       return e.ok ? `${who} shows its plan` : `${who}'s plan is refused`;
     case 'claim':

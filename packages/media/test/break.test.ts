@@ -279,7 +279,8 @@ describe("the music", () => {
 
   it("the series' own track is the one the clip takes, at the tempo its json says", () => {
     const t = breakTrack(join(MEDIA, "shots/race-0001"));
-    expect(t.file.endsWith("audio/break-01.mp3")).toBe(true);
+    // Either separator: a Windows checkout joins the path with backslashes.
+    expect(t.file.split("\\").join("/").endsWith("audio/break-01.mp3")).toBe(true);
     expect(t.tempo.bpm).toBe(120);
     expect(t.from).toBe(0);
     expect(beatGrid(t.tempo, 30, 60)).toEqual([0, 15, 30, 45]);
@@ -368,20 +369,22 @@ const ffmpeg = spawnSync("ffmpeg", ["-version"], { stdio: "ignore" }).status ===
 describe.runIf(ffmpeg && existsSync(KEPT))("the kept clip of round 1", () => {
   const probe = (entries: string, stream: string): string => execFileSync("ffprobe", ["-v", "error", "-select_streams", stream, "-show_entries", entries, "-of", "csv=p=0", KEPT], { encoding: "utf8" }).trim();
 
-  it("is 15 s of 1920×1080 at 30 frames a second, with sound", () => {
+  it("is 15 s of 1920×1080 at 30 frames a second, with sound", { timeout: 30_000 }, () => {
     // ffprobe may close the line with an empty field.
     expect(probe("stream=width,height,r_frame_rate,nb_frames", "v:0").split(",").slice(0, 4)).toEqual(["1920", "1080", "30/1", "450"]);
     expect(probe("stream=codec_name", "a:0").split(",")[0]).toBe("aac");
   });
 
-  it("moves from its first frame: frame 0 and frame 45 are different pictures", () => {
-    const r = spawnSync("ffmpeg", ["-hide_banner", "-i", KEPT, "-filter_complex", "[0:v]select='eq(n\\,0)',setpts=PTS-STARTPTS[a];[0:v]select='eq(n\\,45)',setpts=PTS-STARTPTS[b];[a][b]ssim", "-f", "null", "-"], { encoding: "utf8" });
+  // Only the first 2 s are decoded (frame 45 is at 1.5 s): the whole clip takes longer than a test's default 5 s on a
+  // busy machine.
+  it("moves from its first frame: frame 0 and frame 45 are different pictures", { timeout: 30_000 }, () => {
+    const r = spawnSync("ffmpeg", ["-hide_banner", "-t", "2", "-i", KEPT, "-filter_complex", "[0:v]select='eq(n\\,0)',setpts=PTS-STARTPTS[a];[0:v]select='eq(n\\,45)',setpts=PTS-STARTPTS[b];[a][b]ssim", "-f", "null", "-"], { encoding: "utf8" });
     const all = /All:([0-9.]+)/.exec(r.stderr);
     expect(all, r.stderr.slice(-300)).not.toBeNull();
     expect(Number(all![1])).toBeLessThan(0.8);
   });
 
-  it("is loud from its first frame", () => {
+  it("is loud from its first frame", { timeout: 30_000 }, () => {
     const r = spawnSync("ffmpeg", ["-hide_banner", "-t", "0.25", "-i", KEPT, "-vn", "-af", "volumedetect", "-f", "null", "-"], { encoding: "utf8" });
     const mean = /mean_volume: (-?[0-9.]+) dB/.exec(r.stderr);
     expect(mean, r.stderr.slice(-300)).not.toBeNull();

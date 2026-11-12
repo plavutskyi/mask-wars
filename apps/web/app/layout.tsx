@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import { color } from '@maskwars/brand';
+import { Footer } from '@/components/Footer';
 import { LINE, pageMeta, SITE } from '@/lib/meta';
 import { siteOrigin } from '@/lib/site';
 import { hubot, mona } from './fonts';
@@ -23,7 +24,11 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={`${hubot.variable} ${mona.variable}`}>
-      <body>{children}</body>
+      <body>
+        {children}
+        {/* After the page, never inside it: a page that fills one screen keeps it whole, and the footer is below. */}
+        <Footer />
+      </body>
     </html>
   );
 }

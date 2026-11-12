@@ -370,7 +370,11 @@ export async function send(
     finality: "final",
     account_id: signer,
     public_key: key.publicKeyText,
-  })) as { nonce: number | string; block_hash: string };
+  })) as { nonce?: number | string; block_hash?: string; error?: string };
+  // A node answers a key the account does not hold with an `error` inside the result, not as an RPC error.
+  if (access.nonce === undefined || access.block_hash === undefined) {
+    throw new RpcError(`view_access_key: AccessKeyNotFound: ${signer} holds no key ${key.publicKeyText}${access.error ? ` (${access.error})` : ""}`);
+  }
   const tx: Transaction = {
     signer,
     publicKey: key.publicKey,
@@ -394,6 +398,17 @@ export async function send(
     return value === undefined ? failed : { ...failed, value };
   }
   return value === undefined ? { hash: signed.hash, ok: true, logs } : { hash: signed.hash, ok: true, value, logs };
+}
+
+/** Whether `account` holds `key` now: a node answers a missing key inside the result, so this reads that answer. */
+export async function holdsKey(chain: Chain, account: string, key: NearKey): Promise<boolean> {
+  const k = (await chain.rpc("query", {
+    request_type: "view_access_key",
+    finality: "final",
+    account_id: account,
+    public_key: key.publicKeyText,
+  })) as { nonce?: unknown };
+  return k.nonce !== undefined;
 }
 
 /** Signs `method(args)` on `receiver` as `signer` with `key`, no deposit, and waits for the result (`send`). */

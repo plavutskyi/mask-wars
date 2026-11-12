@@ -17,13 +17,13 @@
  * `release_minutes`, and then the mind pays nothing.
  *
  * Optional: `MASK_FACTORY`, `KEEPER_ACCOUNT` (the factory's keeper), `BOUNTY_CONTRACT`, `BOUNTY_TEAM` (comma-separated)
- * and `NEAR_RPC`; by default the factory, the admin, the bounty contract, the admin and the RPC of MASKWARS_NETWORK
- * (packages/network).
+ * and `NEAR_RPC`; by default the factory, the admin, the bounty contract, the arena's teams (the admin, the season and
+ * the house, whose daily round lets people's masks in) and the RPC of MASKWARS_NETWORK (packages/network).
  */
 import { appendFile, readFile } from "node:fs/promises";
 import { armHumans, costsFor, costYocto, humansOf, settleHumans, stillInPlay, keeperKey, type KeeperOptions } from "../src/keeper.ts";
 import { JsonRpc, view } from "../src/near-tx.ts";
-import { NET } from "@maskwars/network";
+import { NET, teams } from "@maskwars/network";
 import { onThisNetwork } from "../src/net.ts";
 
 const fail = (why: string): never => {
@@ -64,7 +64,7 @@ const o: KeeperOptions = {
   seed,
   bountyContract,
   bountyId,
-  team: (process.env.BOUNTY_TEAM || NET.admin).split(",").map((t) => t.trim()).filter(Boolean),
+  team: (process.env.BOUNTY_TEAM || teams(NET).join(",")).split(",").map((t) => t.trim()).filter(Boolean),
   log: (line) => console.log(line),
 };
 console.log(`keeper ${o.keeper}, its key ${keeperKey(seed, factory).publicKeyText} on ${factory}`);

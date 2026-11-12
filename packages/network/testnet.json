@@ -61,6 +61,11 @@
     "jobs": "10",
     "crews": "5"
   },
+  "guests": {
+    "masks": 3,
+    "agents": 2,
+    "deposit": "0.051"
+  },
   "limits": {
     "season": {
       "max_prize": "1",
@@ -73,6 +78,18 @@
     },
     "house_max": "6",
     "fund_max": "50",
-    "fuel_max": "5"
+    "fuel_max": "5",
+    "jobs": {
+      "min_reward": "0.5",
+      "max_bond": "0.1",
+      "per_round": 2,
+      "per_client": 1,
+      "seats": 2,
+      "max_out": "0.624",
+      "max_work_minutes": 60,
+      "max_reveal_minutes": 60,
+      "max_appeal_minutes": 60,
+      "reveal_runs": 2
+    }
   }
 }

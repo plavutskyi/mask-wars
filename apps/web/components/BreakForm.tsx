@@ -133,7 +133,7 @@ export function BreakForm() {
         ) : (
           <form className={s.form} onSubmit={submit} noValidate>
             <p className={s.lede} data-first={step === 0 ? '' : undefined}>
-              Put up a bounty. Masks race to drain your vault before you ship.
+              Put up a bounty. Masks race to drain your contract before you ship.
             </p>
 
             <div className={s.top}>

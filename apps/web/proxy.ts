@@ -108,6 +108,22 @@ export const config = {
       ],
     },
     {
+      // Get NEAR: it hands out deposit addresses and asks wallets to sign, so no other site may frame it.
+      source: '/near',
+      missing: [
+        { type: 'header', key: 'next-router-prefetch' },
+        { type: 'header', key: 'purpose', value: 'prefetch' },
+      ],
+    },
+    {
+      // Swap: the same, for any coin into any coin.
+      source: '/swap',
+      missing: [
+        { type: 'header', key: 'next-router-prefetch' },
+        { type: 'header', key: 'purpose', value: 'prefetch' },
+      ],
+    },
+    {
       source: '/hire/prove',
       missing: [
         { type: 'header', key: 'next-router-prefetch' },

@@ -1,0 +1,6 @@
+{
+  "factory": { "bytes": 355216, "sha256": "ebcabbccd5fa9e3f87407e4a2c948b0ec50eb77c3efbdd2dda1868f8fa944b95" },
+  "mask": { "bytes": 60229, "sha256": "35b5471c52feb3600f45d2a4118d587b89fc6d7a615b35a64701f16997f6861a" },
+  "state_bytes": 479,
+  "keeper_float": "0.1"
+}

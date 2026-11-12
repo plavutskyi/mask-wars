@@ -65,6 +65,11 @@ describe("the rules are the contract's", () => {
     expect(BigInt(RULES.judgeGraceHours)).toBe(jobs("JUDGE_GRACE_HOURS"));
     expect(BigInt(RULES.appealGraceHours)).toBe(jobs("APPEAL_GRACE_HOURS"));
     expect(BigInt(RULES.maxWorkMinutes)).toBe(jobs("MAX_WORK_MINUTES"));
+    expect(BigInt(RULES.drainRoundHours)).toBe(jobs("DRAIN_ROUND_HOURS"));
+    // The longest life of a job, as the contract adds it up from its own windows.
+    expect(jobsRs).toContain("pub const MAX_JOB_HOURS: u64 = CHECK_HOURS + 3 * 24 + 24 + JUDGE_GRACE_HOURS + 24 + APPEAL_GRACE_HOURS;");
+    expect(RULES.maxJobHours).toBe(RULES.checkHours + 3 * 24 + 24 + RULES.judgeGraceHours + 24 + RULES.appealGraceHours);
+    expect(RULES.maxJobHours).toBe(144);
     expect(BigInt(RULES.maxRetryWaitMinutes)).toBe(jobs("MAX_RETRY_WAIT_MINUTES"));
     expect(BigInt(RULES.maxReviewWinAt)).toBe(jobs("MAX_REVIEW_WIN_AT"));
     expect(BigInt(RULES.minJudgeTgas)).toBe(jobs("MIN_JUDGE_GAS"));
@@ -181,6 +186,43 @@ describe("a board with no job", () => {
     const board = await emptyJobs("deployed").board();
     expect(board).toMatchObject({ network: "testnet", contract: NETWORKS.testnet.jobs, deployed: true, jobs: [], open: 0, waiting: "0", paid: "0", biggest: null });
     expect(board.market).toMatchObject({ jobs: 0, live: 0, judges: [], crews: NETWORKS.testnet.crews, feeBps: 500 });
+  });
+});
+
+describe("whether jobs run on a network at all", () => {
+  /** The deployed world, with one account asked for answered as if it did not exist. */
+  function without(gone: string): typeof fetch {
+    const base = emptyJobsFetch("deployed");
+    return (async (input: string | URL | Request, init?: RequestInit) => {
+      const body = typeof init?.body === "string" ? (JSON.parse(init.body) as { params?: { account_id?: string } }) : null;
+      if (body?.params?.account_id === gone) body.params.account_id = "gone.testnet";
+      return base(input, body ? { ...init, body: JSON.stringify(body) } : init);
+    }) as typeof fetch;
+  }
+  const reader = (fetch: typeof globalThis.fetch, config = jobsConfigOf()) => new Jobs({ config, rpc: new ChainReader({ endpoints: config.rpc, fetch }), indexer: new Indexer({ fetch }) });
+
+  it("they do once the jobs contract and the crews contract it names are both on chain and answer", async () => {
+    expect(await emptyJobs("deployed").ready()).toBe(true);
+  });
+
+  it("they do not before the jobs contract is deployed, on testnet or on mainnet", async () => {
+    expect(await emptyJobs("undeployed").ready()).toBe(false);
+    expect(await emptyJobs("undeployed", jobsConfigOf(NETWORKS.mainnet)).ready()).toBe(false);
+    expect(await reader(emptyJobsFetch("undeployed"), { ...jobsConfigOf(), contract: null }).ready()).toBe(false);
+  });
+
+  it("they do not while the crews contract the jobs contract names is missing: no crew could take a job", async () => {
+    expect(await reader(without(NETWORKS.testnet.crews)).ready()).toBe(false);
+    expect(await reader(without(NETWORKS.testnet.jobs)).ready()).toBe(false);
+  });
+
+  it("says nothing when no RPC answers, so a caller keeps to what it knew", async () => {
+    const down = (async () => {
+      throw new TypeError("fetch failed");
+    }) as typeof fetch;
+    expect(await reader(down).ready()).toBeNull();
+    const hung = (() => new Promise<Response>(() => {})) as typeof fetch;
+    expect(await reader(hung).ready(50)).toBeNull();
   });
 });
 

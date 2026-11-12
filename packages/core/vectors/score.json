@@ -1,5 +1,5 @@
 {
-  "spec": "docs/spec/fight.md#рахунок",
+  "spec": "packages/core/README.md#score",
   "seed": "5566822197458195027",
   "vectors": [
     {

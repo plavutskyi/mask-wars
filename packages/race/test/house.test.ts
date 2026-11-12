@@ -12,6 +12,9 @@ import {
   HOME_LEAST,
   homeAmount,
   houseConfig,
+  houseMethod,
+  HOUSE_METHODS,
+  houseStepTx,
   planDay,
   readHouse,
   retireMissing,
@@ -143,6 +146,99 @@ describe("the house's day", () => {
     for (const n of [7, 8]) chain.older.add(`race-000${n}`);
     const cfg = { ...CFG, contracts: [BOUNTY, "old.maskwars.near"] };
     expect(await run(chain, { cfg })).toMatchObject({ kind: "opened", round: { id: "race-0009" } });
+  });
+});
+
+// The house contract (contracts/house) on the house's own account: the day's key is a function-call key for its seven
+// methods alone, so every step, the masks' winnings first, is a call on the house that the contract passes on.
+describe("through the house contract", () => {
+  const DAY_NS = 24n * HOUR;
+  const repo = (path: string) => readFileSync(new URL(`../../../${path}`, import.meta.url), "utf8");
+
+  it("sends each step of the day as a call on the house, nothing attached, the masks' winnings first", async () => {
+    const chain = FakeNear.after("open").mask(NOVA, 300n * MILLI);
+    chain.contract = { lastRound: 2, lastSlot: SLOT - DAY_NS, made: SLOT - DAY_NS };
+    const logs: string[] = [];
+    expect(await run(chain, { log: (l) => logs.push(l) })).toMatchObject({ kind: "opened", round: { id: "race-0003" } });
+    expect(chain.steps).toEqual(["home", "refund", "retire", "create", "open"]);
+    for (const t of chain.landed) {
+      expect(t, t.step).toMatchObject({ signer: HOUSE, receiver: HOUSE, actions: [{ kind: "functionCall", deposit: 0n }] });
+      expect(HOUSE_METHODS).toContain((t.actions[0] as { method: string }).method);
+    }
+    const calls = chain.landed.map((t) => t.actions[0] as { method: string; args: Record<string, unknown> });
+    expect(calls.map((c) => c.method)).toEqual(["home", "refund", "retire", "make_vault", "open_round"]);
+    expect(calls[0]!.args).toEqual({ mask: NOVA });
+    expect(calls[1]!.args).toEqual({ id: "race-0002" });
+    expect((calls[3]!.args.wasm as Buffer).equals(WASM)).toBe(true);
+    expect(calls[4]!.args).toEqual({ id: "race-0003" });
+    expect(logs.some((l) => l.includes("(through the house contract: make_vault)"))).toBe(true);
+    // The circle closed the same way: NOVA's winnings home, the vault made again, the round open on it.
+    expect(chain.masks.get(NOVA)!.amount).toBe(MASK_KEEPS);
+    expect(chain.vault).toMatchObject({ amount: 1930n * MILLI, codeHash: CODE, keys: 0, team: HOUSE, lock: { bounty: "race-0003" } });
+    expect(chain.contract).toEqual({ lastRound: 3, lastSlot: SLOT, made: SLOT });
+  });
+
+  it("each kind of step has its method, the key's seven, and the gas the key pays for is bounded", () => {
+    const steps: DayStep[] = [
+      { kind: "home", mask: ORACLE, amount: NEAR },
+      { kind: "unstick", id: "race-0002", claim: 21, mask: NOVA },
+      { kind: "settle", id: "race-0002" },
+      { kind: "refund", id: "race-0002" },
+      { kind: "retire" },
+      { kind: "create" },
+      { kind: "open", id: "race-0003" },
+    ];
+    expect(steps.map(houseMethod)).toEqual([...HOUSE_METHODS]);
+    const txs = steps.map((s) => houseStepTx(s, CFG, WASM));
+    for (const tx of txs) {
+      expect(tx.receiver).toBe(HOUSE);
+      expect(tx.actions).toHaveLength(1);
+      const a = tx.actions[0] as { gas: bigint; deposit: bigint };
+      expect(a.deposit).toBe(0n);
+      expect(a.gas).toBeLessThanOrEqual(120n * 10n ** 12n);
+    }
+    expect(Buffer.from((txs[1]!.actions[0] as { args: Uint8Array }).args).toString()).toBe(`{"id":"race-0002","claim":"21"}`);
+    expect(Buffer.from((txs[5]!.actions[0] as { args: Uint8Array }).args).equals(WASM)).toBe(true);
+    expect(() => houseStepTx({ kind: "create" }, CFG, null)).toThrow("the safe's wasm is not at hand");
+    expect(() => houseStepTx({ kind: "create" }, CFG, safeWasm(1000, ["new"]))).toThrow("exports no retire or on_retire");
+  });
+
+  it("a vault made in an earlier slot retires and is made again: the contract opens only on a vault made in the slot", async () => {
+    const chain = new FakeNear();
+    chain.vault = chain.newVault(1930n * MILLI, WASM);
+    chain.house = { amount: 1150n * MILLI, storage: 36_400 };
+    chain.contract = { lastRound: 1, lastSlot: SLOT - DAY_NS, made: SLOT - DAY_NS };
+    const plan = planDay(await readHouse(chain, CFG), CFG, { wasm: wasmInfo(WASM) });
+    expect(plan).toMatchObject({ kind: "steps", steps: [{ kind: "retire" }, { kind: "create" }, { kind: "open", id: "race-0002" }] });
+    expect(plan.kind === "steps" && plan.note).toMatch(/made before this slot/);
+    expect(await run(chain)).toMatchObject({ kind: "opened", round: { id: "race-0002" } });
+    expect(chain.steps).toEqual(["retire", "create", "open"]);
+
+    // Made in this slot, the same vault takes the round as it is.
+    const fresh = new FakeNear();
+    fresh.vault = fresh.newVault(1930n * MILLI, WASM);
+    fresh.contract = { lastRound: 1, lastSlot: SLOT - DAY_NS, made: SLOT };
+    expect(await run(fresh)).toMatchObject({ kind: "opened", round: { id: "race-0002" } });
+    expect(fresh.steps).toEqual(["open"]);
+  });
+
+  it("opens only a number after the contract's own last round", async () => {
+    const chain = new FakeNear();
+    chain.contract = { lastRound: 41, lastSlot: 0n, made: 0n };
+    expect(await run(chain)).toMatchObject({ kind: "opened", round: { id: "race-0042" } });
+    expect(chain.contract).toMatchObject({ lastRound: 42, lastSlot: SLOT, made: SLOT });
+  });
+
+  it("the key the owner adds is for the contract's seven methods, with an allowance of 0.3 NEAR", () => {
+    const contract = repo("contracts/house/src/contract.rs");
+    for (const m of HOUSE_METHODS) expect(contract, m).toMatch(new RegExp(`pub extern "C" fn ${m}\\(\\)`));
+    // The spec is a working document of the development repository; the contract's README goes everywhere the code goes.
+    for (const doc of ["docs/spec/house-contract.md", "contracts/house/README.md"].filter((d) => d.startsWith("contracts/") || existsSync(new URL(`../../../${d}`, import.meta.url)))) {
+      const names = /--function-names '([^']+)'/.exec(repo(doc))?.[1];
+      expect(names?.split(/,\s*/), doc).toEqual([...HOUSE_METHODS]);
+      expect(repo(doc), doc).toContain("--allowance '0.3 NEAR'");
+      expect(repo(doc), doc).not.toContain("--allowance '1 NEAR'");
+    }
   });
 });
 

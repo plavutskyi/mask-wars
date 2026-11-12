@@ -77,11 +77,29 @@ export function chainOf(id: string): Chain | null {
 
 /** Whether `text` is an address money can be sent to on `chain`, checksum included wherever the network has one. */
 export function addressOk(chain: ChainId, text: string): boolean {
-  const a = text.trim();
   switch (chain) {
     case "base":
     case "eth":
     case "arb":
+      return addressOfKind("evm", text);
+    case "sol":
+    case "tron":
+    case "btc":
+      return addressOfKind(chain, text);
+  }
+}
+
+/** The address formats this code reads with certainty: every EVM network, Solana, Tron and Bitcoin mainnet. */
+export type AddressKind = "evm" | "sol" | "tron" | "btc";
+
+/**
+ * Whether `text` is an address of `kind`, checksum included wherever the format has one: EIP-55 for a mixed-case EVM
+ * address, base58check for Tron and legacy Bitcoin, bech32/bech32m for segwit. A Solana address is 32 bytes of base58.
+ */
+export function addressOfKind(kind: AddressKind, text: string): boolean {
+  const a = text.trim();
+  switch (kind) {
+    case "evm":
       return evmOk(a);
     case "sol": {
       const bytes = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(a) ? fromBase58(a) : null;
@@ -128,7 +146,7 @@ function polymod(values: number[]): number {
   return chk >>> 0;
 }
 
-/** Native segwit on Bitcoin mainnet: v0 in bech32 (`bc1q…`), v1+ in bech32m (`bc1p…`), BIP-173 and BIP-350. */
+/** Native segwit on Bitcoin mainnet: v0 in bech32 (`bc1q…`), Taproot v1 in bech32m (`bc1p…`), BIP-173 and BIP-350. */
 function segwitOk(text: string): boolean {
   if (text !== text.toLowerCase() && text !== text.toUpperCase()) return false;
   const a = text.toLowerCase();
@@ -146,5 +164,6 @@ function segwitOk(text: string): boolean {
   if (bits % 8 >= 5 || (words.length > 0 && (words.at(-1)! & ((1 << (bits % 8)) - 1)) !== 0)) return false;
   const bytes = Math.floor(bits / 8);
   if (version === 0) return bytes === 20 || bytes === 32;
-  return bytes >= 2 && bytes <= 40;
+  // Taproot (v1, 32 bytes) and nothing later: a v2+ program, or v1 of another length, is spendable by anyone today.
+  return version === 1 && bytes === 32;
 }

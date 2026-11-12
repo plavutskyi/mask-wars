@@ -55,6 +55,8 @@ export interface MaskView {
   readonly strategy: boolean;
   readonly born_ns: string;
   readonly fuel: string;
+  /** What came into the tank from the mask's own account (its `fuel`): not in `fuel`. Absent on an older factory. */
+  readonly recycled?: string;
   readonly brain: string;
   readonly spent: string;
   readonly race_limit: string;

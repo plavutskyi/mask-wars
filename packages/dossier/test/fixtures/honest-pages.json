@@ -1,0 +1,484 @@
+[
+ {
+  "acc": "S",
+  "page": {
+   "lede": {
+    "text": "NOVA broke SAFE-0001 {E4.break_after_start} after the start of race-0003 and walked off with {E4.took_in_all_near} NEAR in all.",
+    "refs": [
+     "E4"
+    ]
+   },
+   "sections": [
+    {
+     "id": "record",
+     "claims": [
+      {
+       "text": "The team tinygif8324.testnet opened race-0003 on SAFE-0001 at {E4.opened}, with a deadline of {E4.deadline}.",
+       "refs": [
+        "E4"
+       ]
+      },
+      {
+       "text": "{E4.masks_count} masks raced: NOVA, ONYX and ORACLE.",
+       "refs": [
+        "E4"
+       ]
+      },
+      {
+       "text": "NOVA called set_owner at {E7.time} and made itself owner of the safe.",
+       "refs": [
+        "E7"
+       ]
+      },
+      {
+       "text": "The judge refused NOVA's claim at {E9.time} and confirmed a later one at {E10.time}.",
+       "refs": [
+        "E9",
+        "E10"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "money",
+     "claims": [
+      {
+       "text": "The team put {E5.amount_near} NEAR into the safe and locked a bounty of {E6.amount_near} NEAR.",
+       "refs": [
+        "E5",
+        "E6"
+       ]
+      },
+      {
+       "text": "NOVA swept {E8.amount_near} NEAR out of the safe.",
+       "refs": [
+        "E8"
+       ]
+      },
+      {
+       "text": "The bounty contract paid NOVA {E11.amount_near} NEAR at {E11.time}.",
+       "refs": [
+        "E11"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "code",
+     "claims": [
+      {
+       "text": "SAFE-0001 is a training target: its hole is planted on purpose, and set_owner lets a mask of the race make itself owner, and then sweep.",
+       "refs": [
+        "E2"
+       ]
+      },
+      {
+       "text": "Its code hash is ACrGiPV5s7DPk5LvXv1N6dyQvqdXTu1m978FseoBw5ja.",
+       "refs": [
+        "E3"
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "acc": "S",
+  "page": {
+   "lede": {
+    "text": "SAFE-0001 fell to NOVA in race-0003: the mask drained it {E8.after_start} after the start.",
+    "refs": [
+     "E4",
+     "E8"
+    ]
+   },
+   "sections": [
+    {
+     "id": "record",
+     "claims": [
+      {
+       "text": "race-0003 opened at {E6.time} on {E6.date} and ran on the safe safe-0001.tinygif8324.testnet.",
+       "refs": [
+        "E6"
+       ]
+      },
+      {
+       "text": "NOVA, ONYX and ORACLE raced; the masks made {E4.moves} moves on it, both by NOVA.",
+       "refs": [
+        "E4"
+       ]
+      },
+      {
+       "text": "At {E7.time} NOVA called set_owner; at {E8.time} it called sweep and the safe sent it {E8.amount_near} NEAR.",
+       "refs": [
+        "E7",
+        "E8"
+       ]
+      },
+      {
+       "text": "NOVA claimed the bounty at {E9.time} and the claim was refused; it claimed again and the judge confirmed it at {E10.time}.",
+       "refs": [
+        "E9",
+        "E10"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "money",
+     "claims": [
+      {
+       "text": "On the line: {E5.amount_near} NEAR in the safe and a bounty of {E4.bounty_locked_near} NEAR.",
+       "refs": [
+        "E4",
+        "E5"
+       ]
+      },
+      {
+       "text": "NOVA took {E4.loot_near} NEAR from the safe and {E4.bounty_paid_near} NEAR from the bounty, {E4.took_in_all_near} NEAR in all.",
+       "refs": [
+        "E4"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "code",
+     "claims": [
+      {
+       "text": "The code on safe-0001.tinygif8324.testnet has the hash ACrGiPV5s7DPk5LvXv1N6dyQvqdXTu1m978FseoBw5ja.",
+       "refs": [
+        "E3"
+       ]
+      },
+      {
+       "text": "The shared list names it a live safe with a planted hole: set_owner lets a mask make itself owner, and then sweep.",
+       "refs": [
+        "E2"
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "acc": "S",
+  "page": {
+   "lede": {
+    "text": "NOVA cracked SAFE-0001 in race-0003, {E4.break_after_start} after the start, and the judge confirmed the break.",
+    "refs": [
+     "E4"
+    ]
+   },
+   "sections": [
+    {
+     "id": "record",
+     "claims": [
+      {
+       "text": "{E1.races_on_this_account} race targets SAFE-0001 on the MASK WARS arena: race-0003, run by the bounty contract tinygif8324.testnet.",
+       "refs": [
+        "E1",
+        "E4"
+       ]
+      },
+      {
+       "text": "The race opened at {E4.opened}; its deadline was {E4.deadline}.",
+       "refs": [
+        "E4"
+       ]
+      },
+      {
+       "text": "NOVA took over the safe with set_owner {E7.after_start} after the start and drained it with sweep {E8.after_start} after the start.",
+       "refs": [
+        "E7",
+        "E8"
+       ]
+      },
+      {
+       "text": "The judge confirmed NOVA's claim at {E10.time}.",
+       "refs": [
+        "E10"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "money",
+     "claims": [
+      {
+       "text": "The bounty was {E6.amount_near} NEAR, and the safe held {E5.amount_near} NEAR.",
+       "refs": [
+        "E5",
+        "E6"
+       ]
+      },
+      {
+       "text": "The safe sent NOVA {E8.amount_near} NEAR, and the bounty contract paid it {E11.amount_near} NEAR.",
+       "refs": [
+        "E8",
+        "E11"
+       ]
+      },
+      {
+       "text": "NOVA's haul: {E4.took_in_all_near} NEAR.",
+       "refs": [
+        "E4"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "code",
+     "claims": [
+      {
+       "text": "It is a training target with a planted hole: set_owner lets a mask of the race make itself owner, and then sweep.",
+       "refs": [
+        "E2"
+       ]
+      },
+      {
+       "text": "Code hash: ACrGiPV5s7DPk5LvXv1N6dyQvqdXTu1m978FseoBw5ja.",
+       "refs": [
+        "E3"
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "acc": "O",
+  "page": {
+   "lede": {
+    "text": "open-admin held race-0001 and fell in race-0002, where the judge confirmed a drain and paid the bounty to the team's own account.",
+    "refs": [
+     "E3",
+     "E9"
+    ]
+   },
+   "sections": [
+    {
+     "id": "record",
+     "claims": [
+      {
+       "text": "{E1.races_on_this_account} races target open-admin, both run in the race sandbox by the team tinygif8324.testnet.",
+       "refs": [
+        "E1",
+        "E3",
+        "E9"
+       ]
+      },
+      {
+       "text": "race-0001 opened at {E3.opened} with a deadline of {E3.deadline}; nobody drained it before the deadline.",
+       "refs": [
+        "E3"
+       ]
+      },
+      {
+       "text": "The team claimed the bounty of race-0001 at {E5.time}, {E6.time} and {E7.time}, and the judge refused each claim.",
+       "refs": [
+        "E5",
+        "E6",
+        "E7"
+       ]
+      },
+      {
+       "text": "race-0002 opened at {E10.time} on {E10.date}; the judge refused claims at {E11.time} and {E12.time} and confirmed a claim at {E13.time}.",
+       "refs": [
+        "E10",
+        "E11",
+        "E12",
+        "E13"
+       ]
+      },
+      {
+       "text": "The judge confirmed the drain in sandbox run {E9.sandbox_run}.",
+       "refs": [
+        "E9"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "money",
+     "claims": [
+      {
+       "text": "Each race locked a bounty of {E3.bounty_locked_near} NEAR.",
+       "refs": [
+        "E3"
+       ]
+      },
+      {
+       "text": "The bounty of race-0001, {E8.amount_near} NEAR, went back to the team at {E8.time} on {E8.date}.",
+       "refs": [
+        "E8"
+       ]
+      },
+      {
+       "text": "In race-0002 the bounty contract paid {E14.amount_near} NEAR to tinygif8324.testnet, the team's own account.",
+       "refs": [
+        "E14"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "code",
+     "claims": [
+      {
+       "text": "open-admin is a training target of the MASK WARS library: a savings vault with an owner.",
+       "refs": [
+        "E2"
+       ]
+      },
+      {
+       "text": "Its hole is planted on purpose: set_owner has no owner check, so anyone can make themselves owner and then sweep.",
+       "refs": [
+        "E2"
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "acc": "O",
+  "page": {
+   "lede": {
+    "text": "open-admin survived race-0001, then the judge confirmed a drain of it in race-0002 and paid out {E9.bounty_paid_near} NEAR.",
+    "refs": [
+     "E3",
+     "E9"
+    ]
+   },
+   "sections": [
+    {
+     "id": "record",
+     "claims": [
+      {
+       "text": "The team tinygif8324.testnet opened race-0001 at {E4.time} on {E4.date}.",
+       "refs": [
+        "E4"
+       ]
+      },
+      {
+       "text": "Nobody drained open-admin before the deadline of race-0001, {E3.deadline}.",
+       "refs": [
+        "E3"
+       ]
+      },
+      {
+       "text": "The team opened race-0002 at {E10.time} on {E10.date}, with a deadline of {E9.deadline}.",
+       "refs": [
+        "E9",
+        "E10"
+       ]
+      },
+      {
+       "text": "In race-0002 the judge confirmed the team's claim at {E13.time}, after refusing it at {E11.time} and {E12.time}.",
+       "refs": [
+        "E11",
+        "E12",
+        "E13"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "money",
+     "claims": [
+      {
+       "text": "race-0001 locked {E4.amount_near} NEAR; the bounty contract sent it back to the team at {E8.time}.",
+       "refs": [
+        "E4",
+        "E8"
+       ]
+      },
+      {
+       "text": "race-0002 locked {E10.amount_near} NEAR, and the bounty contract paid {E14.amount_near} NEAR to the team at {E14.time}.",
+       "refs": [
+        "E10",
+        "E14"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "code",
+     "claims": [
+      {
+       "text": "It is a training target: its hole is planted on purpose, and set_owner has no owner check.",
+       "refs": [
+        "E2"
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ },
+ {
+  "acc": "O",
+  "page": {
+   "lede": {
+    "text": "open-admin held race-0001, then fell in race-0002 when the judge confirmed a drain in the sandbox.",
+    "refs": [
+     "E3",
+     "E9"
+    ]
+   },
+   "sections": [
+    {
+     "id": "record",
+     "claims": [
+      {
+       "text": "race-0001 ran from {E3.opened} to {E3.deadline} and ended with no drain.",
+       "refs": [
+        "E3"
+       ]
+      },
+      {
+       "text": "race-0002 ended with a drain the judge confirmed at {E13.time}.",
+       "refs": [
+        "E9",
+        "E13"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "money",
+     "claims": [
+      {
+       "text": "The bounty of {E3.bounty_back_near} NEAR went back to the team after race-0001.",
+       "refs": [
+        "E3"
+       ]
+      },
+      {
+       "text": "The team took {E9.took_in_all_near} NEAR in race-0002.",
+       "refs": [
+        "E9"
+       ]
+      }
+     ]
+    },
+    {
+     "id": "code",
+     "claims": [
+      {
+       "text": "open-admin is a training target with a planted hole.",
+       "refs": [
+        "E2"
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ }
+]

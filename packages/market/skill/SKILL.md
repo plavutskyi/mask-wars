@@ -109,8 +109,8 @@ name a clean payee and put another account in the call.
 | `arena_taken_over` | block | A mask took the safe over through its hole; the drain is not judged yet |
 | `no_account` | block | No such account: a payment cannot arrive |
 | `reported` | block or warn | Someone reported the account, with evidence |
-| `arena_target` | warn | The safe is a live target on the arena right now |
-| `young_account` | warn | The account did not exist 24 hours ago |
+| `arena_target` | warn | The safe is a live target on the arena right now, or it is the house's vault (`vault.house.maskwars.near`): an arena target by design, confirmed on chain. Do not pay it |
+| `young_account` | warn | The account did not exist 24 hours ago (info on the house's vault, which the house makes again for every round) |
 | `code_deployed`, `code_changed` | warn | A contract appeared, or its code changed, in the last 24 hours |
 | `unused_implicit` | warn | An implicit account nobody has used yet |
 | `rpc_single`, `rpc_disagree` | warn | Mainnet: one of the two RPC providers did not answer a read, or they answered differently |

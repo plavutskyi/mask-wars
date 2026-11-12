@@ -102,3 +102,12 @@ export async function connect(rpcs: readonly string[]): Promise<Signer> {
   if (!id) throw new Error('no account');
   return signer(wallet, id);
 }
+
+/** Signs the person out of the wallet connected on this site, so the next `connect` asks which wallet and account. */
+export async function disconnect(rpcs: readonly string[]): Promise<void> {
+  try {
+    await (await nearConnect(rpcs)).disconnect();
+  } catch {
+    // None was connected.
+  }
+}

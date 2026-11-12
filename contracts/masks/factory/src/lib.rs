@@ -113,6 +113,7 @@ enum Key {
     Armed,
     Copies,
     Links,
+    Recycled,
 }
 
 /// The ids a mask may be forged with. The site shows only what is listed here.
@@ -240,6 +241,9 @@ pub struct MaskView {
     /// The mask this one copies (its author's name), and the share it owes, fixed at its forging.
     pub copy_of: Option<String>,
     pub copy_bps: u16,
+    /// What came into the tank from the mask's own account (`fuel`), NEAR it won or NEAR anyone sent it: not in `fuel`.
+    /// The × counts as put in `fuel` and whatever of this exceeds what the mask earned in the arena.
+    pub recycled: U128,
 }
 
 #[near(serializers = [json])]
@@ -339,6 +343,10 @@ pub struct Factory {
     /// Each author's copies, in forging order: `(author, i)` to the name of its `i`-th copy, `i` below the author's
     /// `copies`. So `copies_of` reads one author's page and never walks every mask.
     links: LookupMap<(String, u32), String>,
+    /// By mask name, what came into its tank from its own account (its code's `fuel`): NEAR it won, or NEAR anyone
+    /// sent it. Not in `fuel`; the site counts it as put in only beyond what the mask earned in the arena, so the × can
+    /// never be raised by a transfer to the mask's account. A mask that never fuelled itself has no entry.
+    recycled: LookupMap<String, u128>,
 }
 
 /// The factory's state as it was first deployed, before `publishing` and `armed`: `migrate` reads it.
@@ -385,6 +393,7 @@ impl From<FactoryV1> for Factory {
             teams,
             copy: LookupMap::new(Key::Copies),
             links: LookupMap::new(Key::Links),
+            recycled: LookupMap::new(Key::Recycled),
         }
     }
 }
@@ -431,6 +440,7 @@ impl Factory {
             teams,
             copy: LookupMap::new(Key::Copies),
             links: LookupMap::new(Key::Links),
+            recycled: LookupMap::new(Key::Recycled),
         }
     }
 
@@ -569,16 +579,32 @@ impl Factory {
             .then(Self::ext(env::current_account_id()).with_static_gas(CALLBACK_GAS).on_forged(name))
     }
 
-    /// Adds the attached NEAR to the mask's tank. Anyone may: the owner, or a fan of the mask.
+    /// Adds the attached NEAR to the mask's tank. Anyone may: the owner, or a fan of the mask. From the mask's own
+    /// account (its code's `fuel`) it is the mask paying for its own mind: it fills the tank and is not put in, but is
+    /// recorded as `recycled`, and its record's storage the first time comes out of it. The site counts as put in
+    /// whatever of `recycled` exceeds what the mask earned in the arena: NEAR sent to the mask's account to be fuelled
+    /// raises the base of its × as much as a refuel would.
     #[payable]
     pub fn refuel(&mut self, name: String) -> MaskView {
-        let deposit = env::attached_deposit().as_yoctonear();
+        let mut deposit = env::attached_deposit().as_yoctonear();
         require!(deposit >= MIN_REFUEL.as_yoctonear(), "refuel with at least 0.1 NEAR");
+        let by = env::predecessor_account_id();
+        let own = by == self.account_of(&name);
+        self.ready_mask(&name);
+        if own {
+            let before = env::storage_usage();
+            let total = self.recycled.get(&name).copied().unwrap_or(0).saturating_add(deposit);
+            self.recycled.insert(name.clone(), total);
+            self.recycled.flush();
+            let grew = u128::from(env::storage_usage().saturating_sub(before));
+            deposit -= env::storage_byte_cost().as_yoctonear() * grew;
+        }
         let m = self.ready_mask(&name);
         m.brain += deposit;
-        m.fuel += deposit;
+        if !own {
+            m.fuel += deposit;
+        }
         self.total_brain += deposit;
-        let by = env::predecessor_account_id();
         event("refuel", &Moved { name: &name, by: Some(&by), amount: U128(deposit) });
         self.view(&name)
     }
@@ -1094,6 +1120,7 @@ impl Factory {
             copies: c.as_ref().map_or(0, |r| r.copies),
             copy_of: c.as_ref().and_then(|r| r.copy_of.clone()),
             copy_bps: c.as_ref().map_or(0, |r| r.copy_bps),
+            recycled: U128(self.recycled.get(name).copied().unwrap_or(0)),
         }
     }
 }

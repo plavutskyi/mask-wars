@@ -75,7 +75,7 @@ export function NoCoins(p: { id: string; label: string; coins: CatalogState; emp
         </div>
       ) : null}
       <Note id={p.id} info={false} bad={down}>
-        {down ? 'The coins did not load. Your vault is safe.' : p.coins.catalog ? p.empty : 'Loading the coins on offer.'}
+        {down ? 'The coins did not load. Your money has not moved.' : p.coins.catalog ? p.empty : 'Loading the coins on offer.'}
       </Note>
     </div>
   );

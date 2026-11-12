@@ -1,5 +1,6 @@
 import { duration, near } from '@maskwars/arena/format';
-import { nearText, times, timesText } from '@maskwars/forge';
+import { seasonThought } from '@maskwars/arena/minds';
+import { nearText, putIn, times, timesText } from '@maskwars/forge';
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { cache } from 'react';
@@ -8,6 +9,7 @@ import { PersonPage } from '@/components/arena/PersonPage';
 import { Unreachable } from '@/components/arena/Unreachable';
 import { readArena } from '@/lib/arena';
 import { pageMeta } from '@/lib/meta';
+import { mindsOf } from '@/lib/minds';
 import { readPerson } from '@/lib/person';
 import { maskElsewhere } from '@/lib/site';
 
@@ -32,8 +34,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (p) {
     const NAME = p.mask.name.toUpperCase();
     const earned = p.stats?.earned ?? '0';
+    const paid = putIn(p.mask.fuel, p.mask.recycled, earned);
     const description = p.stats?.breaks
-      ? `${NAME} broke ${p.stats.breaks} ${p.stats.breaks === 1 ? 'safe' : 'safes'} and took ${near(earned)} NEAR: ${timesText(times(earned, p.mask.fuel))} on ${nearText(p.mask.fuel)} NEAR put in.`
+      ? `${NAME} broke ${p.stats.breaks} ${p.stats.breaks === 1 ? 'vault' : 'vaults'} and took ${near(earned)} NEAR: ${timesText(times(earned, paid))} on ${nearText(paid)} NEAR put in.`
       : `${NAME} is a mask a person forged. It races AI masks for bounties on NEAR and pays for its own mind.`;
     return pageMeta({ title: `${NAME} · MASK WARS`, description, path: `/mask/${p.mask.name}` });
   }
@@ -42,7 +45,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!m) return { title: 'MASK WARS', robots: { index: false } };
   const title = `${m.who.name} · MASK WARS`;
   const description = m.breaks
-    ? `${m.who.name} broke ${m.breaks} ${m.breaks === 1 ? 'safe' : 'safes'} and took ${near(m.earned)} NEAR. Fastest break: ${duration(m.fastestMs)}.`
+    ? `${m.who.name} broke ${m.breaks} ${m.breaks === 1 ? 'vault' : 'vaults'} and took ${near(m.earned)} NEAR. Fastest break: ${duration(m.fastestMs)}.`
     : `${m.who.name} has run ${m.races} ${m.races === 1 ? 'race' : 'races'} on the arena.`;
   return pageMeta({ title, description, path: `/mask/${m.who.slug ?? key}` });
 }
@@ -64,5 +67,8 @@ export default async function MaskRoute({ params }: Props) {
     if (away) redirect(away);
     notFound();
   }
-  return <MaskPage mask={hit.view.league[hit.i]!} rank={hit.i + 1} network={hit.view.network} />;
+  const mask = hit.view.league[hit.i]!;
+  const ran = new Set(mask.history.map((h) => h.id));
+  const records = await mindsOf(hit.view.races.filter((r) => ran.has(r.id)));
+  return <MaskPage mask={mask} rank={hit.i + 1} network={hit.view.network} season={seasonThought(mask, records)} />;
 }

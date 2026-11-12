@@ -5,6 +5,20 @@
     { "path": "/api/season/tick", "schedule": "14 18 * * *" },
     { "path": "/api/season/tick", "schedule": "34 18 * * *" },
     { "path": "/api/season/tick", "schedule": "4 19 * * *" },
-    { "path": "/api/season/tick", "schedule": "4 21 * * *" }
+    { "path": "/api/season/tick", "schedule": "4 21 * * *" },
+    { "path": "/api/jobs-tick", "schedule": "9 18 * * *" },
+    { "path": "/api/jobs-tick", "schedule": "14 18 * * *" },
+    { "path": "/api/jobs-tick", "schedule": "19 18 * * *" },
+    { "path": "/api/jobs-tick", "schedule": "24 18 * * *" },
+    { "path": "/api/jobs-tick", "schedule": "29 18 * * *" },
+    { "path": "/api/jobs-tick", "schedule": "34 18 * * *" },
+    { "path": "/api/jobs-tick", "schedule": "49 18 * * *" },
+    { "path": "/api/jobs-tick", "schedule": "59 18 * * *" },
+    { "path": "/api/jobs-tick", "schedule": "9 19 * * *" },
+    { "path": "/api/jobs-tick", "schedule": "29 19 * * *" },
+    { "path": "/api/jobs-tick", "schedule": "59 19 * * *" },
+    { "path": "/api/jobs-tick", "schedule": "29 20 * * *" },
+    { "path": "/api/jobs-tick", "schedule": "29 21 * * *" },
+    { "path": "/api/jobs-tick", "schedule": "29 22 * * *" }
   ]
 }

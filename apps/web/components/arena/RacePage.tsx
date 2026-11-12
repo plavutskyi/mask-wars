@@ -1,4 +1,5 @@
 import type { Race, RaceEvent, Who } from '@maskwars/arena';
+import type { RaceThought } from '@maskwars/arena/minds';
 import { accountUrl, txUrl } from '@maskwars/arena/config';
 import { duration, near } from '@maskwars/arena/format';
 import Image from 'next/image';
@@ -12,6 +13,8 @@ import { Info, type InfoRow } from './Info';
 import { raceName, raceTitle } from './names';
 import { Nums } from './Nums';
 import { RaceCall } from './RaceCall';
+import { ArenaTarget, targetOf } from './Target';
+import { RaceMind, Times } from './Thought';
 import type { Entry, RoundBrief } from '@/lib/pick';
 import { Refresh } from './Refresh';
 import { World } from './World';
@@ -20,10 +23,10 @@ import s from './page.module.css';
 function title(r: Race): string {
   if (r.phase === 'broken') {
     if (!r.winner?.mask) return 'Broken';
-    return r.kind === 'safe' ? `${r.winner.name} broke the safe` : `${r.winner.name} broke ${r.target}`;
+    return r.kind === 'safe' ? `${r.winner.name} broke the vault` : `${r.winner.name} broke ${r.target}`;
   }
   if (r.phase === 'sealing') return 'Masks are sealing';
-  if (r.phase === 'racing') return 'The safe is open';
+  if (r.phase === 'racing') return 'The vault is open';
   return r.kind === 'safe' ? 'The vault held' : 'Nobody got through';
 }
 
@@ -68,6 +71,12 @@ function Title({ text }: { text: string }) {
       {text}
     </h1>
   );
+}
+
+/** The break of a round: the drain the contract paid for, or while nobody is paid yet the first drain that counts. */
+function breakTx(r: Race, steps: readonly { kind: string; tx?: string; early?: boolean }[]): string | null {
+  if (r.txs.drain) return r.txs.drain;
+  return steps.find((e) => e.kind === 'drain' && !e.early)?.tx ?? null;
 }
 
 /** Six masks at a glance, the winner among them; a bigger field opens with one tap. */
@@ -131,10 +140,13 @@ export function RacePage({
   next,
   asOf = null,
   call = null,
+  thought = null,
 }: {
   race: Race;
   prev: Race | null;
   next: Race | null;
+  /** What the masks' minds cost in this race, when the race job's record of it is kept (lib/minds.ts). */
+  thought?: RaceThought | null;
   /** When the reading was taken, for one too old to be shown as happening now (`asOf` of lib/arena); else null. */
   asOf?: number | null;
   /** The person's pick on this round, from their own device's record. */
@@ -144,17 +156,21 @@ export function RacePage({
   const art = r.phase === 'broken' ? artOf(winner) : null;
   const number = r.phase === 'broken' ? r.takes : r.phase === 'held' ? (r.refund?.amount ?? r.bounty) : r.prize;
   const numberTone = r.phase === 'broken' ? 'money' : 'plain';
+  // The race's safe, when it is the arena's own: said plainly under the number, its whole story behind «i».
+  const target = targetOf(r);
 
   const facts: InfoRow[] = [
     { label: 'Id', value: r.id },
     { label: 'Contract', value: r.contract, href: accountUrl(r.contract) },
-    { label: r.kind === 'safe' ? 'Safe' : 'Target', value: r.target, href: r.kind === 'safe' ? accountUrl(r.target) : undefined },
+    { label: r.kind === 'safe' ? 'Vault' : 'Target', value: r.target, href: r.kind === 'safe' ? accountUrl(r.target) : undefined },
+    // The arena's own race is part of the target's record: every race on it, every step, the judge's word.
+    ...(r.official ? [{ label: 'Its record', value: 'Every race on it, step by step', href: `/contract/${r.target}` }] : []),
     ...(r.targetCode ? [{ label: 'Target fingerprint', value: r.targetCode }] : []),
     { label: 'Team', value: r.team, href: accountUrl(r.team) },
     ...(r.locked ? [{ label: 'Bounty locked', value: `${near(r.locked)} NEAR`, href: r.txs.open ? txUrl(r.txs.open) : undefined }] : []),
-    ...(r.safeFunded ? [{ label: 'In the safe at the start', value: `${near(r.safeFunded)} NEAR` }] : []),
+    ...(r.safeFunded ? [{ label: 'In the vault at the start', value: `${near(r.safeFunded)} NEAR` }] : []),
     ...(r.minLoot ? [{ label: 'A drain counts from', value: `${near(r.minLoot)} NEAR` }] : []),
-    ...(r.loot ? [{ label: 'Taken from the safe', value: `${near(r.loot)} NEAR`, href: r.txs.drain ? txUrl(r.txs.drain) : undefined }] : []),
+    ...(r.loot ? [{ label: 'Taken from the vault', value: `${near(r.loot)} NEAR`, href: r.txs.drain ? txUrl(r.txs.drain) : undefined }] : []),
     ...(r.payout ? [{ label: 'Bounty paid', value: `${near(r.payout.amount)} NEAR`, href: r.payout.tx ? txUrl(r.payout.tx) : undefined }] : []),
     ...(winner ? [{ label: 'Winner', value: winner.account, href: accountUrl(winner.account) }] : []),
     ...(r.judge ? [{ label: 'Judge (OutLayer, TEE)', value: r.judge }] : []),
@@ -187,6 +203,7 @@ export function RacePage({
               {near(number)}
               <span className={`${s.word} ${s.unit}`}>NEAR</span>
             </span>
+            {thought?.winner ? <Times x={thought.winner.x} label={`on what ${thought.winner.spend.name}'s mind cost`} /> : null}
             <Info rows={facts} label="The race on chain" align="start" />
           </div>
           <p className={s.sub}>
@@ -207,6 +224,8 @@ export function RacePage({
               sub
             )}
           </p>
+          {target ? <ArenaTarget target={target} className={s.target} align="start" /> : null}
+          {thought && r.phase !== 'sealing' ? <RaceMind thought={thought} takes={r.takes} /> : null}
           {r.masks.length ? <Chips race={r} /> : null}
           {call ? <RaceCall round={call.round} mine={call.mine} open={call.open} /> : null}
         </div>
@@ -224,7 +243,7 @@ export function RacePage({
           The race
         </h2>
         <ol className={s.steps}>
-          {stepsOf(r).map((e, i) =>
+          {stepsOf(r).map((e, i, all) =>
             e.kind === 'unlock' ? (
               <li key={`unlock-${i}`} className={s.step} data-kind="unlock">
                 <span className={s.when}>{offset(e.at, zeroOf(r))}</span>
@@ -239,7 +258,9 @@ export function RacePage({
                 <span className={s.when}>{offset(e.at, zeroOf(r))}</span>
                 <span className={s.what}>
                   {e.kind === 'open' && r.sealUntil !== null ? 'The round opens' : eventLine(e, r.team)}
-                  {e.kind === 'drain' ? <span className={`${s.word} ${s.tag}`}>The break</span> : null}
+                  {/* One break a round: the drain that won, or while nobody is paid yet the first drain that counts. A guest
+                      that drains in a later turn takes what is left, and that is not the break. */}
+                  {e.kind === 'drain' && e.tx === breakTx(r, all) ? <span className={`${s.word} ${s.tag}`}>The break</span> : null}
                 </span>
                 <span className={s.amount} data-tone={amountTone(e)}>
                   {e.amount ? `${near(e.amount)} NEAR` : ''}

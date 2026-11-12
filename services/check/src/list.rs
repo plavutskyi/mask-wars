@@ -1,11 +1,14 @@
 // The shared list, read by the rules of packages/check/src/list.ts. The module carries the two lists of the repo
 // (packages/check/list.json for testnet, list.mainnet.json for mainnet), so its sha256 names them: a version of the
 // module is a version of the lists.
+// - `vault`: the house's vault, the arena's daily safe, where the network has one. The house makes it again under the
+//   same name for every round, so its round is never listed: the check reads it from the vault itself, and gives the
+//   account its arena label only once the chain confirms it is the house's vault.
 // - `arena`: a live safe on the arena. The file only says where to look; what happened to the safe is read from the
 //   chain on every check, so an entry can never claim a drain the chain does not show.
 // - `reports`: an account someone reported, with the evidence attached.
 
-use crate::account::{account_ok, is_mainnet_name, is_testnet_name};
+use crate::account::{account_ok, is_mainnet_name, is_sub_account_of, is_testnet_name};
 use crate::encode::hash_ok;
 use crate::network::Network;
 use crate::time::date_ok;
@@ -24,6 +27,18 @@ pub struct ArenaEntry {
     /// Who owned the safe when the race opened; anyone else owning it means a mask took it over.
     pub owner_at_open: String,
     pub note: String,
+}
+
+/// The house's vault: one safe the house makes again under the same name for every round of its day. The list names
+/// only where it is; whether an account of that name is the vault right now is read from the chain on every check.
+#[derive(Deserialize, Debug, Clone)]
+pub struct HouseVault {
+    /// The bounty contract that arms the vault for its round: the vault's `arbiter`.
+    pub contract: String,
+    /// The vault: the house's own sub-account, so the house alone can make it.
+    pub safe: String,
+    /// The house: it funds the vault, opens its round and takes back what is left. The vault's `team`.
+    pub house: String,
 }
 
 /// One piece of evidence. Fields the list's rules do not name are dropped, as the TypeScript check drops them.
@@ -57,6 +72,9 @@ pub struct Report {
 pub struct SharedList {
     pub network: String,
     pub about: String,
+    /// `None` on a network where the house makes no vault: `null`, or not there at all.
+    #[serde(default)]
+    pub vault: Option<HouseVault>,
     pub arena: Vec<ArenaEntry>,
     pub reports: Vec<Report>,
 }
@@ -90,12 +108,24 @@ pub fn parse_list(raw: &str) -> Result<SharedList, String> {
             Ok(())
         }
     };
+    if let Some(v) = &list.vault {
+        for account in [&v.contract, &v.safe, &v.house] {
+            named(account, "vault".into())?;
+        }
+        if !is_sub_account_of(&v.safe, &v.house) {
+            return Err(format!("vault: {} is not the house's own sub-account", v.safe));
+        }
+    }
     for (i, e) in list.arena.iter().enumerate() {
         for account in [&e.contract, &e.safe, &e.owner_at_open] {
             named(account, format!("arena {i}"))?;
         }
         if e.race.is_empty() {
             return Err(format!("arena {i}: no race"));
+        }
+        // The vault's round is read from the vault on every check: a race listed for it would outlive the vault it was on.
+        if list.vault.as_ref().is_some_and(|v| v.safe == e.safe) {
+            return Err(format!("arena {i}: {} is the house's vault: its round is read from the chain, never listed", e.safe));
         }
     }
     for (i, r) in list.reports.iter().enumerate() {
@@ -162,6 +192,36 @@ mod tests {
         assert!(parse_list(&list("testnet", report("x.near", tx.clone()))).unwrap_err().contains("is not a testnet account"));
         assert!(parse_list(&list("mainnet", report("x.near", tx.clone()))).is_ok());
         assert!(parse_list(&list("devnet", report("x.near", tx))).is_err());
+    }
+
+    #[test]
+    fn the_mainnet_list_names_the_houses_vault_and_testnet_none() {
+        let v = shared(Network::Mainnet).unwrap().vault.expect("the mainnet list names the house's vault");
+        assert_eq!(
+            (v.contract.as_str(), v.safe.as_str(), v.house.as_str()),
+            ("bounty.maskwars.near", "vault.house.maskwars.near", "house.maskwars.near")
+        );
+        assert!(shared(Network::Testnet).unwrap().vault.is_none());
+    }
+
+    #[test]
+    fn the_vault_is_the_houses_own_sub_account_of_the_lists_network_and_never_listed_race_by_race() {
+        let with = |vault: serde_json::Value, arena: serde_json::Value| {
+            json!({ "network": "mainnet", "about": "test", "vault": vault, "arena": arena, "reports": [] }).to_string()
+        };
+        let vault = json!({ "contract": "bounty.maskwars.near", "safe": "vault.house.maskwars.near", "house": "house.maskwars.near" });
+        assert!(parse_list(&with(vault.clone(), json!([]))).is_ok());
+        assert!(parse_list(&with(json!(null), json!([]))).unwrap().vault.is_none());
+        assert!(parse_list(&list("mainnet", json!([]))).unwrap().vault.is_none());
+        for safe in ["vault.maskwars.near", "a.vault.house.maskwars.near", "house.maskwars.near", "vaulthouse.maskwars.near"] {
+            let mut v = vault.clone();
+            v["safe"] = json!(safe);
+            assert!(parse_list(&with(v, json!([]))).unwrap_err().contains("not the house's own sub-account"), "{safe}");
+        }
+        let testnet = json!({ "contract": "bounty.maskwars.near", "safe": "vault.house.maskwars.testnet", "house": "house.maskwars.testnet" });
+        assert!(parse_list(&with(testnet, json!([]))).unwrap_err().contains("is not a mainnet account"));
+        let race = json!([{ "contract": "bounty.maskwars.near", "race": "race-0012", "safe": "vault.house.maskwars.near", "owner_at_open": "vault.house.maskwars.near", "note": "x" }]);
+        assert!(parse_list(&with(vault, race)).unwrap_err().contains("is the house's vault: its round is read from the chain"));
     }
 
     #[test]

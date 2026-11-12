@@ -67,7 +67,7 @@ export const STYLES: readonly Style[] = [
   {
     id: "bold",
     name: "Bold",
-    manner: "Goes for the whole safe.",
+    manner: "Goes for the whole vault.",
     brief: "You go for everything in the safe at once. Of two plans you pick the one that takes the most, even if it is longer.",
   },
 ];

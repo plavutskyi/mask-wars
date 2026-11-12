@@ -12,6 +12,7 @@ import { NEAR_AI_BASE_URL, costUsd, isTeeModel } from "./models.ts";
 import {
   ProviderError,
   sha256Hex,
+  type Billed,
   sleep,
   type Completion,
   type CompletionRequest,
@@ -58,32 +59,48 @@ export class NearAiProvider implements Provider {
       max_tokens: request.maxTokens,
       temperature: request.temperature,
     });
-    const responseText = await this.#call(`${this.#baseUrl}/chat/completions`, deadline, {
-      method: "POST",
-      headers: this.#headers({ "content-type": "application/json" }),
-      body,
-    });
+    const bill: { id: string | null } = { id: null };
+    let responseText: string;
+    try {
+      responseText = await this.#call(
+        `${this.#baseUrl}/chat/completions`,
+        deadline,
+        { method: "POST", headers: this.#headers({ "content-type": "application/json" }), body },
+        (headers) => {
+          bill.id = billId(headers.get("inference-id"));
+        },
+      );
+    } catch (e) {
+      // NEAR AI took the call and named it, and the answer ran out of time on its way: NEAR AI bills it all the same,
+      // and its id is all there is to price it by.
+      if (e instanceof ProviderError && (e.code === "timeout" || e.code === "network") && bill.id) {
+        throw new ProviderError(e.code, e.message, e.status, { model: request.model, usage: NO_USAGE, costUsd: 0, inferenceId: bill.id, cut: true });
+      }
+      throw e;
+    }
 
     let parsed: ChatResponse;
     try {
       parsed = JSON.parse(responseText) as ChatResponse;
     } catch {
-      throw new ProviderError("shape", "completion is not JSON");
-    }
-    const text = parsed.choices?.[0]?.message?.content;
-    if (typeof text !== "string") {
-      // A reasoning model that runs out of tokens while it thinks answers with no content at all.
-      const cut = parsed.choices?.[0]?.finish_reason === "length";
-      throw new ProviderError("shape", cut ? `the model spent all ${request.maxTokens} tokens before it answered` : "completion has no message content");
-    }
-    if (parsed.model && parsed.model !== request.model) {
-      throw new ProviderError("shape", `answered by ${parsed.model}, asked for ${request.model}`);
+      throw new ProviderError("shape", "completion is not JSON", undefined, bill.id ? { model: request.model, usage: NO_USAGE, costUsd: 0, inferenceId: bill.id } : undefined);
     }
     const usage = {
       promptTokens: parsed.usage?.prompt_tokens ?? 0,
       completionTokens: parsed.usage?.completion_tokens ?? 0,
       cachedTokens: parsed.usage?.prompt_tokens_details?.cached_tokens ?? 0,
     };
+    // An answer that is no use is still an answer NEAR AI bills: the error carries what it counted, for the caller's tab.
+    const billed: Billed = { model: request.model, usage, costUsd: costUsd(request.model, usage), ...(bill.id ? { inferenceId: bill.id } : {}) };
+    const text = parsed.choices?.[0]?.message?.content;
+    if (typeof text !== "string") {
+      // A reasoning model that runs out of tokens while it thinks answers with no content at all.
+      const cut = parsed.choices?.[0]?.finish_reason === "length";
+      throw new ProviderError("shape", cut ? `the model spent all ${request.maxTokens} tokens before it answered` : "completion has no message content", undefined, billed);
+    }
+    if (parsed.model && parsed.model !== request.model) {
+      throw new ProviderError("shape", `answered by ${parsed.model}, asked for ${request.model}`, undefined, billed);
+    }
     const requestHash = sha256Hex(body);
     const responseHash = sha256Hex(responseText);
 
@@ -100,6 +117,7 @@ export class NearAiProvider implements Provider {
       responseHash,
       usage,
       costUsd: costUsd(request.model, usage),
+      ...(bill.id ? { inferenceId: bill.id } : {}),
       signature,
       signatureVerified,
     };
@@ -137,21 +155,81 @@ export class NearAiProvider implements Provider {
     return { accept: "application/json", authorization: `Bearer ${this.#apiKey}`, "x-no-aliasing": "true", ...extra };
   }
 
-  async #call(url: string, deadline: number, init: RequestInit): Promise<string> {
+  async #call(url: string, deadline: number, init: RequestInit, onHeaders?: (headers: Headers) => void): Promise<string> {
     const left = deadline - Date.now();
     if (left <= 0) throw new ProviderError("timeout", "deadline passed");
     let response: Response;
+    const failed = (error: unknown): ProviderError => {
+      const name = (error as { name?: string }).name;
+      if (name === "TimeoutError" || name === "AbortError") return new ProviderError("timeout", `no answer in ${left}ms`);
+      return new ProviderError("network", (error as Error).message);
+    };
     try {
       response = await this.#fetch(url, { ...init, signal: AbortSignal.timeout(left) });
     } catch (error) {
-      const name = (error as { name?: string }).name;
-      if (name === "TimeoutError" || name === "AbortError") throw new ProviderError("timeout", `no answer in ${left}ms`);
-      throw new ProviderError("network", (error as Error).message);
+      throw failed(error);
     }
-    const text = await response.text();
+    // The headers of a call the provider took come before its body: what they name stands even if the body never does.
+    if (response.ok) onHeaders?.(response.headers);
+    let text: string;
+    try {
+      text = await response.text();
+    } catch (error) {
+      throw failed(error);
+    }
     if (!response.ok) throw new ProviderError("http", `${response.status} ${text.slice(0, 200)}`, response.status);
     return text;
   }
+}
+
+const NO_USAGE = { promptTokens: 0, completionTokens: 0, cachedTokens: 0 } as const;
+
+/** NEAR AI's bill names an answer by the UUID in its `inference-id` header; anything else is not an id. */
+const BILL_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const billId = (v: string | null): string | null => (v && BILL_ID.test(v.trim()) ? v.trim().toLowerCase() : null);
+
+/** The most ids one `POST /v1/billing/costs` is asked about. */
+const COSTS_AT_ONCE = 50;
+
+export interface CostsOptions {
+  readonly apiKey: string;
+  readonly baseUrl?: string;
+  readonly fetch?: typeof fetch;
+  readonly timeoutMs?: number;
+}
+
+/**
+ * What NEAR AI's bill says each answer cost, in nano-dollars, by `inference-id` (`POST /v1/billing/costs`,
+ * `{"requestIds": [...]}` → `{"requests": [{"requestId", "costNanoUsd"}]}`). An id the bill does not know yet comes
+ * back as 0 with a warning ("usage for a just-finished request can take a few seconds to become visible"): it is left
+ * out, for the caller to ask again or to price from the answer's tokens. A batch that fails leaves its ids out too.
+ */
+export async function nearAiCosts(ids: readonly string[], o: CostsOptions): Promise<Map<string, bigint>> {
+  const base = (o.baseUrl ?? NEAR_AI_BASE_URL).replace(/\/$/, "");
+  const want = [...new Set(ids.map((id) => billId(id)).filter((id): id is string => id !== null))];
+  const out = new Map<string, bigint>();
+  for (let i = 0; i < want.length; i += COSTS_AT_ONCE) {
+    const batch = want.slice(i, i + COSTS_AT_ONCE);
+    try {
+      const res = await (o.fetch ?? fetch)(`${base}/billing/costs`, {
+        method: "POST",
+        headers: { accept: "application/json", authorization: `Bearer ${o.apiKey}`, "content-type": "application/json" },
+        body: JSON.stringify({ requestIds: batch }),
+        signal: AbortSignal.timeout(o.timeoutMs ?? 20_000),
+      });
+      if (!res.ok) continue;
+      const body = (await res.json()) as { requests?: { requestId?: unknown; costNanoUsd?: unknown }[] };
+      for (const r of body.requests ?? []) {
+        const id = billId(typeof r.requestId === "string" ? r.requestId : null);
+        const nano = r.costNanoUsd;
+        if (!id || !batch.includes(id) || typeof nano !== "number" || !Number.isSafeInteger(nano) || nano <= 0) continue;
+        out.set(id, BigInt(nano));
+      }
+    } catch {
+      // The bill did not answer: these ids are priced from their tokens.
+    }
+  }
+  return out;
 }
 
 /** A model TEE signature that commits to this model, these exact bytes, and a signer the attestation named. */

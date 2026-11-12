@@ -6,10 +6,12 @@
  *
  *   HOUSE_KEY=ed25519:… node scripts/house-open.ts
  *
- * `HOUSE_KEY` is a full key of the house's own account and of nothing else: a secret of the GitHub environment
+ * `HOUSE_KEY` is a key of the house's own account and of nothing else: a secret of the GitHub environment
  * `season-mainnet` (`season` on testnet), never of the repository. With it this script signs the day's transactions
- * without asking, so it is only ever set where the owner decided the house runs on its own. Whoever holds it can spend
- * what the house holds; it has no say over the bounty contract, the masks, or the vault while a round is on.
+ * without asking, so it is only ever set where the owner decided the house runs on its own. A full key can spend what
+ * the house holds. Once the house runs its contract (contracts/house), every step is a call of that contract and the
+ * key is the day's function-call key for its seven methods, which moves no NEAR (contracts/house/README.md). Either
+ * way it has no say over the bounty contract, the masks, or the vault while a round is on.
  *
  * Without `HOUSE_KEY` nothing is signed. The script says which steps wait for a signature (the owner sends them by
  * hand: retire.ps1, which also sends the masks' winnings home, safe-deploy.ps1 -House, open-safe.ps1 -House in
@@ -32,13 +34,20 @@
  *                               from the chain (a dry run)
  *   --any-time                  with a key: open now, whatever the slot
  *   HOUSE_SKIP_HOME=<a,b>       with --plan: masks the owner's script already called home() on this run, left out
+ * Guests (src/house-guests.ts): before the vault is made the step reads who else plays today, the people's masks
+ * that can race and the agents that signed up for this slot on the site (`GUESTS_SITE`, by default
+ * https://maskwars.xyz on mainnet and none on testnet), each checked against the chain, and makes the vault with them.
+ * A run at any time takes the sign-ups for the next slot, the round the agents signed up for.
+ *
  * Optional: `NEAR_RPC`, one endpoint in place of the network's own, which are asked in order when one is down.
  */
 import { appendFile, mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { fillingSlot, openingSlot } from "@maskwars/arena/guests";
 import { codeHashHex, NET } from "@maskwars/network";
-import { daySummary, houseConfig, planDay, readHouse, roundArgs, runDay, STEP_GAS, stepText, stepTx, vaultInit, wasmInfo, type DayPlan, type DayStep } from "../src/house.ts";
+import { daySummary, houseConfig, openDeposit, planDay, readHouse, roundArgs, runDay, STEP_GAS, stepText, stepTx, vaultInit, wasmInfo, type DayPlan, type DayStep } from "../src/house.ts";
+import { pickGuests } from "../src/house-guests.ts";
 import { FailoverRpc, JsonRpc, NearKey } from "../src/near-tx.ts";
 
 const fail = (why: string): never => {
@@ -75,12 +84,28 @@ if (!wasm && cfg.safeCode) {
 // Every endpoint of the network, the first preferred: a node that is down does not cost the day.
 const chain = new FailoverRpc((process.env.NEAR_RPC ? [process.env.NEAR_RPC] : NET.rpc).map((url) => new JsonRpc(url)));
 
+/** NEAR to the last yocto, as near.exe takes it: `0.33`, `1.93`. */
+const nearExact = (y: bigint) => `${y / 10n ** 24n}${y % 10n ** 24n ? `.${(y % 10n ** 24n).toString().padStart(24, "0").replace(/0+$/, "")}` : ""}`;
+
+/** Who else plays the round this run would open, each checked against the chain; the notes go to the log (stderr). */
+async function todaysGuests(anyTime: boolean): Promise<string[]> {
+  const site = process.env.GUESTS_SITE ?? (NET.id === "mainnet" ? "https://maskwars.xyz" : null);
+  const slot = anyTime ? fillingSlot(NET, Date.now()) : openingSlot(NET, Date.now());
+  if (slot === null) return [];
+  const g = await pickGuests({ chain, net: NET, slot, site }).catch((e: Error) => {
+    console.error(`guests: ${e.message}: the round opens with the arena's own masks`);
+    return { masks: [], agents: [], notes: [] };
+  });
+  for (const line of g.notes) console.error(`guest ${line}`);
+  return [...g.masks, ...g.agents];
+}
+
 if (flag("--plan")) {
   // For the owner's scripts: what is left, each step with what near.exe needs to send it. Nothing is signed here.
   const sample = flag("--sample");
   const state = sample ? null : await readHouse(chain, cfg).catch((e: Error) => fail(`the chain did not answer: ${e.message}`));
   const plan: DayPlan = state
-    ? planDay(state, cfg, { wasm: wasm ? wasmInfo(wasm.bytes) : null, anyTime: true, skipHome: (process.env.HOUSE_SKIP_HOME ?? "").split(",").filter((m) => m) })
+    ? planDay(state, cfg, { wasm: wasm ? wasmInfo(wasm.bytes) : null, anyTime: true, skipHome: (process.env.HOUSE_SKIP_HOME ?? "").split(",").filter((m) => m), guests: await todaysGuests(true) })
     : { kind: "steps", steps: [{ kind: "retire" }, { kind: "create" }, { kind: "open", id: "race-0000" }], note: "a dry run: the steps of an ordinary day; a real run reads the chain and takes the first free id" };
   // What stands on the vault's name: nothing, a safe armed for a round, or a safe no round was opened on.
   const vault = !state ? "armed" : !state.vault ? "none" : state.vault.safe?.lock ? "armed" : "idle";
@@ -88,7 +113,7 @@ if (flag("--plan")) {
   if (dir) await mkdir(dir, { recursive: true });
   const tgas = (n: number) => `${n}.0 Tgas`;
   const steps = plan.kind !== "steps" ? [] : await Promise.all(plan.steps.map(async (step: DayStep, i) => {
-    const args = step.kind === "create" ? vaultInit(cfg) : step.kind === "open" ? roundArgs(cfg, step.id) : step.kind === "retire" || step.kind === "home" ? {} : step.kind === "unstick" ? { id: step.id, claim: String(step.claim) } : { id: step.id };
+    const args = step.kind === "create" ? vaultInit(cfg, step.guests) : step.kind === "open" ? roundArgs(cfg, step.id, step.masks) : step.kind === "retire" || step.kind === "home" ? {} : step.kind === "unstick" ? { id: step.id, claim: String(step.claim) } : { id: step.id };
     const file = dir ? join(dir, `house-${i + 1}-${step.kind}-args.json`) : null;
     if (file) await writeFile(file, JSON.stringify(args));
     return {
@@ -100,7 +125,7 @@ if (flag("--plan")) {
       args_file: file,
       gas: tgas(step.kind === "create" ? STEP_GAS.new : STEP_GAS[step.kind]),
       // The network's own figures, to the last digit: what near.exe is told is what packages/network says.
-      deposit: `${step.kind === "open" ? NET.round.deposit : "0"} NEAR`,
+      deposit: `${step.kind === "open" ? nearExact(openDeposit(cfg, step.masks)) : "0"} NEAR`,
       ...(step.kind === "create" ? { near: `${NET.round.safe} NEAR`, wasm: wasm?.path ?? null, wasm_sha256: cfg.safeCode ? codeHashHex(cfg.safeCode) : null } : {}),
       ...(step.kind === "open" ? { id: step.id } : {}),
       ...(step.kind === "home" ? { mask: step.mask } : {}),
@@ -141,7 +166,8 @@ async function theDay(): Promise<number> {
       })()
     : undefined;
 
-  const day = await runDay({ chain, config: cfg, key, wasm: wasm?.bytes ?? null, anyTime: flag("--any-time"), log: (line) => console.log(line) }).catch((e: Error) => fail(e.message));
+  const guests = await todaysGuests(flag("--any-time"));
+  const day = await runDay({ chain, config: cfg, key, wasm: wasm?.bytes ?? null, anyTime: flag("--any-time"), guests, log: (line) => console.log(line) }).catch((e: Error) => fail(e.message));
 
   const summary = daySummary(day, cfg);
   if (day.kind === "unsigned") {

@@ -217,7 +217,7 @@ LD_PRELOAD=/tmp/nofile.so cargo test -p job-judges-sandbox --test tests_job
   of their seats pays half its bond to the company, and the puppet gets the reward and no bond; a jobs contract of someone else's that copies a job and asks the judge for a check and a
   verdict: refused both times, nothing read or kept.
 
-The sandbox's neard asks for 65 535 open files; the shim is in [public/JUDGE-PATH.md](../../public/JUDGE-PATH.md).
+The sandbox's neard asks for 65 535 open files; the shim is in [JUDGE-PATH.md](../../JUDGE-PATH.md#if-a-step-stops).
 
 ## Not covered here
 

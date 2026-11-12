@@ -4,25 +4,38 @@
  *   pnpm --filter @maskwars/race race <challenge> [--attempts 5]
  *
  * Needs `NEAR_AI_API_KEY` (or `NEARAI_CLOUD_API_KEY`) in the environment or in the repo's `.env`, and a built runner
- * (`pnpm --filter @maskwars/race build:runner`). One agent per Private TEE model, all on the same target. Prints the
- * public board as it fills, then the winner. The winning plan is written only to `--finding <file>` if asked;
- * `--result <file>` gets the public outcome (`{"winner":"NOVA"}` or `{"winner":null}`) for the bounty judge.
+ * (`pnpm --filter @maskwars/race build:runner`). One agent per mask of the arena, each with its own Private TEE model
+ * (`ARENA_MODELS`), all on the same target. Prints the public board as it fills, then the winner. The winning plan is
+ * written only to `--finding <file>` if asked; `--result <file>` gets the public outcome (`{"winner":"NOVA"}` or
+ * `{"winner":null}`) for the bounty judge. `--minds <file>` gets the race's tab of its minds (src/minds.ts, `MindTab`):
+ * every answer each mask's mind got, with its id on NEAR AI's bill; it needs the race's id in `BOUNTY`. The tab waits for
+ * the calls still on their way when the race ends (each up to its 300 s deadline), and the script ends only after it, so
+ * the seal that follows this step can wait that long. It asks nothing of the network: scripts/minds.ts prices it later.
+ *
+ * As the race begins, each of our models is attested with a fresh nonce beside it (src/minds.ts, `trustAttested`): the
+ * nodes that pass become the signers each answer's TEE signature is checked against, and the tab says which answers
+ * passed. A model whose attestation does not pass races all the same; its answers count as not verified.
  *
  * The people's masks the keeper armed for the round (`HUMAN_MASKS`, from the `arm` job of `Live race`) race beside
  * ours: each thinks on OutLayer in its own mind's TEE (src/brain.ts), where its owner's strategy opens and nowhere else.
  * That needs `OUTLAYER_PAYMENT_KEY` and the round's id in `BOUNTY`. `--costs <file>` gets the round and what each one's
  * mind spent in it, for the keeper to settle (`{"bounty":"human-0001","costs":{"kira.masks.…":{"usd":0.0021,"calls":5}}}`).
+ *
+ * With `OUTLAYER_PAYMENT_KEY` set, the run ends with what is left on that key (src/payment-key.ts), in the log and the
+ * job's summary, and a warning with the owner's top-up step when it runs low. Nothing tops it up by itself.
  */
-import { writeFile } from "node:fs/promises";
+import { appendFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import { NearAiProvider, TEE_MODELS } from "@maskwars/mind";
+import { ARENA_MODELS, NearAiProvider } from "@maskwars/mind";
 import { NET } from "@maskwars/network";
 import { ModelAttacker, type Attacker } from "../src/agent.ts";
+import { trustAttested, type MindTab } from "../src/minds.ts";
 import { BrainAttacker, humanMasksFrom } from "../src/brain.ts";
 import type { CostsFile } from "../src/keeper.ts";
 import { CHALLENGES_DIR, listChallenges, loadChallenge } from "../src/challenge.ts";
 import { formatEntry, formatJournal } from "../src/journal.ts";
 import { nearString } from "../src/outcome.ts";
+import { keyRef, keyReport, readKeyBalance } from "../src/payment-key.ts";
 import { runRace } from "../src/race.ts";
 import { RunnerSandbox } from "../src/sandbox.ts";
 
@@ -55,8 +68,13 @@ if (!(await sandbox.available())) {
 }
 
 const provider = new NearAiProvider({ apiKey });
-const masks = ["ONYX", "NOVA", "ORACLE"];
-const attackers: Attacker[] = Object.keys(TEE_MODELS).map((model, i) => new ModelAttacker({ id: masks[i] ?? model, provider, model }));
+// The models' attestation with a fresh nonce, beside the race: a model's first answer takes far longer than it.
+const attested = trustAttested(provider, Object.values(ARENA_MODELS), { apiKey, log: (line) => console.log(`attestation: ${line}`) }).catch((e: Error) => {
+  console.log(`attestation: ${e.message}: no answer counts as verified`);
+  return {} as Record<string, number>;
+});
+const own = Object.entries(ARENA_MODELS).map(([id, model]) => new ModelAttacker({ id, provider, model }));
+const attackers: Attacker[] = [...own];
 const challenge = await loadChallenge(join(CHALLENGES_DIR, id));
 
 // The people's masks of this round, each with its own mind in its own TEE.
@@ -118,3 +136,44 @@ if (costs) {
 }
 const resultFile = flag("--result");
 if (resultFile) await writeFile(resultFile, JSON.stringify({ winner: result.winner?.attacker ?? null }));
+
+// What the minds cost in this race. A race is over the moment one mask wins; the calls of the others still on their way
+// are answered and paid for all the same, so the record waits for them (each up to its own deadline, 300 s).
+await attested;
+const mindsFile = flag("--minds");
+const race = process.env.BOUNTY ?? "";
+if (mindsFile && race) {
+  await Promise.all(own.map((m) => m.idle()));
+  for (const m of own) {
+    const verified = m.answers.filter((a) => a.verified).length;
+    console.log(`${m.id.padEnd(7)} mind: ${m.answers.length} answers, ${verified} with a TEE signature checked against the race's attestation`);
+  }
+  const accounts: Readonly<Record<string, string>> = NET.masks;
+  const tab: MindTab = {
+    network: NET.id,
+    race,
+    own: own.flatMap((m) => (accounts[m.id] ? [{ name: m.id, account: accounts[m.id]!, model: m.model, answers: m.answers, unanswered: m.unanswered }] : [])),
+    people: minds.map((m) => ({
+      name: m.id,
+      account: m.mask,
+      model: m.model,
+      calls: m.spent.calls,
+      unanswered: m.stops["out-of-time"] + m.stops.refused + m.stops.unreachable,
+      usd: m.spent.usd,
+      tokens: m.spent.tokens,
+    })),
+  };
+  await writeFile(mindsFile, JSON.stringify(tab));
+}
+
+// The day's report on the key that pays the people's minds: what is left on it, and the owner's step when it runs low.
+// It is read by the key's owner and number only; nothing tops it up but the owner, by hand.
+const payKey = (process.env.OUTLAYER_PAYMENT_KEY ?? "").trim();
+if (payKey) {
+  const ref = keyRef(payKey);
+  const balance = ref ? await readKeyBalance(process.env.OUTLAYER_API || NET.outlayer.api, ref) : null;
+  const report = keyReport(ref, balance);
+  console.log(report.lines.join("\n"));
+  if (process.env.GITHUB_ACTIONS === "true" && report.low) console.log(`::warning::${report.lines[0]!.replace(/^- /, "")}`);
+  if (process.env.GITHUB_STEP_SUMMARY) await appendFile(process.env.GITHUB_STEP_SUMMARY, `${report.lines.join("\n")}\n`);
+}

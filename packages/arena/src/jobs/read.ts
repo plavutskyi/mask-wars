@@ -319,6 +319,31 @@ export class Jobs {
   }
 
   /**
+   * The drains `board` does not hold: opened before its newest `BOARD_JOBS` jobs and since `since` (ms, the chain's
+   * clock), read from the contract's own list by their place in it, at the board's block, oldest first. The board is
+   * the newest jobs only, so sixty newer ones push a job off it while masks still sit on it or a bond still waits
+   * there: whoever answers for those (packages/race, the masks' pass and the house's) reads these as well, and nothing
+   * anyone opens hides a job from them. A job that is over comes without its course: its terms and how it stands.
+   */
+  async older(board: JobBoard, since: number): Promise<Job[]> {
+    const contract = board.contract;
+    if (!contract || !board.deployed || !board.block || board.total <= BOARD_JOBS) return [];
+    const at: At = { block_id: board.block.height };
+    const raw: RawJob[] = [];
+    // The contract lists jobs in the order they opened: page back from the board's oldest until a page starts before
+    // `since`.
+    for (let end = board.total - BOARD_JOBS; end > 0; ) {
+      const from = Math.max(0, end - LIST_PAGE);
+      const page = await this.#rpc.view<RawJob[]>(contract, "list", { from_index: from, limit: end - from }, at);
+      raw.unshift(...page.filter((j) => j.terms.kind === "drain" && ms(j.terms.opened_ns) >= since));
+      if (page.length === 0 || ms(page[0]!.terms.opened_ns) < since) break;
+      end = from;
+    }
+    const factories = new Set(board.market?.factories ?? []);
+    return pool(raw, PARALLEL, (j) => this.#job(contract, j, at, null, false, (account) => this.#mask(account, factories)));
+  }
+
+  /**
    * A crew as the crews contract holds it at the latest final block: its captain, every seat and whether it joined, its
    * split and version. `null` when no such crew is there, or no crews contract is. `contract` is the crews contract a
    * job opened with (`Job.crews`); the default is this network's. One reading per crew is reused for `ttlMs`.
@@ -344,6 +369,43 @@ export class Jobs {
     this.#crews.set(key, { at: now, value });
     if (this.#crews.size > 256) this.#crews.delete(this.#crews.keys().next().value!);
     return value;
+  }
+
+  /**
+   * Whether jobs run on this network: the jobs contract is on chain and answers its `config`, and so does the crews
+   * contract that config names. `false` when either is missing, holds no code or is some other contract; `null` when
+   * no RPC answered within `timeoutMs`: the chain said nothing, and a caller keeps to what it knew before.
+   */
+  async ready(timeoutMs = 4_000): Promise<boolean | null> {
+    const contract = this.config.contract;
+    if (!contract) return false;
+    const on = async (account: string): Promise<boolean> => {
+      const info = await this.#rpc.account(account);
+      return info !== null && info.codeHash !== NO_CODE;
+    };
+    const check = async (): Promise<boolean | null> => {
+      try {
+        if (!(await on(contract))) return false;
+        const config = await this.#rpc.view<Partial<RawConfig>>(contract, "config", {});
+        const crews = typeof config?.crews === "string" ? config.crews : "";
+        if (!crews || !(await on(crews))) return false;
+        await this.#rpc.view<unknown>(crews, "config", {});
+        return true;
+      } catch (error) {
+        // An account with other code, or one gone between two reads: no such contract.
+        if (error instanceof ChainError && (error.kind === "contract" || error.kind === "unknown_account")) return false;
+        return null;
+      }
+    };
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const late = new Promise<null>((done) => {
+      timer = setTimeout(() => done(null), timeoutMs);
+    });
+    try {
+      return await Promise.race([check(), late]);
+    } finally {
+      clearTimeout(timer);
+    }
   }
 
   // ---------------------------------------------------------------------------------------------------------------
@@ -444,7 +506,7 @@ export class Jobs {
     });
     const open = jobs.filter((j) => j.takes);
     const paid = jobs.flatMap((j) => (j.settlement && j.settlement.state !== "due" ? j.settlement.payouts.map((p) => BigInt(p.amount)) : []));
-    const fuelPaid = jobs.map((j) => (j.settlement && j.settlement.state !== "due" ? BigInt(j.settlement.toNearAi) : 0n));
+    const fuelPaid = jobs.map((j) => (j.settlement && j.settlement.state !== "due" ? BigInt(j.settlement.toTreasury) : 0n));
     return {
       network,
       contract,
@@ -740,7 +802,7 @@ export class Jobs {
         state,
         payouts: settled.payouts.map((p): Payout => ({ mask: mask(p.mask), role: roleOf(p.mask), amount: p.amount })),
         fee: settled.fee,
-        toNearAi: sum(settled.fuel.map((f) => big(f.covered))).toString(),
+        toTreasury: sum(settled.fuel.map((f) => big(f.covered))).toString(),
         forfeit: settled.forfeit ?? sum((settled.bonds ?? []).map((b) => big(b.lost))).toString(),
         bondsBack: sum((settled.bonds ?? []).map((b) => big(b.bond) - big(b.lost))).toString(),
         back: settled.back,
@@ -753,7 +815,7 @@ export class Jobs {
         state: "due",
         payouts: [...(due ?? new Map<string, bigint>())].map(([account, amount]): Payout => ({ mask: mask(account), role: roleOf(account), amount: amount.toString() })),
         fee: dueFee.toString(),
-        toNearAi: sum(fuel.map((f) => big(f.covered))).toString(),
+        toTreasury: sum(fuel.map((f) => big(f.covered))).toString(),
         forfeit: sum(seated.map((m) => big(m.bond.lost))).toString(),
         bondsBack: sum(seated.map((m) => big(m.bond.amount) - big(m.bond.lost))).toString(),
         back: null,
@@ -786,6 +848,7 @@ export class Jobs {
     const openEvent = pick("open")[0];
     const bar: Bar | null = t.bar ? { winAt: t.bar.win_at, cases: t.bar.cases ?? null, fuel: t.bar.fuel ?? null } : null;
     const retryAt = ms(j.retry_at);
+    const room = j.phase === "enlisting" && j.masks < t.slots;
 
     return {
       id: j.id,
@@ -823,7 +886,9 @@ export class Jobs {
       judgeUntil: ms(t.judge_until),
       appealMinutes: t.appeal_minutes,
       phase: j.phase,
-      takes: j.phase === "enlisting" && j.masks < t.slots,
+      room,
+      // A job for forged masks only is open only where the factory is on chain: before that nobody has such a mask.
+      takes: room && (openTo.who === "anyone" || (openTo.who === "registered" && openTo.factories.length > 0 && this.config.forge === true)),
       runs: j.runs,
       retryAt: retryAt > 0 ? retryAt : null,
       entrants,

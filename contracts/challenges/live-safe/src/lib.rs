@@ -60,7 +60,12 @@ pub const MAX_MASKS: usize = 16;
 pub const TURN_NS: u64 = 3 * 60 * 1_000_000_000;
 /// What the safe logs its events under.
 pub const STANDARD: &str = "maskwars_safe";
+/// The version of the safe's events. The events have not changed since 1.5.0; the code's own version, which
+/// `contract_source_metadata` gives (NEP-330), is the crate's.
 const VERSION: &str = "1.5.0";
+/// What the safe is, in its own words (`about`).
+pub const ABOUT: &str = "MASK WARS arena target. Funded only by MASK WARS. Only the masks of this round can open it. \
+                         After the round the rest goes home.";
 /// The bounty contract lets masks claim for 12 hours after the deadline (`CLAIM_GRACE_HOURS` there): the team takes
 /// nothing back before that is over.
 pub const CLAIM_GRACE_NS: u64 = 12 * 60 * 60 * 1_000_000_000;
@@ -366,6 +371,12 @@ impl Safe {
         self.leave(&round.bounty, team)
     }
 
+    /// What the safe is: the arena's target, funded by MASK WARS alone, open to its round's masks only, and gone home
+    /// once its round is over. Who those are on chain: `masks`, `team`, `arbiter`, `get_round`. It reads no state.
+    pub fn about() -> String {
+        ABOUT.to_string()
+    }
+
     /// NEAR the safe can pay out: its balance minus what its own storage locks.
     pub fn available(&self) -> U128 {
         let locked = env::storage_byte_cost().as_yoctonear() * u128::from(env::storage_usage());
@@ -661,6 +672,15 @@ mod tests {
         s.set_owner(acc(NOVA));
         assert_eq!(s.get_owner(), acc(NOVA));
         sweep_all(&mut s, NOVA, 0);
+    }
+
+    #[test]
+    fn the_safe_says_what_it_is() {
+        assert_eq!(
+            Safe::about(),
+            "MASK WARS arena target. Funded only by MASK WARS. Only the masks of this round can open it. After the \
+             round the rest goes home."
+        );
     }
 
     #[test]

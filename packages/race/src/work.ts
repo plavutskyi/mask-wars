@@ -1,11 +1,25 @@
 /**
- * The arena's masks at work on the jobs market (contracts/jobs, contracts/crews, docs/spec/jobs.md). One pass reads
+ * The arena's masks at work on the jobs market (contracts/jobs, contracts/crews). One pass reads
  * the board through the arena's own reader (`@maskwars/arena/jobs`), decides what each of our masks does on each job
  * now, and does it with the mask's own function-call keys, both from the seed it races with (`MASK_KEYS`, src/keys.ts):
  * its key on the jobs contract (`enlist`, `step`, `reveal`, `leave`, `judge`, `settle`, `close`) and its key on the
  * crews contract (`join`, `leave`, `enlist`). Neither key attaches NEAR, so no pass ever moves a mask's money: the bond
  * a mask takes a job with is locked for it beforehand by whoever answers for it (`jobs.bond`, the owner's
- * scripts/testnet/jobs-bond.ps1), and a mask with no bond waiting for it does not enlist.
+ * scripts/testnet/jobs-bond.ps1, or the house on a job from outside: src/sponsor.ts), and a mask with no bond waiting for
+ * it does not enlist. The contract lets anyone lock a bond for any mask, so a mask takes only a bond one of our own
+ * accounts locked (`Ours.owners`), or any bond on a job one of them opened: an outsider who bonds our masks on jobs of
+ * its own cannot fill their four live seats.
+ *
+ * A job from outside (a drain on our round that none of our accounts opened: a person's from /jobs, an agent's) is
+ * taken within `Ours.outside`, the network's `limits.jobs`: a reward of at least `minReward`, a bond of `maxBond` at
+ * most, short windows with our own runs inside its reveal (`outsideTermsBar`, shared with the site); at most `perRound`
+ * such jobs a round and `perClient` of one client at once, first opened first taken; at most `seats` of them on one mask
+ * at once, so the rest of its four places stay for our own jobs; and only once MASK CHECK said its client is not
+ * blocked. A job holds its place in those counts from the moment a bond of ours waits on it, whether or not a mask of
+ * ours got its seat: an outsider who fills its slots first frees no room for the next job.
+ *
+ * The board is the contract's newest jobs only, so a pass also reads the drains that newer ones pushed off it
+ * (`wholeBoard`): nothing anyone opens hides a job our masks are on from the pass that reveals its steps.
  *
  * A pass is idempotent and reads everything from the chain: run it on a schedule and every job our masks are on moves
  * one window further each time its clock allows.
@@ -27,9 +41,29 @@
  */
 import { createHash, createHmac } from "node:crypto";
 import { near } from "@maskwars/arena";
-import { LIVE, OVER, stepHash, type Job, type JobBoard, type Jobs, type Role } from "@maskwars/arena/jobs";
+import { LIVE, MIN_REVEAL_MS, OVER, RULES, outsideRules, outsideTermsBar, stepHash, type Job, type JobBoard, type Jobs, type OutsideRules, type Role } from "@maskwars/arena/jobs";
+import type { CheckResult, ReasonCode } from "@maskwars/check";
+import { bountyContracts, teams as teamsOf, type Network } from "@maskwars/network";
 import { raceKey } from "./keys.ts";
 import { call, type CallResult, type Chain, type NearKey } from "./near-tx.ts";
+
+/** MASK CHECK's word on an account (packages/check `maskCheck`). */
+export type Verdict = "allow" | "warn" | "block";
+
+/** The reasons with which MASK CHECK says it read nothing on chain, or stopped reading: its verdict then is no answer. */
+export const UNREAD: readonly ReasonCode[] = ["chain_unreadable", "rpc_disagree"];
+
+/**
+ * MASK CHECK's word as the masks and the house take it. To a person MASK CHECK shows a chain it could not read as a
+ * warning; here that is no answer at all (`null`): no mask works and the house locks nothing for a client nothing on
+ * chain was checked about. A block stands whatever else was read: the shared list alone gives one.
+ */
+export function wordOf(result: Pick<CheckResult, "verdict" | "reasons">): Verdict | null {
+  if (result.verdict === "block") return "block";
+  return result.reasons.some((r) => UNREAD.includes(r.code)) ? null : result.verdict;
+}
+
+export { MIN_REVEAL_MS, outsideRules, type OutsideRules };
 
 /** The methods of a mask's key on the jobs contract: its own moves, and the calls anyone may make to move a job on. */
 export const JOB_KEY_METHODS = ["enlist", "step", "reveal", "leave", "judge", "settle", "close", "unstick"] as const;
@@ -39,15 +73,22 @@ export const CREW_KEY_METHODS = ["join", "leave", "enlist"] as const;
 /** Gas each call carries, TGas: at least what the contract asks (`MIN_JUDGE_GAS` 180, `MIN_SETTLE_GAS` 200). */
 export const GAS = { enlist: 50, step: 30, reveal: 30, judge: 250, settle: 300, close: 300, unstick: 30, join: 30, enlistCrew: 150 } as const;
 
+/** How often a transaction whose nonce a node read too early is signed again with a fresh one. */
+export const NONCE_RETRIES = 3;
+/** The chain would not take the transaction at all, and would not take the next one from that key either. */
+export const KEY_REFUSED = /NotEnoughAllowance|AccessKeyNotFound|NotEnoughBalance|LackBalanceForState|InvalidAccessKeyError/;
+
 /** A mask seals no step this close to the end of the work window: the transaction must land inside it. */
 export const STEP_MARGIN_MS = 2 * 60_000;
 /** A round is raced only with this long left to seal in: the race itself takes a few minutes, often a quarter hour. */
 export const RACE_MIN_MS = 20 * 60_000;
 /** Most live jobs a mask may be on at once: `MAX_LIVE_JOBS_PER_MASK`. */
 export const MAX_LIVE = 4;
-/** The shortest reveal window a mask takes a job with: two quarter hours of the schedule, so a run that is late still
- * finds it open. A run that raced the job's round follows it the whole time. */
-export const MIN_REVEAL_MS = 30 * 60_000;
+/**
+ * How far back a pass looks for a job our masks are on, or a bond of ours waits on: a day more than the longest any job
+ * lives by the contract's own windows (`MAX_JOB_HOURS`, 144), so none still running is ever older than this.
+ */
+export const JOB_LOOKBACK_MS = (RULES.maxJobHours + 24) * 3_600_000;
 /** OutLayer answers or fails within 200 blocks; the jobs contract lets anyone drop a judge run after this many. */
 export const JUDGE_TIMEOUT_BLOCKS = 600;
 /** A change proposed on the crews contract lapses a day after it is ready (`CHANGE_LAPSE_HOURS`). */
@@ -112,8 +153,16 @@ export interface CrewFacts {
 
 /** What one pass knows beyond the board, all at the board's block. */
 export interface Facts {
-  /** `<job>/<mask>` → the bond waiting for the mask to enlist, yoctoNEAR; absent when none waits. */
+  /** `<job>/<mask>` → the bond waiting for the mask to enlist, yoctoNEAR, when it is one our masks take: locked by one
+   * of our own accounts, or on a job one of them opened (`Ours.owners`). Absent when none waits. */
   readonly bonds: ReadonlyMap<string, bigint>;
+  /**
+   * `<job>/<mask>` → a bond the house would lock for the mask if the plan seats it (src/sponsor.ts): the plan takes it
+   * as a bond that waits, but unlike one that does it holds no place on its round, of its client or of the mask.
+   */
+  readonly offered?: ReadonlyMap<string, bigint>;
+  /** `<job>/<mask>` → who locked a bond our masks do not take: an account not ours, on a job not ours. */
+  readonly foreignBonds?: ReadonlyMap<string, string>;
   /** `<bounty>/<round>` → the round. */
   readonly rounds: ReadonlyMap<string, RoundFacts>;
   readonly crew: CrewFacts | null;
@@ -125,7 +174,14 @@ export interface Facts {
   readonly crewsChanging?: boolean;
   /** Jobs whose crew enlist the chain refused earlier in this run: its masks go alone. */
   readonly crewRefused?: ReadonlySet<string>;
+  /** MASK CHECK's verdict on the client of each job our masks may take (`null`: it did not answer). A job whose
+   * client it blocks gets no work from our masks (contracts/jobs/README.md), and a job from outside whose client it
+   * was not asked about gets none either. Absent: no check was asked. */
+  readonly clients?: ReadonlyMap<string, Verdict | null>;
 }
+
+/** A job from outside: a drain none of our own accounts opened. */
+export const fromOutside = (job: Pick<Job, "kind" | "client">, ours: Pick<Ours, "owners">): boolean => job.kind === "drain" && !ours.owners.includes(job.client);
 
 export interface Ours {
   /** Our masks: name → account. */
@@ -135,6 +191,12 @@ export interface Ours {
   /** Bounty contracts whose rounds our masks play, and the teams whose rounds those are. */
   readonly bounties: readonly string[];
   readonly teams: readonly string[];
+  /**
+   * Our own accounts: the owner's and the teams'. A mask takes a job only on a bond one of them locked, or on a job one
+   * of them opened. The contract takes a bond from anyone, and a mask is on four live jobs at most: an outsider who
+   * opened four jobs on a round of ours and bonded our masks on them would otherwise fill every seat they have.
+   */
+  readonly owners: readonly string[];
   /** The rounds a pass may start a race on: only on this bounty contract (the one `Live race` plays) and opened by
    * these teams (the owner's hand rounds: the season races its own). */
   readonly raceBounty: string;
@@ -143,6 +205,34 @@ export interface Ours {
   readonly crew: string | null;
   /** The round this run raced (on `raceBounty`): while it is open, the run asks again every little while. */
   readonly follow?: string | null;
+  /** The limits on jobs from outside (`outsideRules`). */
+  readonly outside: OutsideRules;
+}
+
+/**
+ * Our side on network `n`, as the Jobs workflow runs it (scripts/jobs.ts, scripts/jobs-sponsor.ts): the bounty
+ * contracts and teams whose rounds our masks play (`teams`, by default the network's admin, season and house), our own
+ * accounts (the admin and those teams: a mask takes only a bond one of them locked, or any bond on a job one of them
+ * opened), the rounds this workflow races itself (the owner's hand rounds on the bounty contract `Live race` plays; the
+ * season races its own) and the limits on jobs from outside.
+ */
+export function oursOn(
+  n: Network,
+  o: { masks: Readonly<Record<string, string>>; signers: readonly string[]; crew: string | null; teams?: readonly string[]; raceTeams?: readonly string[]; follow?: string | null },
+): Ours {
+  const team = o.teams?.length ? [...o.teams] : [...teamsOf(n)];
+  return {
+    masks: o.masks,
+    signers: o.signers,
+    bounties: bountyContracts(n),
+    teams: team,
+    owners: [...new Set([n.admin, ...team])],
+    raceBounty: n.bounty,
+    raceTeams: o.raceTeams?.length ? [...o.raceTeams] : [n.admin],
+    crew: o.crew,
+    follow: o.follow ?? null,
+    outside: outsideRules(n),
+  };
 }
 
 export type Act =
@@ -168,8 +258,9 @@ export interface Skip {
 export interface Plan {
   readonly acts: readonly Act[];
   readonly skips: readonly Skip[];
-  /** A round to race now: a hand round of ours on a job our masks are on, nobody sealed in yet. */
-  readonly race: { readonly job: string; readonly bounty: string; readonly round: string } | null;
+  /** A round to race now: a hand round of ours on a job our masks are on, nobody sealed in yet. `striker`: the
+   * striker of our crew on that job, who plays whatever any of our masks finds in the race (null: the finder plays). */
+  readonly race: { readonly job: string; readonly bounty: string; readonly round: string; readonly striker: string | null } | null;
   /** The next moment a job our masks are on can move, ms by the chain's clock; `null` when nothing waits. */
   readonly next: number | null;
   /** A job our masks are on waits for its round's outcome, or the round this run raced is still open: neither has a
@@ -193,6 +284,21 @@ function seated(job: Job): Map<string, { role: Role; entrant: number }> {
   return out;
 }
 
+/**
+ * The striker of a crew of ours on the job: of an entrant of two or more seats, all ours, its one striker that can sign.
+ * A crew with two strikers, or none that signs, has no one to name: the finder plays, as alone.
+ */
+function crewStriker(seats: readonly { readonly mask: string; readonly role: Role }[], ours: Ours, signs: (name: string) => boolean): string | null {
+  if (seats.length < 2 || !seats.every((s) => nameOf(ours, s.mask))) return null;
+  const strikers = seats.filter((s) => s.role === "striker").map((s) => nameOf(ours, s.mask)!);
+  return strikers.length === 1 && signs(strikers[0]!) ? strikers[0]! : null;
+}
+
+/** A round this workflow races itself: on the bounty contract `Live race` plays, opened by one of the hand teams. */
+function raceable(round: RoundFacts | undefined, ours: Ours): boolean {
+  return Boolean(round && round.bounty === ours.raceBounty && round.owner && ours.raceTeams.includes(round.owner));
+}
+
 /** Every mask that ever took a seat on the job: one that left does not come back. */
 function everSeated(job: Job): Set<string> {
   return new Set(job.entrants.flatMap((e) => e.members.map((m) => m.mask.account)));
@@ -213,9 +319,16 @@ function drainBar(job: Job, round: RoundFacts | undefined, ours: Ours, account: 
   return null;
 }
 
-/** Why this job does not take the mask by its own terms, or null. */
-function termsBar(job: Job, account: string, now: number, live: ReadonlyMap<string, number>): string | null {
+/** Why this job does not take the mask by its own terms, or null. `outside`: a job none of our accounts opened. */
+function termsBar(job: Job, account: string, now: number, live: ReadonlyMap<string, number>, clients: ReadonlyMap<string, Verdict | null> | undefined, outside: boolean): string | null {
   if (job.client === account) return "the client is not one of its own job's masks";
+  // A job from outside is taken only on MASK CHECK's word on its client: nothing is locked for a client nobody checked.
+  if (outside && !clients?.has(job.client)) return `MASK CHECK was not asked about its client ${job.client}: a job from outside waits for it`;
+  if (clients?.has(job.client)) {
+    const verdict = clients.get(job.client);
+    if (verdict === "block") return `MASK CHECK blocks its client ${job.client}: our masks do no work for it`;
+    if (verdict === null) return `MASK CHECK did not answer on its client ${job.client}: asked again on the next pass`;
+  }
   if (everSeated(job).has(account)) return "on the job already, or left it";
   if (job.openTo.who === "masks" && !job.openTo.masks.includes(account)) return "the job takes only its listed masks";
   if (job.openTo.who === "registered" && !job.openTo.factories.some((f) => account.endsWith(`.${f}`) && !account.slice(0, -f.length - 1).includes("."))) {
@@ -228,6 +341,70 @@ function termsBar(job: Job, account: string, now: number, live: ReadonlyMap<stri
   }
   return null;
 }
+
+/**
+ * What our masks hold of jobs from outside now: the jobs on each round, of each client and on each mask. A job is held
+ * once a mask of ours sits on it or a bond of ours waits on it for a mask, whether or not that mask ever gets its seat.
+ */
+interface OutsideCounts {
+  readonly rounds: Map<string, Set<string>>;
+  readonly clients: Map<string, Set<string>>;
+  readonly masks: Map<string, Set<string>>;
+  /** The jobs held by a waiting bond alone, no mask of ours on them yet. */
+  readonly waiting: Set<string>;
+  /** Every job's place in the order they opened. */
+  readonly order: ReadonlyMap<string, number>;
+}
+
+/**
+ * How many jobs of `set` stand before `job`: every other job in it, but that of two jobs each held by a waiting bond
+ * alone the one opened first comes first, so the later one does not bar the earlier.
+ */
+function ahead(held: OutsideCounts, set: ReadonlySet<string> | undefined, job: Job): number {
+  if (!set) return 0;
+  const mine = held.waiting.has(job.id) ? held.order.get(job.id)! : null;
+  let n = 0;
+  for (const id of set) {
+    if (id === job.id) continue;
+    if (mine !== null && held.waiting.has(id) && held.order.get(id)! > mine) continue;
+    n += 1;
+  }
+  return n;
+}
+
+/**
+ * Why our masks take no new seat on this job from outside, whoever of them: its own terms (`outsideTermsBar`: reward,
+ * bond, windows), its client's share, its round's share.
+ */
+function outsideBar(job: Job, ours: Ours, held: OutsideCounts): string | null {
+  const o = ours.outside;
+  const terms = outsideTermsBar(job, o);
+  if (terms) return terms;
+  const ofClient = ahead(held, held.clients.get(job.client), job);
+  if (ofClient >= o.perClient) {
+    return `our masks are on ${ofClient} job${ofClient === 1 ? "" : "s"} of ${job.client} already: ${o.perClient} at a time from one client`;
+  }
+  if (job.judge.by !== "round") return null;
+  const onRound = ahead(held, held.rounds.get(roundKey({ bounty: job.judge.bounty, id: job.judge.round })), job);
+  if (onRound >= o.perRound) {
+    return `our masks are on ${onRound} job${onRound === 1 ? "" : "s"} from outside on round ${job.judge.round} already: ${o.perRound} a round, first opened first taken`;
+  }
+  return null;
+}
+
+/** Counts a job from outside as held: on its round, of its client and, with `account`, on that mask. */
+function hold(held: OutsideCounts, job: Job, account: string | null) {
+  const add = (map: Map<string, Set<string>>, key: string) => {
+    if (!map.has(key)) map.set(key, new Set());
+    map.get(key)!.add(job.id);
+  };
+  if (job.judge.by === "round") add(held.rounds, roundKey({ bounty: job.judge.bounty, id: job.judge.round }));
+  add(held.clients, job.client);
+  if (account) add(held.masks, account);
+}
+
+/** Oldest first: of two jobs from outside on one round, the one opened first is taken first. */
+const byOpening = (a: Job, b: Job) => a.openedAt - b.openedAt || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
 
 /**
  * What our masks do now, from one reading of the board and the facts at its block. Pure: the same reading gives the
@@ -245,17 +422,28 @@ export function plan(board: JobBoard, facts: Facts, ours: Ours): Plan {
   // A seat joins a crew's version once per pass, whatever number of jobs the crew takes in it.
   const joined = new Set<string>();
 
-  // How many live jobs each of our masks holds a seat on now: a mask is on four at most.
+  // How many live jobs each of our masks holds a seat on now: a mask is on four at most. And what they hold of jobs
+  // from outside, on each round, of each client, on each mask: the jobs a mask of ours sits on, and the jobs a bond of
+  // ours waits on for a mask, seated yet or never. The second is what keeps an outsider from emptying the house: one
+  // who fills a job's slots before our masks enlist leaves the bonds waiting there, and they hold the job's place.
   const live = new Map<string, number>();
+  const inOrder = [...board.jobs].sort(byOpening);
+  const held: OutsideCounts = { rounds: new Map(), clients: new Map(), masks: new Map(), waiting: new Set(), order: new Map(inOrder.map((j, i) => [j.id, i])) };
   for (const j of board.jobs) {
     if (!LIVE.has(j.phase)) continue;
-    for (const a of seated(j).keys()) if (accounts.has(a)) live.set(a, (live.get(a) ?? 0) + 1);
+    const ourSeats = [...seated(j).keys()].filter((a) => accounts.has(a));
+    for (const a of ourSeats) live.set(a, (live.get(a) ?? 0) + 1);
+    if (!fromOutside(j, ours)) continue;
+    const bonded = j.phase === "enlisting" ? [...accounts].filter((a) => !ourSeats.includes(a) && facts.bonds.has(bondKey(j.id, a))) : [];
+    for (const a of [...ourSeats, ...bonded]) hold(held, j, a);
+    if (ourSeats.length === 0 && bonded.length > 0) held.waiting.add(j.id);
   }
 
-  for (const job of board.jobs) {
+  for (const job of inOrder) {
     if (OVER.has(job.phase)) continue;
     const seats = seated(job);
     const mine = [...seats.keys()].filter((a) => accounts.has(a));
+    const outside = fromOutside(job, ours);
     const ref: RoundRef | null = job.judge.by === "round" ? { bounty: job.judge.bounty, id: job.judge.round } : null;
     const round = ref ? facts.rounds.get(roundKey(ref)) : undefined;
     // Who moves the job on: a mask of ours on it that can sign, the round's winner first (it was paid for the round),
@@ -270,6 +458,8 @@ export function plan(board: JobBoard, facts: Facts, ours: Ours): Plan {
 
     // ---- enlisting: take the job, then seal the one step ------------------------------------------------------
     if (job.phase === "enlisting") {
+      // The striker of the crew this pass enlists, if it does.
+      let enlisting: string | null = null;
       if (job.kind !== "drain") {
         skips.push({ job: job.id, why: `${job.kind}: the work is sealed for the judge's TEE key, and the masks' minds do not write it yet` });
       } else {
@@ -278,22 +468,38 @@ export function plan(board: JobBoard, facts: Facts, ours: Ours): Plan {
         const takers: { name: string; account: string }[] = [];
         const bondless = new Set<string>();
         const barred = new Set<string>();
+        // A job from outside: its reward, and what our masks hold of its round and of its client, bar every mask alike.
+        const shared = outside ? outsideBar(job, ours, held) : null;
         for (const [name, account] of Object.entries(ours.masks)) {
-          const why = termsBar(job, account, now, live) ?? drainBar(job, round, ours, account, now) ?? (signs(name) ? null : "no seed in MASK_KEYS");
+          const seatsBar = outside && ahead(held, held.masks.get(account), job) >= ours.outside.seats ? `on ${ours.outside.seats} job${ours.outside.seats === 1 ? "" : "s"} from outside already: its other places stay for our own jobs` : null;
+          const why = termsBar(job, account, now, live, facts.clients, outside) ?? drainBar(job, round, ours, account, now) ?? shared ?? seatsBar ?? (signs(name) ? null : "no seed in MASK_KEYS");
           if (why) {
             barred.add(account);
-            // A bond locked for a mask that will not take the job waits for whoever locked it to take it back.
-            const waiting = facts.bonds.has(bondKey(job.id, account)) ? ` Its bond waits: jobs-bond.ps1 -Job ${job.id} -Unbond` : "";
+            // A bond locked for a mask that will not take the job waits for whoever locked it to take it back: the
+            // owner on a job of ours, the house on one from outside (its next pass does: src/sponsor.ts).
+            const waiting = !facts.bonds.has(bondKey(job.id, account)) ? "" : outside ? " Its bond waits: the house takes back its own on its next pass" : ` Its bond waits: jobs-bond.ps1 -Job ${job.id} -Unbond`;
             if (!seats.has(account)) skips.push({ job: job.id, mask: name, why: `${why}${waiting ? `.${waiting}` : ""}` });
             continue;
           }
-          const bond = facts.bonds.get(bondKey(job.id, account));
+          // A bond an outsider locked on a job of its own: the mask leaves it, so no outsider fills its live seats.
+          const outsider = facts.foreignBonds?.get(bondKey(job.id, account));
+          if (outsider !== undefined) {
+            barred.add(account);
+            skips.push({ job: job.id, mask: name, why: `its bond was locked by ${outsider} on a job ${job.client} opened, neither ours: a mask takes only our own bonds, so no outsider fills its ${MAX_LIVE} live seats` });
+            continue;
+          }
+          const bond = facts.bonds.get(bondKey(job.id, account)) ?? facts.offered?.get(bondKey(job.id, account));
           if (bond === undefined || bond < BigInt(job.bond)) {
             bondless.add(account);
             skips.push({
               job: job.id,
               mask: name,
-              why: bond === undefined ? `no bond waits for it: the owner locks it (jobs-bond.ps1 -Job ${job.id})` : "the bond waiting for it is less than this job's",
+              why:
+                bond === undefined
+                  ? outside
+                    ? "no bond waits for it: the house locks it once the job clears the limits (src/sponsor.ts, the Jobs workflow's sponsor)"
+                    : `no bond waits for it: the owner locks it (jobs-bond.ps1 -Job ${job.id})`
+                  : "the bond waiting for it is less than this job's",
             });
             continue;
           }
@@ -321,6 +527,12 @@ export function plan(board: JobBoard, facts: Facts, ours: Ours): Plan {
             if (out.length < crew.seats.length) skips.push({ job: job.id, why: `crew ${crew.id} cannot take it: ${named(out)} cannot; the others go alone` });
           }
           else if (crew.seats.length > free) skips.push({ job: job.id, why: `crew ${crew.id} needs ${crew.seats.length} slots, the job has ${free}; its masks go alone` });
+          // A drain pays the crew only when its striker drains the round. This workflow makes sure of that on a round
+          // it races (the striker plays whatever any of our masks finds); on a round raced elsewhere the finder plays,
+          // and a scout or verifier that drains it would win the crew nothing, so the masks go alone.
+          else if (!crew.seats.every((s) => s.role === "striker") && !(raceable(round, ours) && crewStriker(crew.seats, ours, signs))) {
+            skips.push({ job: job.id, why: `crew ${crew.id} has roles, and round ${job.judge.by === "round" ? job.judge.round : "-"} is raced elsewhere: a scout or verifier that drains it would win the crew nothing; its masks go alone` });
+          }
           else if (waiting.length) {
             crewHolds = true;
             skips.push({ job: job.id, why: `crew ${crew.id} waits for the bond of ${named(waiting)}` });
@@ -331,9 +543,11 @@ export function plan(board: JobBoard, facts: Facts, ours: Ours): Plan {
               joined.add(s.mask);
             }
             acts.push({ kind: "enlist_crew", mask: captain, crew: crew.id, job: job.id, members: crew.seats.map((s) => nameOf(ours, s.mask)!) });
+            enlisting = crewStriker(crew.seats, ours, signs);
             for (const s of crew.seats) {
               acts.push({ kind: "step", mask: nameOf(ours, s.mask)!, job: job.id, role: s.role, round: ref! });
               live.set(s.mask, (live.get(s.mask) ?? 0) + 1);
+              if (outside) hold(held, job, s.mask);
             }
             free -= crew.seats.length;
           }
@@ -348,6 +562,7 @@ export function plan(board: JobBoard, facts: Facts, ours: Ours): Plan {
           acts.push({ kind: "enlist", mask: t.name, job: job.id });
           acts.push({ kind: "step", mask: t.name, job: job.id, role: "striker", round: ref! });
           live.set(t.account, (live.get(t.account) ?? 0) + 1);
+          if (outside) hold(held, job, t.account);
           free -= 1;
         }
       }
@@ -367,9 +582,14 @@ export function plan(board: JobBoard, facts: Facts, ours: Ours): Plan {
       // Only a round of our masks alone: a round with people's masks on its list is raced by hand
       // (scripts/testnet/human-round.ps1), and its keeper arms them for that run.
       const ownMasks = round?.masks?.every((m) => accounts.has(m)) ?? false;
-      if (!race && round && ownMasks && (mine.length > 0 || taking) && round.bounty === ours.raceBounty && round.owner && ours.raceTeams.includes(round.owner)) {
+      if (!race && round && ownMasks && (mine.length > 0 || taking) && raceable(round, ours)) {
         if (round.state === "open" && round.seals === 0 && round.commitUntil !== null && round.commitUntil - now >= RACE_MIN_MS) {
-          race = { job: job.id, bounty: round.bounty, round: round.id };
+          // Our crew on the job: enlisted before, or by this pass.
+          const onIt = job.entrants
+            .map((e) => e.members.filter((m) => !m.left).map((m) => ({ mask: m.mask.account, role: m.role })))
+            .map((seats) => crewStriker(seats, ours, signs))
+            .find((name) => name !== null);
+          race = { job: job.id, bounty: round.bounty, round: round.id, striker: onIt ?? enlisting };
         }
       }
       if (mine.length > 0 || taking) nexts.push(job.workUntil);
@@ -465,6 +685,18 @@ export async function viewAt<T>(chain: Chain, contract: string, method: string, 
   return JSON.parse(Buffer.from(r.result).toString("utf8")) as T;
 }
 
+/**
+ * The board with the drains its newest jobs pushed off it (`Jobs.older`), opened within `JOB_LOOKBACK_MS`: every job
+ * our masks may still be on, or a bond of ours may still wait on, whatever number of newer jobs anyone opened since.
+ * The same reading when the board already holds every job.
+ */
+export async function wholeBoard(jobs: Pick<Jobs, "older">, board: JobBoard): Promise<JobBoard> {
+  if (!board.deployed || board.total <= board.jobs.length) return board;
+  const on = new Set(board.jobs.map((j) => j.id));
+  const older = (await jobs.older(board, board.readAt - JOB_LOOKBACK_MS)).filter((j) => !on.has(j.id));
+  return older.length ? { ...board, jobs: [...board.jobs, ...older] } : board;
+}
+
 interface RawBounty {
   readonly owner: string;
   readonly status: { readonly state?: string; readonly winner?: string };
@@ -483,6 +715,7 @@ export async function readFacts(
   if (height === undefined || height === null) throw new Error("the board was read at no block");
   const accounts = Object.values(ours.masks);
   const bonds = new Map<string, bigint>();
+  const foreignBonds = new Map<string, string>();
   const rounds = new Map<string, RoundFacts>();
   const stuck = new Set<string>();
   for (const job of board.jobs) {
@@ -499,10 +732,13 @@ export async function readFacts(
     }
     if (job.phase !== "enlisting" || job.kind !== "drain") continue;
     const onIt = everSeated(job);
+    const ourJob = ours.owners.includes(job.client);
     for (const account of accounts) {
       if (onIt.has(account) || job.client === account) continue;
-      const b = await viewAt<{ amount: string; enlisted: boolean } | null>(chain, board.contract!, "bond_of", { id: job.id, mask: account }, height);
-      if (b && !b.enlisted) bonds.set(bondKey(job.id, account), BigInt(b.amount));
+      const b = await viewAt<{ by: string; amount: string; enlisted: boolean } | null>(chain, board.contract!, "bond_of", { id: job.id, mask: account }, height);
+      if (!b || b.enlisted) continue;
+      if (ourJob || ours.owners.includes(b.by)) bonds.set(bondKey(job.id, account), BigInt(b.amount));
+      else foreignBonds.set(bondKey(job.id, account), b.by);
     }
   }
   let crew: CrewFacts | null = null;
@@ -521,7 +757,7 @@ export async function readFacts(
     ).catch(() => null);
     crew = c ? { id: c.id, captain: c.captain, seats: c.seats, version: c.version } : null;
   }
-  return { bonds, rounds, crew, crewsContract, stuck, crewsChanging };
+  return { bonds, foreignBonds, rounds, crew, crewsContract, stuck, crewsChanging };
 }
 
 async function readRound(chain: Chain, r: { bounty: string; id: string }, height: number): Promise<RoundFacts> {
@@ -560,6 +796,15 @@ export interface WorkOptions {
    * the network lost is not in it: it goes again.
    */
   readonly refused?: Set<string>;
+  /** The pause before a transaction whose nonce a node read too early is signed again (2 s; tests pass 0). */
+  readonly nonceRetryMs?: number;
+  /**
+   * MASK CHECK (packages/check): asked once a run about the client of every job our masks may take, before any mask
+   * enlists and locks the bond the owner put on it. Without it, no client is checked.
+   */
+  readonly check?: (account: string) => Promise<Verdict | null>;
+  /** The run's verdicts so far, shared by its passes: a client is checked once a run. */
+  readonly checked?: Map<string, Verdict | null>;
 }
 
 export interface Done {
@@ -575,6 +820,8 @@ export interface Done {
 
 export interface Pass {
   readonly board: JobBoard;
+  /** What the pass knew beyond the board, at its block; `null` when the contract is not deployed. */
+  readonly facts: Facts | null;
   readonly plan: Plan;
   readonly done: readonly Done[];
 }
@@ -584,17 +831,32 @@ const short = (e: string | undefined) => (e ?? "").replace(/\s+/g, " ").slice(0,
 /** One pass: read, decide, act. A failed act stops the acts that need it (a step after a failed enlist) and no other. */
 export async function work(o: WorkOptions): Promise<Pass> {
   const log = o.log ?? (() => {});
-  const board = await o.jobs.board();
-  if (!board.deployed) {
-    log(`${board.contract ?? "no jobs contract"}: not deployed, no job to take`);
-    return { board, plan: { acts: [], skips: [], race: null, next: null, waits: false }, done: [] };
+  const newest = await o.jobs.board();
+  if (!newest.deployed) {
+    log(`${newest.contract ?? "no jobs contract"}: not deployed, no job to take`);
+    return { board: newest, facts: null, plan: { acts: [], skips: [], race: null, next: null, waits: false }, done: [] };
   }
-  if (board.stale) throw new Error("the board could not be read fresh: no mask acts on an old reading");
-  const read = await readFacts(o.chain, board, o.ours, o.crewsContract);
+  if (newest.stale) throw new Error("the board could not be read fresh: no mask acts on an old reading");
+  // With the drains newer jobs pushed off the board: a job our masks are on is read whatever anyone opened since.
+  const board = await wholeBoard(o.jobs, newest);
   const refused = o.refused ?? new Set<string>();
+  // A mask whose key the chain would not take (its allowance spent, the key gone) signs nothing more in this run: the
+  // plan then picks another mask of ours to move a job on, and a crew whose captain or seat it is goes alone.
+  const ours = withoutSpentKeys(o.ours, refused);
+  const read = await readFacts(o.chain, board, ours, o.crewsContract);
   const crewRefused = new Set([...refused].filter((k) => k.startsWith("enlist_crew/")).map((k) => k.split("/")[1]!));
-  const facts: Facts = { ...read, crewRefused };
-  const p = plan(board, facts, o.ours);
+  // MASK CHECK on the client of every job still taking masks, once a run: a client it blocks gets no work.
+  let clients: Map<string, Verdict | null> | undefined;
+  if (o.check) {
+    const checked = o.checked ?? new Map<string, Verdict | null>();
+    for (const j of board.jobs.filter((j) => j.phase === "enlisting" && j.kind === "drain")) {
+      if (checked.has(j.client) && checked.get(j.client) !== null) continue;
+      checked.set(j.client, await o.check(j.client).catch(() => null));
+    }
+    clients = checked;
+  }
+  const facts: Facts = { ...read, crewRefused, ...(clients ? { clients } : {}) };
+  const p = plan(board, facts, ours);
   /** A mask's step on a drain job: its salt and its content, both rebuilt from its seed on every pass. */
   const stepOf = (act: { mask: string; job: string; role: Role; round: RoundRef }) => {
     const seed = o.seeds[act.mask]!;
@@ -625,6 +887,8 @@ export async function work(o: WorkOptions): Promise<Pass> {
       done.push({ act, ok: false, sent: false, hash: null, error: "refused by the chain earlier in this run: not sent again" });
       log(`not again ${describe(act)}: the chain refused it earlier in this run`);
       if (act.kind === "enlist") failed.add(`${act.job}/${act.mask}`);
+      // A seat that will not join leaves its crew's enlisting nothing to stand on.
+      if (act.kind === "join") failed.add(`crew/${act.crew}`);
       continue;
     }
     if (needs(act).some((n) => failed.has(n))) {
@@ -635,14 +899,25 @@ export async function work(o: WorkOptions): Promise<Pass> {
       continue;
     }
     let r: CallResult = { hash: "", ok: false, error: "no call" };
-    const onJobs = (method: string, args: object, gas: number) => call(o.chain, account, keyOf(act.mask, o.jobsContract), o.jobsContract, method, args, gas);
+    // A nonce a node read a moment too early: the transaction was never taken, so it is signed again with a fresh one.
+    const sent = async (receiver: string, method: string, args: object, gas: number): Promise<CallResult> => {
+      for (let tries = 0; ; tries++) {
+        try {
+          return await call(o.chain, account, keyOf(act.mask, receiver), receiver, method, args, gas);
+        } catch (e) {
+          if (!/InvalidNonce/.test((e as Error).message) || tries >= NONCE_RETRIES) throw e;
+          await new Promise((ok) => setTimeout(ok, o.nonceRetryMs ?? 2_000));
+        }
+      }
+    };
+    const onJobs = (method: string, args: object, gas: number) => sent(o.jobsContract, method, args, gas);
     try {
       switch (act.kind) {
         case "join":
-          r = await call(o.chain, account, keyOf(act.mask, o.crewsContract), o.crewsContract, "join", { id: act.crew, version: act.version }, GAS.join);
+          r = await sent(o.crewsContract, "join", { id: act.crew, version: act.version }, GAS.join);
           break;
         case "enlist_crew":
-          r = await call(o.chain, account, keyOf(act.mask, o.crewsContract), o.crewsContract, "enlist", { id: act.crew, jobs: o.jobsContract, job: act.job }, GAS.enlistCrew);
+          r = await sent(o.crewsContract, "enlist", { id: act.crew, jobs: o.jobsContract, job: act.job }, GAS.enlistCrew);
           // The crews contract's callback says whether the job took the crew: `null` when it did not.
           if (r.ok && (r.value === null || r.value === undefined)) r = { ...r, ok: false, error: r.error ?? "the job did not take the crew" };
           break;
@@ -681,6 +956,12 @@ export async function work(o: WorkOptions): Promise<Pass> {
       }
     } catch (e) {
       r = { hash: "", ok: false, error: (e as Error).message };
+      // The chain would not take the mask's transaction at all: its key's allowance is spent, or the key is gone.
+      // Every later call of that key would be refused the same way, so the mask signs nothing more in this run.
+      if (KEY_REFUSED.test(r.error ?? "")) {
+        refused.add(actKey(act));
+        refused.add(`key/${act.mask}`);
+      }
     }
     const note = noteOf(act, r, (a) => nameOf(o.ours, a) ?? a);
     done.push({ act, ok: r.ok, sent: true, hash: r.hash || null, ...(r.ok ? {} : { error: short(r.error) }), ...(note ? { note } : {}) });
@@ -693,7 +974,13 @@ export async function work(o: WorkOptions): Promise<Pass> {
       else failed.add(`${act.job}/${act.mask}`);
     }
   }
-  return { board, plan: p, done };
+  return { board, facts, plan: p, done };
+}
+
+/** Our masks less those whose key the chain would not take earlier in this run (`key/<mask>` in `refused`). */
+export function withoutSpentKeys(ours: Ours, refused: ReadonlySet<string>): Ours {
+  const spent = new Set([...refused].filter((k) => k.startsWith("key/")).map((k) => k.split("/")[1]!));
+  return spent.size ? { ...ours, signers: ours.signers.filter((n) => !spent.has(n)) } : ours;
 }
 
 /** What an act is, for the run's memory of what the chain refused: its kind, its job (or crew) and its mask. */
@@ -764,6 +1051,8 @@ export const MAX_PASSES = 100;
  * run has time and at most this many times in a row. */
 export const RETRY_MS = 60_000;
 export const MAX_FAILED_PASSES = 10;
+/** After a pass that moved a job on, the next one reads the board this much later: a few blocks. */
+export const SETTLE_MS = 6_000;
 
 export interface RunOptions {
   /** One pass with a fresh reading of the board. */
@@ -781,8 +1070,8 @@ export interface RunOptions {
 
 /**
  * Passes until nothing more can move within the run's time. A pass that moved a job on (the judge answered, a crew
- * took its seats) is followed by another at once, since what it made possible, a settle after a verdict, needs no later
- * run. One that moved nothing waits for the next deadline of a job our masks are on, when it comes within the time left
+ * took its seats) is followed by another a few blocks later (`SETTLE_MS`), since what it made possible, a settle after
+ * a verdict, needs no later run. One that moved nothing waits for the next deadline of a job our masks are on, when it comes within the time left
  * (a reveal window that opens), a little past it so the block that crosses it is final; with `pollMs`, a job waiting for
  * its round's outcome is asked about again that often, so the judge is called as soon as the round is drained. A pass
  * that cannot read the chain is tried again a minute later, then two, four, up to five minutes apart, while the run has
@@ -813,7 +1102,12 @@ export async function keepWorking(o: RunOptions): Promise<Pass[]> {
     await o.onPass?.(pass, n);
     const left = o.waitMinutes * 60_000 - (now() - started);
     if (o.waitMinutes <= 0 || left <= 0) break;
-    if (pass.done.some((d) => d.ok)) continue;
+    if (pass.done.some((d) => d.ok)) {
+      // A few blocks first, so the next reading is taken past the block the transactions landed in: a node a block
+      // behind would show the board from before them, and a mask would send the same call again (a second step).
+      await sleep(SETTLE_MS);
+      continue;
+    }
     const next = pass.plan.next;
     const due = next === null ? null : Math.max(next - pass.board.readAt, 0) + 20_000;
     const poll = o.pollMs && pass.plan.waits ? o.pollMs : null;

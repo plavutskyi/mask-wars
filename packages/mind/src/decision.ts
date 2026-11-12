@@ -1,6 +1,6 @@
 /**
  * The model proposes; this file disposes. A proposal is parsed with zod, then checked against the basket, the mask's
- * manner and the rules of Market Duel v1 (docs/spec/fight.md). Anything that does not pass becomes the mask's default
+ * manner and the rules of Market Duel v1 (packages/core/README.md). Anything that does not pass becomes the mask's default
  * move, never a failed fight.
  */
 import { z } from "zod";

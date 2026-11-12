@@ -242,6 +242,56 @@ async fn a_person_forges_a_mask_that_races_and_pays_for_its_own_mind() {
 }
 
 #[tokio::test]
+async fn a_mask_pays_for_its_own_mind_with_what_it_won() {
+    let w = World::new(wasm(), 60).await.unwrap();
+    let kira = w.mask_id("kira");
+    let res = w.forge(&w.ann, "kira", ONE_NEAR, None).await.unwrap();
+    assert!(res.is_success(), "{}", why(&res));
+    let before = w.mask("kira").await.unwrap();
+    let (brain, fuel) = (u128_of(&before["brain"]), u128_of(&before["fuel"]));
+
+    // KIRA wins: the arena pays 1 NEAR to the mask's own account.
+    let paid = w
+        .arena
+        .call(w.arena.id(), "pay")
+        .args_json(json!({ "to": kira }))
+        .deposit(NearToken::from_near(1))
+        .transact()
+        .await
+        .unwrap();
+    assert!(paid.is_success(), "{}", why(&paid));
+
+    // Only ANN spends the prize, and only on KIRA's own tank.
+    let res = w.bob.call(&kira, "fuel").gas(Gas::from_tgas(60)).transact().await.unwrap();
+    assert!(why(&res).contains("only the mask's owner fuels its mind"), "{}", why(&res));
+    let res =
+        w.ann.call(&kira, "fuel").gas(Gas::from_tgas(60)).deposit(NearToken::from_near(1)).transact().await.unwrap();
+    assert!(why(&res).contains("fuel takes no deposit"), "{}", why(&res));
+    let res = w.ann.call(&kira, "fuel").gas(Gas::from_tgas(60)).transact().await.unwrap();
+    assert!(res.is_success(), "fuel: {}", why(&res));
+    let line = res.logs().iter().find(|l| l.starts_with("fuel ")).map(|l| l.to_string()).unwrap();
+    let sent: u128 = line.split(' ').nth(1).unwrap().parse().unwrap();
+    assert!(sent > 990 * MILLI && sent < 1_050 * MILLI, "the prize and what the mask did not burn on gas: {line}");
+    assert!(
+        res.logs().iter().any(|l| l.contains(r#""event":"refuel""#) && l.contains(kira.as_str())),
+        "{:?}",
+        res.logs()
+    );
+
+    // The tank holds the prize; what people put in stays what it was, so the × is not inflated by recycled winnings.
+    let m = w.mask("kira").await.unwrap();
+    assert_eq!((u128_of(&m["fuel"]), u128_of(&m["recycled"])), (fuel, sent), "recorded as the mask's own, not put in");
+    let record = brain + sent - u128_of(&m["brain"]);
+    assert!(record > 0 && record < MILLI, "only the record of `recycled` is paid from it: {record}");
+    let left = w.balance(&kira).await.unwrap();
+    assert!((250 * MILLI..260 * MILLI).contains(&left), "the gas fund and the storage stay: {left}");
+
+    // Nothing above the gas fund is left to fuel.
+    let res = w.ann.call(&kira, "fuel").gas(Gas::from_tgas(60)).transact().await.unwrap();
+    assert!(why(&res).contains("less than 0.1 NEAR"), "{}", why(&res));
+}
+
+#[tokio::test]
 async fn a_race_nobody_settles_is_released_and_costs_the_mind_nothing() {
     let w = World::new(wasm(), 1).await.unwrap();
     let kira = w.mask_id("kira");

@@ -28,7 +28,7 @@ export const passing = (e: unknown): boolean => e instanceof PayError && (e.code
 
 export interface CatalogView {
   readonly live: boolean;
-  /** The most one top-up may bring, in dollars (limits.pay_usd_max of packages/network/mainnet.json). */
+  /** The most one top-up quote asks for, in dollars (limits.pay_usd_max of packages/network/mainnet.json). */
   readonly maxUsd?: number;
   readonly near: Coin;
   readonly chains: readonly (CatalogChain & { readonly window: number })[];
@@ -52,6 +52,27 @@ export interface VaultView {
   readonly near: string;
   readonly nearPrice: number;
   readonly holdings: readonly Held[];
+}
+
+/** A forged mask of the vault's owner, as the vault shows it: amounts in yoctoNEAR. */
+export interface MaskTank {
+  readonly name: string;
+  readonly account: string;
+  readonly look: string;
+  /** What its mind's tank holds now. */
+  readonly brain: string;
+  /** Everything ever put into it. */
+  readonly fuel: string;
+  readonly state: string;
+}
+
+export interface MasksView {
+  /** The factory is on chain (`sections.forge`): the vault offers to fuel minds. */
+  readonly open: boolean;
+  readonly factory: string;
+  /** The least the factory takes, yoctoNEAR. */
+  readonly minRefuel: string;
+  readonly masks: readonly MaskTank[];
 }
 
 async function call<T>(path: string, init?: { body?: unknown; signal?: AbortSignal }): Promise<T> {
@@ -89,6 +110,7 @@ export const pay = {
       .then((r) => r.key)
       .catch(() => null),
   savePasskey: (id: string, key: string) => call<{ ok: true }>('passkey', { body: { id, key } }).catch(() => null),
+  masks: (account: string) => call<MasksView>(`masks?account=${encodeURIComponent(account)}`),
   keyRegistered: (account: string, key: string) =>
     call<{ registered: boolean }>(`key?account=${encodeURIComponent(account)}&key=${encodeURIComponent(key)}`).then((r) => r.registered),
 };

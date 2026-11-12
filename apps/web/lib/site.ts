@@ -121,7 +121,7 @@ export function acrossUrl(pathname: string, site: Site = SITE): string | null {
 
 // ---- The menu: the same items in the same order on both sites ----
 
-export type Place = 'race' | 'league' | 'jobs' | 'forge' | 'agents' | 'vault' | 'break';
+export type Place = 'race' | 'league' | 'jobs' | 'forge' | 'agents' | 'vault' | 'near' | 'break';
 
 export interface MenuItem extends SiteLink {
   readonly place: Place;
@@ -133,7 +133,8 @@ const ITEMS: readonly { place: Place; path: string; label: string }[] = [
   { place: 'league', path: '/league', label: 'League' },
   { place: 'jobs', path: '/jobs', label: 'Jobs' },
   { place: 'agents', path: '/mcp/connect', label: 'Agents' },
-  { place: 'vault', path: '/wallet', label: 'Vault' },
+  { place: 'vault', path: '/wallet', label: 'Wallet' },
+  { place: 'near', path: '/near', label: 'Get NEAR' },
 ];
 
 /**
@@ -147,21 +148,125 @@ export function forgeStated(site: Site = SITE): boolean {
 }
 
 /**
- * Whether Jobs is in the menu. Two sites that know each other show one menu, and the item leads to wherever the board
- * is on chain. A single site shows it only while its own network has the jobs contract: the menu never leads to a
- * board that cannot open.
+ * What this network's chain answered when a site on its own asked whether jobs run here (/api/jobs-open): `true`, the
+ * jobs contract and the crews contract it names are both on chain; `false`, they are not; `silent`, no RPC answered;
+ * `null`, not asked yet.
  */
-export function jobsShown(site: Site = SITE): boolean {
-  return site.sibling !== null || site.networks[site.network].sections.jobs;
+export type JobsAnswer = boolean | 'silent' | null;
+
+/**
+ * Whether Jobs is in the menu without asking the chain: two sites that know each other show one menu, and the item
+ * leads to wherever the board is on chain. `false`: the menu asks this network's chain, as Forge does.
+ */
+export function jobsStated(site: Site = SITE): boolean {
+  return site.sibling !== null;
 }
 
-/** The menu's items. `forgeOpen`: what this network's factory answered, for a site that has to ask (`forgeStated`). */
-export function menuOf(forgeOpen: boolean, site: Site = SITE): readonly MenuItem[] {
-  return ITEMS.filter((i) => (i.place !== 'forge' || forgeStated(site) || forgeOpen) && (i.place !== 'jobs' || jobsShown(site))).map((i) => ({
+/**
+ * Whether Jobs is in the menu. A site on its own shows it only while its chain has the jobs and the crews contracts:
+ * the menu never leads to a board that cannot open. Until the chain answers, and when no RPC answers at all, the
+ * network's statement (`sections.jobs`) stands, so the first frame is already right.
+ */
+export function jobsShown(answer: JobsAnswer = null, site: Site = SITE): boolean {
+  if (jobsStated(site)) return true;
+  if (answer === null || answer === 'silent') return site.networks[site.network].sections.jobs;
+  return answer;
+}
+
+/**
+ * The menu's items. `forgeOpen`: what this network's factory answered, for a site that has to ask (`forgeStated`);
+ * `jobs`: what its chain answered about the jobs contracts, for a site that has to ask (`jobsStated`).
+ */
+export function menuOf(forgeOpen: boolean, site: Site = SITE, jobs: JobsAnswer = null): readonly MenuItem[] {
+  return ITEMS.filter((i) => (i.place !== 'forge' || forgeStated(site) || forgeOpen) && (i.place !== 'jobs' || jobsShown(jobs, site))).map((i) => ({
     place: i.place,
     label: i.label,
     ...linkTo(i.path, site),
   }));
+}
+
+// ---- The footer: every page a visitor can open, in three short groups ----
+
+export interface FootLink extends SiteLink {
+  readonly label: string;
+  /** The page on this site, before the two-network rule decides where the link goes. */
+  readonly path: string;
+}
+
+export interface FootGroup {
+  readonly title: string;
+  readonly links: readonly FootLink[];
+}
+
+const FOOT: readonly { title: string; links: readonly (readonly [label: string, path: string])[] }[] = [
+  {
+    title: 'Play',
+    links: [
+      ['The race', '/'],
+      ['League', '/league'],
+      ['Forge', '/forge'],
+      ['Jobs', '/jobs'],
+    ],
+  },
+  {
+    title: 'Money',
+    links: [
+      ['Get NEAR', '/near'],
+      ['Swap', '/swap'],
+      ['Wallet', '/wallet'],
+    ],
+  },
+  {
+    title: 'Agents & trust',
+    links: [
+      ['Connect an agent', '/mcp/connect'],
+      ['MASK CHECK', '/check'],
+      ['Hire the swarm', '/hire'],
+      ['Private minds', '/verified'],
+    ],
+  },
+];
+
+/** The pages the menu's own items lead to: the footer shows such a page only while the menu does. */
+const MENU_PATHS = new Map(ITEMS.map((i) => [i.path, i.place]));
+
+/**
+ * The footer's groups. Forge and Jobs stand in it exactly while the menu has them, and lead where the menu's items
+ * lead (`menuOf`): a link never points at a page that is closed on this network. `forgeOpen` and `jobs` as in `menuOf`.
+ */
+export function footerOf(forgeOpen: boolean, site: Site = SITE, jobs: JobsAnswer = null): readonly FootGroup[] {
+  const menu = new Map(menuOf(forgeOpen, site, jobs).map((i) => [i.place, i]));
+  return FOOT.map((g) => ({
+    title: g.title,
+    links: g.links.flatMap(([label, path]): FootLink[] => {
+      const place = MENU_PATHS.get(path);
+      const item = place ? menu.get(place) : null;
+      if (place && !item) return [];
+      return [{ label, path, ...(item ? { href: item.href, away: item.away } : linkTo(path, site)) }];
+    }),
+  }));
+}
+
+/**
+ * The pages the header's menu has no item for. The open menu shows them as a quieter second group under its own
+ * items, so a phone reaches every page the footer names without scrolling to it.
+ */
+export function menuMore(site: Site = SITE): readonly FootLink[] {
+  const inMenu = new Set(['/', ...MENU_PATHS.keys()]);
+  return FOOT.flatMap((g) => g.links)
+    .filter(([, path]) => !inMenu.has(path))
+    .map(([label, path]) => ({ label, path, ...linkTo(path, site) }));
+}
+
+/** Where the code is. */
+export const CODE_URL = 'https://github.com/plavutskyi/mask-wars';
+
+/**
+ * Whether a page has the site's footer. The hire checkout is a frame inside another site's page and the window that
+ * frame opens to prove a vault is the checkout's own; the lab is a development view. Every other page closes with it.
+ */
+export function footerOn(pathname: string): boolean {
+  return !/^\/(hire\/(embed|prove)|lab)(\/|$)/.test(pathname);
 }
 
 // ---- The home page's one line about the other network ----

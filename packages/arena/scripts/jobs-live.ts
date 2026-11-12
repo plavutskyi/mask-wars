@@ -17,7 +17,7 @@ if (!board.deployed) {
   process.exit(0);
 }
 console.log(`${board.network} ${board.contract} · block ${board.block?.height} · ${iso(board.readAt)} UTC`);
-console.log(`${board.open} open · ${near(board.waiting)} NEAR waiting for masks · ${near(board.paid)} NEAR paid to masks · ${near(board.fuelPaid)} NEAR of fuel to NEAR AI\n`);
+console.log(`${board.open} open · ${near(board.waiting)} NEAR waiting for masks · ${near(board.paid)} NEAR paid to masks · ${near(board.fuelPaid)} NEAR of fuel to the treasury\n`);
 const only = process.argv[2];
 for (const j of board.jobs) {
   if (only && j.id !== only) continue;
@@ -32,7 +32,7 @@ for (const j of board.jobs) {
     const what = !s.revealed ? `sealed ${s.hash.slice(0, 12)}…` : s.boxed ? `box for the judge ${s.hash.slice(0, 12)}…` : `“${(s.content ?? "").slice(0, 60)}”`;
     console.log(`     #${s.seq} ${s.mask.name} ${s.role} ${what}${s.counted ? " · counted" : ""}${s.fake ? " · fake" : ""}${s.copyOf !== null ? ` · copy of #${s.copyOf}` : ""}`);
   }
-  if (j.settlement) console.log(`   ${j.settlement.state}: ${j.settlement.payouts.map((p) => `${p.mask.name} ${near(p.amount)}`).join(", ") || "nobody"} · fee ${near(j.settlement.fee)} · NEAR AI ${near(j.settlement.toNearAi)} · bonds lost ${near(j.settlement.forfeit)}${j.settlement.back ? ` · back ${near(j.settlement.back)}` : ""}`);
+  if (j.settlement) console.log(`   ${j.settlement.state}: ${j.settlement.payouts.map((p) => `${p.mask.name} ${near(p.amount)}`).join(", ") || "nobody"} · fee ${near(j.settlement.fee)} · fuel to the treasury ${near(j.settlement.toTreasury)} · bonds lost ${near(j.settlement.forfeit)}${j.settlement.back ? ` · back ${near(j.settlement.back)}` : ""}`);
   if (j.delivery) console.log(`   delivered: ${j.delivery.at} in ${j.delivery.project} · sha256 ${j.delivery.sha256.slice(0, 16)}… · for ${j.delivery.key.slice(0, 15)}…`);
   if (only) for (const e of j.events) console.log(`     ${iso(e.at)} ${e.kind.padEnd(8)} ${e.who?.name ?? ""} ${e.amount ? near(e.amount) : ""} ${e.note ?? ""} ${e.tx.slice(0, 8)}`);
 }

@@ -3,7 +3,7 @@
 # waits there. Each bond is the job's own (`bond` in its terms) and its record's storage (0.004 NEAR), read from the
 # chain; what the record does not take comes back at once. The bond comes back to $Admin when the job ends, all of it
 # for a mask whose step counted, half for a seat that gave the job nothing, none for one the judge calls fake
-# (docs/spec/jobs.md, "Застава"). The workflow's masks reveal their step in its window, so their bonds come back whole
+# (contracts/jobs/README.md, the bond). The workflow's masks reveal their step in its window, so their bonds come back whole
 # as long as a run reaches the job in that window (a reveal window of 30 minutes or more: the masks take no shorter).
 # "send" once per mask. A bond of more than -Max NEAR a mask (0.5 unless given) is not locked.
 #   .\jobs-bond.ps1 -Job break-safe-0005

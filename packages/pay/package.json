@@ -7,7 +7,9 @@
     ".": "./src/index.ts",
     "./passkey": "./src/webauthn.ts",
     "./fake": "./src/fake.ts",
-    "./fixtures/oneclick.json": "./test/fixtures/oneclick.json"
+    "./fixtures/oneclick.json": "./test/fixtures/oneclick.json",
+    "./fixtures/masks.json": "./test/fixtures/masks.json",
+    "./fixtures/tokens.json": "./test/fixtures/tokens.json"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",

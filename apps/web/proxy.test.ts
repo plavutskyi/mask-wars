@@ -139,7 +139,7 @@ describe('a page whose part lives on the other network', () => {
     }
   });
 
-  it('the vault and the checkout keep their policies on both sites', async () => {
+  it('the vault, the checkout, Get NEAR and Swap keep their policies on both sites', async () => {
     for (const [network, sibling] of [
       ['mainnet', 'https://testnet.maskwars.xyz'],
       ['testnet', 'https://maskwars.xyz'],
@@ -150,6 +150,18 @@ describe('a page whose part lives on the other network', () => {
       expect(wallet.headers.get('x-frame-options')).toBe('DENY');
       expect(wallet.headers.get('content-security-policy')).toContain("frame-ancestors 'none'");
       expect(open('/hire/prove').headers.get('referrer-policy')).toBe('no-referrer');
+      // Get NEAR hands out deposit addresses and asks wallets to sign: framed by nobody, scripts only by nonce.
+      const near = open('/near');
+      expect(near.status).toBe(200);
+      expect(near.headers.get('x-frame-options')).toBe('DENY');
+      expect(near.headers.get('content-security-policy')).toContain("frame-ancestors 'none'");
+      expect(near.headers.get('content-security-policy')).toMatch(/script-src 'nonce-[^']+' 'strict-dynamic'/);
+      // Swap too: any coin into any coin, the same deposit addresses and wallet signatures.
+      const swap = open('/swap');
+      expect(swap.status).toBe(200);
+      expect(swap.headers.get('x-frame-options')).toBe('DENY');
+      expect(swap.headers.get('content-security-policy')).toContain("frame-ancestors 'none'");
+      expect(swap.headers.get('content-security-policy')).toMatch(/script-src 'nonce-[^']+' 'strict-dynamic'/);
     }
   });
 });

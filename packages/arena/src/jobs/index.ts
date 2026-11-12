@@ -2,6 +2,7 @@
 export * from "./config.ts";
 export * from "./format.ts";
 export * from "./open.ts";
+export * from "./outside.ts";
 export * from "./read.ts";
 export * from "./rules.ts";
 export * from "./box.ts";

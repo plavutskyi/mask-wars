@@ -212,6 +212,9 @@ importers:
       '@maskwars/check':
         specifier: workspace:*
         version: link:../../packages/check
+      '@maskwars/dossier':
+        specifier: workspace:*
+        version: link:../../packages/dossier
       '@maskwars/forge':
         specifier: workspace:*
         version: link:../../packages/forge
@@ -308,6 +311,21 @@ importers:
         version: 4.6.7
 
   packages/core: {}
+
+  packages/dossier:
+    dependencies:
+      '@maskwars/arena':
+        specifier: workspace:*
+        version: link:../arena
+      '@maskwars/check':
+        specifier: workspace:*
+        version: link:../check
+      '@maskwars/mind':
+        specifier: workspace:*
+        version: link:../mind
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
 
   packages/forge:
     devDependencies:

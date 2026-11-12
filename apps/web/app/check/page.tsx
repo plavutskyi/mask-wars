@@ -10,7 +10,7 @@ import s from './check.module.css';
 // NEAR through /api/check. Agents ask the same question over MCP (check_account).
 export const metadata: Metadata = pageMeta({
   title: 'Ask before you pay · MASK WARS',
-  description: 'Name a NEAR account and get allow, warn or block, read live from the chain. A safe the masks broke on the arena reads block.',
+  description: 'Name a NEAR account and get allow, warn or block, read live from the chain. A vault the masks broke on the arena reads block.',
   path: '/check',
 });
 
@@ -28,7 +28,7 @@ export default function CheckPage() {
             <br />
             you pay
           </h1>
-          <p className={s.lede}>Name a NEAR account. A safe the masks broke on the arena comes back as block.</p>
+          <p className={s.lede}>Name a NEAR account. A vault the masks broke on the arena comes back as block.</p>
         </section>
         <Check signs={canSign(TEE_DEPLOYMENT, process.env.OUTLAYER_PAYMENT_KEY)} />
       </div>

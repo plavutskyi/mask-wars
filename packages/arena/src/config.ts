@@ -69,16 +69,20 @@ export interface MaskProfile {
   readonly model: string;
 }
 
-/** The model each of the arena's own masks thinks with, as `packages/race/scripts/race.ts` hands them out. */
-const MODELS: Readonly<Record<string, string>> = {
+/**
+ * The model each of the arena's own masks thinks with, as `packages/race/scripts/race.ts` hands them out
+ * (`ARENA_MODELS` in `@maskwars/mind`; a test holds the two tables together). ORACLE thought with the base
+ * `Qwen/Qwen3.8-27B` until 11.11.2026; a race's own record names the model that really ran it (`MindCost`).
+ */
+export const MODELS: Readonly<Record<string, string>> = {
   NOVA: "deepseek-ai/DeepSeek-V4.1-Flash-1017",
   ONYX: "z-ai/glm-5.3-flash",
-  ORACLE: "Qwen/Qwen3.8-27B",
+  ORACLE: "Qwen/Qwen3.8-27B-abliterated",
 };
 
 /**
  * The arena's own masks. Accounts as in the repository variable `MASK_ACCOUNTS` (packages/network: `masks`); models as
- * `packages/race/scripts/race.ts` hands them out (ONYX, NOVA, ORACLE take the TEE models of `@maskwars/mind` in order).
+ * `packages/race/scripts/race.ts` hands them out (`MODELS`).
  */
 export const MASKS: readonly MaskProfile[] = Object.entries(NET.masks).map(([name, account]) => ({
   slug: name.toLowerCase(),

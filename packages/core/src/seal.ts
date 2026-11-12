@@ -1,5 +1,5 @@
 /**
- * Seal: hashes that commit to a hidden choice (spec «Печатка»). Fields are UTF-8 strings joined by one `0x00` byte;
+ * Seal: hashes that commit to a hidden choice (packages/core/README.md, "Seal"). Fields are UTF-8 strings joined by one `0x00` byte;
  * `salt32` is 32 random bytes written as 64 lower-case hex characters and hashed as that text.
  *
  *   seal     = sha256("maskwars.seal.v1"     00 fight_id 00 mask_id 00 primary 00 backup 00 call 00 salt32)

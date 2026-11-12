@@ -7,7 +7,7 @@ import { JobScreen } from '../JobScreen';
 import { getJobs, readJobs } from '../reader';
 import { KIND_WORD, jobTitle } from '../show';
 
-// One job and its whole course, read from the chain.
+// One job and its whole course, read from the chain. Where the jobs contract is not on chain no job is found.
 export const dynamic = 'force-dynamic';
 
 type Props = { params: Promise<{ id: string }> };
@@ -30,6 +30,7 @@ export default async function JobRoute({ params }: Props) {
   } catch {
     return <Unreachable />;
   }
+  if (!board.deployed) notFound();
   const i = board.jobs.findIndex((j) => j.id === id);
   if (i < 0) notFound();
   return (

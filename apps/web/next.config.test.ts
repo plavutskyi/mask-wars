@@ -4,7 +4,7 @@ import { siblingOf } from './lib/site';
 // What the build is held to before anything is compiled: the network, and the other site's address.
 const build = async (env: Record<string, string | undefined>) => {
   vi.resetModules();
-  for (const name of ['MASKWARS_NETWORK', 'MASKWARS_SIBLING_URL', 'APP_ORIGIN']) vi.stubEnv(name, env[name] ?? '');
+  for (const name of ['MASKWARS_NETWORK', 'MASKWARS_SIBLING_URL', 'APP_ORIGIN', 'NEXT_PUBLIC_PAY_TEST', 'NEXT_PUBLIC_JOBS_TEST', 'VERCEL_ENV']) vi.stubEnv(name, env[name] ?? '');
   return (await import('./next.config')).default;
 };
 
@@ -65,5 +65,44 @@ describe('MASKWARS_SIBLING_URL at build', () => {
     // The testnet site that forgot APP_ORIGIN would ship as maskwars.xyz: canonical links and the vault's API with it.
     await expect(build({ MASKWARS_NETWORK: 'testnet', MASKWARS_SIBLING_URL: 'https://maskwars.xyz' })).rejects.toThrow('set APP_ORIGIN');
     await expect(build({ MASKWARS_NETWORK: 'mainnet', MASKWARS_SIBLING_URL: 'https://testnet.maskwars.xyz', APP_ORIGIN: 'https://testnet.maskwars.xyz/' })).rejects.toThrow('set APP_ORIGIN');
+  });
+});
+
+describe('NEXT_PUBLIC_PAY_TEST at build', () => {
+  it('builds a test wallet anywhere but production, and stops a production build that carries it', async () => {
+    await expect(build({ MASKWARS_NETWORK: 'mainnet', NEXT_PUBLIC_PAY_TEST: '1' })).resolves.toBeTruthy();
+    await expect(build({ MASKWARS_NETWORK: 'mainnet', NEXT_PUBLIC_PAY_TEST: '1', VERCEL_ENV: 'preview' })).resolves.toBeTruthy();
+    await expect(build({ MASKWARS_NETWORK: 'mainnet', VERCEL_ENV: 'production' })).resolves.toBeTruthy();
+    for (const value of ['1', '0', 'true']) {
+      await expect(build({ MASKWARS_NETWORK: 'mainnet', NEXT_PUBLIC_PAY_TEST: value, VERCEL_ENV: 'production' }), value).rejects.toThrow('NEXT_PUBLIC_PAY_TEST');
+    }
+  });
+});
+
+describe('NEXT_PUBLIC_JOBS_TEST at build', () => {
+  it('builds the stand-in signer of "Post a job" anywhere but production, and stops a production build that carries it', async () => {
+    await expect(build({ MASKWARS_NETWORK: 'mainnet', NEXT_PUBLIC_JOBS_TEST: '1' })).resolves.toBeTruthy();
+    await expect(build({ MASKWARS_NETWORK: 'mainnet', NEXT_PUBLIC_JOBS_TEST: '1', VERCEL_ENV: 'preview' })).resolves.toBeTruthy();
+    for (const value of ['1', '0', 'true']) {
+      await expect(build({ MASKWARS_NETWORK: 'mainnet', NEXT_PUBLIC_JOBS_TEST: value, VERCEL_ENV: 'production' }), value).rejects.toThrow('NEXT_PUBLIC_JOBS_TEST');
+    }
+  });
+});
+
+describe('headers on every page', () => {
+  it('no page may be framed by another site but the hire checkout, and none lets a browser guess a type', async () => {
+    const rules = await (await build({ MASKWARS_NETWORK: 'mainnet' })).headers!();
+    const of = (source: string) => Object.fromEntries(rules.find((r) => r.source === source)!.headers.map((h) => [h.key, h.value]));
+    expect(of('/:path*')).toEqual({
+      'x-content-type-options': 'nosniff',
+      'referrer-policy': 'strict-origin-when-cross-origin',
+      'permissions-policy': 'camera=(), microphone=(), geolocation=()',
+    });
+    const unframed = rules.find((r) => r.headers.some((h) => h.key === 'x-frame-options'))!;
+    expect(Object.fromEntries(unframed.headers.map((h) => [h.key, h.value]))).toEqual({ 'x-frame-options': 'DENY', 'content-security-policy': "frame-ancestors 'none'" });
+    // The rule's own pattern: everything but /hire/embed, which <mask-wars-hire> opens in a frame on a host's page.
+    const pattern = new RegExp(`^${unframed.source}$`);
+    for (const path of ['/', '/forge', '/swap', '/hire', '/hire/prove', '/api/forge']) expect(pattern.test(path), path).toBe(true);
+    for (const path of ['/hire/embed', '/hire/embed?job=x']) expect(pattern.test(path.split('?')[0]!), path).toBe(false);
   });
 });

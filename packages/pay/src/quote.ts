@@ -134,8 +134,10 @@ export function previewView(v: QuoteView): QuoteView {
 
 /** What the person agreed to, for reading a quote back before it is used. */
 export interface QuoteTerms {
-  /** The vault: every refund goes back to it. */
+  /** The vault: every refund goes back to it. A swap names its own refund address here. */
   readonly account: string;
+  /** Where the refund goes: NEAR Intents (a vault, and Get NEAR), or the origin network (a swap paid from a wallet). */
+  readonly refundType?: DepositType;
   readonly from: string;
   readonly to: string;
   /** Where the money arrives: the vault itself for a top-up, the typed address for a cash-out. */
@@ -164,7 +166,7 @@ export function checkQuote(v: QuoteView, e: QuoteTerms): QuoteCheck {
   if (v.destinationAsset !== e.to) return no(`coin out is ${v.destinationAsset}`);
   if (v.recipient !== e.recipient.trim()) return no(`receiver is ${String(v.recipient)}`);
   if (v.recipientType !== e.recipientType) return no(`receiver type is ${v.recipientType}`);
-  if (v.refundTo !== e.account || v.refundType !== "INTENTS") return no(`refund goes to ${String(v.refundTo)}`);
+  if (v.refundTo !== e.account || v.refundType !== (e.refundType ?? "INTENTS")) return no(`refund goes to ${String(v.refundTo)}`);
   if (e.amountIn !== undefined && v.amountIn !== e.amountIn) return no(`amount in is ${v.amountIn}`);
   const units = (t: string) => (/^\d{1,40}$/.test(t) ? BigInt(t) : null);
   const out = units(v.amountOut);

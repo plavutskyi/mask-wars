@@ -1,11 +1,30 @@
 # @maskwars/mind
 
-How the masks think and talk.
+How the masks think and talk: the NEAR AI Cloud client for Private TEE models, the models and their prices, the
+attestation check, and the first design's mind and voice for market duels.
+
+## On mainnet
+
+The live arena uses the client, the models and the attestation check. In `packages/race` the arena's own masks think
+through `NearAiProvider`. The race attests each model with a fresh nonce when it begins (`verifyModel`), checks each
+answer's TEE signature against the attested signers, and prices the answers from NEAR AI's bill (`nearAiCosts`) or,
+when the bill has no price yet, from their tokens (`costUsd`). The site's `/verified` runs the same attestation code.
+
+| Mask | Model (`ARENA_MODELS`, `src/models.ts`) |
+| --- | --- |
+| ONYX | `z-ai/glm-5.3-flash` |
+| NOVA | `deepseek-ai/DeepSeek-V4.1-Flash-1017` |
+| ORACLE | `Qwen/Qwen3.8-27B-abliterated`, NEAR AI's red-teaming build of Qwen 3.8 27B, since 11 Nov 2026 |
+
+A person's mask picks from `TEE_MODELS`: the first two above and `Qwen/Qwen3.8-27B`. `ATTESTED_MODELS` holds all four.
+
+The `Mind` and `Voice` classes below belong to the first design, market duels between two masks (`packages/core`).
+They do not run in the arena today.
 
 - **Mind.** One sealed pick before the bell (`primary`, `backup`, `call`), then one `HOLD` or `ROTATE` per minute
-  until the rotate is spent. Open models run in Private TEE on NEAR AI Cloud. The model only proposes a move. The code
-  checks it against the basket, the mask's manner and the fight rules. Anything late, malformed or against the rules is
-  replaced by the mask's own default move, so a bad answer never breaks a fight.
+  until the rotate is spent. The model only proposes a move. The code checks it against the basket, the mask's manner
+  and the fight rules. Anything late, malformed or against the rules is replaced by the mask's own default move, so a
+  bad answer never breaks a fight.
 - **Voice.** Six masks, 150+ hand-written lines each, tagged by fight event. A line goes on screen the moment the event
   happens. A model may tailor it to the fight afterwards. If that is late or off-voice, the written line stays.
 
@@ -37,17 +56,18 @@ line.polished.then(swapIfStill); // maybe, later
 | --- | --- |
 | `src/decision.ts` | zod schemas for both proposals, rule checks, default moves per manner |
 | `src/near-ai.ts` | NEAR AI Cloud client: Private TEE allow list, canonical IDs, `x-no-aliasing: true`, no streaming, one deadline, signature fetch and check |
-| `src/provider.ts` | `Provider` interface. Claude and Codex plug in through it with their own clients. `FakeProvider` for tests and keyless demos |
+| `src/models.ts` | The models a mask may think with, their prices, `ARENA_MODELS`, `costUsd` |
+| `src/provider.ts` | The `Provider` interface any model client implements; `FakeProvider` for tests and keyless demos |
 | `src/prompt.ts` | Our words in the system message. Market, fight state, rival history and viewer text go in one JSON object as data |
 | `src/clean.ts` | Viewer text cleaning: invisible characters, bidi, tag characters, HTML and markdown payloads, links, handles, fake chat turns |
 | `src/journal.ts` | Per decision: model, sha256 of the exact request and response bytes, TEE signature, whether it verified, cost, latency, model or default |
 | `src/lines.ts`, `src/voice.ts` | Line book, slot filling, no repeats within a mask's last 20 fights, tailoring with checks |
 | `src/attestation.ts`, `scripts/verify-attestation.ts` | Attestation check: Intel TDX quote, nonce, signer, config, boot log, NVIDIA GPUs |
-| `voices/<mask>.md`, `voices/<mask>.json` | Voice bible and lines per mask |
+| `voices/<mask>.json` | The lines of each mask; its voice bible, `voices/<mask>.md`, is kept private |
 
 ## Cost
 
-No model call per tick. At most five calls per mask per fight: one seal and up to four minute moves, and none once the
+In a market duel there is no model call per tick. At most five calls per mask per fight: one seal and up to four minute moves, and none once the
 rotate is spent. At about 2 000 tokens in and 300 out, that is ≈$0.0003 per decision on `z-ai/glm-5.3-flash`. The market
 digest is built once per snapshot and is byte-identical across masks, so the shared part of the prompt can come from the
 provider's cache.
@@ -55,7 +75,7 @@ provider's cache.
 ## Attestation
 
 ```sh
-pnpm --filter @maskwars/mind verify:attestation                  # all three TEE models
+pnpm --filter @maskwars/mind verify:attestation                  # every model in ATTESTED_MODELS, all four
 pnpm --filter @maskwars/mind verify:attestation z-ai/glm-5.3-flash
 ```
 
@@ -90,13 +110,11 @@ Fail-closed: a check passes only when its evidence was obtained and holds. Evide
 report, Intel collateral and NVIDIA's answer under the recorded nonce and time. The tests replay it without network
 or key, then tamper with it: another nonce, one changed quote byte, an edited `app_compose` or boot event, a swapped
 signer, missing evidence, outages.
-After a new recording, replace the two NVIDIA tokens allowed in `scripts/public-export/gitleaks.toml` with the new
-ones: they are public attestation verdicts, and the public-copy scan lists exact values only.
 
 Each answer's signature is checked when it arrives: the signed text must be `model:sha256(request):sha256(response)`
 for our exact bytes, and the EIP-191 signer must be one of the model TEE addresses from a fresh attestation report. The
-journal records whether that check passed. Claude and Codex do not run in Private TEE, and their journal entries carry
-no TEE signature.
+journal records whether that check passed. An answer from a provider outside a Private TEE carries no TEE signature
+and is recorded as unverified.
 
 ## Checks
 

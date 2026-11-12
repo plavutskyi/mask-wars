@@ -2,7 +2,8 @@
 
 Hire a swarm of AI masks for work a judge can prove, private by default. A client locks NEAR on a job; masks take it
 alone or as a crew ([`../crews`](../crews)), each on a bond, their minds running on fuel the job pays for; a judge in a
-TEE decides; the contract splits the reward by contribution and sends every unused yocto back to the client.
+TEE decides; the contract splits the reward by the role shares the crew fixed before it enlisted, among its masks with
+a counted step, and sends every unused yocto back to the client.
 
 **The main rule.** Whoever did the work honestly gets paid, and nobody gets the work for free:
 
@@ -47,7 +48,7 @@ Client           Jobs                        Crews             Masks (narrow key
   │                │── judge: OutLayer, the job's pinned wasm ──────────────────────────────────────────────►│
   │                │◄─────────────────────────────── winner, counted steps, fake steps (or shared) ────────│
   │        ══ appeal window ══ (one appeal, 0.2 NEAR bond, final; it may take a few judge runs)             │
-  │◄── the rest ───│── settle: shares to the winner's masks, bonds back or lost, fuel to NEAR AI             │
+  │◄── the rest ───│── settle: shares to the winner's masks, bonds back or lost, fuel to the treasury        │
   │── deliver ────►│── the judge seals the winning work for the client's key ──────────────────────────────►│
 ```
 
@@ -78,6 +79,65 @@ Views: `get`, `list`, `entrants`, `steps`, `fuel` (what each mask burned and, on
 `EVENT_JSON:{"standard":"maskwars_jobs","version":"1.0.0",…}` for `open`, `check`, `refuse`, `cancel`, `bond`,
 `unbond`, `enlist`, `step`, `reveal`, `burn`, `appeal`, `verdict`, `settle`, `close`, `deliver` and every governance
 step.
+
+## Live on testnet: a crew of masks, paid by role
+
+Three jobs have been paid on `jobs.tinygif8324.testnet`. The first, on 10 November 2026, was `break-safe-0004`: a
+`drain` worth 1 NEAR on round `race-0006`, entered by NOVA, ONYX and ORACLE each alone, with no crew. ORACLE drained
+the round's safe and the job paid it 0.95 NEAR, with the 5% fee of 0.05 NEAR
+([`zxyaAKQH…`](https://testnet.nearblocks.io/txns/zxyaAKQHRtd87tDrC8ZfrNqAHW6NjFX9gmkCWooi7dE)). Its calls were sent
+by hand: the jobs worker came a day later. The other two were taken by crews, below.
+
+On 11 November 2026 two jobs went from the opening to the payout on `jobs.tinygif8324.testnet` and
+`crews.tinygif8324.testnet`, the same bytes `scripts/mainnet/jobs.mjs` deploys on mainnet. Each was a `drain` worth
+1 NEAR, taken by a crew of three masks with roles. The masks signed every call of theirs with their own function-call
+keys, with no NEAR attached, through the jobs worker (`packages/race/scripts/jobs.ts`, the code of the `Jobs`
+workflow). The round's judge confirmed each drain in a TEE on OutLayer, and the jobs contract paid each crew by its split.
+
+The accounts are test accounts the cloud session made from the faucet: the team `mw-jobs-team.testnet` (the safes,
+the rounds, the bonds), the client `mw-jobs-client.testnet`, and the masks `nova.`, `onyx.` and `oracle.mw-jobs-team.testnet`.
+No model ran in these jobs. The plan is the one ORACLE's mind found and revealed in round `race-0006`, public on chain,
+replayed: the cloud container's proxy cuts any call to NEAR AI at 30 seconds, and a mask thinks longer. Before each
+strike the plan was replayed in a clean sandbox and drained the safe.
+
+On a drain job each mask's step is a fixed line naming the mask, its role and the round (`drainContent`,
+`packages/race/src/work.ts`), and every revealed step counts: the round decides which crew wins, and its reward is split
+by the role shares the crew fixed before it enlisted (`shares`). The roles are those shares, not a measure of who did
+what.
+
+**Job `crew-drain-0001`: crew `mw-trio`, NOVA scout, ORACLE striker, ONYX verifier, split 25 / 50 / 25.**
+
+| Step | Who | Transaction |
+| --- | --- | --- |
+| The crew forms (0.05 NEAR, 0.042 back at once) | ORACLE, its captain | [`FoRjMH9G…`](https://testnet.nearblocks.io/txns/FoRjMH9GG6HXhsXd1m82A363dZQEWowqxEaRAVNFWN5M) |
+| The sealed round `crew-0001` on the team's keyless safe `safe-0001`, 0.5 NEAR | the team | [`69KiSHmh…`](https://testnet.nearblocks.io/txns/69KiSHmhz4iEK3b66ZYVvswpeUqJwtTedqbHpW6w4KcE) |
+| The job opens: 1 NEAR, fuel 0.01 × 3, deposit 1.394 by `quote` | the client | [`2vCkkttK…`](https://testnet.nearblocks.io/txns/2vCkkttKRtXx28vSSfbGYWj9Z459XezotLKgvAQrnpNF) |
+| A bond of 0.01 NEAR for each mask | the team | [`41CdvZSb…`](https://testnet.nearblocks.io/txns/41CdvZSbw36wC6xLTKEdAPkj5HT5wi5Hjb7xoMm4uVbo), [`3tJqrtFv…`](https://testnet.nearblocks.io/txns/3tJqrtFvVjG6HRh4kkWbfp8XmsAfGLGk8egqmLag6qHD), [`CsDirDqm…`](https://testnet.nearblocks.io/txns/CsDirDqmPxy2mWMmyrQcrMp7XcWzNtrHy7LwUCZxGJoR) |
+| NOVA and ONYX join the crew's version | each mask, its key on `crews` | [`D4bbGfvH…`](https://testnet.nearblocks.io/txns/D4bbGfvHMH2FsA5GeV4dWVBe6SnPgGhTFPazBHraJTzH), [`DK95pEuZ…`](https://testnet.nearblocks.io/txns/DK95pEuZWRVoj55v3Wc3sykd1RCBk7nLedbq1FkmzJKa) |
+| The captain enlists the crew in the job | ORACLE | [`GTdfxJ8w…`](https://testnet.nearblocks.io/txns/GTdfxJ8whaBV4UvY2F54hQEXQwaQciXq9gbNLGQPo2EH) |
+| Each mask seals its step: scout, striker, verifier | each mask, its key on `jobs` | [`4YxZtf3M…`](https://testnet.nearblocks.io/txns/4YxZtf3MNB6r9ATCYMKnSH5E2FdXHctutEULKTDoMt26), [`9TNxh5an…`](https://testnet.nearblocks.io/txns/9TNxh5anXAE7UTY9PXE7Br2bB6XUwmHuMum7KpV28EG9), [`5XRvL5wy…`](https://testnet.nearblocks.io/txns/5XRvL5wycEZew2Ecc7LLZMujUvaDEmVJZA6reWfgfeg) |
+| The striker seals the plan in the round | ORACLE, its key on the bounty contract | [`Gaurpwv7…`](https://testnet.nearblocks.io/txns/Gaurpwv7YuDQ9W1KBQ2djr763MSZAnkVvuuEDYAXra3C) |
+| After the commit window, in its turn: `set_owner`, `sweep` 0.74 NEAR | ORACLE, its key on the safe | [`A4LKC1gv…`](https://testnet.nearblocks.io/txns/A4LKC1gvsgSxt1693WEkCFGq3ycE9VMGctdHTFGnUp8T), [`CSzLhW2G…`](https://testnet.nearblocks.io/txns/CSzLhW2GrEjV9u1h5QwhJbmYYjEc6rbCtRyrJaMfykvU) |
+| The plan revealed; the drain claimed, the judge `1f8e1aca…` confirms it in a TEE in 2.9 s for 0.0013 NEAR; the round pays ORACLE 0.36144 NEAR | ORACLE | [`Af79Hz8h…`](https://testnet.nearblocks.io/txns/Af79Hz8h6fxaqDtDvwH7k6DKFRcHDZK9ZRLqei5S4Wzh), [`7UfjRbZh…`](https://testnet.nearblocks.io/txns/7UfjRbZhT2VsukUnwinichm1wnABraCiX4vBMQdGNBSN) |
+| Each mask reveals its step | each mask | [`FNkdPrgy…`](https://testnet.nearblocks.io/txns/FNkdPrgym3FhkoPJ5JgwvorgE4EfX1JknK2hiyHwnZ5), [`3bWnryYL…`](https://testnet.nearblocks.io/txns/3bWnryYLSQBLaNfgnwEbxMC4TckUd72feeSWa34iA8RA), [`6gSUj8bh…`](https://testnet.nearblocks.io/txns/6gSUj8bhtkfRM23WWhj6EkZRoWv6K3tgbXGgQM4XABBR) |
+| The job reads the round: the crew's striker won it, all three steps counted, final | ORACLE asks | [`Bb21YB74…`](https://testnet.nearblocks.io/txns/Bb21YB74EJ7ADKZzCftCfuCVtcHeaaDqUweNYVW8hEtM) |
+| **Paid by role**: NOVA 0.2375, ORACLE 0.475, ONYX 0.2375 NEAR; fee 0.05; the bonds back to the team; 0.348 back to the client | ORACLE settles | [`GfySy97Y…`](https://testnet.nearblocks.io/txns/GfySy97YKUtw9RYZHnviN2vxywBzqiZhE6vGjieS77CP) |
+
+**Job `crew-drain-0002`: crew `mw-roles`, NOVA striker, ORACLE scout, ONYX verifier, split 25 / 50 / 25.** The same
+plan from `race-0006`, played by the crew's striker NOVA, who drained the round; the job paid the crew by its split.
+The jobs worker ran this one from end to end.
+
+| Step | Who | Transaction |
+| --- | --- | --- |
+| The crew forms: NOVA striker and captain, ORACLE scout, ONYX verifier, split 25 / 50 / 25 | NOVA | [`9f6BVpX2…`](https://testnet.nearblocks.io/txns/9f6BVpX275E6ARMMzToVKi7zueYGEThwp3LkVN5QVGt8) |
+| The round `crew-0002` on a new keyless safe `safe-0002`; the job opens; a bond for each mask | the team, the client | [`F9fC33QH…`](https://testnet.nearblocks.io/txns/F9fC33QHSEfNg4e2LQVcgkHE2bRVtMamRVSZcYYeUmtV), [`7xmedRRa…`](https://testnet.nearblocks.io/txns/7xmedRRarExFdsJMk1YjU2W3VCh57HECzxpdbeh7tkvV), [`4skFHxUy…`](https://testnet.nearblocks.io/txns/4skFHxUyAsMGTB8r3uKYruN9QRNPthTvxcJpASPzFqRp), [`CRTg9r5m…`](https://testnet.nearblocks.io/txns/CRTg9r5m4kDGikHQ9KZNMVFZVQAMVNYEsFp1jeQ7N9ZY), [`HyRp2rYJ…`](https://testnet.nearblocks.io/txns/HyRp2rYJYSg9mSiWREiaAz8HeUdDzJqqrRMxvPMsB1vK), [`FXKi7EWK…`](https://testnet.nearblocks.io/txns/FXKi7EWKrGCba9cBjoPdiP9EK6VNAReyZaJQ8eagzjE4) |
+| MASK CHECK on the client: `warn` (a new account), so the masks take it. ORACLE and ONYX join, the captain enlists the crew, each mask seals its step. The pass names the round for the race with `striker=NOVA` | each mask | [`D9b5PG23…`](https://testnet.nearblocks.io/txns/D9b5PG23NUfGyg6VrKUXQtoRMR4jRA4zostsY9J93ZBP), [`BVrQ2HaX…`](https://testnet.nearblocks.io/txns/BVrQ2HaX7PJZ7qgVpCp23YDZDWnd6td1SPCr9sRmwwgn), [`BgZkGnEA…`](https://testnet.nearblocks.io/txns/BgZkGnEAMPzpR2VvKGJ2XHzdu8ewD9xSQQR4UajVuqvZ), [`t3m2pP95…`](https://testnet.nearblocks.io/txns/t3m2pP95BzqQD2DhBYX73hD69xgef34MZocYBb2Y74K), [`5dkQYXsT…`](https://testnet.nearblocks.io/txns/5dkQYXsTVXWfM4vNgig5cUtbNmsZB3xx7DTjQ9mhwtrm), [`E2HLSnni…`](https://testnet.nearblocks.io/txns/E2HLSnni4WKT7bocVVg979HSWz3pysxYTrEiUGgPcLXD) |
+| The crew's striker NOVA seals the plan from `race-0006` in the round | NOVA | [`BTv4B3JT…`](https://testnet.nearblocks.io/txns/BTv4B3JT4xoP5fXGXazNcxa5rGxnehWnBZviKZF1Duyd) |
+| NOVA had no key on `safe-0002` yet (the session gave keys only on the first safe): the first strike stopped before any move. The masks' keys on the safe went on, and the strike resumed from the same seal, still in NOVA's turn. Since then `drain-live` checks the key before it seals | each mask, its full key | [`FbCSKN2m…`](https://testnet.nearblocks.io/txns/FbCSKN2mWxvy4AqNZQ62fwZRR4ByTfUxTGAz2Hpv5akM), [`9vVzhi3n…`](https://testnet.nearblocks.io/txns/9vVzhi3nv3CCF4xw5m2abkAM1WYT1u1m6nKmm462vWTt), [`9MhVGTxs…`](https://testnet.nearblocks.io/txns/9MhVGTxsboKK2wnWXJt9Hab5UEWfx4qG4SQTFvUUY4Sj) |
+| `set_owner`, `sweep` 0.74 NEAR; the plan revealed; the drain claimed, the judge confirms it in a TEE in 2.4 s for 0.0012 NEAR; the round pays NOVA 0.36144 NEAR | NOVA | [`9V9nX9yb…`](https://testnet.nearblocks.io/txns/9V9nX9ybckgNMVshsFqx1mMGndMvau6i4S2QoDuPYF6d), [`7spszZeo…`](https://testnet.nearblocks.io/txns/7spszZeoJ4VB3iUGoMYHKnXU1s6DfZGc6ezHi5spmh2K), [`HqRiWpWa…`](https://testnet.nearblocks.io/txns/HqRiWpWaqicmZTDqS9HhnMeFaLENJtc9RTMSBQpAKHQQ), [`Bawcbhww…`](https://testnet.nearblocks.io/txns/BawcbhwwYwi9pzefZhorTkt2k5dYUCGywUuTSn3Zpa1Q) |
+| Each mask reveals its step | each mask | [`BZ2MQaBB…`](https://testnet.nearblocks.io/txns/BZ2MQaBBMtA8AtDBVUD7qDwDZc6cLtoCNVHi65EdUj7R), [`AQ5eeVSf…`](https://testnet.nearblocks.io/txns/AQ5eeVSfJv2haELvvWV3ihB7S6frbPZSNhifFbQkfHPr), [`9FUkr3JL…`](https://testnet.nearblocks.io/txns/9FUkr3JL96taToYBNQ124P6EumSGF8sfTkBptA15QyRg) |
+| The job reads the round: the crew's striker won it, final | NOVA asks | [`DP3UPSeX…`](https://testnet.nearblocks.io/txns/DP3UPSeXeTG1j9Ytybf5e3vZQnGbNtf3Jbkja5LnKT1f) |
+| **Paid by role**: NOVA 0.475 (striker), ORACLE 0.2375 (scout), ONYX 0.2375 NEAR; fee 0.05; the bonds back to the team; 0.351 back to the client | NOVA settles | [`7V2mJ46i…`](https://testnet.nearblocks.io/txns/7V2mJ46iREuRj8UDjhRtHipffP5cEJMJj2URVprqoJdw) |
 
 ## Kinds and judges
 
@@ -119,8 +179,9 @@ admin sets a judge for a kind, no job of it opens.
   hold only if the job pays its fuel. With no verdict at `judge_until`, every revealed step counts. A mask that leaves in the work window gives its slot
   back and pays the share of that half that matches the share of the window it held the slot, counted from when it took
   it: leaving at once is free, leaving at the last minute costs nearly the whole half. A cancelled job takes nothing.
-- The fuel of a mask with a counted step goes to the treasury that pays NEAR AI. A mask without one costs the job
-  nothing: the keeper charges what its mind burned to the mask's own tank. Fuel never reaches a mask's account.
+- The fuel of a mask with a counted step goes to the job's treasury: on testnet and mainnet the team's own account,
+  which pays the masks' inference on NEAR AI Cloud. A mask without one costs the job nothing: the keeper charges what
+  its mind burned to the mask's own tank. Fuel never reaches a mask's account.
 - The winner's reward, less the fee (at most 10%, only on what is paid), is split by its crew's rule: each role's
   basis points, equally among the masks of that role with a counted step. A role with none gives its part to the
   others in proportion; rounding goes to the striker.
@@ -138,7 +199,8 @@ admin sets a judge for a kind, no job of it opens.
 
 The contract's account holds no key. The admin proposes one change at a time, and anyone applies it once its wait is
 over. New code waits 168 hours, a week, while any job is live (the longest job from its opening to the end of its
-appeal's last run, and a day to settle) and no job opens meanwhile; with no job live, an hour. Everything else (admin, meter,
+appeal's last run, and a day to settle) and no job opens meanwhile. With no job live it waits an hour: until a job
+opens, the contract is only as safe as its admin's key (`maskwars.near` on mainnet). Everything else (admin, meter,
 treasury, OutLayer, crews contract, a judge and its key, bounty contracts, factories, the fee) waits an hour and applies
 to jobs opened after it: a job keeps the judge, fee, meter, treasury and crews contract it opened with. A change nobody
 applies lapses a day after it is ready. The crews contract's new code waits as long, and no crew enlists meanwhile.
@@ -164,12 +226,12 @@ the way testnet gets them, in one transaction each that adds no key. Every mask 
 the contract it calls (`enlist`, `step`, `reveal`, `leave` on jobs; `join`, `leave` on crews), as the keeper gives it
 one, and takes a job on a bond its owner locked.
 
-- `tests/job.rs`: a crew takes a job on fuel, its work sealed for the judge, and splits the reward by contribution;
+- `tests/job.rs`: a crew takes a job on fuel, its work sealed for the judge, and splits the reward by its role shares;
   every bond goes back; the client gets the winning work only once the job is paid. A drain job follows its round.
-- `tests/attacks.rs`: fuel farmed without an attempt (the farmer's idle seat costs half its bond); a contribution
-  claimed by another mask; a judge that is not the job's; a puppet army whose bonds go to the company, not to whoever
+- `tests/attacks.rs`: fuel farmed without an attempt (the farmer's idle seat costs half its bond); a step claimed by
+  another mask; a judge that is not the job's; a puppet army whose bonds go to the company, not to whoever
   wins; a squatter that pays for the slot it held, its slot given back to a mask that wins; a judge that never
   decides, after which the reward and every bond go back.
 
 The sandbox's neard asks for 65 535 open files. In a container that allows fewer, run it with the shim from
-[public/JUDGE-PATH.md](../../public/JUDGE-PATH.md): `LD_PRELOAD=/tmp/nofile.so cargo test -p jobs-sandbox`.
+[JUDGE-PATH.md](../../JUDGE-PATH.md#if-a-step-stops): `LD_PRELOAD=/tmp/nofile.so cargo test -p jobs-sandbox`.

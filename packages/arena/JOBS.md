@@ -23,12 +23,12 @@ jobs contract is not deployed on the network the list is empty and says `deploye
 
 ```text
 sandbox jobs.test.near · block 32013 · 2026-11-09 20:31 UTC
-2 open · 17 NEAR waiting for masks · 7.6 NEAR paid to masks · 0.12 NEAR of fuel to NEAR AI
+2 open · 17 NEAR waiting for masks · 7.6 NEAR paid to masks · 0.12 NEAR of fuel to the treasury
 
 agent-0011   AI review        paid            3 NEAR · fuel 0.05 × 4 · bond 0.1 · 1/4 masks
    ★ solo v0: outsider.test.near striker burned 0.03 paid 2.85
      #0 outsider.test.near striker box for the judge 789b7579edd2… · counted
-   paid: outsider.test.near 2.85 · fee 0.15 · NEAR AI 0.03 · bonds lost 0 · back 0.545
+   paid: outsider.test.near 2.85 · fee 0.15 · fuel to the treasury 0.03 · bonds lost 0 · back 0.545
    delivered: delivery/jobs.test.near/agent-0011 in maskwars.testnet/review · sha256 700510e57643ab4b… · for x25519:80794707…
 ```
 

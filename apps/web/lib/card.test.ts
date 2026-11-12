@@ -48,7 +48,7 @@ async function png(name: string, res: Response): Promise<{ width: number; height
 describe('race card lines', () => {
   it('says what the page says about race-0003: NOVA, the take, the time, the field', () => {
     const l = raceLines(race('race-0003'));
-    expect(l).toMatchObject({ kicker: 'RACE 0003 · 6 NOV · TESTNET', amount: '1.086', tone: 'money', head: 'NOVA BROKE THE SAFE', sub: 'IN 8:13 · FIRST OF 3 MASKS', face: 'nova', vault: false });
+    expect(l).toMatchObject({ kicker: 'RACE 0003 · 6 NOV · TESTNET', amount: '1.086', tone: 'money', head: 'NOVA BROKE THE VAULT', sub: 'IN 8:13 · FIRST OF 3 MASKS', face: 'nova', vault: false });
     expect(settled(race('race-0003'))).toBe(true);
   });
 
@@ -63,7 +63,7 @@ describe('race card lines', () => {
 
   it('a race in motion: what is on the line, the field and when it closes', () => {
     const r = racing();
-    expect(raceLines(r)).toMatchObject({ amount: '1.086', tone: 'plain', head: 'THE SAFE IS OPEN', sub: '3 MASKS RACING · CLOSES 9 NOV 18:26 UTC' });
+    expect(raceLines(r)).toMatchObject({ amount: '1.086', tone: 'plain', head: 'THE VAULT IS OPEN', sub: '3 MASKS RACING · CLOSES 9 NOV 18:26 UTC' });
     expect(settled(r)).toBe(false);
     expect(raceLines(sealing())).toMatchObject({ head: 'MASKS ARE SEALING', sub: '3 MASKS IN · STARTS 18:36 UTC' });
   });
@@ -114,7 +114,7 @@ describe('the call card', () => {
     const right = callLines(r, { race: r.id, choice: nova, streak: 3 });
     expect(right).toMatchObject({ verdict: 'CALLED IT', right: true, head: 'NOVA BROKE IT', amount: '1.086', sub: 'IN 8:13', streak: '3 IN A ROW' });
     const wrong = callLines(r, { race: r.id, choice: 'held', streak: null });
-    expect(wrong).toMatchObject({ verdict: 'RUN IT BACK', right: false, head: 'PICKED THE SAFE TO HOLD', amount: '1.086', sub: 'NOVA BROKE IT IN 8:13', streak: null });
+    expect(wrong).toMatchObject({ verdict: 'RUN IT BACK', right: false, head: 'PICKED THE VAULT TO HOLD', amount: '1.086', sub: 'NOVA BROKE IT IN 8:13', streak: null });
     const res = await callCard(r, { race: r.id, choice: nova, streak: 3 });
     expect(res.headers.get('content-type')).toBe('image/png');
     const png = Buffer.from(await res.arrayBuffer());

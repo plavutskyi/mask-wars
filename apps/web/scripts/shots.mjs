@@ -25,7 +25,8 @@ if (!BASE) {
     cwd: app,
     stdio: 'ignore',
     detached: true,
-    env: { ...process.env, ARENA_FIXTURE: '../../packages/arena/test/fixtures/testnet.json' },
+    // The price of the masks' thinking in race-0003, from NEAR AI's bill (lib/minds.ts): the race page's × and Mind.
+    env: { ...process.env, ARENA_FIXTURE: '../../packages/arena/test/fixtures/testnet.json', MINDS_FIXTURE: '../../packages/arena/test/fixtures/minds-testnet.json' },
   });
   for (let i = 0; i < 60; i++) {
     try {

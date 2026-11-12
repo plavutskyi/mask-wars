@@ -35,6 +35,10 @@ use near_sdk::borsh::{BorshDeserialize, BorshSerialize};
 use near_sdk::{env, require, AccountId, Allowance, CryptoHash, Gas, NearToken, Promise, PublicKey};
 use std::num::NonZeroU128;
 
+/// What `contract_source_metadata` returns (NEP-330), as build.rs wrote it for this build: the version, the public
+/// repository and, when the build ran in cargo-near's pinned image, how to build these bytes again.
+pub const SOURCE_METADATA: &str = include_str!(concat!(env!("OUT_DIR"), "/nep330.json"));
+
 /// What `withdraw` leaves on the account besides its storage: the gas a race burns. A claim prepays up to 300 TGas at
 /// 0.001 NEAR a TGas, and the unused part comes back to the account.
 pub const GAS_FUND: NearToken = NearToken::from_millinear(250);
@@ -49,6 +53,12 @@ pub const MAX_ALLOWANCE: NearToken = NearToken::from_near(1);
 /// owner, but never takes a share above this.
 pub const MAX_AUTHOR_BPS: u16 = 3000;
 const MIGRATE_GAS: Gas = Gas::from_tgas(10);
+/// The least the factory's `refuel` takes; `fuel` asks no less, so it never sends NEAR the factory would send back.
+pub const MIN_REFUEL: NearToken = NearToken::from_millinear(100);
+/// Gas for the factory's `refuel`: one record read and written, its view returned.
+const REFUEL_GAS: Gas = Gas::from_tgas(20);
+/// Gas for `on_fuel`, the mask's own look at how the refuel went.
+const ON_FUEL_GAS: Gas = Gas::from_tgas(5);
 
 /// A function-call key for one race: `public_key` may call `method_names` on `receiver_id` and burn at most
 /// `allowance` yoctoNEAR of gas. The factory sends a list of these, Borsh-encoded.
@@ -251,6 +261,68 @@ impl Mask {
         self.pay(owed)
     }
 
+    /// The mask pays for its own mind: what it won goes from its account into its tank in the factory that forged it
+    /// (`refuel` for this very mask, and nowhere else). Only the owner, who could as well withdraw it, and exactly what
+    /// `withdraw` would pay them: the gas fund stays, so the mask keeps racing, and a copy pays its author what is owed
+    /// first, in this same call, so fuel never comes out of the author's share. Like a payout it lowers a copy's mark.
+    /// No argument, like `withdraw`: a wallet calls it as it is.
+    pub fn fuel(&mut self) -> Promise {
+        require!(env::predecessor_account_id() == self.owner, "only the mask's owner fuels its mind");
+        require!(env::attached_deposit().is_zero(), "fuel takes no deposit: it spends what the mask holds");
+        self.count();
+        let free = free();
+        let to_author = self.author.as_ref().map_or(0, |a| a.owed.min(free));
+        let amount = free - to_author;
+        require!(
+            amount >= MIN_REFUEL.as_yoctonear(),
+            "less than 0.1 NEAR, the factory's least refuel, above the gas fund"
+        );
+        if to_author > 0 {
+            self.pay(to_author).detach();
+        }
+        if let Some(a) = self.author.as_mut() {
+            a.mark = a.mark.saturating_sub(amount);
+        }
+        let me = env::current_account_id();
+        let name = me.as_str().strip_suffix(self.factory.as_str()).and_then(|n| n.strip_suffix('.'));
+        let name = name.unwrap_or_else(|| env::panic_str("the mask is not an account of its factory"));
+        let mut line = String::from("fuel ");
+        push_u128(&mut line, amount);
+        line.push_str(" to ");
+        line.push_str(self.factory.as_str());
+        env::log_str(&line);
+        // `{"name":"<name>"}`: a mask's name is lowercase letters and digits, nothing to escape.
+        let mut args = String::from("{\"name\":\"");
+        args.push_str(name);
+        args.push_str("\"}");
+        Promise::new(self.factory.clone())
+            .function_call("refuel".to_string(), args.into_bytes(), NearToken::from_yoctonear(amount), REFUEL_GAS)
+            .then(Promise::new(me.clone()).function_call(
+                "on_fuel".to_string(),
+                near_sdk::borsh::to_vec(&amount).unwrap_or_default(),
+                NearToken::from_yoctonear(0),
+                ON_FUEL_GAS,
+            ))
+    }
+
+    /// The mask's own answer to its `fuel`: when the factory refused the refuel, NEAR gives `amount` back to the mask,
+    /// and a copy raises its mark by it again, so the owner's own NEAR coming back is never counted as winnings the
+    /// author takes a share of. Only the mask itself, in the callback of `fuel`.
+    pub fn on_fuel(&mut self, amount: u128) {
+        require!(env::predecessor_account_id() == env::current_account_id(), "only the mask itself");
+        // Only a failed refuel counts: a refuel that went through answers with the mask's record, longer than the 0
+        // bytes asked for here, and that is `TooLong`, not a failure.
+        if env::promise_results_count() != 1
+            || !matches!(env::promise_result_checked(0, 0), Err(near_sdk::PromiseError::Failed))
+        {
+            return;
+        }
+        env::log_str("fuel refused: the NEAR comes back to the mask");
+        if let Some(a) = self.author.as_mut() {
+            a.mark = a.mark.saturating_add(amount);
+        }
+    }
+
     /// Adds the attached NEAR to the mask's account as its owner's own money, for its race gas: never counted as
     /// winnings, so a copy's author takes no share of it, and the owner can take it back out. Anyone may.
     pub fn top_up(&mut self) {
@@ -367,6 +439,21 @@ mod exports {
     }
 
     #[no_mangle]
+    pub extern "C" fn fuel() {
+        let mut m = mask();
+        let p = m.fuel();
+        env::state_write(&m);
+        p.as_return().detach();
+    }
+
+    #[no_mangle]
+    pub extern "C" fn on_fuel() {
+        let mut m = mask();
+        m.on_fuel(input());
+        env::state_write(&m);
+    }
+
+    #[no_mangle]
     pub extern "C" fn top_up() {
         let mut m = mask();
         m.top_up();
@@ -387,6 +474,12 @@ mod exports {
             }
         }
         env::value_return(out.as_bytes());
+    }
+
+    /// NEP-330: where this code's source is. A view: it reads and writes nothing.
+    #[no_mangle]
+    pub extern "C" fn contract_source_metadata() {
+        env::value_return(SOURCE_METADATA.as_bytes());
     }
 
     #[no_mangle]
@@ -506,6 +599,19 @@ mod tests {
     }
 
     #[test]
+    fn the_code_says_where_its_source_is() {
+        // NEP-330 as near-sdk writes it. A plain build has no build_info; the build in cargo-near's pinned image adds
+        // it (contracts/README.md, "Source on chain").
+        let head =
+            format!(r#"{{"version":"{}","link":"https://github.com/plavutskyi/mask-wars"#, env!("CARGO_PKG_VERSION"));
+        assert!(SOURCE_METADATA.starts_with(&head), "{SOURCE_METADATA}");
+        assert!(SOURCE_METADATA.contains(r#"","standards":[{"standard":"nep330","version":"1.3.0"}],"build_info":"#));
+        if option_env!("NEP330_BUILD_INFO_BUILD_ENVIRONMENT").is_none() {
+            assert!(SOURCE_METADATA.ends_with(r#","build_info":null}"#), "{SOURCE_METADATA}");
+        }
+    }
+
+    #[test]
     fn only_the_parent_factory_initializes() {
         let m = mask();
         assert_eq!((m.factory.as_str(), m.owner.as_str(), m.author.is_some()), ("masks.near", "ann.near", false));
@@ -621,6 +727,95 @@ mod tests {
         let _ = m.withdraw();
     }
 
+    /// The factory calls the mask gets: receiver, method, args and deposit.
+    fn calls_to(to: &str) -> Vec<(String, Vec<u8>, u128)> {
+        get_created_receipts()
+            .into_iter()
+            .filter(|r| r.receiver_id == acc(to))
+            .flat_map(|r| r.actions)
+            .filter_map(|a| match a {
+                MockAction::FunctionCallWeight { method_name, args, attached_deposit, .. } => {
+                    Some((String::from_utf8(method_name).unwrap(), args, attached_deposit.as_yoctonear()))
+                }
+                _ => None,
+            })
+            .collect()
+    }
+
+    #[test]
+    fn the_mask_fuels_its_own_mind_with_what_it_won() {
+        let mut m = mask();
+        as_("ann.near", 2 * ONE);
+        let _ = m.fuel();
+        let won = 2 * ONE - storage() - GAS_FUND.as_yoctonear();
+        assert_eq!(calls_to("masks.near"), vec![("refuel".to_string(), br#"{"name":"kira"}"#.to_vec(), won)]);
+        assert!(sent_to("ann.near").is_empty(), "nothing goes to the owner");
+        assert_eq!(get_logs(), vec![format!("fuel {won} to masks.near")]);
+    }
+
+    #[test]
+    #[should_panic(expected = "only the mask's owner fuels its mind")]
+    fn nobody_else_spends_the_winnings_on_fuel() {
+        let mut m = mask();
+        as_("masks.near", 2 * ONE);
+        let _ = m.fuel();
+    }
+
+    #[test]
+    #[should_panic(expected = "fuel takes no deposit")]
+    fn fuel_spends_only_what_the_mask_holds() {
+        let mut m = mask();
+        paying("ann.near", 2 * ONE, ONE);
+        let _ = m.fuel();
+    }
+
+    /// The factory refused the refuel: NEAR gives the NEAR back to the copy, and its mark rises by it again, so the
+    /// owner's own NEAR coming back is never counted as winnings. A refuel that went through changes nothing.
+    #[test]
+    fn a_refused_refuel_puts_the_mark_back() {
+        use near_sdk::test_vm_config;
+        use near_sdk::PromiseResult;
+        let mut m = copy(BPS, FUND);
+        as_("ann.near", FUND + ONE);
+        let _ = m.fuel();
+        let mark = m.author.as_ref().unwrap().mark;
+        let callback = |result: PromiseResult| {
+            let mut c = VMContextBuilder::new();
+            c.current_account_id(acc("kira.masks.near"))
+                .predecessor_account_id(acc("kira.masks.near"))
+                .storage_usage(400);
+            testing_env!(
+                c.build(),
+                test_vm_config(),
+                near_sdk::RuntimeFeesConfig::test(),
+                Default::default(),
+                vec![result]
+            );
+        };
+        callback(PromiseResult::Successful(b"{}".to_vec()));
+        m.on_fuel(ONE / 2);
+        assert_eq!(m.author.as_ref().unwrap().mark, mark, "a refuel that went through");
+        callback(PromiseResult::Failed);
+        m.on_fuel(ONE / 2);
+        assert_eq!(m.author.as_ref().unwrap().mark, mark + ONE / 2, "a refused one: the mark is back up");
+    }
+
+    #[test]
+    #[should_panic(expected = "only the mask itself")]
+    fn nobody_else_answers_for_the_refuel() {
+        let mut m = mask();
+        as_("ann.near", ONE);
+        m.on_fuel(1);
+    }
+
+    #[test]
+    #[should_panic(expected = "less than 0.1 NEAR")]
+    fn fuel_is_worth_a_refuel() {
+        let mut m = mask();
+        as_("ann.near", storage() + GAS_FUND.as_yoctonear() + ONE / 20);
+        let _ = m.fuel();
+    }
+
     // ---- a copy and its author's share -------------------------------------------------------------------------
     //
     // The copy is this account (`kira.masks.near`), forged by ANN; its author is NINA's mask (`nina.masks.near`), owed
@@ -692,6 +887,21 @@ mod tests {
         assert!(logs.iter().any(|l| l.starts_with("withdraw ") && l.ends_with(" to ann.near")), "{logs:?}");
         let a = m.author.as_ref().unwrap();
         assert_eq!((a.paid, a.owed), (ONE * 3 / 10, 0));
+    }
+
+    /// A copy won 1 NEAR and its owner fuels its mind with it: the author gets their 30% first, in the same call, and
+    /// only the owner's part goes to the tank. Nothing the author earned is spent on fuel.
+    #[test]
+    fn a_copy_s_fuel_pays_the_author_first() {
+        let mut m = copy(BPS, FUND);
+        as_("ann.near", FUND + ONE);
+        let _ = m.fuel();
+        assert_eq!(sent_to("nina.masks.near"), vec![ONE * 3 / 10], "the author got 30% of the prize, at once");
+        let fuel = FUND + ONE * 7 / 10 - keep();
+        assert_eq!(calls_to("masks.near"), vec![("refuel".to_string(), br#"{"name":"kira"}"#.to_vec(), fuel)]);
+        let a = m.author.as_ref().unwrap();
+        assert_eq!((a.paid, a.owed), (ONE * 3 / 10, 0));
+        assert_eq!(a.mark, FUND + ONE - ONE * 3 / 10 - fuel, "the mark fell by all that left");
     }
 
     /// Review finding 3, the attack: the owner takes their 70%, then the copy keeps racing and its gas burns the

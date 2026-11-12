@@ -150,7 +150,7 @@ for (const [view, opts] of VIEWS) {
   await ctx.close();
 }
 
-// The review's finding 6: the owner's wallet answers with a transaction, but NEAR fails it (too little gas for the
+// A wallet that answers and a chain that refuses: the person's wallet answers with a transaction, but NEAR fails it (too little gas for the
 // withdraw). The page used to say "Taken out" with its own figure; now it asks NEAR and says what NEAR says.
 for (const [view, opts] of VIEWS) {
   const ctx = await browser.newContext({ ...opts, colorScheme: 'dark' });

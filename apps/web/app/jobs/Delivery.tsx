@@ -50,16 +50,16 @@ export function Delivery({ facts }: { facts: DeliveryFacts }) {
     try {
       const signer = await connected(FORGE_NET.rpcs);
       if (!signer || signer.accountId !== facts.client) {
-        setLine('Connect the client’s wallet first. Nothing was sent.');
+        setLine('Connect the client’s NEAR wallet first. Nothing was sent.');
         return;
       }
       const hash = await signer.call(facts.contract, {
         type: 'FunctionCall',
         params: { methodName: 'deliver', args: { id: facts.id }, gas: DELIVER_GAS, deposit: facts.judgeFee },
       });
-      setLine(hash ? 'Asked. The judge seals your work for your key; this page shows it in a minute.' : 'The wallet sent nothing.');
+      setLine(hash ? 'Asked. The judge seals your work for your key; this page shows it in a minute.' : 'The NEAR wallet sent nothing.');
     } catch {
-      setLine('The wallet sent nothing.');
+      setLine('The NEAR wallet sent nothing.');
     } finally {
       setBusy(false);
     }

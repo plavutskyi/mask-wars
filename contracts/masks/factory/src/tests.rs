@@ -406,6 +406,33 @@ fn anyone_refuels_and_the_owner_takes_the_rest_back() {
     assert_eq!(f.total_brain, 0);
 }
 
+#[test]
+fn a_mask_fuels_its_own_mind_without_raising_what_was_put_in() {
+    let mut f = factory();
+    let brain = forged(&mut f, "ann.near", "kira", 2 * ONE).brain.0;
+    // The mask's own account: what it won, sent by its code's `fuel`. Its first `recycled` record is paid from it.
+    ctx("kira.masks.near", ONE / 2, 0);
+    let before = env::storage_usage();
+    let v = f.refuel("kira".into());
+    let record = env::storage_byte_cost().as_yoctonear() * u128::from(env::storage_usage() - before);
+    assert!(record > 0 && record < ONE / 1000, "{record}");
+    assert_eq!(
+        (v.brain.0, v.fuel.0, v.recycled.0),
+        (brain + ONE / 2 - record, 2 * ONE, ONE / 2),
+        "the tank grows, the × base does not"
+    );
+    assert_eq!(f.total_brain, brain + ONE / 2 - record);
+    // A second time the record is there: all of it goes into the tank, and `recycled` adds up.
+    ctx("kira.masks.near", ONE / 2, 0);
+    let v = f.refuel("kira".into());
+    assert_eq!((v.brain.0, v.recycled.0), (brain + ONE - record, ONE));
+    // Another mask's account is a fan like any other: its NEAR is put in.
+    forged(&mut f, "bob.near", "zed", 2 * ONE);
+    ctx("zed.masks.near", ONE / 2, 0);
+    let v = f.refuel("kira".into());
+    assert_eq!((v.brain.0, v.fuel.0, v.recycled.0), (brain + 3 * ONE / 2 - record, 2 * ONE + ONE / 2, ONE));
+}
+
 refused!(only_the_owner_unfuels, "only the mask's owner", |f| {
     forged(&mut f, "ann.near", "kira", 2 * ONE);
     as_("bob.near");
