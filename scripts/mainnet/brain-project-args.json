@@ -1,1 +1,1 @@
-{"name":"brain","source":{"WasmUrl":{"url":"https://maskwars.xyz/outlayer/maskwars-brain-3e1b05b6859b140ca3a1b39e726d529687b237ba7c79084e14850fcdb68f1434.wasm","hash":"3e1b05b6859b140ca3a1b39e726d529687b237ba7c79084e14850fcdb68f1434","build_target":"wasm32-wasip2"}}}
+{"name":"brain","source":{"WasmUrl":{"url":"https://maskwars.xyz/outlayer/maskwars-brain-5bb8bb262cdc10095d064c7dd74408de9d8f69a182313cbdf6413f4640aa0cb5.wasm","hash":"5bb8bb262cdc10095d064c7dd74408de9d8f69a182313cbdf6413f4640aa0cb5","build_target":"wasm32-wasip2"}}}

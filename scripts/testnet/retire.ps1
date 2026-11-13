@@ -17,12 +17,25 @@
 #
 # -Force sends `retire` whatever the plan says, for a vault that was made and never got its round (a safe without a
 # round retires at once). The vault decides for itself: while its round is not over it refuses, and nothing changes.
+#
+# -Safe, for a safe of a round by hand (safe-deploy.ps1 without -House): its team is $Admin, who signs. The safe goes
+# only once its round is over: after a win, from the round's deadline on; after a round nobody won, once its bounty is
+# refunded (refund.ps1 -Id <round>, 12 hours after the deadline). Until then it refuses and nothing changes. Its whole
+# balance, the stake of its storage included, comes back to $Admin.
 #   .\retire.ps1
 #   .\retire.ps1 -Network mainnet
 #   .\retire.ps1 -Network mainnet -Force
+#   .\retire.ps1 -Network mainnet -Safe pause-0001.maskwars.near
 #   .\retire.ps1 -Network mainnet -DryRun
-param([switch]$Force, [string]$Network, [switch]$DryRun)
+param([switch]$Force, [string]$Safe, [string]$Network, [switch]$DryRun)
 . (Join-Path $PSScriptRoot 'config.ps1')
+if ($Safe) {
+  Assert-Account 'the safe' $Safe
+  if ($Safe -eq $Vault) { Write-Error "$Vault is the house's vault: retire.ps1 without -Safe ends its round and retires it"; exit 1 }
+  Write-Host "retire: $Safe deletes itself and gives its whole balance back to its team $Admin, if its round is over or it has none"
+  Invoke-Near contract call-function as-transaction $Safe retire json-args '{}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' sign-as $Admin network-config $Network sign-with-keychain
+  exit $LASTEXITCODE
+}
 if ($Force) {
   Write-Host "retire: $Vault deletes itself and gives its whole balance back to $HouseAccount, if its round is over or it has none"
   Invoke-Near contract call-function as-transaction $Vault retire json-args '{}' prepaid-gas '100.0 Tgas' attached-deposit '0 NEAR' sign-as $HouseAccount network-config $Network sign-with-keychain

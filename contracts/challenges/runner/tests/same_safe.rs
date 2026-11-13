@@ -1,7 +1,9 @@
-//! The safe 1.6.0 against the code the vault runs on mainnet, on one real local node: the same calls, in the same
-//! order, give the same answers, the same panics, the same events and the same transfers. 1.6.0 adds two views, `about`
-//! and a `contract_source_metadata` that names its source (NEP-330); `set_owner`, `sweep`, `arm`, `queue`, `retire`
-//! and `reclaim` must not change by a byte of behaviour.
+//! The safe 1.7.0 against the code the vault runs on mainnet, on one real local node: the same calls, in the same
+//! order, give the same answers, the same panics, the same events and the same transfers. 1.6.0 added two views, `about`
+//! and a `contract_source_metadata` that names its source (NEP-330); 1.7.0 adds the safe's kind (`variant` at `new`)
+//! with the desks of the two new kinds and three views. A safe that names no kind, as the house's vault does, is of
+//! the `owner` kind: `set_owner`, `sweep`, `arm`, `queue`, `retire` and `reclaim` must not change by a byte of
+//! behaviour.
 //!
 //! The mainnet code is the file the house deploys today: `apps/web/public/contracts/maskwars-live-safe-<sha256>.wasm`
 //! for `safe_code` of packages/network/mainnet.json. The new code is this source's build. Each runs on its own fresh
@@ -339,17 +341,33 @@ async fn the_safe_1_6_behaves_as_the_code_on_mainnet_call_for_call() -> Result<(
     let new = std::fs::read(wasm_dir().join("live_safe.wasm"))?;
     assert_ne!(code_hash(&old), code_hash(&new));
 
-    // The new code exports what the old one does and two views more.
+    // The new code exports what the old one does, `about`, and what the safe's kinds brought: the desks of the two
+    // new kinds, which a safe of the owner kind refuses, and three views.
     let (old_exports, new_exports) = (exports(&old), exports(&new));
-    let added: Vec<&String> = new_exports.iter().filter(|e| !old_exports.contains(e)).collect();
+    let mut added: Vec<&str> = new_exports.iter().filter(|e| !old_exports.contains(e)).map(String::as_str).collect();
+    added.sort_unstable();
     let dropped: Vec<&String> = old_exports.iter().filter(|e| !new_exports.contains(e)).collect();
-    assert_eq!(added, ["about"], "{new_exports:?}");
+    let kinds = [
+        "about",
+        "book",
+        "cash_out",
+        "check_exit",
+        "claim",
+        "get_desk",
+        "is_paused",
+        "pause",
+        "request_exit",
+        "unpause",
+        "variant",
+        "withdraw",
+    ];
+    assert_eq!(added, kinds, "{new_exports:?}");
     assert!(dropped.is_empty(), "{dropped:?}");
     assert!(new_exports.contains(&"contract_source_metadata".to_string()));
 
     let (was, is) = (script(&old).await?, script(&new).await?);
     for (a, b) in was.iter().zip(is.iter()) {
-        assert_eq!(a, b, "the mainnet code and 1.6.0 part here");
+        assert_eq!(a, b, "the mainnet code and 1.7.0 part here");
     }
     assert_eq!(was.len(), is.len());
     // The script did reach every path it means to: a drain through the hole, the refusals, the retire.

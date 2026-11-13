@@ -171,12 +171,19 @@ describe("the mind's project on OutLayer mainnet", () => {
     const newest = /\| Brain, mainnet build \| `([0-9a-f]{8})…([0-9a-f]{4})` \|/.exec(readme);
     expect(newest).not.toBeNull();
     expect(`${hash.slice(0, 8)}…${hash.slice(-4)}`).toBe(`${newest![1]}…${newest![2]}`);
-    expect(hash.startsWith("3e1b05b6")).toBe(true);
+    expect(hash.startsWith("5bb8bb26")).toBe(true);
     // forge.mjs checks the same file before it prints a step: the site serves exactly these bytes under that name.
     expect(brainBuild()).toEqual({ url: brain.source.WasmUrl.url, hash, bytes: file(`apps/web/public/outlayer/maskwars-brain-${hash}.wasm`).length });
     // The step the owner runs from scripts/mainnet/README.md names it too, and no older build.
     const owner = file("scripts/mainnet/README.md").toString("utf8");
     expect(owner).toContain(`${hash.slice(0, 8)}…${hash.slice(-4)}`);
     expect(owner).not.toContain("a1922652…bae0");
+  });
+
+  it("adds a new build to the mind's project as the active version, the very build the project file names", () => {
+    // scripts/mainnet/brain-version-args.json is what `add_version` on OutLayer is sent once the project exists: the
+    // same url and sha256 as brain-project-args.json, made active at once (the build before it could ask no model).
+    const version = JSON.parse(file("scripts/mainnet/brain-version-args.json").toString("utf8"));
+    expect(version).toEqual({ project_name: brain.name, source: brain.source, set_active: true });
   });
 });

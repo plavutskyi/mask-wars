@@ -1,0 +1,121 @@
+/* The masks people forged, on the league page: the league's own rows (page.module.css) under the head of the callers'
+   table (callers.module.css). Here only what differs: no rank and no «i», a state word, the way to the forge.
+   Tokens only. */
+
+.side {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px 20px;
+}
+
+/* A quiet way to the forge: an outline, never the page's one solid button. */
+.yours {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid color-mix(in srgb, var(--ice) 32%, transparent);
+  border-radius: var(--radius);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  color: var(--ice);
+  transition:
+    transform 100ms cubic-bezier(0.2, 0, 0, 1),
+    border-color 160ms;
+}
+
+.yours:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) {
+  .yours:hover {
+    border-color: var(--ice);
+  }
+}
+
+/* The league's row without its rank and its «i»: face and name, then three numbers. */
+.row.row {
+  grid-template-columns: minmax(0, 1fr) 120px 140px 240px;
+}
+
+.state {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  word-spacing: 0.16em;
+  line-height: 1.2;
+  white-space: nowrap;
+  color: var(--c);
+}
+
+.state::before {
+  content: '';
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.state[data-state='paused'],
+.state[data-state='empty'] {
+  color: var(--ice-60);
+}
+
+.more {
+  margin: 0;
+  padding: 18px 0 0;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ice-60);
+}
+
+@media (max-width: 1100px) {
+  .row.row {
+    grid-template-columns: minmax(0, 1fr) 96px 112px 200px;
+  }
+}
+
+@media (max-width: 760px) {
+  /* Under the title: the line on the left, the way to the forge on the right, one row. */
+  .side {
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .yours {
+    padding: 0 12px;
+  }
+
+  /* On a phone the numbers sit under the name, as in the league's rows above, and no column is left to label. */
+  .row.row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .labels.labels {
+    display: none;
+  }
+
+  .state {
+    font-size: 12px;
+  }
+
+  /* Three numbers under the name: on the narrowest phones they take a second line, and none is cut. */
+  .row .sub {
+    white-space: normal;
+  }
+
+  .row .who {
+    padding: 6px 0;
+  }
+
+  .more {
+    font-size: 13px;
+  }
+}

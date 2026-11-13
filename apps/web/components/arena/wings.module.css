@@ -1,0 +1,285 @@
+/* The wings of the stage: the round's masks that do not stand on it, one row under the three and over the deck's own
+   line. Each as the stage shows a mask, smaller: its face in its own light, its name in the word face, what it has done
+   under it in the words the three get. BRANDBOOK §3, §4, §8. Tokens only. */
+
+.row {
+  --c: var(--ice);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 44px;
+  width: min(760px, 100%);
+  min-height: 48px;
+  /* Air on both sides: the row is a rank of its own, never the line under the middle mask's word. The deck keeps
+     its height for it (stage.module.css, --deck-wings). */
+  margin: 4px 0 12px;
+  padding: 0;
+  list-style: none;
+}
+
+/* The row stands where the floor sinks into ink. The deck is a layer of its own over the arena, so the faces blend
+   (lighten) with what the deck itself paints: a bed of ink under the row, soft at its edges, takes the art's black
+   frame away. Without it the frame would show as a dark square on the floor's light. */
+.row::before {
+  content: '';
+  position: absolute;
+  inset: -16px -64px;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(closest-side, var(--ink) 62%, color-mix(in srgb, var(--ink) 70%, transparent) 80%, transparent);
+}
+
+.mask {
+  min-width: 0;
+}
+
+.mask[data-tone='ember'] {
+  --c: var(--ember);
+}
+
+.mask[data-tone='violet'] {
+  --c: var(--violet);
+}
+
+.link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  min-height: 48px;
+}
+
+/* The face as the league and the round's page show a small one: the mask drawn up to fill its light. */
+.face {
+  position: relative;
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--c) 26%, transparent), transparent 75%);
+}
+
+.face img {
+  object-fit: contain;
+  mix-blend-mode: lighten;
+  transform: translateY(5%) scale(1.3);
+  /* Its frame fades out before its edges, as in the forge: the mask is all of the picture that is seen. */
+  mask-image:
+    linear-gradient(to right, transparent, var(--ink) 20%, var(--ink) 80%, transparent),
+    linear-gradient(to bottom, transparent, var(--ink) 4%, var(--ink) 88%, transparent);
+  mask-composite: intersect;
+}
+
+/* A mask with no art of its own wears the mark, in its own light. */
+.mark {
+  position: absolute;
+  inset: 22% 26%;
+  width: 48%;
+  height: 56%;
+  color: var(--c);
+  opacity: 0.75;
+}
+
+.text {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.word {
+  font-family: var(--font-word);
+  font-weight: 800;
+  font-stretch: 125%;
+  text-transform: uppercase;
+}
+
+.name {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 15px;
+  line-height: 1.15;
+  letter-spacing: 0.05em;
+  color: var(--ice);
+}
+
+/* Long names narrow along the width axis first (BRANDBOOK §4). */
+.name[data-long] {
+  font-stretch: 85%;
+  letter-spacing: 0.03em;
+}
+
+/* An agent from outside has no name of ours: its account, set as an account reads. */
+.account {
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.15;
+  color: var(--ice);
+}
+
+.note {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--ice-60);
+}
+
+.note b {
+  font-weight: 800;
+  font-stretch: 125%;
+  color: var(--ice);
+}
+
+/* The rest of a bigger field: one count in the row's last place, a number as every number on the arena. */
+.more {
+  flex: none;
+}
+
+/* Three faces and the count: a little closer, so the longest names still stand whole. */
+.row[data-wings='4'] {
+  gap: 36px;
+}
+
+.moreLink {
+  display: grid;
+  place-items: center;
+  min-width: 48px;
+  height: 48px;
+  font-family: var(--font-num);
+  font-size: 17px;
+  font-weight: 800;
+  font-stretch: 125%;
+  letter-spacing: 0.02em;
+  color: var(--ice-60);
+  transition: color 160ms;
+}
+
+.link:focus-visible,
+.moreLink:focus-visible {
+  outline: 1px solid var(--ice-60);
+  outline-offset: 4px;
+}
+
+@media (hover: hover) {
+  .moreLink:hover {
+    color: var(--ice);
+  }
+
+  .link:hover .name,
+  .link:hover .account {
+    color: color-mix(in srgb, var(--ice) 86%, var(--c));
+  }
+}
+
+/* Phone ------------------------------------------------------------------------------------------------------------ */
+
+@media (max-width: 760px) {
+  .row {
+    gap: 20px;
+    width: 100%;
+    min-height: 44px;
+    margin: 2px 0 8px;
+  }
+
+  .link {
+    gap: 8px;
+    min-height: 44px;
+  }
+
+  .face {
+    width: 40px;
+    height: 40px;
+  }
+
+  .name,
+  .note {
+    font-size: 13px;
+  }
+
+  .account {
+    font-size: 13px;
+  }
+
+  .name,
+  .account {
+    max-width: 150px;
+  }
+
+  .moreLink {
+    min-width: 44px;
+    height: 44px;
+    font-size: 15px;
+  }
+
+  /* Three faces in a phone's width, with or without the count after them: each stood as the stage stands a mask (its
+     face, its name under it, its word under that), so a name has its whole column. It gives up size before it is cut. */
+  .row[data-wings='3'],
+  .row[data-wings='4'] {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: center;
+    gap: 8px;
+    min-height: 64px;
+  }
+
+  /* The count keeps a narrow column of its own; it is still a tap as tall as the row. */
+  .row[data-wings='4'] {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) 30px;
+    gap: 4px;
+  }
+
+  .row[data-wings='4'] .moreLink {
+    min-width: 30px;
+    height: 64px;
+  }
+
+  :is(.row[data-wings='3'], .row[data-wings='4']) .link {
+    flex-direction: column;
+    gap: 3px;
+    min-height: 64px;
+  }
+
+  :is(.row[data-wings='3'], .row[data-wings='4']) .face {
+    width: 32px;
+    height: 32px;
+  }
+
+  :is(.row[data-wings='3'], .row[data-wings='4']) .text {
+    align-self: stretch;
+    justify-items: center;
+    gap: 1px;
+    text-align: center;
+    container-type: inline-size;
+  }
+
+  /* Hubot at 125 % takes about 1em a letter with its spacing; at 85 % about .6em. */
+  :is(.row[data-wings='3'], .row[data-wings='4']) .name {
+    --cw: 1.02;
+    max-width: 100%;
+    font-size: clamp(11px, calc(100cqw / (var(--chars, 6) * var(--cw))), 13px);
+  }
+
+  :is(.row[data-wings='3'], .row[data-wings='4']) .name[data-long] {
+    --cw: 0.57;
+    letter-spacing: 0;
+  }
+
+  :is(.row[data-wings='3'], .row[data-wings='4']) .account {
+    max-width: 100%;
+    font-size: 11px;
+  }
+
+  :is(.row[data-wings='3'], .row[data-wings='4']) .note {
+    font-size: 12px;
+  }
+
+  :is(.row[data-wings='3'], .row[data-wings='4']) .more {
+    justify-self: center;
+  }
+}

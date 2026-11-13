@@ -346,7 +346,7 @@ impl World {
             )
         );
         let meta = view(&self.worker, &self.vault, "contract_source_metadata", json!({})).await?;
-        assert_eq!(meta["version"], json!("1.6.0"), "{meta}");
+        assert_eq!(meta["version"], json!("1.7.0"), "{meta}");
         assert!(
             meta["link"].as_str().is_some_and(|l| l.starts_with("https://github.com/plavutskyi/mask-wars")),
             "{meta}"

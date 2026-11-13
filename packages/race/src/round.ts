@@ -29,6 +29,8 @@ export interface Scenario {
   /** Minutes after the commit window to play and reveal; 60 when absent. */
   readonly reveal_minutes?: number;
   readonly hours: number;
+  /** The kind of the round's vault (live-safe's `variant`): `owner` when absent, else `limit` or `pause`. */
+  readonly variant?: string;
 }
 
 export const RoundEvent = z.object({ mask: z.string(), step: z.string(), ok: z.boolean(), note: z.string() });
@@ -48,6 +50,8 @@ export interface SimulateOptions {
   readonly bin?: string;
   /** The standard scenario when absent. */
   readonly scenario?: Scenario;
+  /** The round's vault is of this kind (`race-runner round --variant`); a scenario's own `variant` when absent. */
+  readonly variant?: string;
   readonly signal?: AbortSignal;
 }
 
@@ -61,6 +65,7 @@ export async function simulateRound(o: SimulateOptions = {}): Promise<Board> {
       await writeFile(file, JSON.stringify(o.scenario));
       args.push(file);
     }
+    if (o.variant) args.push("--variant", o.variant);
     const out = await run(o.bin ?? RUNNER_BIN, args, o.signal);
     const line = out.split("\n").find((l) => l.startsWith("ROUND_BOARD "));
     if (!line) throw new Error(`the runner printed no board:\n${out.slice(-2000)}`);
@@ -96,10 +101,14 @@ const STEP: Record<string, string> = {
 
 /** The round as a board for the screen: who sealed, who played, who was refused and why, who got paid. */
 export function formatRound(board: Board): string[] {
+  // A call of a plan goes by its own name, whatever the vault's kind: `play cash_out` is `cash_out`.
+  const label = (step: string) => STEP[step] ?? step.replace(/^play /, "");
+  // The column is as wide as it always was, and wider only for a kind whose calls have longer names.
+  const width = Math.max(10, ...board.events.map((e) => label(e.step).length));
   return board.events.map((e) => {
     if (e.step === "window") return "—— the commit window closes ——";
     const who = (e.mask || "").toUpperCase().padEnd(7);
-    const what = (STEP[e.step] ?? e.step).padEnd(10);
+    const what = label(e.step).padEnd(width);
     const mark = e.ok ? "✓" : "×";
     const note = e.step.startsWith("play ") && e.ok ? "" : ` ${e.note}`;
     return `${who} ${what} ${mark}${note}`;

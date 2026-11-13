@@ -30,6 +30,8 @@ const ONE_NEAR: u128 = 1_000_000_000_000_000_000_000_000;
 pub const SWEEP_MARGIN: u128 = 3 * ONE_NEAR / 100;
 const SWEEP_STEP: u128 = ONE_NEAR / 100;
 const BOUNTY_ID: &str = "round-0001";
+/// The most a withdrawal takes at the `limit` desk without the owner's word (`WITHDRAW_LIMIT` in live-safe).
+const WITHDRAW_LIMIT: u128 = ONE_NEAR / 200;
 /// The judge version the sandbox's bounty contract pins; the stub runs the real judge whatever it is.
 pub const SANDBOX_JUDGE: &str = "0000000000000000000000000000000000000000000000000000000000000000";
 
@@ -89,6 +91,10 @@ pub struct Scenario {
     /// Before the team, an account outside it opens a round of its own on the fresh safe, with the same masks.
     #[serde(default)]
     pub intruder: bool,
+    /// The kind of the round's safe (`variant` of live-safe's `new`): `owner` unless named, else `limit` or `pause`.
+    /// The masks' scripts are the same; the calls their plans are made of are that kind's.
+    #[serde(default)]
+    pub variant: Option<String>,
 }
 
 fn default_reveal_minutes() -> u64 {
@@ -118,7 +124,17 @@ impl Scenario {
             sweep_margin: None,
             tight_safe: false,
             intruder: false,
+            variant: None,
         }
+    }
+
+    /// The standard round on a safe of another kind.
+    pub fn of(variant: &str) -> Self {
+        Self { variant: Some(variant.into()), ..Self::standard() }
+    }
+
+    fn kind(&self) -> &str {
+        self.variant.as_deref().unwrap_or(crate::DEFAULT_VARIANT)
     }
 }
 
@@ -154,9 +170,9 @@ struct Asked {
 
 /// One call of a plan on the safe.
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
-struct Call {
-    method: String,
-    args: Value,
+pub struct Call {
+    pub method: String,
+    pub args: Value,
 }
 
 struct Mask {
@@ -180,6 +196,8 @@ struct World {
     stub: Contract,
     masks: Vec<Mask>,
     events: Vec<Event>,
+    /// The call that pays in a plan through the hole of this round's safe: a mask claims the one that went through.
+    pays: String,
 }
 
 /// The seal both the masks and the contract compute.
@@ -192,20 +210,32 @@ fn plan_text(calls: &[Call]) -> String {
     serde_json::to_string(calls).expect("a plan is JSON")
 }
 
-fn the_hole(mask: &str, sweep: u128) -> Vec<Call> {
-    vec![
-        Call { method: "set_owner".into(), args: json!({ "new_owner": mask }) },
-        Call { method: "sweep".into(), args: json!({ "to": mask, "amount": sweep.to_string() }) },
-    ]
+/// The planted hole of a safe of kind `variant`, as `mask` plays it for `sweep` yoctoNEAR: the last call pays.
+pub fn the_hole(variant: &str, mask: &str, sweep: u128) -> Vec<Call> {
+    let call = |method: &str, args: Value| Call { method: method.into(), args };
+    match variant {
+        "limit" => vec![
+            call("request_exit", json!({ "amount": WITHDRAW_LIMIT.to_string() })),
+            call("request_exit", json!({ "amount": sweep.to_string() })),
+            call("withdraw", json!({})),
+        ],
+        "pause" => vec![call("book", json!({ "amount": sweep.to_string() })), call("cash_out", json!({}))],
+        _ => vec![
+            call("set_owner", json!({ "new_owner": mask })),
+            call("sweep", json!({ "to": mask, "amount": sweep.to_string() })),
+        ],
+    }
 }
 
-/// What a squatter plays: one move that takes nothing.
-fn junk(mask: &str) -> Vec<Call> {
-    vec![Call { method: "set_owner".into(), args: json!({ "new_owner": mask }) }]
+/// What a squatter plays: one move that takes nothing, the hole's first call.
+fn junk(variant: &str, mask: &str) -> Vec<Call> {
+    the_hole(variant, mask, 1)[..1].to_vec()
 }
 
-fn a_guess(mask: &str, sweep: u128) -> Vec<Call> {
-    vec![Call { method: "sweep".into(), args: json!({ "to": mask, "amount": sweep.to_string() }) }]
+/// A guess sealed without the hole: the call that pays, alone.
+fn a_guess(variant: &str, mask: &str, sweep: u128) -> Vec<Call> {
+    let hole = the_hole(variant, mask, sweep);
+    hole[hole.len() - 1..].to_vec()
 }
 
 /// The panic message of a failed call, or `ok`.
@@ -254,7 +284,7 @@ impl World {
         Ok((hash, ok))
     }
 
-    /// Plays `calls` on the safe as mask `i`, in order. The sweep that went through is the mask's drain. While
+    /// Plays `calls` on the safe as mask `i`, in order. The paying call that went through is the mask's drain. While
     /// another mask has its turn on the safe, or an earlier seal goes first, the mask waits and sends the call again.
     async fn play(&mut self, i: usize, calls: &[Call]) -> Result<Vec<String>> {
         let mut txs = vec![];
@@ -264,7 +294,7 @@ impl World {
                 self.wait_until_the_safe_lets_in(i).await?;
                 (hash, ok) = self.send(i, call).await?;
             }
-            if ok && call.method == "sweep" {
+            if ok && call.method == self.pays {
                 self.masks[i].drain = Some(hash.clone());
             }
             txs.push(hash);
@@ -483,15 +513,21 @@ pub async fn run_round(scenario: &Scenario) -> Result<Board> {
     // The safe owns itself, lets in the round's masks, and only the bounty contract may lock it to a round.
     let safe = sub("safe", scenario.safe_near).await?;
     let safe = safe.deploy(&safe_wasm).await?.into_result()?;
+    let variant = scenario.kind();
+    let mut init = json!({ "owner": safe.id(), "masks": mask_ids, "arbiter": bounty.id(), "team": team.id() });
+    if let Some(named) = &scenario.variant {
+        init["variant"] = json!(named);
+    }
     safe.call("new")
-        .args_json(json!({ "owner": safe.id(), "masks": mask_ids, "arbiter": bounty.id(), "team": team.id() }))
+        .args_json(init)
         .gas(Gas::from_tgas(30))
         .transact()
         .await?
         .into_result()
         .context("init the safe")?;
 
-    let mut w = World { _node: node, worker, team, safe: safe.id().clone(), bounty, stub, masks, events: vec![] };
+    let pays = the_hole(variant, "", 0).pop().map(|c| c.method).unwrap_or_default();
+    let mut w = World { _node: node, worker, team, safe: safe.id().clone(), bounty, stub, masks, events: vec![], pays };
     if scenario.intruder {
         // Someone outside the team opens a round of its own on the fresh safe first: same masks, same code, same
         // judge, all public. The safe takes only its own team's round.
@@ -558,10 +594,10 @@ pub async fn run_round(scenario: &Scenario) -> Result<Board> {
     for i in 0..n {
         let me = w.masks[i].account.id().to_string();
         let plan = match w.masks[i].script.play {
-            Play::Finder => the_hole(&me, sweep),
-            Play::Gambler => a_guess(&me, sweep),
-            Play::Saboteur => the_hole(&me, everything),
-            Play::Occupant => junk(&me),
+            Play::Finder => the_hole(variant, &me, sweep),
+            Play::Gambler => a_guess(variant, &me, sweep),
+            Play::Saboteur => the_hole(variant, &me, everything),
+            Play::Occupant => junk(variant, &me),
             Play::Peeker | Play::Late | Play::Squatter => continue,
         };
         let text = plan_text(&plan);
@@ -579,7 +615,7 @@ pub async fn run_round(scenario: &Scenario) -> Result<Board> {
     for i in 0..n {
         if matches!(w.masks[i].script.play, Play::Squatter | Play::Occupant) {
             let me = w.masks[i].account.id().to_string();
-            w.play(i, &junk(&me)).await?;
+            w.play(i, &junk(variant, &me)).await?;
         }
     }
 
@@ -587,7 +623,7 @@ pub async fn run_round(scenario: &Scenario) -> Result<Board> {
     for i in 0..n {
         if w.masks[i].script.play == Play::Late {
             let me = w.masks[i].account.id().to_string();
-            w.commit(i, &plan_text(&the_hole(&me, sweep))).await?;
+            w.commit(i, &plan_text(&the_hole(variant, &me, sweep))).await?;
         }
     }
 
@@ -602,12 +638,14 @@ pub async fn run_round(scenario: &Scenario) -> Result<Board> {
         let me = w.masks[i].account.id().to_string();
         match w.masks[i].script.play {
             Play::Gambler if first_finder.is_some() => {
-                // The hole, seen in another mask's set_owner, played outside the sealed plan.
-                w.masks[i].borrowed = w.play(i, &the_hole(&me, sweep)[..1]).await?;
-                w.masks[i].txs = w.play(i, &a_guess(&me, sweep)).await?;
+                // The hole, seen in another mask's moves (its set_owner, on a safe of the owner kind), played outside
+                // the sealed plan: every call of it but the one that pays.
+                let hole = the_hole(variant, &me, sweep);
+                w.masks[i].borrowed = w.play(i, &hole[..hole.len() - 1]).await?;
+                w.masks[i].txs = w.play(i, &a_guess(variant, &me, sweep)).await?;
             }
             Play::Peeker if first_finder.is_some() => {
-                w.masks[i].txs = w.play(i, &the_hole(&me, sweep)).await?;
+                w.masks[i].txs = w.play(i, &the_hole(variant, &me, sweep)).await?;
             }
             _ => {}
         }
@@ -625,12 +663,12 @@ pub async fn run_round(scenario: &Scenario) -> Result<Board> {
             Play::Gambler => {
                 // First the plan it played, as if it had known the hole: the seal says otherwise.
                 let whole: Vec<String> = w.masks[i].borrowed.iter().chain(&txs).cloned().collect();
-                w.reveal(i, &plan_text(&the_hole(&me, sweep)), &whole).await?;
+                w.reveal(i, &plan_text(&the_hole(variant, &me, sweep)), &whole).await?;
                 let plan = w.masks[i].plan.clone().unwrap_or_default();
                 w.reveal(i, &plan, &txs).await?;
             }
             Play::Peeker => {
-                w.reveal(i, &plan_text(&the_hole(&me, sweep)), &txs).await?;
+                w.reveal(i, &plan_text(&the_hole(variant, &me, sweep)), &txs).await?;
             }
             Play::Saboteur => {
                 let plan = w.masks[i].plan.clone().unwrap_or_default();
@@ -918,7 +956,7 @@ mod tests {
             seal_hash("race-0004", "nova.tinygif8324.testnet", "0123456789abcdef0123456789abcdef", plan),
             "cce78cfbfb2d6aee8c1b5aed63ee1fdc5c1efe8cab8a421bae8a200979e6ca10"
         );
-        assert_eq!(plan_text(&the_hole("nova.tinygif8324.testnet", ONE_NEAR)), plan);
+        assert_eq!(plan_text(&the_hole("owner", "nova.tinygif8324.testnet", ONE_NEAR)), plan);
     }
 
     #[test]

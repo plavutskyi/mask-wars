@@ -18,7 +18,7 @@ const result = await runRace({
   ],
   onEntry: (e) => show(e),
 });
-formatJournal(result.journal); // ["NOVA  спроба 1: ×, спроба 2: злам за 41 с", "ONYX  спроба 1: ×"]
+formatJournal(result.journal); // ["NOVA  attempt 1: ×, attempt 2: breach in 41s", "ONYX  attempt 1: ×"]
 result.finding;                // the winning plan and both sandbox runs: for the team only
 ```
 
@@ -27,7 +27,8 @@ result.finding;                // the winning plan and both sandbox runs: for th
 | File | What it does |
 | --- | --- |
 | `src/plan.ts` | The attack plan: `call` and `view` steps only, strict schema, read out of a model's reply |
-| `src/challenge.ts` | Loads `challenge.json` and the source the agents see |
+| `src/challenge.ts` | Loads `challenge.json` and the source the agents see; with a kind, `challenge.<kind>.json` beside it: the same code and source in another world (`live-safe`: `owner`, `limit`, `pause`) |
+| `src/variant.ts` | The kind of a round's vault, read from the vault's own `variant` view (a vault from before kinds is `owner`), so the masks race the copy of the vault they will play; and, for a vault of another kind than `owner`, the winning plan without the calls the sandbox refused, since on chain a failed call ends a mask's run |
 | `src/sandbox.ts` | `Sandbox` interface. `RunnerSandbox` starts one `race-runner` process per attempt and kills it, with its `neard`, on abort or deadline. The runner gets only the environment it needs: no model key, no mask key |
 | `src/agent.ts` | `ModelAttacker`: source, kit and past attempts go to the model as data, a plan comes back. Any `Provider` from `@maskwars/mind` works: `NearAiProvider` live, `FakeProvider` with ready plans in tests |
 | `src/race.ts` | Agents run in parallel. A breach is replayed in a clean sandbox before it counts. The winner stops everyone else |
@@ -52,7 +53,15 @@ pnpm --filter @maskwars/race build:runner           # cargo: runner + training t
 pnpm --filter @maskwars/race test                   # sandbox tests are skipped until the runner is built
 pnpm --filter @maskwars/race race proof-replay      # live, needs NEAR_AI_API_KEY in .env
 pnpm --filter @maskwars/race round                  # a sealed round with scripted masks, no models
+pnpm --filter @maskwars/race round --variant pause  # the same round on a vault of another kind
+pnpm --filter @maskwars/race race live-safe --variant limit   # the models on the copy of that kind
 ```
+
+A race with a round's id in `BOUNTY` asks the round's vault for its kind and races that copy; `--variant` (or
+`VARIANT`, the `variant` input of `Live race`) is for a practice race, and a kind named by hand that the chain
+contradicts stops the race before any model is asked. The masks are shown the kind as the vault's own view says it
+(`public_kit`) and the same source for every kind; what a kind's hole is stays in
+`contracts/challenges/live-safe/README.md`, which they never read.
 
 `round` prints the board of one sealed round: who sealed and when, the window closing, who played, whose reveal or
 claim was refused and why, who was paid.

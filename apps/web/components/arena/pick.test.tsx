@@ -236,6 +236,28 @@ describe('after the round', () => {
     expect(box.textContent).not.toContain('in a row');
   });
 
+  it('missed, and a mask nobody could pick broke it: the line says who', async () => {
+    const DMYTRO: Who = { account: 'dmytro.masks.maskwars.near', slug: 'dmytro', name: 'DMYTRO', mask: true, model: null };
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ me: null, share: 't.m', name: null, linked: false }), { status: 200 }));
+    await show({ ...empty, last: brief({ outcome: DMYTRO.account, winner: DMYTRO }), lastMine: mine(NOVA.account) });
+    expect(line()).toBe('MissedNOVADMYTRO broke it');
+    expect(box.querySelector('[role="status"] [data-long]')).toBeNull();
+    expect(box.textContent).not.toContain('Called it');
+  });
+
+  it('missed, and an agent from outside broke it: its account, never a name of ours', async () => {
+    const agent: Who = { account: 'scout.agents-lab.near', slug: null, name: 'scout.agents-lab.near', mask: true, model: null };
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ me: null, share: 't.m', name: null, linked: false }), { status: 200 }));
+    await show({ ...empty, last: brief({ outcome: agent.account, winner: agent }), lastMine: mine(ORACLE.account) });
+    expect(line()).toBe('MissedORACLEscout.agents-lab.near broke it');
+  });
+
+  it('no pick on a round a guest won: the round and its winner', async () => {
+    const DMYTRO: Who = { account: 'dmytro.masks.maskwars.near', slug: 'dmytro', name: 'DMYTRO', mask: true, model: null };
+    await show({ ...empty, last: brief({ outcome: DMYTRO.account, winner: DMYTRO }) });
+    expect(line()).toBe('Race 0002DMYTROPicks open next round');
+  });
+
   it('no pick on it: the last round, and when picks open again', async () => {
     await show({ ...empty, last: brief({ outcome: HELD, winner: null }) });
     expect(box.textContent).toContain('Vault held');
@@ -264,5 +286,7 @@ describe('the words shared', () => {
     expect(shareText(brief(), ORACLE.account, 3)).toBe('Called it. ORACLE broke Race 0002 of MASK WARS in 16:24 and took 1.836 NEAR. 3 in a row.');
     expect(shareText(brief(), NOVA.account, null)).toBe('I picked NOVA. ORACLE broke Race 0002 of MASK WARS in 16:24 and took 1.836 NEAR. Running it back.');
     expect(shareText(brief({ outcome: HELD, winner: null }), HELD, 1)).toBe('Called it. The vault held in Race 0002 of MASK WARS. Nobody got through.');
+    const DMYTRO: Who = { account: 'dmytro.masks.maskwars.near', slug: 'dmytro', name: 'DMYTRO', mask: true, model: null };
+    expect(shareText(brief({ outcome: DMYTRO.account, winner: DMYTRO }), NOVA.account, null)).toBe('I picked NOVA. DMYTRO broke Race 0002 of MASK WARS in 16:24 and took 1.836 NEAR. Running it back.');
   });
 });

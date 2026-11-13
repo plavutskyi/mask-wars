@@ -47,7 +47,7 @@ describe.skipIf(!ready)("real sandbox", () => {
     expect(result.winner?.attempt).toBe(2);
     expect(BigInt(result.winner!.stolen)).toBe(10n * 10n ** 24n);
     const board = formatJournal(result.journal);
-    expect(board.find((l) => l.startsWith("ORACLE"))).toMatch(/^ORACLE {2}спроба 1: ×, спроба 2: злам за \d/);
+    expect(board.find((l) => l.startsWith("ORACLE"))).toMatch(/^ORACLE {2}attempt 1: ×, attempt 2: breach in \d/);
     console.log(board.join("\n"));
   });
 

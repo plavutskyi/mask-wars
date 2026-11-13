@@ -12,8 +12,9 @@
   --what: 34px;
   --deck: 170px;
   --deck-pick: 0px;
+  --deck-wings: 0px;
   --top: calc(64px + var(--what) + env(safe-area-inset-top));
-  --bottom: calc(var(--deck) + var(--deck-pick) + env(safe-area-inset-bottom));
+  --bottom: calc(var(--deck) + var(--deck-pick) + var(--deck-wings) + env(safe-area-inset-bottom));
   container: screen / size;
   position: relative;
   display: flex;
@@ -743,7 +744,13 @@
   --deck-pick: 51px;
 }
 
-.deck > :first-child[data-mode] {
+/* With the round's other masks in the wings, the deck is taller by their row and its air (wings.module.css): the arena
+   composes above it, so the row never meets a mask's name or the word under it. */
+.screen[data-wings] {
+  --deck-wings: 70px;
+}
+
+.deck > [data-mode] {
   margin-bottom: 8px;
 }
 
@@ -986,6 +993,16 @@
 
   .screen[data-pick='called'] {
     --deck-pick: 45px;
+  }
+
+  .screen[data-wings] {
+    --deck-wings: 56px;
+  }
+
+  /* Three faces stand each mask over its name, as the stage does: a taller row. */
+  .screen[data-wings='3'],
+  .screen[data-wings='4'] {
+    --deck-wings: 76px;
   }
 
   .quietRow {

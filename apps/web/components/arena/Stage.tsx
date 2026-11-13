@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { type CSSProperties, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { PickView } from '@/lib/pick';
-import { artOf, day, shortAccount, timeUtc, toneOf } from '@/lib/show';
+import { day, type Faces, faceOf, isAccount, shortAccount, timeUtc, toneIn } from '@/lib/show';
 import type { Across } from '@/lib/site';
 import { twoLines } from '../arena3d/headline';
 import { ArenaAudio } from '../arena3d/sound';
@@ -21,8 +21,9 @@ import { Info, type InfoRow } from './Info';
 import { raceName, raceTitle, stageName, standing } from './names';
 import { Nums } from './Nums';
 import { ownsDeck, Pick, type PickMode, pickMode } from './Pick';
-import { nextCast, nextScene, opensLine, type Scene, sceneOf, stageCast } from './scene';
+import { nextCast, nextScene, offStage, opensLine, type Scene, sceneOf, stageCast } from './scene';
 import { ArenaTarget, nextTargetOf, targetOf } from './Target';
+import { Wings, wingPlaces } from './Wings';
 import s from './stage.module.css';
 
 // The 3D arena is its own chunk with three.js inside: it is fetched only once the page has loaded and gone quiet,
@@ -181,6 +182,7 @@ export function Stage({
   across = null,
   pick = null,
   rpId = 'maskwars.xyz',
+  faces = null,
 }: {
   race: Race | null;
   next?: NextRace | null;
@@ -192,6 +194,8 @@ export function Stage({
   /** Pick the breaker: the round that takes picks, and the person's own calls (lib/pick). */
   pick?: PickView | null;
   rpId?: string;
+  /** The faces of the round's masks that people forged, by account (lib/forged.ts): the arena has no art of its own for them. */
+  faces?: Faces | null;
 }) {
   const router = useRouter();
   const [now, setNow] = useState(serverNow);
@@ -206,7 +210,7 @@ export function Stage({
   // Between rounds the stage is the next one: its vault and its sum, the clock to it in the header. A round that has
   // just ended keeps the stage for a while first.
   const ahead = upNext !== null && (race === null || now - endOf(race) > RESULT_MS) ? upNext : null;
-  const scene = useMemo(() => (ahead ? nextScene(ahead) : sceneOf(race, error === true)), [ahead, race, error]);
+  const scene = useMemo(() => (ahead ? nextScene(ahead) : sceneOf(race, error === true, faces)), [ahead, race, error, faces]);
   const three = useThree(scene !== null);
   const shown = useShown(scene, three.mode === 'on', ahead ? `next-${ahead.at}` : (race?.id ?? (error ? 'error' : 'empty')));
   // The round that takes picks is the one on the stage: the round itself, or the next one between rounds.
@@ -347,11 +351,15 @@ export function Stage({
     );
   }
 
-  const cast = useMemo(() => (ahead ? nextCast(ahead) : stageCast(race)), [ahead, race]);
+  const cast = useMemo(() => (ahead ? nextCast(ahead) : stageCast(race, faces)), [ahead, race, faces]);
+  // The stage holds three. The round's other masks stand in its wings, under the three: nobody in the round is left out.
+  const wings = useMemo(() => offStage(ahead ? ahead.masks : (race?.masks ?? []), cast), [ahead, race, cast]);
   const heats = race && !ahead ? cast.map((m) => standing(m, race.events)) : cast.map(() => ({ heat: 0.1, text: '' }));
-  const heat = ahead ? 0.15 : !race ? 0 : race.phase === 'broken' ? 1 : race.phase === 'sealing' ? 0.15 : race.phase === 'held' ? 0 : Math.max(0, ...heats.map((h) => h.heat));
+  // The light behind the vault is the whole round's: a mask in the wings that closes in on the vault burns in it too.
+  const closest = race && !ahead ? Math.max(0, ...heats.map((h) => h.heat), ...wings.map((m) => standing(m, race.events).heat)) : 0;
+  const heat = ahead ? 0.15 : !race ? 0 : race.phase === 'broken' ? 1 : race.phase === 'sealing' ? 0.15 : race.phase === 'held' ? 0 : closest;
   const lead = !ahead && race?.phase === 'racing' && heats.length ? heats.indexOf(heats.reduce((a, b) => (b.heat > a.heat ? b : a))) : -1;
-  const tone = ahead || !race ? 'ice' : race.phase === 'broken' ? toneOf(race.winner) : lead >= 0 ? toneOf(cast[lead]) : 'ice';
+  const tone = ahead || !race ? 'ice' : race.phase === 'broken' ? toneIn(race.winner, faces) : lead >= 0 ? toneIn(cast[lead], faces) : 'ice';
   const action = !race
     ? 'See the league'
     : ahead
@@ -375,6 +383,7 @@ export function Stage({
       data-across={other ? '' : undefined}
       data-target={target ? '' : undefined}
       data-pick={mode === 'none' || !pick ? undefined : mode === 'open' ? 'open' : picking ? 'called' : 'row'}
+      data-wings={wings.length ? wingPlaces(wings.length) : undefined}
       style={{ '--heat': heat.toFixed(3) } as CSSProperties}
     >
       <div className={s.flatBack} aria-hidden>
@@ -392,13 +401,14 @@ export function Stage({
       </div>
 
       {race?.phase === 'broken' && !ahead ? (
-        <FlatBroken race={race} facts={facts} />
+        <FlatBroken race={race} facts={facts} faces={faces} />
       ) : (
         <>
           <FlatStage
             race={ahead ? null : race}
             error={error === true}
             cast={cast}
+            faces={faces}
             heats={heats}
             lead={lead}
             aside={aside}
@@ -431,6 +441,7 @@ export function Stage({
       ) : null}
 
       <footer className={s.deck}>
+        {wings.length ? <Wings masks={wings} events={running && race ? race.events : null} faces={faces} href={race && !ahead ? `/race/${race.id}` : '/league'} /> : null}
         {pick ? <Pick pick={pick} now={now} rpId={rpId} onMode={onMode} onStage={onStage} /> : null}
         {error && !race ? (
           // The chain did not answer: the one useful action is to ask it again.
@@ -498,6 +509,7 @@ function FlatStage({
   race,
   error,
   cast,
+  faces,
   heats,
   lead,
   aside,
@@ -506,6 +518,7 @@ function FlatStage({
   race: Race | null;
   error: boolean;
   cast: readonly Who[];
+  faces: Faces | null;
   heats: readonly { heat: number; text: string }[];
   lead: number;
   aside: ReactNode;
@@ -562,14 +575,14 @@ function FlatStage({
 
       <ol className={s.fMasks} aria-label={race ? 'Masks in the race' : 'Masks of the arena'}>
         {cast.map((m, i) => {
-          const art = artOf(m);
+          const art = faceOf(m, faces);
           const st = heats[i]!;
           const note = running ? st.text : '';
           return (
             <li
               key={m.account}
               className={s.fMask}
-              data-tone={toneOf(m)}
+              data-tone={toneIn(m, faces)}
               data-lead={i === lead ? '' : undefined}
               data-long={m.name.length > 8 ? '' : undefined}
               style={{ '--h': (running ? st.heat : 0.1).toFixed(2), '--chars': Math.max(4, m.name.length) } as CSSProperties}
@@ -605,9 +618,10 @@ function Line({ text }: { text: string }) {
 }
 
 /** The flat arena of a broken vault: the mask that broke it takes the whole face, the money and its name under it. */
-function FlatBroken({ race, facts }: { race: Race; facts: InfoRow[] }) {
+function FlatBroken({ race, facts, faces }: { race: Race; facts: InfoRow[]; faces: Faces | null }) {
   const winner = race.winner;
-  const taker = artOf(winner);
+  // The winner's own face: the arena's art of it, or the look a person forged it with. Never another mask's.
+  const taker = faceOf(winner, faces);
   const sum = near(race.takes);
   return (
     <>
@@ -642,7 +656,7 @@ function FlatBroken({ race, facts }: { race: Race; facts: InfoRow[] }) {
                 <Link href={`/mask/${winner.slug}`} className={`${s.word} ${s.who}`} data-long={winner.name.length > 8 ? '' : undefined}>
                   {winner.name}
                 </Link>
-              ) : winner?.mask ? (
+              ) : winner?.mask && !isAccount(winner.name) ? (
                 <span className={`${s.word} ${s.who}`} data-long={winner.name.length > 8 ? '' : undefined}>
                   {winner.name}
                 </span>

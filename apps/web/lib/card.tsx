@@ -5,11 +5,13 @@ import { join } from 'node:path';
 import type { MaskStats, Race, Who } from '@maskwars/arena';
 import { duration, near, raceNo } from '@maskwars/arena/format';
 import { color } from '@maskwars/brand';
+import { look as lookOf, type MaskView, mind as mindOf, style as styleOf } from '@maskwars/forge';
 import { ImageResponse } from 'next/og';
 import type { CSSProperties, ReactNode } from 'react';
+import { stateOf } from '@/lib/person';
 import { choiceName, HELD, outcomeOf, verdictOf } from '@/lib/pick';
 import type { Claim } from '@/lib/share';
-import { artOf, day, shortAccount, type Tone, toneOf } from '@/lib/show';
+import { artOf, day, lookTone, shortAccount, type Tone, toneOf } from '@/lib/show';
 import { raceName } from '@/components/arena/names';
 import { type Metrics, lineWidth, metrics, wordKern } from '@/lib/ttf';
 
@@ -300,14 +302,14 @@ function Headline({ a, head, fill }: { a: Assets; head: Head; fill: string }) {
 }
 
 /** NEAR as the page sets it: the figure big in Mona, the unit a third of it in Hubot, on one baseline. */
-function Amount({ a, value, fill, size, max = COLUMN }: { a: Assets; value: string; fill: string; size: number; max?: number }) {
-  const unit = 0.34;
-  const width = (s: number) => lineWidth(a.m.num, value, s, NUM_TRACK) + s * 0.12 + lineWidth(a.m.word, 'NEAR', s * unit, WORD_TRACK);
+function Amount({ a, value, fill, size, max = COLUMN, unit = 'NEAR' }: { a: Assets; value: string; fill: string; size: number; max?: number; unit?: string }) {
+  const small = 0.34;
+  const width = (s: number) => lineWidth(a.m.num, value, s, NUM_TRACK) + s * 0.12 + lineWidth(a.m.word, unit, s * small, WORD_TRACK);
   const s = width(size) <= max ? size : Math.floor((size * max) / width(size));
   return (
     <div style={{ display: 'flex', alignItems: 'baseline' }}>
       <span style={text('num', s, fill)}>{value}</span>
-      <span style={text('word', s * unit, fill, { marginLeft: s * 0.12 })}>NEAR</span>
+      <span style={text('word', s * small, fill, { marginLeft: s * 0.12 })}>{unit}</span>
     </div>
   );
 }
@@ -373,8 +375,12 @@ const TONE: Record<Tone, string> = { ember: color.ember, ice: color.ice, violet:
 /** Where the picture stands: the right of the card, its centre here. */
 const STAGE = { x: 930, y: 300 } as const;
 
+/** The light of a forged mask's look: an ellipse of the mask's own proportions around its eye line, wider than it, px. */
+const GLOW = { rx: 360, ry: 490 } as const;
+const pct = (part: number) => `${(part * 100).toFixed(2)}%`;
+
 /** The right of the card: a mask's face, the mark for a mask with no frame yet (in its own light), or the vault. */
-async function hero(pick: { face: string | null; vault?: boolean; tone?: Tone }): Promise<ReactNode> {
+async function hero(pick: { face: string | null; vault?: boolean; tone?: Tone; glow?: boolean }): Promise<ReactNode> {
   const vault = pick.vault ? await picture('vault') : null;
   if (vault) {
     // ring.jpg: 2200×1235, the ring's centre at (1098, 585), 1130 across. Here 440 across, on the stage; the frame's
@@ -383,9 +389,20 @@ async function hero(pick: { face: string | null; vault?: boolean; tone?: Tone })
     return <Soft src={vault} left={Math.round(STAGE.x - 1098 * k)} top={Math.round(STAGE.y - 585 * k)} width={Math.round(2200 * k)} height={Math.round(1235 * k)} edge={0.17} />;
   }
   const face = pick.face ? await picture(pick.face) : null;
-  // A 1:1 frame as high as the card: the mask stands 78% of it, its eyes on the centre line (BRANDBOOK §5).
-  if (face) return <Soft src={face} left={STAGE.x - H / 2 + 10} top={0} width={H} height={H} edge={0.2} />;
   const light = TONE[pick.tone ?? 'ice'];
+  if (face) {
+    // A 1:1 frame as high as the card: the mask stands 78% of it, its eyes on the centre line (BRANDBOOK §5).
+    const frame = <Soft src={face} left={STAGE.x - H / 2 + 10} top={0} width={H} height={H} edge={0.2} />;
+    if (!pick.glow) return frame;
+    // A forged mask stands in the light of its look, as on its page: the colour of its eyes around it, faint enough
+    // to leave the material its own (Satori has no blend modes, so the light lies over the frame, not behind it).
+    return (
+      <>
+        {frame}
+        <div style={{ ...full, backgroundImage: `radial-gradient(${pct(GLOW.rx / W)} ${pct(GLOW.ry / H)} at ${pct((STAGE.x + 10) / W)} 46%, ${rgba(light, 0.03)} 0%, ${rgba(light, 0.05)} 34%, ${rgba(light, 0.2)} 52%, ${rgba(light, 0.07)} 76%, ${rgba(light, 0)} 100%)` }} />
+      </>
+    );
+  }
   return (
     <div style={{ position: 'absolute', left: STAGE.x - 260, top: STAGE.y - 260, width: 520, height: 520, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ position: 'absolute', left: 0, top: 0, width: 520, height: 520, display: 'flex', backgroundImage: `radial-gradient(50% 50% at 50% 50%, ${rgba(light, 0.24)} 0%, ${rgba(light, 0.08)} 50%, ${rgba(light, 0)} 100%)` }} />
@@ -402,7 +419,7 @@ function Column({ children, gap = 22 }: { children: ReactNode; gap?: number }) {
   );
 }
 
-function Kicker({ a, line, live = false }: { a: Assets; line: string; live?: boolean }) {
+function Kicker({ a, line, live = false, fill = color.ice60 }: { a: Assets; line: string; live?: boolean; fill?: string }) {
   const size = 28;
   const liveWidth = live ? 16 + 10 + lineWidth(a.m.word, 'LIVE', size, LABEL_TRACK) + 22 : 0;
   return (
@@ -413,7 +430,7 @@ function Kicker({ a, line, live = false }: { a: Assets; line: string; live?: boo
           <span style={text('word', size, color.live, { letterSpacing: size * LABEL_TRACK })}>LIVE</span>
         </div>
       ) : null}
-      <Mixed a={a} line={line} size={size} fill={color.ice60} max={COLUMN - liveWidth} floor={0} />
+      <Mixed a={a} line={line} size={size} fill={fill} max={COLUMN - liveWidth} floor={0} />
     </div>
   );
 }
@@ -421,6 +438,20 @@ function Kicker({ a, line, live = false }: { a: Assets; line: string; live?: boo
 async function draw(node: ReactNode, cache: string): Promise<ImageResponse> {
   const a = await assets();
   return new ImageResponse(<Arena>{node}</Arena>, { ...SIZE, fonts: a.fonts, headers: { 'Cache-Control': cache } });
+}
+
+/**
+ * A card drawn to the end before it is sent, or null when it cannot be drawn: a card that fails halfway would reach
+ * whoever unfurls the link as a broken picture, so the caller sends another card instead.
+ */
+export async function drawn(card: () => Promise<Response>): Promise<Response | null> {
+  try {
+    const res = await card();
+    const png = await res.arrayBuffer();
+    return res.ok && png.byteLength ? new Response(png, { status: 200, headers: res.headers }) : null;
+  } catch {
+    return null;
+  }
 }
 
 // Cards ---------------------------------------------------------------------------------------------------------------
@@ -585,6 +616,105 @@ export async function maskCard(m: MaskStats, rank: number, network: string): Pro
       </Column>
     </>,
     CACHE.mask,
+  );
+}
+
+// A forged mask ---------------------------------------------------------------------------------------------------------
+
+/** What the card of a mask a person forged says: its name, its face, and where it stands, as the chain has it. */
+export interface ForgedLines {
+  readonly name: string;
+  /** The frame of its look (`LOOKS` of packages/forge); null for a look with no frame here: the mark stands in. */
+  readonly face: string | null;
+  readonly tone: Tone;
+  /** NEAR it took, once it broke a vault; null before that. */
+  readonly taken: string | null;
+  /** Where it stands: its breaks under the NEAR it took, its races, or that it has not raced yet. */
+  readonly line: string;
+  /** Its mind and style, by the names its page shows. */
+  readonly mind: string;
+}
+
+/**
+ * The lines of a forged mask's card, from the factory's record and the arena's (`stats`, null until it raced or when
+ * the arena was not read). Races are the page's: never fewer than the factory counted. A mask that never raced is
+ * ready only if it can race now: one that is paused or out of fuel is not called ready.
+ */
+export function forgedLines(m: Pick<MaskView, 'name' | 'look' | 'model' | 'style' | 'races' | 'state' | 'race' | 'brain'>, stats: Pick<MaskStats, 'races' | 'breaks' | 'earned'> | null): ForgedLines {
+  const art = lookOf(m.look)?.art.match(/^\/art\/([a-z]+)\.webp$/)?.[1];
+  const breaks = stats?.breaks ?? 0;
+  const races = Math.max(stats?.races ?? 0, m.races);
+  const state = stateOf(m).key;
+  return {
+    name: m.name.toUpperCase(),
+    face: art && ART_FILES[art] ? art : null,
+    tone: lookTone(m.look),
+    taken: breaks && BigInt(stats?.earned || '0') > 0n ? near(stats?.earned) : null,
+    line: breaks
+      ? count(breaks, 'BREAK', 'BREAKS')
+      : races
+        ? count(races, 'RACE', 'RACES')
+        : state === 'ready'
+          ? 'READY TO RACE'
+          : state === 'racing'
+            ? 'IN ITS FIRST RACE'
+            : 'BUILT TO BREAK VAULTS',
+    mind: `Mind: ${mindOf(m.model)?.name ?? modelName(m.model)} · ${styleOf(m.style)?.name ?? m.style}`,
+  };
+}
+
+/** The name at its largest: a short one fills the column in the wide cut, up to this size. */
+const NAME_BIG = 148;
+/** A long name narrows on the width axis (BRANDBOOK §4) and starts from this size. */
+const NAME_LONG = 112;
+
+/**
+ * A forged mask's name in one line of `max` px, as its page sets it: up to 8 characters in the wide cut, as large as
+ * the column takes; a longer one narrows on the width axis first, then gives up size. No name of 3 to 16 characters
+ * is cut short.
+ */
+function fitName(a: Assets, name: string, max: number): Fit {
+  const [font, size]: [FontKey, number] = name.length > 8 ? ['narrow', NAME_LONG] : ['word', NAME_BIG];
+  const w = lineWidth(a.m[font], name, size, WORD_TRACK);
+  return { font, size: w <= max ? size : Math.floor((size * max) / w), text: name };
+}
+
+/** How a name stands on the card: its cut and size. */
+export async function nameFit(name: string): Promise<{ font: 'word' | 'narrow'; size: number }> {
+  const f = fitName(await assets(), name.toUpperCase(), COLUMN);
+  return { font: f.font === 'narrow' ? 'narrow' : 'word', size: f.size };
+}
+
+/**
+ * The card of a mask a person forged: its face in the light of its look, its name, where it stands, the mind it
+ * thinks with. `cache` is the edge cache: shorter when the arena was not read and the card may say less than is true.
+ */
+export async function forgedCard(m: Parameters<typeof forgedLines>[0], stats: Parameters<typeof forgedLines>[1], cache: string = CACHE.mask): Promise<ImageResponse> {
+  const a = await assets();
+  const l = forgedLines(m, stats);
+  const quiet = 30;
+  const whole = lineWidth(a.m.line, l.mind, quiet) <= COLUMN ? l.mind : l.mind.split(' · ')[0]!;
+  const mindSize = Math.max(28, Math.min(quiet, Math.floor((quiet * COLUMN) / lineWidth(a.m.line, whole, quiet))));
+  return draw(
+    <>
+      {await hero({ face: l.face, tone: l.tone, glow: true })}
+      <Column gap={0}>
+        <Kicker a={a} line="FORGED ON NEAR" fill={color.amber} />
+        <div style={{ display: 'flex', marginTop: 22 }}>
+          <Words a={a} fit={fitName(a, l.name, COLUMN)} fill={color.ice} />
+        </div>
+        {l.taken ? (
+          <div style={{ display: 'flex', marginTop: 26 }}>
+            <Amount a={a} value={l.taken} fill={color.money} size={88} unit="NEAR TAKEN" />
+          </div>
+        ) : null}
+        <div style={{ display: 'flex', marginTop: l.taken ? 18 : 30 }}>
+          <Mixed a={a} line={l.line} size={l.taken ? 40 : 46} fill={color.ice} floor={0} />
+        </div>
+        <span style={text('line', mindSize, color.ice60, { marginTop: 22 })}>{whole}</span>
+      </Column>
+    </>,
+    cache,
   );
 }
 

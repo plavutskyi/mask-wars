@@ -125,6 +125,36 @@ export const config = (net: Network) => view<FactoryConfig>(net, "config");
 export const nameFree = (net: Network, name: string) => view<boolean>(net, "name_free", { name });
 export const getMask = (net: Network, name: string) => view<MaskView | null>(net, "get_mask", { name });
 export const masksOf = (net: Network, owner: string) => view<MaskView[]>(net, "masks_of", { owner });
+
+/** The most masks the factory gives in one answer of `list_masks` (contracts/masks/factory: `limit.min(50)`). */
+export const LIST_PAGE = 50;
+
+export interface ListOptions {
+  /** Stop after this many masks: the oldest `max` are read. */
+  readonly max?: number;
+  /** How long one RPC may take over one page, ms. */
+  readonly timeoutMs?: number;
+  /** The view call the pages are read with; `view` unless a test gives its own. */
+  readonly read?: typeof view;
+}
+
+/**
+ * The masks the factory lists, in the order they were forged, read page by page (`list_masks`, 50 a page) until a
+ * page comes short or `max` are read. Each is the whole record `get_mask` gives: look, tank, races, state. A page
+ * that fails fails the reading: half a list is never returned as the list.
+ */
+export async function listMasks(net: Network, o: ListOptions = {}): Promise<MaskView[]> {
+  const read = o.read ?? view;
+  const max = Math.max(0, Math.floor(o.max ?? 2_000));
+  const out: MaskView[] = [];
+  while (out.length < max) {
+    const limit = Math.min(LIST_PAGE, max - out.length);
+    const page = await read<MaskView[]>(net, "list_masks", { from_index: out.length, limit }, o.timeoutMs);
+    out.push(...page.slice(0, limit));
+    if (page.length < limit) break;
+  }
+  return out;
+}
 /** One page of the masks that copy `name`, in forging order, read from the author's own list on the factory. */
 export const copiesOf = (net: Network, name: string, fromIndex = 0, limit = 50) =>
   view<CopyChild[]>(net, "copies_of", { name, from_index: fromIndex, limit });

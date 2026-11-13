@@ -25,6 +25,30 @@ export function toneOf(who: Who | null | undefined): Tone {
   }
 }
 
+/** A forged mask's colour follows the eyes of its look, as the cast's do: `porcelain` Ice, `crimson` Ember, `graphite` Violet. */
+export function lookTone(look: string): Tone {
+  return look === 'crimson' ? 'ember' : look === 'graphite' ? 'violet' : 'ice';
+}
+
+/** A mask a person forged, as the stage shows it: the art of the look it was forged with, the colour of its eyes. */
+export interface Face {
+  readonly art: string;
+  readonly tone: Tone;
+}
+
+/** The faces of the forged masks of a round, by account (lib/forged.ts reads them from the factory). */
+export type Faces = Readonly<Record<string, Face>>;
+
+/** A mask's face: the arena's art of it, or the art of the look a person forged it with; null for one with neither. */
+export function faceOf(who: Who | null | undefined, faces?: Faces | null): string | null {
+  return artOf(who) ?? (who ? (faces?.[who.account]?.art ?? null) : null);
+}
+
+/** A mask's colour: its own eyes' for the arena's cast, its look's for a mask a person forged. */
+export function toneIn(who: Who | null | undefined, faces?: Faces | null): Tone {
+  return (who && !artOf(who) ? faces?.[who.account]?.tone : undefined) ?? toneOf(who);
+}
+
 const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 
 /** 6 NOV, in UTC like everything on the chain. */

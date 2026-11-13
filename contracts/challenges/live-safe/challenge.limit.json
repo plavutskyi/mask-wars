@@ -1,0 +1,13 @@
+{
+  "id": "live-safe",
+  "title": "Live safe",
+  "wasm": "live_safe.wasm",
+  "source": ["src/lib.rs"],
+  "target": { "name": "safe", "near": 5 },
+  "attacker": { "name": "attacker", "near": 5 },
+  "accounts": [{ "name": "alice", "near": 10 }],
+  "init": { "method": "new", "args": { "owner": "alice.test.near", "masks": ["attacker.test.near"], "variant": "limit" } },
+  "setup": [],
+  "kit": { "variant": "limit" },
+  "limits": { "max_steps": 12, "timeout_s": 120, "min_loot_near": 1 }
+}

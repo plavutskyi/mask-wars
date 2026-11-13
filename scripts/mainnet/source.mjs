@@ -9,6 +9,10 @@
 //        house's next day makes the vault with it (refused while the chain does not list the code)
 //   node scripts/mainnet/source.mjs <out/source> --switch home
 //        `home_code` of mainnet.json, right before home-deploy.mjs puts the new home on the masks
+//   node --use-env-proxy scripts/mainnet/source.mjs <out/source> --hand pause [--id pause-0002]
+//        a round by hand on a vault of that kind (owner, limit, pause), on a fresh vault of its own: checks the
+//        vault's code, puts it where bounty-change.ps1 and safe-deploy.ps1 read it and prints the owner's steps in
+//        order, each a command. The daily vault is not touched: nothing is served, `safe_code` stays
 //
 // The vault's code is pinned in two places on chain and one in the repository, and all three move together or the
 // day stops: the bounty contract's `safe_codes` (it opens no round on a code it does not list), the house's
@@ -117,6 +121,78 @@ export function houseTerms(net, judge, code) {
   };
 }
 
+/** The kinds a live vault comes in (contracts/challenges/live-safe/README.md) and the calls of each kind's desk. */
+export const KINDS = {
+  owner: ['set_owner', 'sweep'],
+  limit: ['request_exit', 'check_exit', 'withdraw'],
+  pause: ['claim', 'book', 'cash_out', 'pause', 'unpause'],
+};
+/** What a round by hand leaves the masks to race for, beside the stake of the vault's own storage. */
+const HAND_BANK = '0.3';
+/** The fault of `vaultFaults` that is the daily vault's alone: a vault by hand gets its own NEAR. */
+const DAILY_ONLY = /leaves less than twice the least drain$/;
+
+/**
+ * A round by hand on a fresh vault of `kind` with the code `b`: the vault's account, what it gets, and the owner's
+ * steps in order, each with the command that sends it. `listed` says whether the bounty contract already lists the
+ * code (`null`: not known). Signs nothing. Throws when the code cannot play such a round.
+ */
+export function handRound(b, net, kind, id = `${kind}-0001`, listed = null, hours = 4) {
+  if (!Object.hasOwn(KINDS, kind)) throw new Error(`--hand: ${Object.keys(KINDS).join(', ')}, not ${JSON.stringify(kind)}`);
+  if (!/^[a-z0-9-]{8,60}$/.test(id) || /^race-\d+$/.test(id)) throw new Error(`--id: 8 to 60 of a-z, 0-9 and -, and not race-<n>, the house's own row of rounds: ${JSON.stringify(id)}`);
+  const missing = ['arm', 'queue', 'retire', 'on_retire', 'reclaim', 'on_bounty', 'about', 'contract_source_metadata', ...KINDS[kind], ...(kind === 'owner' ? [] : ['variant'])].filter((m) => !b.exports.includes(m));
+  if (missing.length > 0) throw new Error(`this code has no vault of the ${kind} kind: it exports no ${missing.join(', ')}`);
+  const stake = (BigInt(b.bytes.length) + VAULT_STATE_BYTES) * BYTE_COST;
+  // The stake and the bank, rounded up to a tenth of a NEAR: what safe-deploy.ps1 -Near takes.
+  const tenth = NEAR / 10n;
+  const fund = ((stake + yocto(HAND_BANK) + tenth - 1n) / tenth) * tenth;
+  if (fund > yocto(net.limits.hand.safe_max)) throw new Error(`the vault would need ${near(fund)} NEAR, above limits.hand.safe_max of ${net.limits.hand.safe_max}`);
+  const bank = fund - stake;
+  if (bank < 2n * yocto(net.round.min_loot)) throw new Error(`${near(fund)} NEAR leaves ${near(bank)} to race for, less than twice the least drain`);
+  const safe = `${id}.${net.admin}`;
+  const ps = (script, args) => `.\\scripts\\testnet\\${script} -Network mainnet ${args}`;
+  const fundText = `${fund / NEAR}.${String((fund % NEAR) / tenth)}`;
+  const steps = [];
+  if (listed !== true) {
+    steps.push({
+      who: net.admin,
+      what: `The bounty contract takes the vault's code ${b.code} on its list. Propose outside ${ROUND_WINDOW.from} to ${ROUND_WINDOW.to} UTC.`,
+      commands: [ps('bounty-change.ps1', '-AllowSafe')],
+    });
+    steps.push({
+      who: net.admin,
+      what: 'An hour later, and within 24 hours of that: apply. -Show then lists the code among safe_codes, beside the old one.',
+      commands: [ps('bounty-change.ps1', '-Apply'), ps('bounty-change.ps1', '-Show')],
+    });
+  }
+  steps.push({
+    who: net.admin,
+    what: `The vault ${safe}, of the ${kind} kind for good, in one transaction that adds no key: ${fundText} NEAR, about ${near(stake)} the stake of its storage and about ${near(bank)} what the masks race for.`,
+    commands: [ps('safe-deploy.ps1', `-Safe ${safe} -Variant ${kind} -Near ${fundText}`)],
+  });
+  steps.push({
+    who: 'each mask (3 transactions)',
+    what: 'The masks\' keys on the new vault, from the seeds they hold: every call of every kind is on the list a key gets.',
+    commands: [ps('season-keys.ps1', `-Safe ${safe} -SafeOnly`)],
+  });
+  steps.push({
+    who: net.admin,
+    what: `The round ${id}: ${net.round.deposit} NEAR of deposit, a drain from ${net.round.min_loot} NEAR, ${hours} hours in all. Open it so that it is played out before 17:30 UTC or after ${ROUND_WINDOW.to} UTC: the masks sign both rounds with the same keys on the bounty contract.`,
+    commands: [ps('open-safe.ps1', `-Id ${id} -Safe ${safe} -MinLoot ${net.round.min_loot} -Near ${net.round.deposit}`)],
+  });
+  steps.push({
+    who: 'nobody signs',
+    what: 'The race, at once: Live race in the public repository, approved in live-race-hand. It reads the vault\'s kind from the chain and gives the masks that copy.',
+    commands: [`gh workflow run live-race.yml --repo plavutskyi/mask-wars -f challenge=live-safe -f attempts=5 -f bounty=${id}`],
+  });
+  steps.push({
+    who: net.admin,
+    what: `Once the round's deadline has passed, ${hours} hours after it opened: the vault deletes itself, and all it holds comes back to ${net.admin}, the stake included. A round nobody won is refunded first, 12 hours after the deadline (refund.ps1 -Network mainnet -Id ${id}).`,
+    commands: [ps('retire.ps1', `-Safe ${safe}`)],
+  });
+  return { kind, id, safe, fund: fundText, stake, bank, steps };
+}
+
 /** What the vault's code and state lock, rounded up to a hundredth of a NEAR: `round.stake` of the network file. */
 export function stakeOf(bytes) {
   const y = BigInt(bytes) * BYTE_COST;
@@ -152,10 +228,12 @@ async function listed(net, code) {
 }
 
 async function main(argv) {
-  const dir = argv.find((a) => !a.startsWith('--'));
-  const which = argv.includes('--switch') ? argv[argv.indexOf('--switch') + 1] : null;
-  if (!dir || (argv.includes('--switch') && !['safe', 'home'].includes(which))) {
-    console.error('usage: node scripts/mainnet/source.mjs <out/source> [--switch safe|home]');
+  const value = (flag) => (argv.includes(flag) ? (argv[argv.indexOf(flag) + 1] ?? '') : null);
+  const dir = argv.find((a, i) => !a.startsWith('--') && !['--switch', '--hand', '--id'].includes(argv[i - 1]));
+  const which = value('--switch');
+  const hand = value('--hand');
+  if (!dir || (which !== null && !['safe', 'home'].includes(which)) || (hand !== null && (which !== null || !Object.hasOwn(KINDS, hand)))) {
+    console.error(`usage: node scripts/mainnet/source.mjs <out/source> [--switch safe|home | --hand ${Object.keys(KINDS).join('|')} [--id <round>]]`);
     return 2;
   }
   const net = JSON.parse(readFileSync(join(ROOT, 'packages/network/mainnet.json'), 'utf8'));
@@ -165,9 +243,13 @@ async function main(argv) {
   const rev = Object.values(build)[0].meta?.link?.split('/tree/')[1];
   console.log(`commit ${rev} of the public repository\n`);
   for (const [name, b] of Object.entries(build)) {
-    const why = name === 'live-safe' ? [...b.why, ...vaultFaults(b, net)] : b.why;
+    if (hand !== null && name !== 'live-safe') continue;
+    const faults = name === 'live-safe' ? vaultFaults(b, net) : [];
+    // A vault by hand gets its own NEAR: whether the code fits the daily vault's is said, and stops nothing.
+    const why = [...b.why, ...(hand !== null ? faults.filter((f) => !DAILY_ONLY.test(f)) : faults)];
     console.log(`${name.padEnd(13)} ${b.meta?.version ?? '?'}  ${String(b.bytes.length).padStart(7)} bytes  code hash ${b.code}  sha256 ${b.sha256}`);
     for (const w of why) console.log(`  NOT OK: ${w}`);
+    if (hand !== null) for (const f of faults.filter((f) => DAILY_ONLY.test(f))) console.log(`  the daily vault would not take this code as it is (${f}): raise round.safe before --switch safe. A vault by hand is not held by it.`);
     bad ||= why.length > 0;
   }
   if (bad) {
@@ -176,6 +258,27 @@ async function main(argv) {
   }
 
   const safe = build['live-safe'];
+  if (hand !== null) {
+    if (!safe) throw new Error('no live-safe.wasm: nothing to open a round on');
+    const round = JSON.parse(readFileSync(join(ROOT, 'scripts/mainnet/open-safe-args.json'), 'utf8'));
+    const onList = await listed(net, safe.code).catch(() => null);
+    const plan = handRound(safe, net, hand, value('--id') || undefined, onList, round.hours);
+    const scratch = join(ROOT, '.scratch', 'near-mainnet');
+    mkdirSync(scratch, { recursive: true });
+    copyFileSync(safe.file, join(scratch, CONTRACTS['live-safe'].scratch));
+    console.log(`\nPlaced: the vault's code in .scratch/near-mainnet/${CONTRACTS['live-safe'].scratch}. Nothing is served and mainnet.json is as it was: the daily vault keeps its code.`);
+    console.log(`\nA round by hand on a vault of the ${plan.kind} kind: ${plan.safe}, round ${plan.id}.`);
+    console.log(`\nFirst, with no NEAR at stake: a practice race of the three models on the copy of this kind. Go on once a mask breaks it.`);
+    console.log(`     gh workflow run live-race.yml --repo plavutskyi/mask-wars -f challenge=live-safe -f attempts=5 -f variant=${plan.kind}`);
+    if (onList === true) console.log(`\n${net.bounty} already lists ${safe.code}: nothing to propose.`);
+    if (onList === null) console.log(`\nNo RPC said whether ${net.bounty} lists ${safe.code}: -Show tells; if it does, skip the first two steps.`);
+    console.log('\nThe owner signs, in this order (each script takes -DryRun first):');
+    plan.steps.forEach((st, i) => {
+      console.log(`\n${i + 1}. ${st.who}: ${st.what}`);
+      for (const c of st.commands) console.log(`     ${c}`);
+    });
+    return 0;
+  }
   if (which === 'safe') {
     if (!safe) throw new Error('no live-safe.wasm: nothing to switch');
     if (!(await listed(net, safe.code))) {
@@ -224,7 +327,7 @@ async function main(argv) {
     console.log('     .\\scripts\\testnet\\bounty-change.ps1 -Network mainnet -AllowSafe');
     console.log('     an hour later: .\\scripts\\testnet\\bounty-change.ps1 -Network mainnet -Apply; then -Show lists the code');
     console.log(`${step()} The repository names the new code: node --use-env-proxy scripts/mainnet/source.mjs <out/source> --switch safe,`);
-    console.log('   merge, export the public copy before 18:00 UTC. The next day the house retires the vault and makes it with 1.6.0.');
+    console.log(`   merge, export the public copy before 18:00 UTC. The next day the house retires the vault and makes it with ${safe.meta?.version ?? 'the new code'}.`);
     console.log(`${step()} The house's terms with the new code are .scratch/near-mainnet/house-terms.json. While house.maskwars.near has no`);
     console.log('   contract (contracts/house/README.md) nothing to send. Once it runs one, the same moment as step 2, ' + window + ':');
     console.log("     near contract call-function as-transaction house.maskwars.near configure file-args .scratch/near-mainnet/house-terms.json prepaid-gas '30.0 Tgas' attached-deposit '1 yoctoNEAR' sign-as house.maskwars.near network-config mainnet sign-with-keychain send");

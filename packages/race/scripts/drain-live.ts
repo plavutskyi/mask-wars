@@ -40,6 +40,8 @@ import { claimKeyOf, roundKeys, secretsOf, type MaskSecret } from "../src/keys.t
 import { playLive, resumeLive, sealLive, sweepRuleOf, type RoundView, type SafeRace } from "../src/live.ts";
 import { holdsKey, JsonRpc, view } from "../src/near-tx.ts";
 import { Plan } from "../src/plan.ts";
+import { DEFAULT_VARIANT } from "../src/challenge.ts";
+import { vaultVariant, withoutFailed } from "../src/variant.ts";
 
 const fail = (why: string): never => {
   console.error(why);
@@ -62,7 +64,7 @@ if (keeperSeed) console.log(`::add-mask::${keeperSeed}`);
 const humanOf = (id: string) => humans.find((h) => h.name.toUpperCase() === id);
 for (const h of humans) accounts[h.name.toUpperCase()] ??= h.account;
 
-type Finding = { attacker: string; plan: unknown };
+type Finding = { attacker: string; plan: unknown; replay?: { steps?: unknown } | null };
 const readFinding = async (): Promise<Finding | null> => {
   if (process.env.FINDING_BOX) {
     const boxes = [JSON.parse(await readFile(process.env.FINDING_BOX, "utf8")) as FindingBox | FindingBox[]].flat();
@@ -142,10 +144,17 @@ const live = {
 
 const round = await view<RoundView | null>(live.chain, live.bountyContract, "get_round", { id: bountyId });
 const resuming = round?.seals.some((s) => s.mask === mask && s.state === "sealed") ?? false;
+// The vault's kind (src/variant.ts). The owner kind, every vault before 1.7.0 and a chain that does not say play the
+// plan as it was found, as always. On another kind the mask leaves out the calls the sandbox refused: on chain a
+// failed call ends its run, and the judge confirms only a plan played whole.
+const kind = await vaultVariant(chain, race.safe).catch(() => DEFAULT_VARIANT);
+const found = Plan.parse(finding.plan);
+const whole = kind === DEFAULT_VARIANT ? found : withoutFailed(found, finding.replay as Parameters<typeof withoutFailed>[1]);
+if (kind !== DEFAULT_VARIANT) console.log(`the vault is of the ${kind} kind${whole === found ? "" : `: ${found.steps.length - whole.steps.length} call(s) the sandbox refused are left out`}`);
 const seal = {
   ...live,
   challenge: await loadChallenge(join(CHALLENGES_DIR, challengeId)),
-  plan: Plan.parse(finding.plan),
+  plan: whole,
   ...(anyMethod ? { safeMethods: null } : {}),
 };
 const sealed = await (resuming ? resumeLive(seal) : sealLive(seal)).catch((e: Error) =>

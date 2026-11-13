@@ -240,6 +240,43 @@ describe("a sealed round on testnet", () => {
     expect(result).toMatchObject({ status: "drained", drainTx: result.calls[0]!.hash });
   });
 
+  // The vault's other kinds (live-safe's `variant`): the plan is that kind's own calls, with no sweep in it. The mask
+  // plays it with its seed's key as the sandbox found it: the amounts stay, since such a vault pays as much of them as
+  // it holds, and the plan's last call is the drain it claims.
+  for (const [kind, methods] of [
+    ["limit", ["request_exit", "request_exit", "withdraw"]],
+    ["pause", ["book", "cash_out"]],
+  ] as const) {
+    it(`plays a vault of the ${kind} kind: the sandbox plan as it is, and the last call is the drain`, async () => {
+      const chain = new FakeTestnet();
+      chain.available = NEAR / 4n;
+      const lines: string[] = [];
+      const plan = Plan.parse(JSON.parse(await planText(`live-safe.${kind}`, "breach")));
+      const o = { ...live(chain, lines), challenge: await challenge("live-safe", kind), plan, salt: "salt-0123456789abcdef", safeMethods: null };
+      const sealed = await sealLive(o);
+      // The view is dropped, the calls are the plan's own, with the amounts the sandbox copy was asked for.
+      const calls = plan.steps.filter((s) => s.kind === "call").map((s) => ({ method: s.method, args: s.args ?? {} }));
+      expect(sealed.calls).toEqual(calls);
+      expect(sealed.calls.map((c) => c.method)).toEqual([...methods]);
+      const result = await playLive(live(chain, lines), sealed);
+      expect(chain.sent.map((t) => t.method)).toEqual(["commit", ...methods, "reveal", "claim_drain"]);
+      for (const t of chain.sent.slice(1, 1 + methods.length)) {
+        expect(t).toMatchObject({ signer: NOVA, pk: SAFE_KEY.publicKeyText, receiver: SAFE, deposit: 0n, gas: BigInt(SAFE_CALL_TGAS) * 10n ** 12n });
+      }
+      expect(chain.sent.at(-1)!.args).toEqual({ id: ID, tx_hash: result.calls.at(-1)!.hash });
+      expect(result).toMatchObject({ status: "drained", drainTx: result.calls.at(-1)!.hash });
+    });
+  }
+
+  it("a call of another kind's plan may name only the mask, the vault and amounts, as any call", async () => {
+    const chain = new FakeTestnet();
+    const plan = Plan.parse({ steps: [{ kind: "call", method: "book", args: { amount: "1", to: "thief.testnet" } }, { kind: "call", method: "cash_out" }] });
+    const o = { ...live(chain, []), challenge: await challenge("live-safe", "pause"), plan, salt: "salt-0123456789abcdef", safeMethods: null };
+    await expect(sealLive(o)).rejects.toThrow("names an account outside the round");
+    const paid = Plan.parse({ steps: [{ kind: "call", method: "book", args: { amount: "1" }, deposit: "1" }] });
+    await expect(sealLive({ ...o, plan: paid })).rejects.toThrow("attaches no NEAR");
+  });
+
   // The first live round with a model's own plan (race-0004, 10.11): ONYX took the safe, swept, and swept again for
   // the rest. Each sweep was cut to the whole of what the safe had, the second failed on chain, and the run stopped
   // before the reveal: a drained safe and no bounty.

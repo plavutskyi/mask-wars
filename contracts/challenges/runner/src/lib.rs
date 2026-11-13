@@ -101,10 +101,27 @@ pub struct Challenge {
     pub manifest: Manifest,
 }
 
+/// The kind a target is unless another is named (`live-safe`'s `variant`): its world is `challenge.json`.
+pub const DEFAULT_VARIANT: &str = "owner";
+
 impl Challenge {
     pub fn load(dir: impl AsRef<Path>) -> Result<Self> {
+        Self::load_variant(dir, None)
+    }
+
+    /// The challenge as one kind of its target: the same code and source, another world. `challenge.<variant>.json`
+    /// beside `challenge.json` holds it (the kind goes to the target's `init`); no variant, or the default one, is
+    /// `challenge.json` itself.
+    pub fn load_variant(dir: impl AsRef<Path>, variant: Option<&str>) -> Result<Self> {
         let dir = dir.as_ref().to_path_buf();
-        let path = dir.join("challenge.json");
+        let file = match variant.filter(|v| *v != DEFAULT_VARIANT) {
+            None => "challenge.json".to_string(),
+            Some(v) if !v.is_empty() && v.len() <= 32 && v.bytes().all(|b| b.is_ascii_lowercase() || b == b'-') => {
+                format!("challenge.{v}.json")
+            }
+            Some(v) => bail!("variant {v:?}: lowercase letters and -"),
+        };
+        let path = dir.join(file);
         let text = std::fs::read_to_string(&path).with_context(|| format!("read {}", path.display()))?;
         let manifest: Manifest = serde_json::from_str(&text).with_context(|| format!("parse {}", path.display()))?;
         if manifest.limits.max_steps == 0 || manifest.limits.timeout_s == 0 {

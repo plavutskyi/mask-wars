@@ -4,25 +4,33 @@ import { duration, near } from '@maskwars/arena/format';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { CSSProperties } from 'react';
+import type { Forged as ForgedList } from '@/lib/forged';
 import { artOf, toneOf } from '@/lib/show';
 import { Mark } from '../Mark';
 import type { Caller } from '@/lib/pick';
 import { Callers } from './Callers';
+import { Forged } from './Forged';
 import { Header } from './Header';
 import { Info } from './Info';
 import { World } from './World';
 import s from './page.module.css';
 
-/** The league as a sports table: mask, breaks, what it took, its fastest break. Model and fingerprints behind «i». */
+/**
+ * The league as a sports table: mask, breaks, what it took, its fastest break. Model and fingerprints behind «i».
+ * Under it the masks people forged, then the best callers. The count under the title is the table's own.
+ */
 export function LeaguePage({
   league,
   races,
   network,
   callers = null,
+  forged = null,
 }: {
   league: readonly MaskStats[];
   races: number;
   network: string;
+  /** The masks people forged, most races first; null when the network has no forge or the factory gave none. */
+  forged?: ForgedList | null;
   /** The best callers of the free picks, and how many rounds were settled; null when the record cannot be read. */
   callers?: { list: readonly Caller[]; rounds: number; me: string | null } | null;
 }) {
@@ -91,6 +99,8 @@ export function LeaguePage({
           })}
         </ol>
       </section>
+
+      {forged?.masks.length ? <Forged forged={forged} /> : null}
 
       {callers ? <Callers callers={callers.list} rounds={callers.rounds} me={callers.me} /> : null}
 

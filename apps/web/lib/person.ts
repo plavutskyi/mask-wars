@@ -21,6 +21,7 @@ import {
   reserved,
   takeOut,
   type Viewer,
+  view,
   viewersOf,
 } from '@maskwars/forge';
 import { FORGE_NET } from './forge';
@@ -151,6 +152,47 @@ export async function readPerson(name: string): Promise<Person | null> {
     copy,
     network: arena?.network ?? FORGE_NET.id,
   };
+}
+
+/** What the link card of a person's mask is drawn from: the factory's record, and the arena's once it raced. */
+export interface CardRead {
+  readonly mask: MaskView;
+  /** Its races on the arena; null until it raced, or when the arena was not read in time. */
+  readonly stats: MaskStats | null;
+  /** The arena answered: `stats` says all there is. False when the card may say less than is true. */
+  readonly whole: boolean;
+}
+
+/** A link card waits this long for the chain, ms: whoever unfurls the link does not wait for a picture much longer. */
+const CARD_WAIT_MS = 3_000;
+const CARD_RPC_MS = 2_500;
+
+/**
+ * A person's mask for its link card: one view call on the factory and the arena's reading, both within `waitMs`. Far
+ * less than the page reads (`readPerson`), so the picture is there when a link is unfurled. Null when there is no such
+ * mask, when it is still being forged, or when the factory does not answer in time: then the card is the arena's own.
+ * It never throws.
+ */
+export async function readCard(
+  name: string,
+  o: { get?: (name: string) => Promise<MaskView | null>; league?: () => Promise<readonly MaskStats[]>; waitMs?: number } = {},
+): Promise<CardRead | null> {
+  if (!nameOk(name) || reserved(name)) return null;
+  const get = o.get ?? ((n: string) => view<MaskView | null>(FORGE_NET, 'get_mask', { name: n }, CARD_RPC_MS));
+  const league = o.league ?? (() => readArena().then((v) => v.league));
+  const wait = o.waitMs ?? CARD_WAIT_MS;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const late = new Promise<null>((done) => {
+    timer = setTimeout(() => done(null), wait);
+  });
+  const inTime = <T>(read: () => Promise<T>): Promise<T | null> => Promise.race([Promise.resolve().then(read).catch(() => null), late]);
+  // Both are asked at once; a name the factory does not know waits for nothing more.
+  const arena = inTime(league);
+  const mask = await inTime(() => get(name));
+  const masks = mask && mask.state !== 'forging' ? await arena : null;
+  clearTimeout(timer);
+  if (!mask || mask.state === 'forging') return null;
+  return { mask, stats: masks?.find((m) => m.who.account === mask.account) ?? null, whole: masks !== null };
 }
 
 export { shareText } from '@maskwars/forge';

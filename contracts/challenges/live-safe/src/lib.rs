@@ -5,6 +5,11 @@
 //! PLANTED HOLE, on purpose: this is a training target. `set_owner` lets any mask of the round in, but never checks
 //! that the caller is the owner; the owner may sweep the safe to any account.
 //!
+//! That is the safe of the `owner` kind, the one a safe is unless `new` says otherwise. A safe is of one kind for
+//! good (`variant`): `owner`, `limit` or `pause`. Each kind opens one desk, the only calls that move the safe's NEAR,
+//! and refuses the calls of the other two. A safe of another kind has a planted hole of its own, and this file does
+//! not name it.
+//!
 //! The safe is locked to its round, and only its own team's round. It names at deployment the bounty contract that arms
 //! it (`arbiter`) and the team whose round it takes (`team`): the bounty contract arms it when that team opens the
 //! round (`arm`), with the end of the commit window, and a round anyone else opens on it does not arm it. Until then
@@ -87,6 +92,10 @@ pub const BEFORE_DEADLINE: &str = "the round's deadline has not come: the sealed
 pub const RETIRING: &str = "the safe is retiring already";
 /// An answer about a round the safe is not armed for: it was on its way to an earlier safe of the same name.
 pub const ANOTHER_ROUND: &str = "the answer is about another round than the one the safe is armed for";
+/// A call of a desk the safe does not have: its kind is another one (`variant`).
+pub const ANOTHER_KIND: &str = "this safe is of another kind: it has no such desk";
+/// The `limit` desk: the most a withdrawal takes without the owner's word.
+pub const WITHDRAW_LIMIT: u128 = 5_000_000_000_000_000_000_000;
 
 #[near(contract_state)]
 #[derive(PanicOnDefault)]
@@ -116,6 +125,46 @@ pub struct Safe {
     /// The safe has sent the deletion of its own account (`retire`): it sends it once. A byte the safe pays for
     /// from `new` on, so a safe with nothing left to pay for storage still retires. New fields go last.
     retiring: bool,
+    /// The safe's kind, named at `new` and never changed: which desk moves its NEAR.
+    variant: Variant,
+    /// What the desks keep between the calls of one turn. Its size never changes: `new` writes it in full, and every
+    /// turn starts with it as the round left it.
+    desk: Desk,
+}
+
+/// The kind of a safe: the one desk that moves its NEAR.
+#[near(serializers = [borsh, json])]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum Variant {
+    /// The safe has an owner, who hands it on and sweeps it: `set_owner`, `sweep`.
+    Owner,
+    /// Exits go on file and are paid once cleared: one within `WITHDRAW_LIMIT` at once, a bigger one by the owner's
+    /// word. `request_exit`, `check_exit`, `withdraw`.
+    Limit,
+    /// The safe is paused, and while it is paused no NEAR leaves it: `claim`, `book`, `cash_out`, `pause`, `unpause`.
+    Pause,
+}
+
+/// What the desks keep within a turn (`get_desk`). Amounts are yoctoNEAR.
+#[near(serializers = [borsh, json])]
+#[derive(Clone, Debug, PartialEq)]
+pub struct Desk {
+    /// `limit`: the exit on file; 0 for none.
+    pub asked: U128,
+    /// `limit`: the exit on file may be paid.
+    pub cleared: bool,
+    /// `pause`: the safe is paused.
+    pub paused: bool,
+    /// `pause`: the payout on the book; 0 for none.
+    pub booked: U128,
+}
+
+impl Desk {
+    /// The desks as a round leaves them: nothing on file, nothing on the book, and a safe of the `pause` kind paused.
+    fn of(variant: Variant) -> Self {
+        Self { asked: U128(0), cleared: false, paused: variant == Variant::Pause, booked: U128(0) }
+    }
 }
 
 /// The round the safe is armed for.
@@ -198,9 +247,16 @@ impl Safe {
     /// the safe's account, whose key is then dropped, or sent by its parent account, the one that creates the safe as
     /// its sub-account (the season treasury makes every round's safe so, in one batch that adds no key). Nobody else
     /// can initialise a safe. `arbiter` is the bounty contract that will arm the safe for its round, `team` the one account
-    /// whose round on it the safe takes; without them the safe is a practice safe, open at once.
+    /// whose round on it the safe takes; without them the safe is a practice safe, open at once. `variant` is the
+    /// safe's kind, `owner` when it is left out.
     #[init]
-    pub fn new(owner: AccountId, masks: Vec<AccountId>, arbiter: Option<AccountId>, team: Option<AccountId>) -> Self {
+    pub fn new(
+        owner: AccountId,
+        masks: Vec<AccountId>,
+        arbiter: Option<AccountId>,
+        team: Option<AccountId>,
+        variant: Option<Variant>,
+    ) -> Self {
         let (me, by) = (env::current_account_id(), env::predecessor_account_id());
         require!(me == by || me.is_sub_account_of(&by), "only the safe itself or the account that makes it calls new");
         require!((1..=MAX_MASKS).contains(&masks.len()), "masks: 1 to 16 accounts");
@@ -213,6 +269,7 @@ impl Safe {
             log!("the safe drops the key that deployed it");
             let _ = Promise::new(me).delete_key(env::signer_account_pk());
         }
+        let variant = variant.unwrap_or(Variant::Owner);
         Self {
             home: owner.clone(),
             owner,
@@ -227,6 +284,8 @@ impl Safe {
             turns: 0,
             seals: [NO_SEAL; MAX_MASKS],
             retiring: false,
+            variant,
+            desk: Desk::of(variant),
         }
     }
 
@@ -268,6 +327,7 @@ impl Safe {
     /// Hands the safe to a new owner.
     pub fn set_owner(&mut self, new_owner: AccountId) {
         let turn = self.turn_for_caller();
+        self.desk_of(Variant::Owner);
         self.begin(turn);
         log!("owner {} -> {}", self.owner, new_owner);
         self.owner = new_owner;
@@ -277,6 +337,7 @@ impl Safe {
     /// The owner moves NEAR out of the safe.
     pub fn sweep(&mut self, to: AccountId, amount: U128) -> Promise {
         let turn = self.turn_for_caller();
+        self.desk_of(Variant::Owner);
         // A turn that starts with this call starts with the safe as its own owner again.
         let owner = if turn.is_some() { &self.home } else { &self.owner };
         require!(env::predecessor_account_id() == *owner, "owner only");
@@ -285,6 +346,100 @@ impl Safe {
         log!("sweep {} to {}", NearToken::from_yoctonear(amount.0).exact_amount_display(), to);
         self.moved();
         Promise::new(to).transfer(NearToken::from_yoctonear(amount.0))
+    }
+
+    /// Puts the caller's exit of `amount` on file, in place of the one that was there. An exit within `WITHDRAW_LIMIT`
+    /// is cleared at once; a bigger one waits for the owner's word (`check_exit`).
+    pub fn request_exit(&mut self, amount: U128) {
+        let turn = self.turn_for_caller();
+        self.desk_of(Variant::Limit);
+        require!(amount.0 > 0, "amount: more than nothing");
+        self.begin(turn);
+        self.desk.asked = amount;
+        if amount.0 <= WITHDRAW_LIMIT {
+            self.desk.cleared = true;
+        }
+        log!("on file: {}", NearToken::from_yoctonear(amount.0).exact_amount_display());
+        self.moved();
+    }
+
+    /// The owner checks the exit on file and clears it, whatever its size.
+    pub fn check_exit(&mut self) {
+        let turn = self.turn_for_caller();
+        self.desk_of(Variant::Limit);
+        self.begin(turn);
+        require!(env::predecessor_account_id() == self.owner, "owner only");
+        require!(self.desk.asked.0 > 0, "no exit on file");
+        self.desk.cleared = true;
+        log!("the exit on file is cleared");
+        self.moved();
+    }
+
+    /// Pays the exit on file to the caller, once it is cleared: as much of it as the safe can pay out.
+    pub fn withdraw(&mut self) -> Promise {
+        let turn = self.turn_for_caller();
+        self.desk_of(Variant::Limit);
+        self.begin(turn);
+        require!(self.desk.asked.0 > 0, "no exit on file");
+        require!(self.desk.cleared, "the exit on file waits for the owner");
+        let amount = self.desk.asked.0;
+        self.desk = Desk::of(self.variant);
+        self.pay(amount)
+    }
+
+    /// Pays `amount` to the caller at once: as much of it as the safe can pay out. Only while the safe runs.
+    pub fn claim(&mut self, amount: U128) -> Promise {
+        let turn = self.turn_for_caller();
+        self.desk_of(Variant::Pause);
+        self.begin(turn);
+        require!(!self.desk.paused, "the safe is paused");
+        require!(amount.0 > 0, "amount: more than nothing");
+        self.pay(amount.0)
+    }
+
+    /// Puts a payout of `amount` to the caller on the book, in place of the one that was there. Booking moves no
+    /// NEAR, so the desk takes it while the safe is paused too.
+    pub fn book(&mut self, amount: U128) {
+        let turn = self.turn_for_caller();
+        self.desk_of(Variant::Pause);
+        require!(amount.0 > 0, "amount: more than nothing");
+        self.begin(turn);
+        self.desk.booked = amount;
+        log!("on the book: {}", NearToken::from_yoctonear(amount.0).exact_amount_display());
+        self.moved();
+    }
+
+    /// Pays the payout on the book to the caller: as much of it as the safe can pay out.
+    pub fn cash_out(&mut self) -> Promise {
+        let turn = self.turn_for_caller();
+        self.desk_of(Variant::Pause);
+        self.begin(turn);
+        require!(self.desk.booked.0 > 0, "nothing is on the book");
+        let amount = self.desk.booked.0;
+        self.desk.booked = U128(0);
+        self.pay(amount)
+    }
+
+    /// The owner stops the safe: no NEAR leaves it.
+    pub fn pause(&mut self) {
+        let turn = self.turn_for_caller();
+        self.desk_of(Variant::Pause);
+        self.begin(turn);
+        require!(env::predecessor_account_id() == self.owner, "owner only");
+        self.desk.paused = true;
+        log!("the safe is paused");
+        self.moved();
+    }
+
+    /// The owner lets the safe run again.
+    pub fn unpause(&mut self) {
+        let turn = self.turn_for_caller();
+        self.desk_of(Variant::Pause);
+        self.begin(turn);
+        require!(env::predecessor_account_id() == self.owner, "owner only");
+        self.desk.paused = false;
+        log!("the safe runs again");
+        self.moved();
     }
 
     /// The safe's team takes back what a round nobody won left in the safe: everything it can pay out (`available`),
@@ -385,6 +540,22 @@ impl Safe {
 
     pub fn get_owner(&self) -> AccountId {
         self.owner.clone()
+    }
+
+    /// The safe's kind: `owner`, `limit` or `pause`.
+    pub fn variant(&self) -> Variant {
+        self.variant
+    }
+
+    /// What the desks hold now: the exit on file and whether it is cleared, whether the safe is paused, the payout
+    /// on the book.
+    pub fn get_desk(&self) -> Desk {
+        self.desk.clone()
+    }
+
+    /// Whether the safe is paused.
+    pub fn is_paused(&self) -> bool {
+        self.desk.paused
     }
 
     pub fn masks(&self) -> Vec<AccountId> {
@@ -538,11 +709,28 @@ impl Safe {
         self.masks.iter().position(|m| m == who)
     }
 
-    /// Starts `turn`, if the call starts one: the safe is its own owner again.
+    /// Only a safe of kind `variant` has the desk the call belongs to.
+    fn desk_of(&self, variant: Variant) {
+        require!(self.variant == variant, ANOTHER_KIND);
+    }
+
+    /// One move that pays the caller `amount`, or all the safe can pay out if that is less.
+    fn pay(&mut self, amount: u128) -> Promise {
+        let amount = amount.min(self.available().0);
+        require!(amount > 0, "nothing in the safe to pay out");
+        let to = env::predecessor_account_id();
+        log!("paid {} to {}", NearToken::from_yoctonear(amount).exact_amount_display(), to);
+        self.moved();
+        Promise::new(to).transfer(NearToken::from_yoctonear(amount))
+    }
+
+    /// Starts `turn`, if the call starts one: the safe is its own owner again, and its desks are as the round left
+    /// them.
     fn begin(&mut self, turn: Option<Turn>) {
         let Some(turn) = turn else { return };
         self.turns = turn.n.0;
         self.owner = self.home.clone();
+        self.desk = Desk::of(self.variant);
         event(
             "turn",
             format!(
@@ -605,13 +793,13 @@ mod tests {
     /// A practice safe: no round, open at once.
     fn practice() -> Safe {
         as_(SAFE);
-        Safe::new(acc("maskwars.testnet"), vec![acc(NOVA), acc(ONYX)], None, None)
+        Safe::new(acc("maskwars.testnet"), vec![acc(NOVA), acc(ONYX)], None, None, None)
     }
 
     /// A fresh safe of a round for `masks`: its own owner, armed only by the bounty contract for TEAM's round.
     fn fresh(masks: &[&str]) -> Safe {
         as_(SAFE);
-        Safe::new(acc(SAFE), masks.iter().map(|m| acc(m)).collect(), Some(acc(BOUNTY)), Some(acc(TEAM)))
+        Safe::new(acc(SAFE), masks.iter().map(|m| acc(m)).collect(), Some(acc(BOUNTY)), Some(acc(TEAM)), None)
     }
 
     /// A safe of TEAM's round, armed by the bounty contract with the window closing at `OPENS`; nobody sealed yet.
@@ -718,14 +906,14 @@ mod tests {
     #[should_panic(expected = "masks: 1 to 16 accounts")]
     fn a_safe_is_for_a_race() {
         as_(SAFE);
-        Safe::new(acc("maskwars.testnet"), vec![], None, None);
+        Safe::new(acc("maskwars.testnet"), vec![], None, None, None);
     }
 
     #[test]
     #[should_panic(expected = "a mask is listed twice")]
     fn a_mask_is_listed_once() {
         as_(SAFE);
-        Safe::new(acc(SAFE), vec![acc(NOVA), acc(NOVA)], None, None);
+        Safe::new(acc(SAFE), vec![acc(NOVA), acc(NOVA)], None, None, None);
     }
 
     #[test]
@@ -733,15 +921,15 @@ mod tests {
         as_(SAFE);
         let two = || vec![acc(NOVA), acc(ONYX)];
         assert_eq!(
-            panics(|| drop(Safe::new(acc(SAFE), two(), Some(acc(BOUNTY)), None))),
+            panics(|| drop(Safe::new(acc(SAFE), two(), Some(acc(BOUNTY)), None, None))),
             "a safe of a round names its bounty contract and its team"
         );
         assert_eq!(
-            panics(|| drop(Safe::new(acc(SAFE), two(), None, Some(acc(TEAM))))),
+            panics(|| drop(Safe::new(acc(SAFE), two(), None, Some(acc(TEAM)), None))),
             "a safe of a round names its bounty contract and its team"
         );
         assert_eq!(
-            panics(|| drop(Safe::new(acc(SAFE), two(), Some(acc(BOUNTY)), Some(acc(NOVA))))),
+            panics(|| drop(Safe::new(acc(SAFE), two(), Some(acc(BOUNTY)), Some(acc(NOVA)), None))),
             "the team cannot be a mask of its own safe"
         );
         let s = fresh(&[NOVA, ONYX]);
@@ -829,7 +1017,7 @@ mod tests {
         as_at(BOUNTY, S);
         assert!(panics(|| p.arm("race-0004".into(), U64(OPENS), both(), acc(TEAM))).starts_with("only the bounty"));
         as_(SAFE);
-        let mut t = Safe::new(acc("team.testnet"), both(), Some(acc(BOUNTY)), Some(acc(TEAM)));
+        let mut t = Safe::new(acc("team.testnet"), both(), Some(acc(BOUNTY)), Some(acc(TEAM)), None);
         as_at(BOUNTY, S);
         assert_eq!(
             panics(|| t.arm("race-0004".into(), U64(OPENS), both(), acc(TEAM))),
@@ -1068,7 +1256,7 @@ mod tests {
             .signer_account_id(acc(SCHEDULER))
             .predecessor_account_id(acc(season));
         testing_env!(c.build());
-        let s = Safe::new(acc(&format!("s0001.{season}")), two(), Some(acc(BOUNTY)), Some(acc(season)));
+        let s = Safe::new(acc(&format!("s0001.{season}")), two(), Some(acc(BOUNTY)), Some(acc(season)), None);
         assert_eq!(s.team(), Some(acc(season)));
         assert!(!get_logs().iter().any(|l| l.contains("drops the key")), "the scheduler's key is not the safe's");
         // Nobody else: not a stranger, not the parent's parent.
@@ -1079,7 +1267,7 @@ mod tests {
                 .predecessor_account_id(acc(who));
             testing_env!(c.build());
             assert_eq!(
-                panics(|| drop(Safe::new(acc(SAFE), two(), Some(acc(BOUNTY)), Some(acc(season))))),
+                panics(|| drop(Safe::new(acc(SAFE), two(), Some(acc(BOUNTY)), Some(acc(season)), None))),
                 "only the safe itself or the account that makes it calls new"
             );
         }
@@ -1087,6 +1275,8 @@ mod tests {
 
     // What happens to the safe after its round (`reclaim`, `retire`) is tested in tests/after_round.rs.
     mod after_round;
+    // The safes of the other kinds (`limit`, `pause`) are tested in tests/variants.rs.
+    mod variants;
 
     #[test]
     fn a_mask_has_one_turn() {

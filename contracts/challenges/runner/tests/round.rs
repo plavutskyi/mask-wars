@@ -249,3 +249,88 @@ async fn a_sweep_sealed_with_the_margin_pays_after_the_turns_before_it() {
     assert!(ok(&b, "nova", "claim"), "{:#?}", b.events);
     assert_eq!(seal_state(&b, "nova"), Some("confirmed"), "{:#?}", b.round);
 }
+
+// The safe's other kinds (`variant` at `new`): the same round, the same scripts, another planted hole. The finder is
+// paid through it, and nobody gets around the seals or the lock on a safe of that kind either.
+
+async fn the_finder_is_paid_through_the_hole_of(variant: &str, hole: &[&str]) {
+    built();
+    let b = run_round(&Scenario::of(variant)).await.unwrap();
+    println!("{variant}: {}", serde_json::to_string_pretty(&b.events).unwrap());
+
+    // NOVA sealed, played every call of the hole in its own turn, revealed, and the real judge confirmed its drain.
+    assert_eq!(b.winner.as_deref(), Some("nova"), "{:#?}", b.events);
+    assert_eq!(b.status["status"]["state"], "drained");
+    let nova = steps(&b, "nova");
+    let played: Vec<&str> =
+        nova.iter().filter(|(s, ok, _)| s.starts_with("play ") && *ok).map(|(s, ..)| &s[5..]).collect();
+    assert_eq!(played, hole, "{nova:?}");
+    for step in ["seal", "reveal", "claim", "paid"] {
+        assert!(ok(&b, "nova", step), "nova {step}: {nova:?}");
+    }
+    assert!(b.prize.parse::<u128>().unwrap() > 0);
+
+    // ONYX sealed only the call that pays and borrowed the rest outside its seal: the safe paid it in its turn, and
+    // the judge refused it, as on a safe of the owner kind.
+    let onyx = steps(&b, "onyx");
+    let pays = format!("play {}", hole[hole.len() - 1]);
+    assert!(ok(&b, "onyx", &pays), "{onyx:?}");
+    assert!(
+        onyx.iter().any(|(s, ok, n)| *s == "claim"
+            && !ok
+            && n.contains("the plan did not start the mask's own turn on the safe")),
+        "{onyx:?}"
+    );
+
+    // JINX tried the whole hole in the commit window: the safe is locked to the round whatever its kind.
+    let jinx = steps(&b, "jinx");
+    for call in hole {
+        let step = format!("play {call}");
+        assert!(
+            jinx.iter()
+                .any(|(s, ok, n)| *s == step && !ok && n.contains("the safe is locked until the commit window closes")),
+            "jinx {step}: {jinx:?}"
+        );
+    }
+
+    // ORACLE sealed nothing and copied the plan off the chain: it never reaches the desk.
+    let oracle = steps(&b, "oracle");
+    for call in hole {
+        let step = format!("play {call}");
+        assert!(
+            oracle
+                .iter()
+                .any(|(s, ok, n)| *s == step && !ok && n.contains("only a mask that sealed a plan moves the safe")),
+            "oracle {step}: {oracle:?}"
+        );
+    }
+    let seals = b.round["seals"].as_array().unwrap();
+    assert_eq!(
+        seals.iter().map(|s| s["state"].as_str().unwrap()).collect::<Vec<_>>(),
+        ["refused", "refused", "confirmed"]
+    );
+    // The plan anyone reads once it is revealed is that kind's own.
+    let plan = seals[2]["plan"].as_str().unwrap();
+    let calls: Vec<serde_json::Value> = serde_json::from_str(plan).unwrap();
+    assert_eq!(calls.iter().map(|c| c["method"].as_str().unwrap()).collect::<Vec<_>>(), hole);
+}
+
+#[tokio::test]
+async fn a_round_on_a_safe_of_the_limit_kind_pays_the_finder() {
+    the_finder_is_paid_through_the_hole_of("limit", &["request_exit", "request_exit", "withdraw"]).await;
+}
+
+#[tokio::test]
+async fn a_round_on_a_safe_of_the_pause_kind_pays_the_finder() {
+    the_finder_is_paid_through_the_hole_of("pause", &["book", "cash_out"]).await;
+}
+
+#[tokio::test]
+async fn the_owner_kind_named_outright_is_the_round_as_it_was() {
+    built();
+    let b = run_round(&Scenario::of("owner")).await.unwrap();
+    assert_eq!(b.winner.as_deref(), Some("nova"), "{:#?}", b.events);
+    for step in ["seal", "play set_owner", "play sweep", "reveal", "claim", "paid"] {
+        assert!(ok(&b, "nova", step), "nova {step}: {:?}", steps(&b, "nova"));
+    }
+}

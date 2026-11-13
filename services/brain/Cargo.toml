@@ -29,7 +29,8 @@ x25519-dalek = { version = "2", features = ["static_secrets"] }
 
 [target.'cfg(target_os = "wasi")'.dependencies]
 outlayer = "0.2"
-wasi-http-client = "0.2"
+# HTTPS is `wasi:http` itself, through its bindings: the module writes the request's body in pieces (src/http.rs).
+wasi = "0.13"
 
 [profile.release]
 opt-level = "z"

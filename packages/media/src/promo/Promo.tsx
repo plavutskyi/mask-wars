@@ -18,14 +18,14 @@ import { BAR_S, BEAT_S, barFrame, driving, DURATION, PROMO } from "./plan.ts";
 const W = PROMO.width;
 const H = PROMO.height;
 const FPS = PROMO.fps;
-const clamp = { extrapolateLeft: "clamp", extrapolateRight: "clamp" } as const;
+export const clamp = { extrapolateLeft: "clamp", extrapolateRight: "clamp" } as const;
 const ease = Easing.bezier(0.16, 1, 0.3, 1);
 const FIELD = 115;
 const BEAT_F = BEAT_S * FPS;
 
 const TINT: Record<Tint, string> = { ice: color.ice, money: color.money, amber: color.amber };
 
-const head = (size: number, tint: Tint = "ice"): CSSProperties => ({
+export const head = (size: number, tint: Tint = "ice"): CSSProperties => ({
   fontFamily: FONT.word,
   fontWeight: 800,
   fontStretch: "125%",
@@ -35,11 +35,11 @@ const head = (size: number, tint: Tint = "ice"): CSSProperties => ({
   textTransform: "uppercase",
   color: TINT[tint],
 });
-const kicker: CSSProperties = { fontFamily: FONT.word, fontWeight: 800, fontStretch: "125%", fontSize: 40, letterSpacing: "0.08em", textTransform: "uppercase", color: color.amber };
-const sub: CSSProperties = { fontFamily: FONT.num, fontWeight: 600, fontStretch: "100%", fontSize: 46, lineHeight: 1.22, color: color.ice, textWrap: "balance" };
+export const kicker: CSSProperties = { fontFamily: FONT.word, fontWeight: 800, fontStretch: "125%", fontSize: 40, letterSpacing: "0.08em", textTransform: "uppercase", color: color.amber };
+export const sub: CSSProperties = { fontFamily: FONT.num, fontWeight: 600, fontStretch: "100%", fontSize: 46, lineHeight: 1.22, color: color.ice, textWrap: "balance" };
 
 /** A headline that keeps inside `maxW`: Hubot 800 capitals are about .84 em wide. */
-const fit = (text: string, base: number, maxW: number): number => {
+export const fit = (text: string, base: number, maxW: number): number => {
   const longest = Math.max(...text.split("\n").map((l) => l.length));
   return Math.min(base, Math.floor(maxW / (longest * 0.84)));
 };
@@ -193,7 +193,7 @@ function written(n: PromoNumbers): Shot[] {
 /** How hard a hit still rings `dt` frames after it: 1 on the hit, gone in a third of a second. */
 const ring = (dt: number): number => (dt < 0 ? 0 : Math.exp(-dt / 3.2));
 
-function shakeOf(frame: number, power: number): { x: number; y: number; s: number } {
+export function shakeOf(frame: number, power: number): { x: number; y: number; s: number } {
   const r = ring(frame) * power;
   return { x: 16 * r * Math.sin(frame * 2.3 + 0.6), y: 11 * r * Math.cos(frame * 1.9), s: 0.05 * r };
 }
@@ -206,7 +206,7 @@ function beatPunch(globalFrame: number): number {
   return 1 + 0.018 * ring(sinceBeat);
 }
 
-function Flash({ frame }: { frame: number }) {
+export function Flash({ frame }: { frame: number }) {
   const o = interpolate(frame, [0, 1, 4], [0.55, 0.32, 0], clamp);
   if (o <= 0) return null;
   return <AbsoluteFill style={{ background: `radial-gradient(40% 70% at 50% 50%, ${color.ice} 0%, rgba(238,241,255,.35) 40%, rgba(238,241,255,0) 100%)`, opacity: o, mixBlendMode: "screen" }} />;
@@ -316,19 +316,19 @@ function Split({ pic, frame, len }: { pic: Pic; frame: number; len: number }) {
 
 // ——— Words ———
 
-function countText(c: NonNullable<Words["count"]>, k: number): string {
+export function countText(c: NonNullable<Words["count"]>, k: number): string {
   const [i, f = ""] = c.to.split(".");
   const scale = 10 ** f.length;
   const v = Math.round((Number(i) + Number(`0.${f || "0"}`)) * scale * k) / scale;
   return `${c.prefix ?? ""}${v.toFixed(f.length)}${c.unit ?? ""}`;
 }
 
-function Slam({ frame, at, children, style }: { frame: number; at: number; children: ReactNode; style?: CSSProperties }) {
+export function Slam({ frame, at, children, style }: { frame: number; at: number; children: ReactNode; style?: CSSProperties }) {
   const k = interpolate(frame, [at, at + 9], [0, 1], { ...clamp, easing: ease });
   return <div style={{ opacity: interpolate(frame, [at, at + 4], [0, 1], clamp), scale: `${1.16 - 0.16 * k}`, filter: `blur(${(1 - k) * 14}px)`, ...style }}>{children}</div>;
 }
 
-function Arrive({ frame, at, children, style }: { frame: number; at: number; children: ReactNode; style?: CSSProperties }) {
+export function Arrive({ frame, at, children, style }: { frame: number; at: number; children: ReactNode; style?: CSSProperties }) {
   return (
     <div style={{ opacity: interpolate(frame, [at, at + 8], [0, 1], clamp), translate: `0 ${interpolate(frame, [at, at + 12], [22, 0], { ...clamp, easing: ease })}px`, ...style }}>
       {children}

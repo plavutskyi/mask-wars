@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { targetName, timeUtc } from './show';
+import { faceOf, targetName, timeUtc, toneIn } from './show';
 
 describe('timeUtc', () => {
   it('says when a reading was taken, in UTC to the minute', () => {
@@ -26,5 +26,28 @@ describe('targetName', () => {
 
   it('keeps a training target’s name', () => {
     expect(targetName({ kind: 'sandbox', target: 'open-admin' })).toBe('OPEN-ADMIN');
+  });
+});
+
+describe('a mask’s face and colour on the stage', () => {
+  const NOVA = { account: 'nova.maskwars.near', slug: 'nova', name: 'NOVA', mask: true, model: null };
+  const DMYTRO = { account: 'dmytro.masks.maskwars.near', slug: 'dmytro', name: 'DMYTRO', mask: true, model: null };
+  const faces = {
+    [DMYTRO.account]: { art: '/art/ronin.webp', tone: 'ember' as const },
+    // A face the factory claims for one of the arena's masks never covers the arena's own.
+    [NOVA.account]: { art: '/art/wraith.webp', tone: 'ice' as const },
+  };
+
+  it('the arena’s mask keeps its own art and colour', () => {
+    expect(faceOf(NOVA, faces)).toBe('/art/nova.webp');
+    expect(toneIn(NOVA, faces)).toBe('violet');
+  });
+
+  it('a forged mask wears its look’s art and colour; with none known, no art and the cold colour', () => {
+    expect(faceOf(DMYTRO, faces)).toBe('/art/ronin.webp');
+    expect(toneIn(DMYTRO, faces)).toBe('ember');
+    expect(faceOf(DMYTRO, null)).toBeNull();
+    expect(toneIn(DMYTRO, {})).toBe('ice');
+    expect(faceOf(null, faces)).toBeNull();
   });
 });

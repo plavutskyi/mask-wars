@@ -62,7 +62,8 @@ export class RunnerSandbox implements Sandbox {
   attempt(challenge: Challenge, plan: Plan, signal?: AbortSignal): Promise<Outcome> {
     const id = challenge.manifest.id;
     if (signal?.aborted) return Promise.resolve(localOutcome(id, "error", "aborted"));
-    const args = ["run", challenge.dir, ...(this.#wasm ? ["--wasm", this.#wasm] : [])];
+    // A target of another kind than the default one: the runner builds that kind's world from the same code.
+    const args = ["run", challenge.dir, ...(challenge.variant ? ["--variant", challenge.variant] : []), ...(this.#wasm ? ["--wasm", this.#wasm] : [])];
     const deadlineMs = challenge.manifest.limits.timeout_s * 1000 + this.#graceMs;
 
     return new Promise((resolve) => {

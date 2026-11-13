@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { CSSProperties } from 'react';
 import { type Person, readableHistory, stateOf } from '@/lib/person';
-import { day } from '@/lib/show';
+import { day, lookTone } from '@/lib/show';
 import { CopyPanel } from './CopyPanel';
 import { Header } from './Header';
 import { HistoryPanel } from './HistoryPanel';
@@ -17,8 +17,6 @@ import { titleEm } from './title';
 import { World } from './World';
 import s from './page.module.css';
 import p from './person.module.css';
-
-const TONE: Record<string, 'ember' | 'ice' | 'violet'> = { porcelain: 'ice', crimson: 'ember', graphite: 'violet' };
 
 /** A person's mask: its face, its mind and style, what the arena paid it, its ×, and its prize for its owner. */
 export function PersonPage({ person }: { person: Person }) {
@@ -46,7 +44,7 @@ export function PersonPage({ person }: { person: Person }) {
   ];
 
   return (
-    <main className={s.page} data-tone={TONE[m.look] ?? 'ice'}>
+    <main className={s.page} data-tone={lookTone(m.look)}>
       <World />
       <Header network={network} />
 

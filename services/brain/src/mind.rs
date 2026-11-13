@@ -424,6 +424,88 @@ pub fn play(
     })
 }
 
+// ---------------------------------------------------------------------------------------------------------------------
+// The road checked
+// ---------------------------------------------------------------------------------------------------------------------
+
+/// The fewest bytes of a probe's question: more than two writes of the request's body (`http::PIECE`), so a probe
+/// that is answered wrote its body the way a real attempt does.
+pub const PROBE_BYTES: usize = 3 * crate::http::PIECE;
+/// The tokens a probe's answer may take: a word, after a little thinking.
+pub const PROBE_TOKENS: u32 = 512;
+
+/// `{"action":"probe","factory":"masks.maskwars.near","model":"Qwen/Qwen3.8-27B"}`
+#[derive(Deserialize, Debug)]
+pub struct ProbeInput {
+    /// A factory the module lists.
+    pub factory: String,
+    /// One of the models the mind runs.
+    pub model: String,
+}
+
+/// What a probe found. Nothing of any mask or strategy is read to make it.
+#[derive(Serialize, Debug, PartialEq)]
+pub struct Probed {
+    /// The factory seals strategies for this mind's key: the seed in this TEE is the one the masks were sealed for.
+    pub key: bool,
+    /// The model that answered, as the provider names it.
+    pub model: String,
+    /// The answer carried text.
+    pub answered: bool,
+    /// The answer was cut at the probe's allowance: the model was reached and was still thinking.
+    pub cut: bool,
+    /// The bytes of the question the model was sent.
+    pub asked_bytes: usize,
+}
+
+/// The question a probe asks: one line, then filler up to `PROBE_BYTES`.
+pub fn probe_messages() -> Vec<Value> {
+    let ask = "This is a connection check. Everything after this line is filler: ignore it. Reply with the single word ok.
+";
+    let filler = "0123456789abcdef".repeat(PROBE_BYTES.div_ceil(16));
+    vec![json!({ "role": "user", "content": format!("{ask}{filler}") })]
+}
+
+/// The mind's road, end to end, with no mask on it: the caller is the keeper, the worker's RPC answers and the factory
+/// names this mind's key, and the model answers a request longer than one write of its body takes.
+pub fn probe(
+    input: &ProbeInput,
+    caller: Option<&str>,
+    mind: &MindSecret,
+    chain: &dyn Chain,
+    llm: &dyn Llm,
+) -> Result<Probed, String> {
+    let w = words();
+    let factory = input.factory.as_str();
+    if !(w.factories.iter().any(|f| f == factory) || MAINNET_FACTORIES.contains(&factory)) {
+        return Err(UNKNOWN_FACTORY.into());
+    }
+    if !caller.is_some_and(|c| w.callers.iter().any(|k| k == c) || MAINNET_CALLERS.contains(&c)) {
+        return Err(NOT_THE_KEEPER.into());
+    }
+    if !w.models.contains(&input.model) {
+        return Err("the model is not a Confidential TEE model the mind runs".into());
+    }
+    let cfg = view(chain, factory, "config", json!({}))?;
+    let key = cfg["strategy_key"].as_str() == Some(key_text(&MindPublic::from(mind)).as_str());
+    let messages = probe_messages();
+    let asked_bytes = messages
+        .iter()
+        .map(|m| m["content"].as_str().unwrap_or_default().len())
+        .sum();
+    let reply = llm.complete(&input.model, &messages, PROBE_TOKENS, 0.0)?;
+    if !reply.model.is_empty() && reply.model != input.model {
+        return Err("another model answered".into());
+    }
+    Ok(Probed {
+        key,
+        model: input.model.clone(),
+        answered: reply.text.as_deref().is_some_and(|t| !t.trim().is_empty()),
+        cut: reply.cut,
+        asked_bytes,
+    })
+}
+
 /// A factory the mind does not list may still play its own masks with this mind: its `config` names this mind's key as
 /// the one its strategies are sealed for, and the caller is that factory's own keeper. It opens nothing of anyone
 /// else's: a box opens only for the mask account it was sealed for (its associated data), and that account is
@@ -1069,6 +1151,92 @@ mod tests {
         );
     }
 
+    /// Why the request's body is written in pieces (src/http.rs): the smallest request the mind ever sends for the
+    /// live safe is many times what one write of a request's body takes. A client that writes it in one call ends
+    /// the run before the model is asked.
+    #[test]
+    fn a_real_request_is_many_writes_long() {
+        let t = target("live-safe").unwrap();
+        let style = words().styles.values().min_by_key(|s| s.len()).unwrap();
+        let messages = prompt(&t, style, None, &[]);
+        let body = json!({ "model": "Qwen/Qwen3.8-27B", "messages": messages, "stream": false,
+                           "max_tokens": MAX_TOKENS, "temperature": TEMPERATURE })
+        .to_string();
+        assert!(body.len() > 10 * crate::http::PIECE, "{} bytes", body.len());
+        assert!(crate::http::pieces(body.as_bytes()).all(|p| p.len() <= crate::http::PIECE));
+        // A probe's question is over two writes too: a probe that is answered wrote its body the same way.
+        let probe = json!({ "messages": probe_messages() }).to_string();
+        assert!(probe.len() > 2 * crate::http::PIECE && probe.len() < 4 * crate::http::PIECE);
+    }
+
+    /// A probe walks the mind's road with no mask on it: the keeper asks, the factory's key is read over the RPC, and
+    /// the model is asked one small question. It reads no mask and no sealed box, and it is the keeper's alone.
+    #[test]
+    fn a_probe_checks_the_road_and_reads_no_mask() {
+        let mind = mind_secret(&SEED);
+        let ask = |factory: &str, model: &str| ProbeInput {
+            factory: factory.into(),
+            model: model.into(),
+        };
+        let qwen = "Qwen/Qwen3.8-27B";
+        let home = "masks.tinygif8324.testnet";
+        // The factory names this mind's key: the seed in the TEE is the one the masks were sealed for.
+        let mut f = factory();
+        f.config = json!({ "keeper": "tinygif8324.testnet",
+                           "strategy_key": key_text(&MindPublic::from(&mind)) });
+        let m = model("ok");
+        let probed = probe(&ask(home, qwen), KEEPER, &mind, &f, &m).unwrap();
+        assert_eq!(
+            probed,
+            Probed {
+                key: true,
+                model: qwen.into(),
+                answered: true,
+                cut: false,
+                asked_bytes: probed.asked_bytes
+            }
+        );
+        assert!(probed.asked_bytes >= PROBE_BYTES);
+        assert_eq!(*m.allowed.borrow(), [PROBE_TOKENS]);
+        // Only the factory's `config` was read: the stand-in panics on any call but the three it knows, and a probe
+        // names no mask to read.
+        assert_eq!(m.asked.borrow().len(), 1);
+        // Another seed in the TEE (the secrets were written anew): the probe says the key is not the factory's.
+        let other = mind_secret(&[7; 32]);
+        assert!(!probe(&ask(home, qwen), KEEPER, &other, &f, &model("ok")).unwrap().key);
+        // A model that was reached and was still thinking at the probe's allowance.
+        let thinking = Model {
+            text: None,
+            cut: true,
+            completion: u64::from(PROBE_TOKENS),
+            asked: RefCell::new(vec![]),
+            allowed: RefCell::new(vec![]),
+        };
+        let probed = probe(&ask(home, qwen), KEEPER, &mind, &f, &thinking).unwrap();
+        assert!(probed.cut && !probed.answered);
+        // Strangers, unknown factories and unknown models spend no token.
+        for (factory, model_id, caller, why) in [
+            (home, qwen, Some("evil.testnet"), "only for the keeper"),
+            (home, qwen, None, "only for the keeper"),
+            ("masks.evil.testnet", qwen, KEEPER, "factories it knows"),
+            (home, "openai/gpt-oss-120b", KEEPER, "not a Confidential TEE model"),
+        ] {
+            let m = model("ok");
+            let err = probe(&ask(factory, model_id), caller, &mind, &f, &m).unwrap_err();
+            assert!(err.contains(why), "{err}");
+            assert!(m.asked.borrow().is_empty());
+        }
+        // Through the module's entry, as OutLayer calls it.
+        let input: Input = serde_json::from_value(
+            json!({ "action": "probe", "factory": home, "model": qwen }),
+        )
+        .unwrap();
+        let out = handle(input, Some(&hex(&SEED)), KEEPER, &f, &model("ok"));
+        assert!(out.success, "{:?}", out.error);
+        assert_eq!(out.output["key"], true);
+        assert_eq!(out.output["answered"], true);
+    }
+
     /// Confidential copying. NINA copies KIRA: NINA carries no box of its own, its record names `copy_of: "kira"`, and
     /// the author KIRA's box stays sealed for KIRA's account. NINA's mind opens KIRA's line inside the TEE and plays
     /// it; nothing of the line reaches NINA's owner, the site or the chain.
@@ -1254,9 +1422,10 @@ mod tests {
     }
 
     /// What one attempt can cost is bounded by its answer, `MAX_TOKENS`, and by its prompt. The race job prices the
-    /// prompt at no more than 20 000 tokens (packages/race/src/brain.ts, `PROMPT_TOKENS_CEILING`); the largest prompt
-    /// the module can write, with the longest strategy and a full memory of the longest attempts, stays under 60 000
-    /// bytes, and a token is never under three bytes of this text on average.
+    /// prompt at no more than 24 000 tokens (packages/race/src/brain.ts, `PROMPT_TOKENS_CEILING`); the largest prompt
+    /// the module can write, with the longest strategy and a full memory of the longest attempts, stays under 72 000
+    /// bytes, and a token is never under three bytes of this text on average. Most of it is the vault's source: a
+    /// vault that grows moves this number, and the ceiling the race job prices moves with it.
     #[test]
     fn the_largest_prompt_stays_under_the_size_the_race_job_prices() {
         let t = target("live-safe").unwrap();
@@ -1269,7 +1438,7 @@ mod tests {
             .iter()
             .map(|m| m["content"].as_str().unwrap().len())
             .sum();
-        assert!(bytes > 50_000 && bytes < 60_000, "{bytes} bytes");
+        assert!(bytes > 60_000 && bytes < 72_000, "{bytes} bytes");
     }
 
     /// OutLayer ends a request that outlives its time with `ConnectionTimeout`. After minutes of waiting that is the

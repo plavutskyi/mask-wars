@@ -1,0 +1,8 @@
+{
+  "steps": [
+    { "kind": "view", "method": "get_desk" },
+    { "kind": "call", "method": "request_exit", "args": { "amount": "5000000000000000000000" }, "gas_tgas": 30 },
+    { "kind": "call", "method": "request_exit", "args": { "amount": "2500000000000000000000000" }, "gas_tgas": 30 },
+    { "kind": "call", "method": "withdraw", "gas_tgas": 30 }
+  ]
+}

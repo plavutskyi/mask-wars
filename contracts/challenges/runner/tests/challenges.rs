@@ -11,9 +11,14 @@ fn root() -> PathBuf {
 }
 
 fn setup(id: &str) -> (Challenge, Vec<u8>) {
+    setup_variant(id, None)
+}
+
+/// The target as one of its kinds: `challenge.<variant>.json` beside its `challenge.json`.
+fn setup_variant(id: &str, variant: Option<&str>) -> (Challenge, Vec<u8>) {
     static BUILD: Once = Once::new();
     BUILD.call_once(|| build_targets().expect("build wasm"));
-    let challenge = Challenge::load(root().join(id)).unwrap();
+    let challenge = Challenge::load_variant(root().join(id), variant).unwrap();
     let wasm = std::fs::read(wasm_dir().join(&challenge.manifest.wasm)).unwrap();
     (challenge, wasm)
 }
@@ -24,7 +29,13 @@ fn plan(name: &str) -> Plan {
 }
 
 async fn check(id: &str) {
-    let (challenge, wasm) = setup(id);
+    check_as(id, None).await;
+}
+
+/// The right plan drains the target of this kind, a wrong one takes nothing.
+async fn check_as(id: &str, variant: Option<&str>) {
+    let (challenge, wasm) = setup_variant(id, variant);
+    let id = &variant.map_or(id.to_string(), |v| format!("{id}.{v}"));
 
     let win = run_attempt(&challenge, &wasm, &plan(&format!("{id}.breach.json"))).await;
     assert_eq!(win.verdict, Verdict::Breach, "{id} right plan: {win:#?}");
@@ -105,6 +116,71 @@ async fn a_stranger_cannot_drain_the_live_safe() {
     let out = run_attempt(&challenge, &wasm, &plan("live-safe.breach.json")).await;
     assert_eq!(out.verdict, Verdict::Held, "{out:#?}");
     assert_eq!(out.stolen, "0");
+}
+
+// The live safe's other kinds (`variant` at `new`): the same code, another desk and another planted hole each.
+
+#[tokio::test]
+async fn live_safe_of_the_limit_kind() {
+    check_as("live-safe", Some("limit")).await;
+}
+
+#[tokio::test]
+async fn live_safe_of_the_pause_kind() {
+    check_as("live-safe", Some("pause")).await;
+}
+
+/// The default kind named outright is the same world as `challenge.json`.
+#[tokio::test]
+async fn the_owner_kind_is_the_live_safe_as_it_was() {
+    let (named, _) = setup_variant("live-safe", Some("owner"));
+    let (plain, _) = setup("live-safe");
+    assert_eq!(serde_json::to_value(&named.manifest).unwrap(), serde_json::to_value(&plain.manifest).unwrap());
+    assert!(plain.manifest.init.args.get("variant").is_none(), "the daily round names no kind: {:?}", plain.manifest);
+    assert!(Challenge::load_variant(root().join("live-safe"), Some("../x")).is_err());
+    assert!(Challenge::load_variant(root().join("live-safe"), Some("vault")).is_err(), "no such kind");
+}
+
+/// Each kind's hole is that kind's alone: the plan that drains one takes nothing from a safe of another.
+#[tokio::test]
+async fn a_plan_for_one_kind_takes_nothing_from_another() {
+    for (variant, others) in
+        [(None, ["limit", "pause"]), (Some("limit"), ["owner", "pause"]), (Some("pause"), ["owner", "limit"])]
+    {
+        let (challenge, wasm) = setup_variant("live-safe", variant);
+        for other in others {
+            let name = if other == "owner" {
+                "live-safe.breach.json".to_string()
+            } else {
+                format!("live-safe.{other}.breach.json")
+            };
+            let out = run_attempt(&challenge, &wasm, &plan(&name)).await;
+            assert_eq!(out.verdict, Verdict::Held, "{variant:?} against the plan for {other}: {out:#?}");
+            assert_eq!(out.stolen, "0");
+            let refused = out.steps.iter().filter(|s| !s.ok).all(|s| {
+                s.error.as_deref().is_some_and(|e| e.contains("this safe is of another kind: it has no such desk"))
+            });
+            assert!(refused, "{variant:?} against the plan for {other}: {out:#?}");
+        }
+    }
+}
+
+/// Whatever its kind, only the masks the safe lets in get to its hole.
+#[tokio::test]
+async fn a_stranger_cannot_drain_a_live_safe_of_any_kind() {
+    for variant in ["limit", "pause"] {
+        let (mut challenge, wasm) = setup_variant("live-safe", Some(variant));
+        challenge.manifest.init.args["masks"] = json!(["alice.test.near"]);
+        let out = run_attempt(&challenge, &wasm, &plan(&format!("live-safe.{variant}.breach.json"))).await;
+        assert_eq!(out.verdict, Verdict::Held, "{variant}: {out:#?}");
+        assert_eq!(out.stolen, "0");
+        let calls: Vec<_> = out.steps.iter().filter(|s| s.error.is_some()).collect();
+        assert!(!calls.is_empty(), "{variant}: {out:#?}");
+        for s in calls {
+            let why = s.error.as_deref().unwrap_or_default();
+            assert!(why.contains("this safe is open to the round's masks only"), "{variant} {}: {why}", s.method);
+        }
+    }
 }
 
 /// Draining the vault into someone else's pocket is not the attacker's win.

@@ -10,8 +10,8 @@ export async function planText(id: string, kind: "breach" | "miss"): Promise<str
   return readFile(join(CHALLENGES_DIR, "runner", "tests", "plans", `${id}.${kind}.json`), "utf8");
 }
 
-export function challenge(id: string): Promise<Challenge> {
-  return loadChallenge(join(CHALLENGES_DIR, id));
+export function challenge(id: string, variant?: string): Promise<Challenge> {
+  return loadChallenge(join(CHALLENGES_DIR, id), variant);
 }
 
 /**

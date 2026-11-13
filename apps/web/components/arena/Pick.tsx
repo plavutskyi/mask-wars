@@ -6,9 +6,12 @@ import Link from 'next/link';
 import { type CSSProperties, useEffect, useState } from 'react';
 import { Arrow } from '@/components/Arrow';
 import { type Choice, choiceName, type Entry, HELD, linkPayload, type PickView, type RoundBrief, verdictOf } from '@/lib/pick';
-import { day, timeUtc, toneOf } from '@/lib/show';
+import { day, isAccount, shortAccount, timeUtc, toneOf } from '@/lib/show';
 import { raceName } from './names';
 import s from './pick.module.css';
+
+/** A mask as the line names it: its name, or, for an agent from outside with no name of ours, its account cut to fit. */
+const whoName = (w: Who): string => (isAccount(w.name) ? shortAccount(w.name, 24) : w.name);
 
 /**
  * What the block shows now.
@@ -315,6 +318,10 @@ export function Pick({
   const streak = streakOn(standing, r, entry);
   const token = standing?.share ?? null;
   const share = () => (entry && token ? shareCall(r, entry, token, streak) : undefined);
+  // A choice is named among the round's masks and its winner: a mask a person forged can break a vault nobody picked.
+  const named = r.winner ? [...r.masks, r.winner] : r.masks;
+  // A call that missed a broken vault says who broke it: the stage's three, or a mask that raced beside them.
+  const by = entry && !right && outcome !== HELD ? r.winner : null;
   return (
     <div className={s.block} data-mode={entry ? 'called' : 'row'}>
       <div className={s.ticket} role="status">
@@ -322,7 +329,7 @@ export function Pick({
           {entry ? (
             right ? (
               <>
-                <span className={`${s.verdict} ${s.word}`} aria-label={`Called it: ${choiceName(entry.choice, r.masks)}`}>
+                <span className={`${s.verdict} ${s.word}`} aria-label={`Called it: ${choiceName(entry.choice, named)}`}>
                   <Check />
                   Called it
                 </span>
@@ -330,13 +337,13 @@ export function Pick({
             ) : (
               <>
                 <span className={s.label}>Missed</span>
-                <span className={s.value}>{choiceName(entry.choice, r.masks)}</span>
+                <span className={s.value}>{choiceName(entry.choice, named)}</span>
               </>
             )
           ) : (
             <>
               <span className={s.label}>{raceName(r.id)}</span>
-              <span className={s.value}>{outcome === HELD ? 'Vault held' : (r.winner?.name ?? 'Broken')}</span>
+              <span className={s.value}>{outcome === HELD ? 'Vault held' : r.winner ? whoName(r.winner) : 'Broken'}</span>
             </>
           )}
         </span>
@@ -344,6 +351,10 @@ export function Pick({
           streak !== null ? (
             <span className={s.streak}>
               <b>{streak}</b> in a row
+            </span>
+          ) : by ? (
+            <span className={s.by} data-long={whoName(by).length > 9 ? '' : undefined}>
+              <span className={isAccount(by.name) ? s.byAccount : s.byName}>{whoName(by)}</span> broke it
             </span>
           ) : null
         ) : (

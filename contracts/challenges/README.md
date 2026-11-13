@@ -4,7 +4,13 @@ AI agents race to drain a vault guarded by a NEAR contract. Each attempt runs in
 Nothing here touches a live network.
 
 **The holes in these targets are planted on purpose.** They are training targets for the race, not real contracts.
-Only `live-safe` goes on testnet, with test NEAR; the others must never be deployed.
+Only `live-safe` goes on chain; the others must never be deployed.
+
+**The live safe comes in kinds.** From 1.7.0 a live safe is of one kind for good, named at `new` (`variant`): `owner`,
+the safe as it always was and the kind of a safe that names none, `limit` or `pause`. Each kind has its own desk and
+its own planted hole, so a round on another kind is another plan: 2 calls, 3 calls, other names. The kinds, their
+holes and why each still passes the judge are in [live-safe/README.md](live-safe/README.md), a file the masks never
+read.
 
 ## The sandbox-only training targets
 
@@ -94,8 +100,9 @@ The arena library above still has the older surface (moves, no lock, no turns). 
 order and turns, with its own state put back at the start of every turn, before its code goes on the list of the
 bounty contract.
 
-**What differs between safes** is the hole and so the calls a drain is made of: `live-safe` is drained with
-`set_owner` then `sweep`, while, say, `fake-oracle` is drained with `oracle_on_call` then `cash_out`. A live deployment
+**What differs between safes** is the hole and so the calls a drain is made of: a `live-safe` of the `owner` kind is
+drained with `set_owner` then `sweep`, one of the `pause` kind with `book` then `cash_out`, one of the `limit` kind
+with `request_exit` twice and `withdraw`, while, say, `fake-oracle` is drained with `oracle_on_call` then `cash_out`. A live deployment
 grants each mask a function-call key for exactly that one safe. The season treasury ([contracts/season](../season))
 makes a safe of the library for every round from its global code, with the safe as its own owner and no key at all;
 on testnet its program starts with `live-safe`.
@@ -117,6 +124,13 @@ team. Two are drained by a mask holding function-call keys only, confirmed by th
 bounty contract; the third nobody plays, and `collect` brings its bounty and its safe's NEAR back to the treasury
 (`reclaim`). A crew's own safe beside it shows what `reclaim` refuses: while the round is open, for anyone but the
 team, after a mask won. Not one full key takes part.
+
+`race-runner round --variant limit` (or `pause`) plays the same round on a safe of that kind: the same scripts, that
+kind's hole. `cargo test -p race-runner --test round` checks it for both, and `cargo test -p race-runner --test
+variants` plays a round by hand on each new kind with the sums of mainnet (the safe's own stake and 0.3 NEAR to race
+for, a drain from 0.1 NEAR) and function-call keys only: a stranger and a mask that sealed nothing get nowhere, the
+plain way out pays nothing, the plan found against a sandbox copy that held far more is paid all the safe can pay
+out, the real judge confirms it, the bounty contract pays, and the drained safe retires to its team.
 
 `cargo test -p race-runner --test retire` retires the safe: a won round keeps its safe until the deadline, then the
 team has all it held, the storage's NEAR included, and the account is gone; a round nobody won keeps its safe until
@@ -148,6 +162,10 @@ deposits and withdraws its own money, does not count.
 
 A team's own contract uses the same format: its wasm, its source, its `setup`.
 
+A target with kinds keeps one more file a kind beside `challenge.json`, in the same format: `challenge.<kind>.json`,
+the same code and source in another world (for `live-safe`, `"variant": "<kind>"` in `init` and in the `kit`).
+`challenge.json` is the default kind.
+
 ## Attack plan
 
 A plan is data, not code: a list of steps from the attacker's account to the target. Unknown kinds and fields are
@@ -171,6 +189,7 @@ cargo build --release -p race-runner
 ./target/release/race-runner build                       # targets → target/challenge-wasm/…/*.wasm
 ./target/release/race-runner run open-admin < plan.json  # prints RACE_OUTCOME {json}
 ./target/release/race-runner run my-target --wasm my.wasm < plan.json
+./target/release/race-runner run live-safe --variant pause < plan.json   # the target as another of its kinds
 ```
 
 The outcome holds the verdict (`breach`, `held`, `invalid`, `timeout`, `error`), the reason, balances before and after
@@ -191,6 +210,8 @@ cargo test
   signed by the bridge key.
 - `runner/tests/round.rs`, `runner/tests/upgrade.rs`, `runner/tests/season.rs`: a sealed round, the keyless bounty
   contract's upgrade, and a season of two rounds with no full key.
+- `runner/tests/variants.rs`, `runner/tests/same_safe.rs`: a round by hand on each new kind of the live safe, and the
+  `owner` kind against the code the vault runs on mainnet, call for call.
 
 The sandbox downloads `neard` 2.14 once and needs an open-file hard limit of at least 65 535 (`ulimit -Hn`). On a
 machine with a lower limit, point `NEAR_SANDBOX_BIN_PATH` at a `neard` that can start there.

@@ -301,15 +301,15 @@ describe("a person's mask thinks on OutLayer, in its mind's TEE", () => {
 
   it("bounds what one attempt and one race can cost the mask's owner", async () => {
     // One attempt: the largest prompt at the full price and the whole allowance of answer tokens.
-    expect(attemptCeilingUsd("z-ai/glm-5.3-flash")).toBeCloseTo(0.0136, 6);
-    expect(attemptCeilingUsd("deepseek-ai/DeepSeek-V4.1-Flash-1017")).toBeCloseTo(0.0348, 6);
-    expect(attemptCeilingUsd("Qwen/Qwen3.8-27B")).toBeCloseTo(0.0332, 6);
-    // One race: five attempts. The dearest model's dearest race is $0.174, under the 0.05 NEAR a race holds by
-    // default for as long as a NEAR is worth $3.48 or more; the keeper never takes more than the race held.
+    expect(attemptCeilingUsd("z-ai/glm-5.3-flash")).toBeCloseTo(0.01392, 6);
+    expect(attemptCeilingUsd("deepseek-ai/DeepSeek-V4.1-Flash-1017")).toBeCloseTo(0.036, 6);
+    expect(attemptCeilingUsd("Qwen/Qwen3.8-27B")).toBeCloseTo(0.03336, 6);
+    // One race: five attempts. The dearest model's dearest race is $0.18, under the 0.05 NEAR a race holds by
+    // default for as long as a NEAR is worth $3.60 or more; the keeper never takes more than the race held.
     expect(RACE_CALLS).toBe(5);
     const dearest = Math.max(...Object.keys(TEE_MODELS).map(raceCeilingUsd));
-    expect(dearest).toBeCloseTo(0.174, 6);
-    expect(dearest / 0.05).toBeCloseTo(3.48, 6);
+    expect(dearest).toBeCloseTo(0.18, 6);
+    expect(dearest / 0.05).toBeCloseTo(3.6, 6);
 
     // A cached prompt is priced as the module counted it: the part read anew and the cached part, each rounded down
     // on its own. The model really used 16 501 tokens of prompt, 16 300 of them cached, and 10 300 of answer.

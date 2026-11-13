@@ -4,7 +4,7 @@
   "api": "https://api.outlayer.ai",
   "project": "maskwars.near/check",
   "price_usd_micro": 10000,
-  "wasm_sha256": null,
-  "rules": null,
-  "key": null
+  "wasm_sha256": "a2f508ce6d9764fd7c1ba2ec0f7df73bba54c8755ac3ffa851dcf87963d5bb89",
+  "rules": "003e104399515f7af297f8a9630f42c74356a307ef28549e1dae9ef9a7459f78",
+  "key": "ed25519:2AyecZnm9kCdq4gcp58TuVHucqgp4oK2JpBVtBRDS2X3"
 }

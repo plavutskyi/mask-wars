@@ -55,6 +55,9 @@ on:
       bounty:
         description: Bounty id on the bounty contract (empty for a practice race)
         default: ""
+      variant:
+        description: Kind of the live-safe copy for a practice race (owner, limit, pause; empty is owner). With a bounty id the race reads the kind from the round's vault itself
+        default: ""
   # The season's round: always a live safe, made by the treasury for this round.
   workflow_call:
     inputs:
@@ -196,6 +199,9 @@ jobs:
           NEAR_AI_API_KEY: ${{ secrets.NEAR_AI_API_KEY }}
           CHALLENGE: ${{ inputs.challenge }}
           ATTEMPTS: ${{ inputs.attempts }}
+          # The kind of the live safe's copy, named by hand for a practice race; empty in every called run. With a
+          # bounty the race reads the kind from the round's vault on chain and races that copy (src/variant.ts).
+          VARIANT: ${{ inputs.variant }}
           # The people's masks the keeper armed, and what their minds on OutLayer need: the round and the payment key.
           HUMAN_MASKS: ${{ needs.arm.outputs.humans || '[]' }}
           BOUNTY: ${{ inputs.bounty }}

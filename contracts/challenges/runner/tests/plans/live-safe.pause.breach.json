@@ -1,0 +1,7 @@
+{
+  "steps": [
+    { "kind": "view", "method": "is_paused" },
+    { "kind": "call", "method": "book", "args": { "amount": "2500000000000000000000000" }, "gas_tgas": 30 },
+    { "kind": "call", "method": "cash_out", "gas_tgas": 30 }
+  ]
+}

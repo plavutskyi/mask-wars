@@ -92,7 +92,7 @@ describe('/api/check', () => {
         ['contract', 'info'],
         ['rpc_agree', 'info'],
       ]);
-      expect(r.tee).toEqual({ signed: false, why: 'MASK CHECK is not published in its TEE yet: the site read this answer itself' });
+      expect(r.tee).toEqual({ signed: false, why: 'the site holds no OutLayer payment key yet: it read this answer itself' });
     } finally {
       world = answers;
     }
@@ -107,11 +107,11 @@ describe('/api/check', () => {
   });
 });
 
-describe('/api/check, as the repo stands: MASK CHECK not yet published in its TEE', () => {
+describe('/api/check, as the repo stands: MASK CHECK is published in its TEE, and a run with no payment key', () => {
   it('reads the chain itself and says plainly that nothing is signed', async () => {
     const r = await (await get('account=intents.near', '198.51.100.20')).json();
     expect(r.verdict).toBe('allow');
-    expect(r.tee).toEqual({ signed: false, why: 'MASK CHECK is not published in its TEE yet: the site read this answer itself' });
+    expect(r.tee).toEqual({ signed: false, why: 'the site holds no OutLayer payment key yet: it read this answer itself' });
   });
 });
 

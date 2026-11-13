@@ -332,6 +332,9 @@ fn retiring_adds_one_byte_after_the_state_the_round_reads() {
     // What the masks' first moves wrote goes to storage, as at the end of a call on chain.
     s.first.flush();
     let bytes = state(&s);
+    // Since 1.7.0 the safe's kind and its desks follow the flag, 35 bytes that are there from `new` on too.
+    let (bytes, desks) = bytes.split_at(bytes.len() - 35);
+    assert_eq!(desks, [vec![0u8], vec![0u8; 34]].concat(), "the owner kind, and nothing at its desks");
     let (was, flag) = bytes.split_at(bytes.len() - 1);
     assert_eq!(flag, [0], "not retiring");
     let old: SafeBeforeRetire = near_sdk::borsh::from_slice(was).unwrap();
@@ -344,5 +347,5 @@ fn retiring_adds_one_byte_after_the_state_the_round_reads() {
     // yoctoNEAR the team has taken back (`reclaim`) still retires.
     as_at(SAFE, DEADLINE);
     drop(s.on_retire(ARMED, bounty_is("drained")));
-    assert_eq!(state(&s), [was, &[1]].concat());
+    assert_eq!(state(&s), [was, &[1], desks].concat());
 }

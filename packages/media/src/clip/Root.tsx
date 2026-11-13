@@ -11,10 +11,20 @@ import { planRaceClip, RACE_CLIP } from "./race-plan.ts";
 import { Promo } from "../promo/Promo.tsx";
 import type { PromoProps } from "../promo/Promo.tsx";
 import { DURATION, PROMO } from "../promo/plan.ts";
+import { Demo } from "../demo/Demo.tsx";
+import type { DemoProps } from "../demo/Demo.tsx";
+import type { DemoData } from "../demo/plan.ts";
+import { DEMO, DURATION as DEMO_DURATION } from "../demo/plan.ts";
+import { Tour } from "../tour/Tour.tsx";
+import type { TourProps } from "../tour/Tour.tsx";
+import type { TourData } from "../tour/plan.ts";
+import { DURATION as TOUR_DURATION, TOUR } from "../tour/plan.ts";
 
 /**
  * The compositions: 16:9, nothing vertical exists here. `RaceClip` tells a race with captions and takes its length
- * from the race; `break` is the wordless clip, 15 s, cut on the beat of its music.
+ * from the race; `break` is the wordless clip, 15 s, cut on the beat of its music; `Promo` is the long film and
+ * `Demo` the one-story film of a round, both cut on the bars of the same track; `Tour` is every page of the site
+ * being used, chapter by chapter, on that track played whole.
  */
 function Root() {
   return (
@@ -46,6 +56,24 @@ function Root() {
         fps={PROMO.fps}
         durationInFrames={DURATION}
         defaultProps={{ today: null as unknown as RaceRecord, first: null as unknown as RaceRecord, music: null } satisfies PromoProps}
+      />
+      <Composition
+        id={DEMO.id}
+        component={Demo}
+        width={DEMO.width}
+        height={DEMO.height}
+        fps={DEMO.fps}
+        durationInFrames={DEMO_DURATION}
+        defaultProps={{ data: null as unknown as DemoData, music: null } satisfies DemoProps}
+      />
+      <Composition
+        id={TOUR.id}
+        component={Tour}
+        width={TOUR.width}
+        height={TOUR.height}
+        fps={TOUR.fps}
+        durationInFrames={TOUR_DURATION}
+        defaultProps={{ data: null as unknown as TourData, music: null } satisfies TourProps}
       />
     </>
   );

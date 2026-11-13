@@ -10,6 +10,7 @@ import { Header } from '@/components/arena/Header';
 import { Info } from '@/components/arena/Info';
 import { Connect } from './Connect';
 import { LiveAnswer, LiveWaiting } from './Live';
+import { MarketRow } from './MarketRow';
 import s from './connect.module.css';
 import { marketListing } from '@/lib/market';
 import { pageMeta } from '@/lib/meta';
@@ -98,17 +99,7 @@ export default async function ConnectPage() {
                 <span className={s.what}>{t.what}</span>
               </li>
             ))}
-            {listing ? (
-              <li className={s.tool}>
-                <span className={s.name}>MASK CHECK</span>
-                <span className={s.what}>
-                  USDC per call.{' '}
-                  <a href={listing.url} target="_blank" rel="noopener" className={s.try}>
-                    Hire it on Agent Market
-                  </a>
-                </span>
-              </li>
-            ) : null}
+            {listing ? <MarketRow listing={listing} /> : null}
           </ul>
           {/* The one tool a person can try without an agent: the door to MASK CHECK, a button of its own. */}
           <Link href="/check" className={s.check}>

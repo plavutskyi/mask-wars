@@ -18,12 +18,12 @@ static OUTLAYER_MANIFEST: [u8; include_bytes!("../manifest.json").len()] =
 
 #[cfg(target_os = "wasi")]
 mod world {
+    use maskwars_brain::http::post;
     use maskwars_brain::mind::{
         out_of_time, out_of_time_words, Chain, Llm, Reply, Usage, CONNECT_SECONDS, NO_KEY,
     };
     use serde_json::{json, Value};
     use std::time::{Duration, Instant};
-    use wasi_http_client::Client;
 
     /// The NEAR RPC that the OutLayer worker itself gives the module (`near:rpc`), for the network it serves.
     pub struct WorkerRpc;
@@ -63,31 +63,35 @@ mod world {
             // left; the run itself goes on, and the module says what happened, with the seconds the model was given,
             // instead of running into the run's own limit.
             let asked = Instant::now();
-            let res = Client::new()
-                .post("https://cloud-api.near.ai/v1/chat/completions")
-                .header("content-type", "application/json")
-                .header("accept", "application/json")
-                .header("authorization", format!("Bearer {}", self.key.trim()))
-                .header("x-no-aliasing", "true")
-                .header("user-agent", "maskwars-brain")
-                .body(body.to_string().as_bytes())
-                .connect_timeout(Duration::from_secs(CONNECT_SECONDS))
-                .send()
-                .map_err(|e| {
-                    let waited = asked.elapsed().as_secs();
-                    if out_of_time(&format!("{e:?}"), waited) {
-                        out_of_time_words(waited)
-                    } else {
-                        "NEAR AI is unreachable".to_string()
-                    }
-                })?;
-            let status = res.status();
+            // The body goes out in pieces of 4096 bytes (src/http.rs): one write takes no more, and the request
+            // carries the target's source.
+            let (status, body) = post(
+                true,
+                "cloud-api.near.ai",
+                "/v1/chat/completions",
+                &[
+                    ("content-type", "application/json"),
+                    ("accept", "application/json"),
+                    ("authorization", &format!("Bearer {}", self.key.trim())),
+                    ("x-no-aliasing", "true"),
+                    ("user-agent", "maskwars-brain"),
+                ],
+                body.to_string().as_bytes(),
+                Duration::from_secs(CONNECT_SECONDS),
+            )
+            .map_err(|e| {
+                let waited = asked.elapsed().as_secs();
+                if out_of_time(&e, waited) {
+                    out_of_time_words(waited)
+                } else if e.starts_with("the answer") {
+                    "NEAR AI's answer was cut".to_string()
+                } else {
+                    "NEAR AI is unreachable".to_string()
+                }
+            })?;
             if status != 200 {
                 return Err(format!("NEAR AI answered {status}"));
             }
-            let body = res
-                .body()
-                .map_err(|_| "NEAR AI's answer was cut".to_string())?;
             let v: Value = serde_json::from_slice(&body)
                 .map_err(|_| "NEAR AI's answer is not JSON".to_string())?;
             // A model that thinks until its allowance runs out answers with no content and `finish_reason: length`.

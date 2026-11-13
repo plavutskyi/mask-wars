@@ -13,7 +13,9 @@
     "round": "node --use-env-proxy --disable-warning=UNDICI-EHPA scripts/round.mjs",
     "shots": "node scripts/shots.mjs",
     "film": "node scripts/film.mjs",
-    "break": "node scripts/break.mjs"
+    "break": "node scripts/break.mjs",
+    "demo": "node scripts/demo.mjs",
+    "tour": "node scripts/tour.mjs"
   },
   "dependencies": {
     "@maskwars/arena": "workspace:*",

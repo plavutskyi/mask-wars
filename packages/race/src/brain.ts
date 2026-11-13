@@ -59,10 +59,10 @@ const SEND_AGAIN = 3;
  */
 export const RACE_CALLS = 5;
 /**
- * The most tokens the mind's prompt takes: the live safe's source is some 16 thousand, and the module's own test
- * holds the prompt under 60 000 bytes, which no tokenizer turns into more than this.
+ * The most tokens the mind's prompt takes: most of it is the vault's source, and the module's own test holds the
+ * largest prompt under 72 000 bytes, which no tokenizer turns into more than this.
  */
-export const PROMPT_TOKENS_CEILING = 20_000;
+export const PROMPT_TOKENS_CEILING = 24_000;
 
 /** The most one attempt can cost on NEAR AI Cloud, in dollars: the largest prompt, nothing of it cached, and the whole allowance. */
 export function attemptCeilingUsd(model: string): number {

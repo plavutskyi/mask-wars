@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 import { codeHashHex, NETWORKS } from "@maskwars/network";
 import { describe, expect, it } from "vitest";
 import { codeHash, faults, sourceMetadata, type SourceMetadata } from "../../../contracts/nep330.mjs";
-import { crateVersion, houseTerms, readBuild, setField, stakeOf, vaultFaults } from "../../../scripts/mainnet/source.mjs";
+import { crateVersion, handRound, houseTerms, KINDS, readBuild, setField, stakeOf, vaultFaults } from "../../../scripts/mainnet/source.mjs";
 
 const ROOT = fileURLToPath(new URL("../../../", import.meta.url));
 const SERVED = join(ROOT, "apps", "web", "public", "contracts");
@@ -27,7 +27,7 @@ const mainnetVault = () => {
 
 /** Metadata as `cargo near build reproducible-wasm` writes it for the vault built at commit REV. */
 const complete = (over: Partial<SourceMetadata> = {}): SourceMetadata => ({
-  version: "1.6.0",
+  version: "1.7.0",
   link: `https://github.com/plavutskyi/mask-wars/tree/${REV}`,
   standards: [{ standard: "nep330", version: "1.3.0" }],
   build_info: {
@@ -77,8 +77,8 @@ describe("the code on its way to mainnet (scripts/mainnet/source.mjs)", () => {
     cpSync(mainnetVault(), join(dir, "live-safe.wasm"));
     const build = await readBuild(dir);
     const vault = build["live-safe"]!;
-    expect(crateVersion("contracts/challenges/live-safe")).toBe("1.6.0");
-    expect(vault.why).toEqual(expect.arrayContaining([expect.stringMatching(/^link: null/), "version 0.1.0, not 1.6.0 of contracts/challenges/live-safe/Cargo.toml"]));
+    expect(crateVersion("contracts/challenges/live-safe")).toBe("1.7.0");
+    expect(vault.why).toEqual(expect.arrayContaining([expect.stringMatching(/^link: null/), "version 0.1.0, not 1.7.0 of contracts/challenges/live-safe/Cargo.toml"]));
     expect(vaultFaults(vault, NETWORKS.mainnet)).toEqual(["it exports no about"]);
   });
 
@@ -115,6 +115,70 @@ describe("the code on its way to mainnet (scripts/mainnet/source.mjs)", () => {
     expect(JSON.parse(changed)).toEqual({ ...JSON.parse(text), safe_code: "NewCode" });
     expect(changed.split("\n").length).toBe(text.split("\n").length);
     expect(() => setField(text, "no_such_field", "x")).toThrow("no_such_field");
+  });
+
+  describe("a round by hand on a vault of another kind (--hand)", () => {
+    const every = ["arm", "queue", "retire", "on_retire", "reclaim", "on_bounty", "about", "contract_source_metadata", "variant", ...Object.values(KINDS).flat()];
+    const vault = (bytes: number, exports: string[] = every) => ({ file: "", bytes: new Uint8Array(bytes), sha256: "ab".repeat(32), code: "9sey9MBoQQNvJWpnqYxrLT6ZcALY8SsBdvXZ973gNeT9", meta: null, why: [], exports });
+    const NET = NETWORKS.mainnet;
+    const commandsOf = (plan: { steps: { commands: string[] }[] }) => plan.steps.flatMap((s) => s.commands);
+    const ps = (script: string, args: string) => [".", "scripts", "testnet", script].join("\\") + ` -Network mainnet ${args}`;
+
+    it("the kinds and their calls are the ones the vault's source has", () => {
+      const text = readFileSync(join(ROOT, "contracts", "challenges", "live-safe", "src", "lib.rs"), "utf8");
+      expect(Object.keys(KINDS)).toEqual(["owner", "limit", "pause"]);
+      for (const method of Object.values(KINDS).flat()) expect(text, method).toContain(`\n    pub fn ${method}(&mut self`);
+    });
+
+    it("the 1.7.0 code of 179 453 bytes does not fit the daily vault's 1.93 NEAR, and a vault by hand gets its own", () => {
+      // What `--switch safe` would stop on: the daily vault needs more NEAR before it takes this code.
+      expect(vaultFaults(vault(179_453), NET)[0]).toMatch(/1\.93 in the vault leaves less than twice the least drain/);
+      const plan = handRound(vault(179_453), NET, "pause");
+      expect(plan).toMatchObject({ kind: "pause", id: "pause-0001", safe: "pause-0001.maskwars.near", fund: "2.2" });
+      // The stake of the code and state, and at least 0.3 NEAR on top to race for, within the limit of a safe by hand.
+      expect(plan.stake).toBe(1_854_530_000_000_000_000_000_000n);
+      expect(plan.bank).toBe(345_470_000_000_000_000_000_000n);
+      expect(Number(plan.fund)).toBeLessThanOrEqual(Number(NET.limits.hand.safe_max));
+    });
+
+    it("gives the owner's steps in their order, each a command of the scripts", () => {
+      const plan = handRound(vault(179_453), NET, "limit", "limit-0002");
+      expect(plan.steps.map((s: { who: string }) => s.who)).toEqual(["maskwars.near", "maskwars.near", "maskwars.near", "each mask (3 transactions)", "maskwars.near", "nobody signs", "maskwars.near"]);
+      expect(commandsOf(plan)).toEqual([
+        ps("bounty-change.ps1", "-AllowSafe"),
+        ps("bounty-change.ps1", "-Apply"),
+        ps("bounty-change.ps1", "-Show"),
+        ps("safe-deploy.ps1", "-Safe limit-0002.maskwars.near -Variant limit -Near 2.2"),
+        ps("season-keys.ps1", "-Safe limit-0002.maskwars.near -SafeOnly"),
+        ps("open-safe.ps1", "-Id limit-0002 -Safe limit-0002.maskwars.near -MinLoot 0.1 -Near 0.25"),
+        "gh workflow run live-race.yml --repo plavutskyi/mask-wars -f challenge=live-safe -f attempts=5 -f bounty=limit-0002",
+        ps("retire.ps1", "-Safe limit-0002.maskwars.near"),
+      ]);
+      // Every option a step names is one its script takes.
+      for (const command of commandsOf(plan).filter((c) => c.startsWith("."))) {
+        const script = /([a-z-]+\.ps1)/.exec(command)![1]!;
+        const params = /^param\((.*)\)$/m.exec(readFileSync(join(ROOT, "scripts", "testnet", script), "utf8"))![1]!;
+        for (const [, option] of command.matchAll(/ -([A-Z][A-Za-z]+)/g)) expect(params, `${script} -${option}`).toContain("$" + option);
+      }
+      expect(plan.steps[0]!.what).toContain("9sey9MBoQQNvJWpnqYxrLT6ZcALY8SsBdvXZ973gNeT9");
+    });
+
+    it("a code the bounty contract already lists needs no proposal", () => {
+      const plan = handRound(vault(179_453), NET, "pause", "pause-0002", true);
+      expect(plan.steps).toHaveLength(5);
+      expect(plan.steps[0]!.commands[0]).toContain("safe-deploy.ps1");
+    });
+
+    it("refuses a kind the code does not have, an id of the house's own row, and a code too big for a safe by hand", () => {
+      expect(() => handRound(vault(179_453), NET, "vault")).toThrow("--hand: owner, limit, pause");
+      expect(() => handRound(vault(179_453), NET, "pause", "race-0005")).toThrow("not race-<n>");
+      expect(() => handRound(vault(179_453), NET, "pause", "p1")).toThrow("--id");
+      // The vault on mainnet today (1.5.0) has no kinds: it plays the owner kind only.
+      const old = every.filter((m) => !["variant", ...KINDS.limit, ...KINDS.pause].includes(m));
+      expect(() => handRound(vault(165_172, old), NET, "pause")).toThrow("this code has no vault of the pause kind: it exports no claim, book, cash_out, pause, unpause, variant");
+      expect(handRound(vault(165_172, old), NET, "owner").fund).toBe("2.1");
+      expect(() => handRound(vault(230_000), NET, "pause")).toThrow("above limits.hand.safe_max of 2.5");
+    });
   });
 
   it("leaves room in the vault for the masks: the 1.6.0 code built at 166 743 bytes still fits 1.93 NEAR", () => {

@@ -20,21 +20,21 @@ const WORDS = {
   en: { attempt: "attempt", breach: "breach in", h: "h", m: "m", s: "s" },
 } as const;
 
-/** `спроба 4: ×` or `спроба 5: злам за 3 хв 12 с`. */
-export function formatEntry(entry: JournalEntry, lang: Lang = "uk"): string {
+/** `attempt 4: ×` or `attempt 5: breach in 3m 12s`. */
+export function formatEntry(entry: JournalEntry, lang: Lang = "en"): string {
   const w = WORDS[lang];
   const mark = entry.verdict === "breach" ? `${w.breach} ${duration(entry.atMs, lang)}` : "×";
   return `${w.attempt} ${entry.attempt}: ${mark}`;
 }
 
-/** One line per attacker: `ONYX  спроба 1: ×, спроба 2: злам за 41 с`. */
-export function formatJournal(entries: readonly JournalEntry[], lang: Lang = "uk"): string[] {
+/** One line per attacker: `ONYX  attempt 1: ×, attempt 2: breach in 41s`. */
+export function formatJournal(entries: readonly JournalEntry[], lang: Lang = "en"): string[] {
   const byAttacker = new Map<string, JournalEntry[]>();
   for (const e of entries) byAttacker.set(e.attacker, [...(byAttacker.get(e.attacker) ?? []), e]);
   return [...byAttacker].map(([who, list]) => `${who}  ${list.map((e) => formatEntry(e, lang)).join(", ")}`);
 }
 
-export function duration(ms: number, lang: Lang = "uk"): string {
+export function duration(ms: number, lang: Lang = "en"): string {
   const w = WORDS[lang];
   const total = Math.max(0, Math.floor(ms / 1000));
   const h = Math.floor(total / 3600);

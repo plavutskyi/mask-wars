@@ -11,6 +11,9 @@ pnpm --filter @maskwars/media race s1-0001-d74851                      # then th
 
 pnpm --filter @maskwars/media film race-0001                           # the real site, replaying the round, filmed frame by frame
 pnpm --filter @maskwars/media break race-0001                          # the wordless 15 s clip, cut from that film
+
+pnpm --filter @maskwars/media demo race-0004                           # the 71 s film of one round, filmed off the live site
+pnpm --filter @maskwars/media tour race-0004 --gpu                     # the 2:30 tour of everything the site does, filmed off it
 ```
 
 Only real rounds are kept here. `races/` holds records marked `LIVE`, and `shots/` holds the cards and the clip of
@@ -276,6 +279,105 @@ How it works (`src/film/`):
 
 For the next round: read its record (`round <id> --network mainnet`), then `film <id>`, then `break <id>`.
 
+## The demo film: one story of a round
+
+`pnpm --filter @maskwars/media demo race-0004` makes the 71 s film of one round: 1920×1080, 30 frames a second, no
+voice, cut on the bars of the long film's track. A person forges a mask, it lines up for the daily round, the round
+runs by itself, a mask breaks the vault and the contract pays, forge yours. That one command films the live site again
+for that round, renders `out/promo/maskwars-demo.mp4` and lays a contact sheet beside it (`maskwars-demo-sheet.jpg`,
+a frame every three seconds).
+
+| From | Part | Picture | Words |
+| --- | --- | --- | --- |
+| 0.0 s | Hook | The home page as it stands, its 3D arena running | What the arena is, in two lines |
+| 4.7 s | Forge | `/forge`, tapped step by step up to the name. The film never presses Forge: no wallet opens, nothing is signed | The step, under the page |
+| 19.7 s | The mask | The person's mask on its own page, then its row among the forged masks of the league | Its name and state, as its page says |
+| 24.4 s | The round | The round's own page, row by row: the vault loaded, the plans sealed, the window closing in the track's silent bar | The time and the sum of each row |
+| 31.9 s | The break | The page's headline, on the track's drop; then the drain, the payout and what the winner took | Who, in how long, how much |
+| 46.9 s | The money | The league table | How many rounds, how many winners, what the first took |
+| 54.4 s | Around it | The picks on the home page, `/near`, `/mcp/connect` | One line each |
+| 65.6 s | End | The arena, dimmed | `Forge yours.`, `maskwars.xyz`, `Built at NEAR HACKATHON` |
+
+- **One file a round.** The command reads the site's `/api/races/<id>` and `/api/races/league` into
+  `out/demo/<id>/data.json`, with the boxes of the rows it measured on the pages. Every word with a name or a number
+  in it is `story()` of that file (`src/demo/plan.ts`): who won, in how long, what it took, whether the person's mask
+  was in the round, or that the vault held. Nothing names a winner by hand; `test/demo.test.ts` plays the round other
+  ways to see the words follow.
+- **Words never sit on a page's own.** A page is filmed whole above a caption bar, or fills the frame for a hit. The
+  film sets no type under 44 px.
+- **Nothing is sent to the site.** The picks are filmed, not tapped: a tap is a real pick. The forge stops at the
+  name, six frames before the page would ask the chain about it.
+- **Sums read as the site reads them**: cut, never rounded up (`0.11176` reads `0.111`).
+
+| Flag | What it does |
+| --- | --- |
+| `--draft` | 960×540 to `maskwars-demo-draft.mp4`, to look at the cut first |
+| `--no-capture` | Renders from what `out/demo/<id>/` already holds |
+| `--take data,stills` | Films only these parts again (`data`, `stills`, `forge`, `home`) and keeps the rest |
+| `--mask <name>` | The person's mask the film follows; `dmytro` by default |
+| `--gpu` | Draws the home page's 3D arena with the graphics card: the same pixels, faster |
+
+A round that is still on is told as on, and the command says so: render it again once the round has ended.
+
+## The tour: everything the site does, and how to use it
+
+`pnpm --filter @maskwars/media tour race-0004 --gpu` makes the 2:30 film for people who will use the site: 1920×1080,
+30 frames a second, no voice, cut on the beats of the long film's track played whole. Ten chapters; each opens with a
+card (its number and its name) and then plays the real page being used, with one line under it for each step. The
+command films every page again, renders `out/promo/maskwars-tour.mp4` and lays a contact sheet beside it
+(`maskwars-tour-sheet.jpg`, a frame every three seconds).
+
+```bash
+pnpm --filter @maskwars/media tour race-0004 --gpu                # every page filmed again, then the film: about 15 min
+pnpm --filter @maskwars/media tour race-0004 --gpu --take round   # only what a new round changes, then the film: about 7 min
+pnpm --filter @maskwars/media tour --gpu --take round             # the same for the latest round that has ended
+```
+
+| From | Chapter | The page, and what is done on it |
+| --- | --- | --- |
+| 0:00 | The first words | The home page, its 3D arena running |
+| 0:04 | 1. Watch and call the round | `/`: the countdown, the vault, the masks, the picks (filmed, never tapped: a tap is a real pick). Then `/race/<id>`: the round's steps, row by row, and what the winner took |
+| 0:31 | 2. Forge your own mask | `/forge`, the six steps up to the name: the demo film's own reel. Then the mask's page |
+| 0:53 | 3. Copy a mask | `/mask/<name>`: what a copy keeps, what its owner takes, the price. The button is not pressed |
+| 1:01 | 4. The league | `/league`: the arena's masks, the masks people forged, the best callers |
+| 1:13 | 5. Hire the masks for a job | `/jobs`: the Post a job sheet, opened and shut, and the two ways in |
+| 1:27 | 6. Get NEAR from any network | `/near`: the coin picker (ETH on Ethereum, back to USDC on Arbitrum), an amount, the sum a person gets |
+| 1:39 | 7. Swap anything into anything | `/swap`: the coin received is changed once |
+| 1:48 | 8. Ask before you pay: MASK CHECK | `/check`: the page's own example is typed back and asked, the verdict and its reasons. Then the agent's page on NEAR Agent Market, and its price |
+| 2:05 | 9. Plug your own agent in | `/mcp/connect`: the line, the three tabs, the tools |
+| 2:15 | 10. Open source | The public repository: the README's top and its rounds on mainnet |
+| 2:22 | The end card | The sign, `maskwars.xyz`, `Built at NEAR HACKATHON` |
+
+- **Real footage.** Every reel is the live page in a window drawn 1920×880 above the caption bar, filmed frame by
+  frame on the film's clock (`src/tour/capture.ts`): a press and a typed letter land on their beat, and a page that
+  glides comes to a stop on the beat its line lands. A wait for the network is not on film. A ring opens where the
+  film presses, five frames ahead of the press; what a line is about is lit while the page stands still. The page of
+  the repository is filmed as the band of a wider window its README stands in, so its type is large enough to read.
+- **It presses four kinds of thing** (`mayPress` in `src/tour/plan.ts`): a picker (the coin button, a network and a
+  coin in its list, an amount), a tab, a sheet that only opens (Post a job, Details) and that sheet's Close. It reads
+  what a control is off the page before it touches it and stops the reel on anything else: a button that submits a
+  form, a link, any control whose words send, sign, hire or copy. It types into the check's field only, and Enter
+  there asks the one question the film sends. No wallet is connected.
+- **Numbers come from the pages.** The round is `/api/races/<id>` and the league `/api/races/league`; the vault's
+  sum, the split of a copy and its price, the count of networks, the sum a person gets, the coins of the swap, the
+  verdict, the agent's price and the count of tools are read off the pages while they are filmed. All of it is one
+  file, `out/tour/data.json`, and every line with a number in it is `lines()` of that file. A page that did not say
+  a number gets a line without one. The round's own lines are the demo film's `story()`.
+- **The round is an argument.** With none named it is the latest round that has ended. `--take round` reads the
+  round again and films its page and the league; the other reels are kept as they lie in `out/tour/`.
+- **Words never sit on a page's own**, and the film sets no type under 44 px; a line is 32 characters or fewer, so
+  it stands at 56 px and more.
+
+| Flag | What it does |
+| --- | --- |
+| `--draft` | 960×540 to `maskwars-tour-draft.mp4`, to look at the cut first |
+| `--no-capture` | Renders from what `out/tour/` already holds |
+| `--no-render` | Films only |
+| `--take round` | Films only these parts again: `round` (the data, the round's page, the league), or any of `data`, `home`, `watch`, `race`, `forge`, `mask`, `copy`, `league`, `jobs`, `near`, `swap`, `check`, `market`, `connect`, `github` |
+| `--stills 5.3,32.3,144` | Those seconds of the film as JPEG in `out/promo/tour-stills/`, and no film: to look at a card or a line at full size |
+| `--mask <name>` | The person's mask of chapters 2 and 3; `dmytro` by default |
+| `--gpu` | Draws with the graphics card: the same pixels, and the 3D arena about five times faster |
+
 ## X thread
 
 `src/race/thread.ts`: 4–8 posts, each with its own picture. The draft (`thread.md`) is in English: which picture goes
@@ -327,7 +429,8 @@ from them never leaves the queue.
 ```bash
 pnpm --filter @maskwars/media typecheck
 pnpm --filter @maskwars/media test       # record, story, thread, lint, clip plan, cards, music, queue, the round from the chain,
-                                         # and the wordless clip: beat grid, slots, numbers, the replayed round
+                                         # the wordless clip: beat grid, slots, numbers, the replayed round,
+                                         # and the two films of the site: their cuts, their words, what the tour may press
 ```
 
 `test/round.test.ts` replays recorded answers through the real reader, with no network: the example round end to end,

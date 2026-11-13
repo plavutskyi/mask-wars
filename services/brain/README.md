@@ -81,6 +81,17 @@ and a longer time, 180 seconds at most and never past the run's end. The manifes
 not carry it. It also makes cloud-api.near.ai the only host the module reaches. The chain is read through the worker's
 own RPC, which is no request of the module's.
 
+**The request.** The question to the model carries the vault's source, some 60 thousand bytes. `wasi:io` takes at
+most 4096 bytes in one write of a request's body and ends the whole run on a longer one, with no error to answer with,
+so the module writes the body in pieces itself (`src/http.rs`) over `wasi:http`, with no client crate in between.
+
+**The road checked before a round.** `{"action":"probe","factory":"masks.maskwars.near","model":"Qwen/Qwen3.8-27B"}`,
+for the keeper only, reads no mask and no sealed box: inside the TEE the module reads the factory's `config` over the
+worker's RPC, says whether the factory still seals strategies for this mind's key, and asks the model one small
+question in a request of more than two writes. `node services/brain/live.mjs` runs it for every model the mind plays,
+on the active version or, with `--version <sha256>`, on a build that is not active yet; it costs about two cents of the
+payment key.
+
 **A model that does not make it.** Three ways an attempt ends without a plan, each named apart:
 
 | What happened | What the race job is told | What the mask pays |
@@ -99,15 +110,15 @@ OutLayer's own charge for the run is the arena's. In dollars, and in NEAR at $3.
 
 | Model | One attempt as it goes on the live safe | One race of 5 such attempts | The dearest race there can be |
 | --- | --- | --- | --- |
-| GLM 5.3 Flash | $0.004 to $0.007 | $0.022 to $0.037: 0.006 to 0.010 NEAR | $0.068: 0.018 NEAR |
-| DeepSeek V4.1 Flash | $0.012 to $0.020 | $0.061 to $0.098: 0.017 to 0.027 NEAR | $0.174: 0.047 NEAR |
-| Qwen 3.8 27B | $0.009 to $0.017 | $0.045 to $0.086: 0.012 to 0.023 NEAR | $0.166: 0.045 NEAR |
+| GLM 5.3 Flash | $0.004 to $0.007 | $0.022 to $0.037: 0.006 to 0.010 NEAR | $0.070: 0.019 NEAR |
+| DeepSeek V4.1 Flash | $0.012 to $0.020 | $0.061 to $0.098: 0.017 to 0.027 NEAR | $0.180: 0.049 NEAR |
+| Qwen 3.8 27B | $0.009 to $0.017 | $0.045 to $0.086: 0.012 to 0.023 NEAR | $0.167: 0.045 NEAR |
 
 "As it goes" is 16 thousand tokens of prompt, none cached, and 8 to 14 thousand of answer, as the mask is charged for
 them: in whole steps of 2048, rounded down. "The dearest" is the ceiling the code
-holds (`raceCeilingUsd` in `packages/race/src/brain.ts`, pinned by its test): 5 attempts, each with 20 000 tokens of
+holds (`raceCeilingUsd` in `packages/race/src/brain.ts`, pinned by its test): 5 attempts, each with 24 000 tokens of
 prompt, none cached, and all 24 000 tokens of answer. A race ends at the first break, so most cost less. The 0.05 NEAR
-a race holds covers the dearest race for as long as a NEAR is worth $3.48 or more; under that the mask still pays the
+a race holds covers the dearest race for as long as a NEAR is worth $3.60 or more; under that the mask still pays the
 0.05 at most and the arena pays the difference. With the allowance of 3 000 tokens the dearest race, counted the same
 way, was $0.016, $0.048 and $0.024 for the three models, and no answer on the live safe ever fit it. The five attempts
 are counted for one run of the race job.
@@ -127,8 +138,10 @@ the mind's seed or spends the owner's NEAR AI key), one run with `{"action":"key
 unopenable. The race needs a payment key for HTTPS calls, made on the keeper's account `tinygif8324.testnet`
 (`outlayer keys create`), since the module answers only that account; it goes into the secret `OUTLAYER_PAYMENT_KEY`
 of the `live-race` environment. A new module version keeps the project's secrets, so the mind's key stays the same:
-after adding one, run `{"action":"key"}` on it before it becomes the active version and compare the key with the one
-the factory publishes (`config()`, `strategy_key`). That run also shows OutLayer did not refuse the module's manifest.
+after adding one (`outlayer deploy brain <url> --no-activate`), run `node services/brain/live.mjs --version <sha256>`
+on it before it becomes the active version: it compares the mind's key with the one the factory publishes (`config()`,
+`strategy_key`) and asks every model a full-length question. That run also shows OutLayer did not refuse the module's
+manifest. Only then `outlayer versions activate <sha256>`.
 That OutLayer gives the request its 165 seconds shows only in a `plan` run where the model thinks for more than 30: a
 run cut short says `the model did not answer in 30 seconds` (the manifest's time was not applied) or
 `… in 5x seconds` (the run got 60 seconds, not the 180 the call asked for).

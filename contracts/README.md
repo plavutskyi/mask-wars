@@ -4,7 +4,7 @@ Every contract MASK WARS puts on NEAR, each in its own folder with its own READM
 
 | Contract | Folder | Version here | On mainnet today |
 | --- | --- | --- | --- |
-| The vault: the arena's target, made again for every round | [`challenges/live-safe`](challenges/live-safe) | 1.6.0 | `vault.house.maskwars.near` runs 1.5.0 (`GBcgJ4RA…K7jV`); 1.6.0 is not deployed |
+| The vault: the arena's target, made again for every round | [`challenges/live-safe`](challenges/live-safe) | 1.7.0 | `vault.house.maskwars.near` runs 1.5.0 (`GBcgJ4RA…K7jV`); 1.7.0 is not deployed |
 | The bounty contract: sealed rounds, the judge in a TEE, the payout | [`bounty`](bounty) | 1.0.0 | `bounty.maskwars.near`, no key, an earlier build |
 | The house: the daily round's steps for a key that can sign nothing else | [`house`](house) | 1.2.0 | not deployed: `house.maskwars.near` has no code and signs its day with a full key |
 | home: a mask's winnings go back to the house, and only there | [`home`](home) | 1.1.0 | `nova`, `onyx`, `oracle.maskwars.near` run 1.0.0 (`59bFq9xj…mz9f`), which has `home` and no NEP-330 view |
@@ -21,7 +21,7 @@ mainnet today (12 Nov 2026): the bounty contract, jobs, crews, the factory and t
 Built as below, each contract answers `contract_source_metadata` (NEP-330): its version, a link to its source at the
 exact commit of the public repository it was built from, and how to build the same bytes again. nearblocks shows that
 link on the account's page, and anyone can rebuild the code and compare. No contract on mainnet carries it yet: the
-answer below is what the vault 1.6.0 gives once it is deployed, and today the same call on mainnet answers
+answer below is what the vault 1.7.0 gives once it is deployed, and today the same call on mainnet answers
 `{"version":"0.1.0","link":null,"standards":[{"standard":"nep330","version":"1.3.0"}],"build_info":null}`.
 
 ```bash
@@ -30,7 +30,7 @@ near contract call-function as-read-only vault.house.maskwars.near contract_sour
 
 ```json
 {
-  "version": "1.6.0",
+  "version": "1.7.0",
   "link": "https://github.com/plavutskyi/mask-wars/tree/<commit>",
   "standards": [{ "standard": "nep330", "version": "1.3.0" }],
   "build_info": {
@@ -70,6 +70,9 @@ node contracts/nep330.mjs <file.wasm>     # what any wasm says about its source
 `sweep` and `set_owner` of the vault are open to the masks of its round: that is the target the masks race to break,
 and a scanner reads it as a hole. It is one, planted, and only for them. The vault says so itself: `about` returns
 *"MASK WARS arena target. Funded only by MASK WARS. Only the masks of this round can open it. After the round the rest
-goes home."* Version 1.6.0 adds `about` and the metadata and changes no behaviour:
-`challenges/runner/tests/same_safe.rs` runs the same calls on the code on mainnet and on 1.6.0 on a real local node
+goes home."* Version 1.6.0 added `about` and the metadata. Version 1.7.0 adds the vault's kinds: named at `new`
+(`variant`), a vault is of the `owner` kind, the one above and the one a vault is when it names none, or of the `limit`
+or `pause` kind, each with a desk and a planted hole of its own, so a round on another kind is another plan
+([challenges/live-safe/README.md](challenges/live-safe/README.md)). A vault that names no kind behaves as it did:
+`challenges/runner/tests/same_safe.rs` runs the same calls on the code on mainnet and on 1.7.0 on a real local node
 and gets the same answers, panics, events and transfers, call for call.

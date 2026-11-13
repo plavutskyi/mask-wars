@@ -1,7 +1,13 @@
 /**
  * Live race with models on NEAR AI Cloud:
  *
- *   pnpm --filter @maskwars/race race <challenge> [--attempts 5]
+ *   pnpm --filter @maskwars/race race <challenge> [--attempts 5] [--variant limit]
+ *
+ * `--variant <kind>` (or `VARIANT`) races the target as another of its kinds: the same code and source, the world of
+ * `challenge.<kind>.json` (live-safe: `owner`, the default, `limit`, `pause`). With a round's id in `BOUNTY` the kind is
+ * read from the round's vault on chain (src/variant.ts), so the masks always race the copy of the vault they will
+ * play; a kind named by hand that the chain contradicts stops the race before any model is asked. A chain that does
+ * not answer changes nothing: the race runs the kind named, or the default.
  *
  * Needs `NEAR_AI_API_KEY` (or `NEARAI_CLOUD_API_KEY`) in the environment or in the repo's `.env`, and a built runner
  * (`pnpm --filter @maskwars/race build:runner`). One agent per mask of the arena, each with its own Private TEE model
@@ -32,7 +38,9 @@ import { ModelAttacker, type Attacker } from "../src/agent.ts";
 import { trustAttested, type MindTab } from "../src/minds.ts";
 import { BrainAttacker, humanMasksFrom } from "../src/brain.ts";
 import type { CostsFile } from "../src/keeper.ts";
-import { CHALLENGES_DIR, listChallenges, loadChallenge } from "../src/challenge.ts";
+import { CHALLENGES_DIR, DEFAULT_VARIANT, listChallenges, listVariants, loadChallenge } from "../src/challenge.ts";
+import { JsonRpc } from "../src/near-tx.ts";
+import { roundVariant } from "../src/variant.ts";
 import { formatEntry, formatJournal } from "../src/journal.ts";
 import { nearString } from "../src/outcome.ts";
 import { keyRef, keyReport, readKeyBalance } from "../src/payment-key.ts";
@@ -53,7 +61,14 @@ const flag = (name: string) => {
 const id = argv.find((a, i) => !a.startsWith("--") && !argv[i - 1]?.startsWith("--"));
 const ids = await listChallenges();
 if (!id || !ids.includes(id)) {
-  console.error(`usage: race <challenge> [--attempts N] [--finding file] [--result file]\nchallenges: ${ids.join(", ")}`);
+  console.error(`usage: race <challenge> [--attempts N] [--variant kind] [--finding file] [--result file]\nchallenges: ${ids.join(", ")}`);
+  process.exit(2);
+}
+// The target's kind: named by hand, or the default one. A name that is no kind of this target stops here.
+const named = (flag("--variant") ?? process.env.VARIANT ?? "").trim() || undefined;
+const kinds = await listVariants(join(CHALLENGES_DIR, id));
+if (named !== undefined && !kinds.includes(named)) {
+  console.error(`${id} has no kind ${JSON.stringify(named)}: ${kinds.join(", ")}`);
   process.exit(2);
 }
 const apiKey = process.env.NEAR_AI_API_KEY || process.env.NEARAI_CLOUD_API_KEY;
@@ -75,7 +90,27 @@ const attested = trustAttested(provider, Object.values(ARENA_MODELS), { apiKey, 
 });
 const own = Object.entries(ARENA_MODELS).map(([id, model]) => new ModelAttacker({ id, provider, model }));
 const attackers: Attacker[] = [...own];
-const challenge = await loadChallenge(join(CHALLENGES_DIR, id));
+
+// A round on chain: its vault says which kind it is, and that is the copy the masks race. Only a target with kinds
+// asks, with a few seconds for the answer; without one the race goes on as named.
+let variant = named;
+if (kinds.length > 1 && process.env.BOUNTY) {
+  const onChain = await roundVariant(new JsonRpc(process.env.NEAR_RPC || NET.rpc[0]!, 8_000), process.env.BOUNTY_CONTRACT || NET.bounty, process.env.BOUNTY).catch((e: Error) => {
+    console.log(`the vault's kind: the chain did not say (${e.message}); racing ${named ?? DEFAULT_VARIANT}`);
+    return null;
+  });
+  if (onChain !== null && named !== undefined && onChain !== named) {
+    console.error(`the vault of ${process.env.BOUNTY} is of the ${onChain} kind, and the race was asked for ${named}: nothing raced`);
+    process.exit(2);
+  }
+  if (onChain !== null && !kinds.includes(onChain)) {
+    console.error(`the vault of ${process.env.BOUNTY} is of the ${onChain} kind, which this checkout has no copy of (${kinds.join(", ")}): nothing raced`);
+    process.exit(2);
+  }
+  if (onChain !== null) variant = onChain;
+}
+const challenge = await loadChallenge(join(CHALLENGES_DIR, id), variant);
+if (challenge.variant) console.log(`the vault's kind: ${challenge.variant}`);
 
 // The people's masks of this round, each with its own mind in its own TEE.
 const humans = humanMasksFrom(process.env.HUMAN_MASKS);

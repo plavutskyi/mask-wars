@@ -3,7 +3,7 @@ import { Arena, Indexer, RPCS, type Race, type RaceEvent } from '@maskwars/arena
 import { type Recording, replayFetch } from '@maskwars/arena/replay';
 import { ChainReader } from '@maskwars/check';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { money, sceneOf, stageCast } from './scene';
+import { money, offStage, sceneOf, stageCast } from './scene';
 
 // The race the home page shows today, as testnet answered on 7.11.2026: NOVA broke safe-0001 in 8:13 and took 1.086 NEAR.
 const recording = JSON.parse(readFileSync(new URL('../../../../packages/arena/test/fixtures/testnet.json', import.meta.url), 'utf8')) as Recording;
@@ -109,6 +109,32 @@ describe('the arena plays the race the chain shows', () => {
     expect(field.masks.map((m) => m.name).sort()).toEqual(['NOVA', 'ONYX', 'VOLT']);
     expect(field.masks[field.winner!]!.name).toBe('NOVA');
     expect(sceneOf({ ...race3, masks: race3.masks.slice(0, 2) })).toBeNull();
+  });
+
+  it('keeps the arena’s three on the stage for the whole round while a guest races beside them, harder or not', () => {
+    const dmytro = { account: 'dmytro.masks.tinygif8324.testnet', slug: 'dmytro', name: 'DMYTRO', mask: true, model: null };
+    const [nova] = race3.masks;
+    const racing = { ...race3, phase: 'racing' as const, winner: null, payout: null, masks: [...race3.masks, dmytro], events: [move(dmytro, 1), move(dmytro, 2), move(dmytro, 3), move(nova!, 4)] };
+    expect(stageCast(racing).map((m) => m.name)).toEqual(['ONYX', 'ORACLE', 'NOVA']);
+    expect(offStage(racing.masks, stageCast(racing)).map((m) => m.name)).toEqual(['DMYTRO']);
+    expect(sceneOf(racing)!.masks.map((m) => m.name)).toEqual(['ONYX', 'ORACLE', 'NOVA']);
+  });
+
+  it('stands a guest that broke the vault on the stage in the look it was forged with, under its own name, and pays it there', () => {
+    const dmytro = { account: 'dmytro.masks.tinygif8324.testnet', slug: 'dmytro', name: 'DMYTRO', mask: true, model: null };
+    const [nova] = race3.masks;
+    const won = { ...race3, masks: [...race3.masks, dmytro], winner: dmytro, events: [move(nova!, 1), move(dmytro, 2), { ...move(dmytro, 3), kind: 'drain' as const }] };
+    const faces = { [dmytro.account]: { art: '/art/wraith.webp', tone: 'ice' as const } };
+    const scene = sceneOf(won, false, faces)!;
+    // Its look's eyes are Ice: the middle corner. NOVA tried once, so ORACLE gives up its place, not ONYX.
+    expect(scene.masks.map((m) => m.name)).toEqual(['ONYX', 'DMYTRO', 'NOVA']);
+    expect(scene.winner).toBe(1);
+    // Built as the catalog's porcelain mask is, never as one of the arena's three.
+    expect(scene.masks[1]).toEqual({ id: 'wraith', name: 'DMYTRO' });
+    expect(scene.rest).toBe('paid');
+    expect(offStage(won.masks, stageCast(won, faces)).map((m) => m.name)).toEqual(['ORACLE']);
+    // With no face from the factory it is a mask of no look of ours: the default one, not a mask of the arena.
+    expect(sceneOf(won)!.masks.find((m) => m.name === 'DMYTRO')?.id).toBe('dmytro');
   });
 
   it('writes NEAR as near() does: never rounded up', () => {

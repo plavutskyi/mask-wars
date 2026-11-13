@@ -91,18 +91,24 @@ node scripts/mainnet/source.mjs out/source     # checks them again, places them,
 (`maskwars_live_safe.wasm` for `bounty-change.ps1 -AllowSafe`, `maskwars_bounty.wasm` for `-Code`, ...), and writes the
 house's terms with the vault's new code to `.scratch\near-mainnet\house-terms.json`. It signs nothing.
 
-### The vault 1.6.0, step by step
+### The daily vault on new code, step by step
 
 The vault's code is pinned in three places that move together, or the day stops and says why: the bounty contract's
 `safe_codes`, `safe_code` of `mainnet.json`, and, once the house runs its contract, the house's own terms. No step lands
 in the round's window, 18:00 to 21:30 UTC, and a change waiting on the bounty contract at 18:04 holds the day's round.
+
+The code of this repository is 1.7.0, 179 453 bytes: its stake is 1.85 NEAR, and the daily vault's 1.93 NEAR
+(`round.safe`) would leave the masks less than twice the least drain. `source.mjs` says so and places nothing for the
+daily vault until `round.safe` is raised to about 2.1 NEAR (it must stay within `limits.hand.safe_max`, and the round
+within `limits.house_max`). Until then the daily vault keeps the code it has, and a new kind of vault runs in a round
+by hand ([below](#a-round-by-hand-on-a-vault-of-another-kind)), which needs only step 1.
 
 | # | Who | What | When |
 | --- | --- | --- | --- |
 | 1 | `maskwars.near` | `bounty-change.ps1 -Network mainnet -AllowSafe`, an hour later `-Apply`, then `-Show` lists the new code | after 21:30 UTC, applied before 17:30 UTC |
 | 2 | the repository | `node --use-env-proxy scripts/mainnet/source.mjs out/source --switch safe` (refuses until step 1 is on chain): `safe_code` and `round.stake`; merge, export the public copy | before 18:00 UTC |
 | 3 | `house.maskwars.near` | only if it runs the house contract: `configure` with `house-terms.json` and 1 yoctoNEAR (the command `source.mjs` prints) | with step 2 |
-| 4 | — | the next day the house retires yesterday's vault and makes it again with 1.6.0; `contract_source_metadata` of `vault.house.maskwars.near` names the commit | 18:04 UTC |
+| 4 | — | the next day the house retires yesterday's vault and makes it again with the new code, of the `owner` kind as before (the house names no kind); `contract_source_metadata` of `vault.house.maskwars.near` names the commit | 18:04 UTC |
 
 The old code stays on the bounty contract's list: a round already open on it is untouched.
 
@@ -134,7 +140,7 @@ coin to USDC on NEAR at [maskwars.xyz/swap](https://maskwars.xyz/swap).
 
 | # | Step | Signs |
 | --- | --- | --- |
-| 1 | The mind's project `maskwars.near/brain` on `outlayer.near`, the mainnet build of the source on `main`, `3e1b05b6…1434` (plays a copy with its author's sealed strategy, and the factory's masks for its keeper) | owner, near-cli |
+| 1 | The mind's project `maskwars.near/brain` on `outlayer.near`, the mainnet build of the source on `main`, `5bb8bb26…0cb5` (plays a copy with its author's sealed strategy, and the factory's masks for its keeper) | owner, near-cli |
 | 2 | Its secrets (`PROTECTED_BRAIN_SEED` made inside the TEE, `NEAR_AI_API_KEY`), readable only by runs `maskwars.near` signs (`--access whitelist:maskwars.near`), one run `{"action":"key"}`, a payment key with $3 of USDC (`outlayer keys create`, then `outlayer keys topup <the key's number> --usd 3`). `outlayer login` keeps the full key of `maskwars.near` in plain text in `%USERPROFILE%\.outlayer\mainnet\credentials.json`: delete that file after the last `outlayer` command | owner, OutLayer CLI |
 | 3 | The factory: create, fund, deploy, `new`, one transaction that adds no key | owner, near-cli |
 | 4 | The keeper's seed (`KEEPER_SEED` of `live-race-mainnet`) and its key on `maskwars.near`: `arm`, `settle`, `note`, `share` on the factory only, the same key `keeper-key.ps1 -Network mainnet` adds | owner |
@@ -261,6 +267,60 @@ it.
 - It lives in the environment `season-mainnet` (Deployment branches: `main` only), never among the repository's
   secrets; the workflow's `guard` job stops the run if it ever does.
 - `house.ps1 -Network mainnet -DropHotKey` deletes it with one transaction signed by the key in the keychain.
+
+## A round by hand on a vault of another kind
+
+From 1.7.0 the vault's code holds three kinds of vault, each with its own planted hole and its own plan
+([contracts/challenges/live-safe/README.md](../../contracts/challenges/live-safe/README.md)). The house's daily vault
+names no kind and stays what it was, on the code `safe_code` of `mainnet.json` pins. A new kind comes out in a round
+of its own, opened by hand by `maskwars.near` on a fresh vault, as round 1 was. Nothing of the daily round is touched:
+another vault, another id, another team, and `safe_code` stays as it is.
+
+**When.** The masks sign both rounds with the same keys on the bounty contract, so the two never run at once: the
+round by hand is opened so that it is played out before 17:30 UTC, or after 21:30 UTC. Opened, it takes about an hour:
+45 minutes of sealing, then the play, the reveal and the judge.
+
+**The code.** What goes on chain is the reproducible build of the vault at a commit of the public repository, so the
+vault names its source (NEP-330). After the merge and the export of the public copy, the public repository's CI builds
+it (job `source`, artifact `maskwars-source-wasm`); the same bytes come from `contracts/build-source.sh live-safe` in a
+clone of the public repository on Linux with Docker. Then one command checks the file, puts it where the scripts read
+it (`.scratch\near-mainnet\maskwars_live_safe.wasm`) and prints the steps below with the code's own hash:
+
+```
+node --use-env-proxy scripts/mainnet/source.mjs <the folder with live-safe.wasm> --hand pause
+```
+
+It serves nothing and leaves `mainnet.json` as it is. It also says that the daily vault would not take this code as it
+is: 1.7.0 is 179 453 bytes, its stake is 1.85 NEAR, and the daily vault's 1.93 NEAR would leave the masks less than
+twice the least drain. That holds only `--switch safe`, which this round does not use.
+
+**Before any NEAR moves:** a practice race of the three models on the copy of the kind, with no bounty:
+`gh workflow run live-race.yml --repo plavutskyi/mask-wars -f challenge=live-safe -f attempts=5 -f variant=pause`. Go on
+once a mask breaks it.
+
+| # | Who signs | What | Command |
+| --- | --- | --- | --- |
+| 1 | `maskwars.near` | The bounty contract takes the new code on its list. Propose outside 18:00 to 21:30 UTC | `.\scripts\testnet\bounty-change.ps1 -Network mainnet -AllowSafe` |
+| 2 | `maskwars.near` | An hour later, and within 24 hours of that: apply. `-Show` then lists the code among `safe_codes`, beside the old one | `.\scripts\testnet\bounty-change.ps1 -Network mainnet -Apply`, then `-Show` |
+| 3 | `maskwars.near` | The vault, in one transaction that adds no key: its kind goes to `new` and stays for good. Of 2.2 NEAR about 1.85 is the stake of its storage and about 0.35 is what the masks race for; the script says both from the file | `.\scripts\testnet\safe-deploy.ps1 -Network mainnet -Safe pause-0001.maskwars.near -Variant pause -Near 2.2` |
+| 4 | each mask, 3 transactions | The masks' keys on the new vault, from the seeds they already hold: the calls of every kind are on the list a key gets | `.\scripts\testnet\season-keys.ps1 -Network mainnet -Safe pause-0001.maskwars.near -SafeOnly` |
+| 5 | `maskwars.near` | The round: 0.25 NEAR of deposit, a drain from 0.1 NEAR, 45 minutes to seal, 4 hours in all. The contract locks the vault to the round in the same call | `.\scripts\testnet\open-safe.ps1 -Network mainnet -Id pause-0001 -Safe pause-0001.maskwars.near -MinLoot 0.1 -Near 0.25` |
+| 6 | — | The race, at once: `Live race` in the public repository with the round's id, approved in `live-race-hand`. It reads the vault's kind from the chain and gives the masks that copy | `gh workflow run live-race.yml --repo plavutskyi/mask-wars -f challenge=live-safe -f attempts=5 -f bounty=pause-0001` |
+| 7 | `maskwars.near` | Once the round's deadline has passed, 4 hours after step 5: the vault deletes itself and all it holds comes back, the stake included. A round nobody won: `refund.ps1 -Network mainnet -Id pause-0001` 12 hours after the deadline first | `.\scripts\testnet\retire.ps1 -Network mainnet -Safe pause-0001.maskwars.near` |
+
+For the `limit` kind the same with `limit-0001` and `-Variant limit`. Every script takes `-DryRun` first: it prints
+each transaction with its arguments and signs nothing.
+
+- **What it costs.** About 0.36 NEAR leaves `maskwars.near` for good when a mask wins: what the vault could pay out
+  and the bounty, both to the winning mask, whose `home` sends them to the house with the next day's first step (they
+  stay on the mask if that would take the house above `limits.house_max`). The vault's stake, about 1.85 NEAR, and
+  about 0.11 NEAR of the deposit's reserve come back. Gas is below 0.05 NEAR in all.
+- **A mistake costs a round, not the day.** A vault made with the wrong kind is retired at once while it has no
+  round (`retire.ps1 -Safe`). A round the masks do not win is refunded after its deadline and the 12 hours of claim
+  grace. Neither touches `vault.house.maskwars.near` or its round.
+- **People's masks stay out for now.** Their minds carry the vault's source inside their TEE build (`services/brain`),
+  which knows the `owner` kind only, and their keys on a vault reach `set_owner` and `sweep`. A round by hand lists
+  the arena's own three masks, as `safe-init-args.json` does.
 
 ## The jobs market
 

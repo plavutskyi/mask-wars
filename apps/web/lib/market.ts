@@ -51,8 +51,32 @@ export function budgeted(check: CheckFn, budget: Limiter): CheckFn {
 export interface MarketListing {
   handle: string;
   name: string;
-  /** The agent's own page: `https://<handle>.market.near.ai`. */
+  /** The agent's own host, where agents call it: `https://<handle>.market.near.ai`. */
   url: string;
+  /** The agent's page on the marketplace, where a person reads about it and hires it: `<origin>/a/<handle>`. */
+  page: string;
+  /** USDC per call as the marketplace quotes it, `"0.10"`; `null` when it states no price. */
+  price: string | null;
+}
+
+/** A plan's price as people read it: two decimals at least, no zeros after them. `"0.1000"` is `"0.10"`. */
+export function priceText(amount: unknown): string | null {
+  const m = typeof amount === 'string' ? /^(\d{1,9})(?:\.(\d{1,6}))?$/.exec(amount.trim()) : null;
+  if (!m) return null;
+  const text = `${BigInt(m[1] as string)}.${(m[2] ?? '').replace(/0+$/, '').padEnd(2, '0')}`;
+  return Number(text) > 0 ? text : null;
+}
+
+/** What a call costs: the live per-call plan the marketplace quotes (`is_default`). No such plan, or no answer: no price. */
+async function quotedPrice(client: MarketClient, agentId: string): Promise<string | null> {
+  try {
+    const plans: unknown = await client.pricingPlans(agentId);
+    if (!Array.isArray(plans)) return null;
+    const plan = plans.find((p) => p?.is_default === true && p.model === 'per_call' && p.listing_status === 'live');
+    return priceText(plan?.price_amount);
+  } catch {
+    return null;
+  }
 }
 
 export interface ListingOptions {
@@ -68,8 +92,9 @@ const FRESH_MS = 5 * 60_000;
 
 /**
  * Reads whether the listing is live, from the marketplace itself: the agent named by MARKET_AGENT_HANDLE, published
- * under that handle. Without the variable nothing is asked. Any other answer, or none, is "not listed": the page
- * shows the way to hire only while the marketplace says there is one. One reading serves an instance for five minutes.
+ * under that handle, and the price of a call it quotes. Without the variable nothing is asked. Any other answer, or
+ * none, is "not listed": the page shows the way to hire only while the marketplace says there is one. One reading
+ * serves an instance for five minutes.
  */
 export function listingReader(options: ListingOptions = {}): () => Promise<MarketListing | null> {
   const env = options.env ?? process.env;
@@ -85,7 +110,15 @@ export function listingReader(options: ListingOptions = {}): () => Promise<Marke
     try {
       const agent = await client.agent(handle);
       const live = agent !== null && agent.handle === handle && agent.listing_status === 'live';
-      const value = live ? { handle, name: String(agent.name).slice(0, 80), url: `https://${handle}.${new URL(origin).host}` } : null;
+      const value = live
+        ? {
+            handle,
+            name: String(agent.name).slice(0, 80),
+            url: `https://${handle}.${new URL(origin).host}`,
+            page: `${origin}/a/${handle}`,
+            price: await quotedPrice(client, agent.agent_id),
+          }
+        : null;
       kept = { at: now(), forMs: FRESH_MS, value };
       return value;
     } catch {

@@ -19,7 +19,12 @@
 //! The mind at play (`{"action":"plan"}`, [`mind`]): for one attempt of a person's mask, asked by the keeper only, the
 //! module reads the mask on chain, opens its strategy here, asks the mask's model on NEAR AI Cloud and hands back only
 //! a plan the module writes itself: the calls a person's mask plays, in the order the model chose.
+//!
+//! The mind's road checked (`{"action":"probe"}`, [`mind::probe`]): for the keeper, before a round. No mask, no
+//! strategy, no plan: whether the factory still names this mind's key, and whether a model answers a request as long
+//! as a real one.
 
+pub mod http;
 pub mod mind;
 
 use aes_gcm::aead::{Aead, KeyInit, Payload};
@@ -166,6 +171,9 @@ pub enum Input {
     /// One attempt of a person's mask in a race: a plan, made here with the owner's strategy, or, for a copy, its
     /// author's. That is the only thing the mind does with a strategy: no action opens one for anyone.
     Plan(mind::PlanInput),
+    /// A check of the mind's own road, with no mask and no strategy: the factory's key read over the worker's RPC and
+    /// one small question to a model, in a request as long as a real one. For the keeper, before a round.
+    Probe(mind::ProbeInput),
 }
 
 /// No chain and no model: for the `key` action, which needs neither.
@@ -223,6 +231,18 @@ pub fn handle(
             Ok(played) => Output {
                 success: true,
                 output: serde_json::to_value(played).unwrap_or(Value::Null),
+                error: None,
+            },
+            Err(e) => Output {
+                success: false,
+                output: Value::Null,
+                error: Some(e),
+            },
+        },
+        Input::Probe(input) => match mind::probe(&input, caller, &mind_secret(&seed), chain, llm) {
+            Ok(probed) => Output {
+                success: true,
+                output: serde_json::to_value(probed).unwrap_or(Value::Null),
                 error: None,
             },
             Err(e) => Output {

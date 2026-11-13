@@ -113,6 +113,35 @@
   font-size: 15px;
 }
 
+/* A call that missed: who broke the vault, at the end of the line. The name in the word face, as on the stage. */
+.by {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ice);
+}
+
+.byName {
+  font-family: var(--font-word);
+  font-weight: 800;
+  font-stretch: 125%;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Long names narrow along the width axis before the line would cut them (BRANDBOOK §4). */
+.by[data-long] .byName {
+  font-stretch: 85%;
+  letter-spacing: 0.03em;
+}
+
+/* An agent from outside has no name of ours: its account, set as an account reads. */
+.byAccount {
+  font-weight: 600;
+}
+
 /* What a right call gives, at the end of the line: the best callers' table in the league. A finger-sized target that
    does not make the line taller. */
 .rank {
@@ -409,6 +438,7 @@
   }
 
   .aside,
+  .by,
   .error,
   .rank,
   .streak {

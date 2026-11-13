@@ -128,10 +128,25 @@
 }
 
 .result {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 8px;
   margin-top: clamp(36px, 7svh, 72px);
+}
+
+/* Beside the card the number stands on the floor: the horizon and its reflections fall away behind it, so the small
+   lines above and under the number never sit on a bright streak. Nothing moves, nothing is boxed. */
+@media (min-width: 1024px) {
+  .result::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    inset: -72px -4% -96px -45%;
+    background: radial-gradient(closest-side, var(--ink) 52%, transparent 100%);
+    opacity: 0.9;
+    pointer-events: none;
+  }
 }
 
 .kicker {

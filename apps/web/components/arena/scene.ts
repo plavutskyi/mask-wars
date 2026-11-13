@@ -10,7 +10,7 @@
 import type { NextRace, Race, Who } from '@maskwars/arena';
 import { MASKS } from '@maskwars/arena/config';
 import { duration, near } from '@maskwars/arena/format';
-import { toneOf } from '../../lib/show';
+import { artOf, type Faces, toneIn } from '../../lib/show';
 import type { ArenaMask, ArenaMoney, ArenaState, MaskSlot } from '../arena3d/types';
 import { stageName, standing } from './names';
 
@@ -43,15 +43,28 @@ export function money(yocto: string): ArenaMoney {
 
 const CORNER = { ember: 0, ice: 1, violet: 2 } as const;
 
-/** The three masks on the stage, ordered by corner: Ember left, Ice middle, Violet right; same corner keeps chain order. */
-function cast(list: readonly Who[]): Who[] {
+/**
+ * The three masks on the stage, ordered by corner: Ember left, Ice middle, Violet right; same corner keeps chain order.
+ * A mask a person forged stands in the corner of its look's eyes (`faces`).
+ */
+function cast(list: readonly Who[], faces?: Faces | null): Who[] {
   return list
     .map((who, i) => ({ who, i }))
-    .sort((a, b) => CORNER[toneOf(a.who)] - CORNER[toneOf(b.who)] || a.i - b.i)
+    .sort((a, b) => CORNER[toneIn(a.who, faces)] - CORNER[toneIn(b.who, faces)] || a.i - b.i)
     .map((x) => x.who);
 }
 
-const asMask = (who: Who): ArenaMask => ({ id: who.slug ?? who.account, name: who.name });
+/** The catalog's mask a frame of art is of: `/art/wraith.webp` is WRAITH's. */
+const frameOf = (art: string): string | null => /\/([a-z]+)\.webp$/.exec(art)?.[1] ?? null;
+
+/**
+ * A mask as the 3D arena builds it. A mask a person forged wears the catalog's mask of its look under its own name:
+ * a porcelain one is built as WRAITH is, never as a mask of the arena it is not.
+ */
+const asMask = (who: Who, faces?: Faces | null): ArenaMask => {
+  const face = artOf(who) ? null : faces?.[who.account];
+  return { id: (face ? frameOf(face.art) : null) ?? who.slug ?? who.account, name: who.name };
+};
 
 /** Calls a mask made on the safe in this race: every move and the drain. */
 export function tries(race: Race, who: Who): number {
@@ -59,29 +72,44 @@ export function tries(race: Race, who: Who): number {
 }
 
 /**
- * The masks on the stage, left to right, the same in the flat arena and the 3D one. A bigger field keeps the winner
- * and the masks that tried hardest; a field of one or two stands as it is. With no race, the arena's own masks wait.
+ * The masks on the stage, left to right, the same in the flat arena and the 3D one. A bigger field keeps the winner,
+ * then the arena's own masks (the ones it has art for), then the masks that tried hardest: a guest beside the house's
+ * three (a mask a person forged, an agent from outside) stands in the wings for the whole round, and takes a place on
+ * the stage only by breaking the vault. A field of one or two stands as it is. With no race, the arena's own masks wait.
  */
-export function stageCast(race: Race | null): Who[] {
+export function stageCast(race: Race | null, faces?: Faces | null): Who[] {
   if (!race) return cast(MASKS.map((m) => ({ account: m.account, slug: m.slug, name: m.name, mask: true, model: m.model })));
-  if (race.masks.length <= 3) return cast(race.masks);
+  if (race.masks.length <= 3) return cast(race.masks, faces);
   return cast(
     [...race.masks]
-      .map((who, i) => ({ who, i, n: who.account === race.winner?.account ? Infinity : tries(race, who) }))
-      .sort((a, b) => b.n - a.n || a.i - b.i)
+      .map((who, i) => ({ who, i, won: who.account === race.winner?.account, own: artOf(who) !== null, n: tries(race, who) }))
+      .sort((a, b) => Number(b.won) - Number(a.won) || Number(b.own) - Number(a.own) || b.n - a.n || a.i - b.i)
       .slice(0, 3)
       .sort((a, b) => a.i - b.i)
       .map((x) => x.who),
+    faces,
   );
 }
 
-export function sceneOf(race: Race | null, error = false): Scene | null {
+/** How many of a round's other masks the home page stands by face under the stage; the rest is one count. */
+export const GUESTS_SHOWN = 3;
+
+/**
+ * The masks of a round that do not stand on the stage, in the chain's order: the guests the house let in beside its own
+ * three (masks people forged, agents from outside), and, once a guest broke the vault, the mask it took the place of.
+ */
+export function offStage(field: readonly Who[], onStage: readonly Who[]): Who[] {
+  const on = new Set(onStage.map((m) => m.account));
+  return field.filter((m) => !on.has(m.account));
+}
+
+export function sceneOf(race: Race | null, error = false, faces?: Faces | null): Scene | null {
   if (!race) {
     const masks = stageCast(null);
     return {
       rest: 'idle',
       intro: ['idle'],
-      masks: masks.map(asMask) as unknown as Scene['masks'],
+      masks: masks.map((m) => asMask(m)) as unknown as Scene['masks'],
       attempts: [0, 0, 0],
       notes: null,
       winner: null,
@@ -95,14 +123,14 @@ export function sceneOf(race: Race | null, error = false): Scene | null {
 
   // Three on the stage; fewer than three stay flat.
   if (race.masks.length < 3) return null;
-  const masks = stageCast(race);
+  const masks = stageCast(race, faces);
   const slot = race.winner ? masks.findIndex((m) => m.account === race.winner!.account) : -1;
   const winner = slot >= 0 ? (slot as MaskSlot) : null;
   const attempts = masks.map((m) => tries(race, m)) as unknown as Scene['attempts'];
   const { text: target, account } = stageName(race);
   const running = race.phase === 'sealing' || race.phase === 'racing';
   const notes = running ? (masks.map((m) => standing(m, race.events).text) as unknown as NonNullable<Scene['notes']>) : null;
-  const base = { masks: masks.map(asMask) as unknown as Scene['masks'], attempts, notes, winner, account, headlines: {} };
+  const base = { masks: masks.map((m) => asMask(m, faces)) as unknown as Scene['masks'], attempts, notes, winner, account, headlines: {} };
 
   switch (race.phase) {
     case 'sealing':
@@ -153,7 +181,7 @@ export function nextScene(next: NextRace): Scene | null {
   return {
     rest: 'idle',
     intro: ['idle'],
-    masks: masks.map(asMask) as unknown as Scene['masks'],
+    masks: masks.map((m) => asMask(m)) as unknown as Scene['masks'],
     attempts: [0, 0, 0],
     notes: null,
     winner: null,

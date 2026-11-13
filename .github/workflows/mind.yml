@@ -1,0 +1,49 @@
+name: Mind
+
+# The road of the people's masks' mind, checked on mainnet with no mask on it and no round open (services/brain/live.mjs):
+# the module on OutLayer tells its key, which must be the one the factory seals strategies for, and each model the mind
+# plays answers one small question sent in a request of more than two writes, the way a real attempt is sent. About two
+# cents of the payment key, the same key the race pays the minds' runs with. Run it after a new version of the module
+# is published and before a round: a mind that cannot ask a model fails here and not in the round.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: The sha256 of one build to ask (empty asks the project's active version)
+        default: ""
+      model:
+        description: One model to ask (empty asks every model the mind plays)
+        default: ""
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  probe:
+    # The module checked is the mainnet one: the script reads packages/network/mainnet.json.
+    if: ${{ vars.MASKWARS_NETWORK == 'mainnet' }}
+    runs-on: ubuntu-latest
+    # OUTLAYER_PAYMENT_KEY lives here and nowhere else; the environment takes only `main`. Named as every job that
+    # reads the key names it; the `if` above leaves only mainnet.
+    environment: ${{ vars.MASKWARS_NETWORK == 'mainnet' && 'outlayer-mainnet' || 'outlayer' }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+      - name: Probe
+        env:
+          OUTLAYER_PAYMENT_KEY: ${{ secrets.OUTLAYER_PAYMENT_KEY }}
+          VERSION: ${{ inputs.version }}
+          MODEL: ${{ inputs.model }}
+        run: |
+          args=()
+          if [ -n "$VERSION" ]; then args+=(--version "$VERSION"); fi
+          if [ -n "$MODEL" ]; then args+=(--model "$MODEL"); fi
+          node services/brain/live.mjs "${args[@]}"

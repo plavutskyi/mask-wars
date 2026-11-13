@@ -1,7 +1,8 @@
 [package]
 name = "live-safe"
-# The code's version, as `contract_source_metadata` gives it (NEP-330). 1.6.0 adds `about`; the events stay 1.5.0.
-version = "1.6.0"
+# The code's version, as `contract_source_metadata` gives it (NEP-330). 1.6.0 adds `about`, 1.7.0 the safe's kind
+# (`variant` at `new`: `owner` as before, `limit`, `pause`); the events stay 1.5.0.
+version = "1.7.0"
 edition.workspace = true
 license.workspace = true
 publish.workspace = true

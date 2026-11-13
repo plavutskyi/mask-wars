@@ -1,0 +1,6 @@
+{
+  "steps": [
+    { "kind": "call", "method": "unpause", "gas_tgas": 30 },
+    { "kind": "call", "method": "claim", "args": { "amount": "2500000000000000000000000" }, "gas_tgas": 30 }
+  ]
+}
