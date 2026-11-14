@@ -79,6 +79,8 @@ function useThree(possible: boolean): { mode: Mode; ready: () => void; fail: () 
   const [mode, setMode] = useState<Mode>('flat');
   const [failed, setFailed] = useState(false);
   useEffect(() => {
+    // A stage that gives the 3D arena up starts from the flat one the next time it takes it.
+    if (!possible) setMode('flat');
     if (!possible || failed) return;
     const q = window.matchMedia('(prefers-reduced-motion: reduce)');
     const nav = navigator as Navigator & { deviceMemory?: number; connection?: { saveData?: boolean } };
@@ -168,6 +170,9 @@ export const WHAT = 'AI masks break a vault of real NEAR. Live. The contract pay
 /** A round that ended keeps the stage this long; then the next one takes it, its clock running. */
 export const RESULT_MS = 60 * 60_000;
 
+/** Past its minute a round is on its way to the chain: the stage holds its door this long, and the page asks often. */
+export const OPENING_MS = 15 * 60_000;
+
 /** When a round that is over stopped moving: the payout, the break, the bounty's way back, or its deadline. */
 export function endOf(race: Race): number {
   return race.payout?.at ?? race.refund?.at ?? race.brokeAt ?? race.deadline;
@@ -204,14 +209,18 @@ export function Stage({
   // instead, and the page asks again.
   const old = asOf !== null;
   const live = !old && (race?.live ?? false);
-  // The next round, while nothing runs: only one the treasury can open, and only until its minute comes. Past it the
-  // scheduler is on its way, or late: the page promises no time it cannot keep.
-  const upNext = !old && !running && !live && next !== null && next.funded && next.at > now ? next : null;
+  // The next round, while nothing runs: only one the treasury can open. Past its minute the scheduler is on its way:
+  // the stage keeps the round's door and says it is opening, with no clock it cannot keep. A round that late is not
+  // promised any more, and the last one takes the stage back.
+  const upNext = !old && !running && !live && next !== null && next.funded && now - next.at < OPENING_MS ? next : null;
+  const opening = upNext !== null && upNext.at <= now;
   // Between rounds the stage is the next one: its vault and its sum, the clock to it in the header. A round that has
   // just ended keeps the stage for a while first.
   const ahead = upNext !== null && (race === null || now - endOf(race) > RESULT_MS) ? upNext : null;
   const scene = useMemo(() => (ahead ? nextScene(ahead) : sceneOf(race, error === true, faces)), [ahead, race, error, faces]);
-  const three = useThree(scene !== null);
+  // The 3D arena is the round itself: its bolts, its break, its payout. Between rounds nothing moves, and the frame
+  // the brand composed (the lit ring, the wet floor) is the better picture, so the stage stays flat until a round is on.
+  const three = useThree(scene !== null && ahead === null);
   const shown = useShown(scene, three.mode === 'on', ahead ? `next-${ahead.at}` : (race?.id ?? (error ? 'error' : 'empty')));
   // The round that takes picks is the one on the stage: the round itself, or the next one between rounds.
   const onStage = pick?.window?.race != null || ahead !== null;
@@ -226,7 +235,7 @@ export function Stage({
   const [sound, setSound] = useState(false);
 
   // In its last minutes the page asks the chain as often as during a race, so the new round is on screen as it opens.
-  const nearly = !running && next !== null && next.funded && next.at - now < 3 * 60_000 && now - next.at < 15 * 60_000;
+  const nearly = !running && next !== null && next.funded && next.at - now < 3 * 60_000 && now - next.at < OPENING_MS;
   const ticking = !old && (running || live || upNext !== null || Boolean(pick?.window));
   // The other network has its line only between races: while this arena runs, the screen is the race's alone.
   const other = !running && !live ? across : null;
@@ -339,7 +348,7 @@ export function Stage({
     center = (
       <>
         <span className={s.clockLabel}>Next round</span>
-        <Digits text={clock(upNext.at - now)} />
+        {opening ? <span className={s.clockDay}>OPENING</span> : <Digits text={clock(upNext.at - now)} />}
       </>
     );
   } else if (race) {
@@ -396,7 +405,8 @@ export function Stage({
 
       <Header center={center} live={live} network={race?.network ?? NETWORK} here="race" />
       <div className={s.top} data-top="">
-        <p className={s.what}>{WHAT}</p>
+        {/* The page's one heading: what this is, in the line a stranger reads first. */}
+        <h1 className={s.what}>{WHAT}</h1>
         {target ? <ArenaTarget target={target} className={s.target} /> : null}
       </div>
 
@@ -412,7 +422,7 @@ export function Stage({
             heats={heats}
             lead={lead}
             aside={aside}
-            door={ahead ? { sum: near(ahead.prize), line: opensLine(ahead.at) } : null}
+            door={ahead ? { sum: near(ahead.prize), line: opening ? 'Opening now' : opensLine(ahead.at) } : null}
           />
           <div className={s.fill} />
         </>

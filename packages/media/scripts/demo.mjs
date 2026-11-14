@@ -33,7 +33,7 @@ import { DEMO, DURATION, MUSIC_CUT, story } from "../src/demo/plan.ts";
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const require = createRequire(import.meta.url);
 const argv = process.argv.slice(2);
-const VALUE_FLAGS = ["--mask", "--site", "--take", "--out", "--music"];
+const VALUE_FLAGS = ["--mask", "--site", "--take", "--out", "--music", "--film"];
 const flag = (name, d) => (argv.includes(name) ? argv[argv.indexOf(name) + 1] : d);
 const [id] = argv.filter((a, i) => !a.startsWith("--") && !VALUE_FLAGS.includes(argv[i - 1] ?? ""));
 if (!id) {
@@ -65,6 +65,23 @@ const told = story(data);
 if (told.outcome === "open") console.warn(`round ${id} is still on (${data.race.phase}): the film says so. Render it again once the round has ended.`);
 console.log(`round ${told.roundNo}: ${told.result.head}${told.result.sub ? `, ${told.result.sub}` : ""} · ${told.after.map((a) => a.head).join(" · ")} · ${told.league.head} ${told.top.head}`);
 
+// The round's own film of the break (pnpm film <round>): with it the demo opens on the vault breaking and plays the
+// break itself at the result. Without it, or when the vault held, the pages stand in as before.
+const filmDir = resolve(root, flag("--film", join("shots", id, "film")));
+const REELS = ["crack", "eye", "flow"];
+let film = null;
+if (told.outcome === "broken" && existsSync(join(filmDir, "film.json"))) {
+  const made = JSON.parse(readFileSync(join(filmDir, "film.json"), "utf8"));
+  const reel = Object.fromEntries(REELS.map((n) => [n, made.shots.find((s) => s.name === n)]));
+  const lost = REELS.filter((n) => !reel[n] || !existsSync(join(filmDir, `${n}.mp4`)));
+  if (lost.length) console.warn(`the round's film in ${filmDir} has no ${lost.join(", ")}: the demo is cut from the pages alone`);
+  else {
+    if (made.round !== id) console.warn(`the film in ${filmDir} is of ${made.round}, not ${id}: a rehearsal, never a film to post`);
+    film = { crack: { frames: reel.crack.frames, breach: reel.crack.marks.breach }, eye: { frames: reel.eye.frames }, flow: { frames: reel.flow.frames, paid: reel.flow.marks.paid } };
+    console.log(`the break is the round's film: ${filmDir}`);
+  }
+} else if (told.outcome === "broken") console.log(`no film of the round in ${filmDir}: the demo is cut from the pages alone (pnpm film ${id})`);
+
 const FOOTAGE = ["home.mp4", "forge.mp4", "race.jpg", "league.jpg", "mask.jpg", "near.jpg", "near-open.jpg", "connect.jpg", "home.jpg"];
 const missing = FOOTAGE.filter((f) => !existsSync(join(dir, f)));
 if (missing.length) {
@@ -79,12 +96,13 @@ try {
   copyFileSync(require.resolve("@fontsource-variable/hubot-sans/files/hubot-sans-latin-standard-normal.woff2"), join(pub, "fonts/hubot-sans.woff2"));
   copyFileSync(require.resolve("@fontsource-variable/mona-sans/files/mona-sans-latin-standard-normal.woff2"), join(pub, "fonts/mona-sans.woff2"));
   for (const f of FOOTAGE) copyFileSync(join(dir, f), join(pub, "demo", f));
+  if (film) for (const n of REELS) copyFileSync(join(filmDir, `${n}.mp4`), join(pub, "demo", `break-${n}.mp4`));
   // The track as the film cuts it: the pieces end to end, a hundredth of a second of crossfade at each join.
   const pieces = MUSIC_CUT.map(([a, b], i) => `[0:a]atrim=${a.toFixed(3)}:${b.toFixed(3)},asetpts=N/SR/TB[p${i}]`);
   const joins = MUSIC_CUT.slice(1).map((_, i) => `[${i === 0 ? "p0" : `j${i - 1}`}][p${i + 1}]acrossfade=d=0.01:c1=tri:c2=tri[j${i}]`);
   execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-i", music, "-filter_complex", [...pieces, ...joins].join(";"), "-map", `[j${MUSIC_CUT.length - 2}]`, "-ar", "48000", join(pub, "music.wav")]);
 
-  const inputProps = { data, music: "music.wav" };
+  const inputProps = { data: { ...data, film }, music: "music.wav" };
   const { bundle } = await import("@remotion/bundler");
   const { selectComposition, renderMedia } = await import("@remotion/renderer");
   const serveUrl = await bundle({ entryPoint: join(root, "src/clip/Root.tsx"), publicDir: pub });

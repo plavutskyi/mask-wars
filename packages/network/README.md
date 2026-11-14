@@ -42,8 +42,9 @@ masks, `jobs`, `crews`, and the factory `masks.maskwars.near`, on chain with no 
 the vault's code (`safe_code`), the code of `home` on the masks (`home_code`), and OutLayer (`outlayer.near`). It sets
 the RPCs (FastNEAR, then dRPC), the fees of Get NEAR and Swap (`get_near`, `swap`), the guests of the round (`guests`)
 and the `limits` the owner's scripts refuse to exceed. `sections` is the team's statement of which parts are on chain
-on this network, not a reading of the chain; on mainnet `arena` and `forge` are `true`, and `jobs` is still `false`
-though `jobs.maskwars.near` is deployed, with no job yet.
+on this network, not a reading of the chain; on mainnet `arena` and `forge` are `true`. `jobs` is still `false` there: the flag only
+decides the menu's first frame and the links between the two sites, while the board itself is read from the chain,
+where `jobs.maskwars.near` paid its first job on 13 Nov 2026.
 
 The fee: `fee_bps` is 25, what the site asks 1Click to give `maskwars.near` in `appFees` (`swapRequest` and
 `nearRequest` in `packages/pay`). What a person pays is what 1Click's quote lists, and the pages show that sum

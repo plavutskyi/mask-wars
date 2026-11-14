@@ -47,6 +47,11 @@ export type Words = Caption & {
    * only the small line stays and the headline under it is new.
    */
   steady?: boolean | "kicker";
+  /**
+   * Over the film's own footage: a lighter shade under the words, so the picture keeps its lower half. And the line
+   * under a headline that stays through a cut stays with it.
+   */
+  soft?: boolean;
 };
 type Beat = {
   /** Bars from the shot's start. */
@@ -100,24 +105,95 @@ export function shots(d: DemoData): Shot[] {
   const bars = afterBars(s.after.length);
   const afterAt = bars.map((_, i) => bars.slice(0, i).reduce((a, n) => a + n, 0));
   const topRow = s.topIndex >= 0 ? b.league.rows[s.topIndex] : undefined;
+  // Who broke what, row by row down the league: with three winners the league's own line takes one bar and each of
+  // them a bar; with fewer, the line keeps two bars and the winners share the other two.
+  const LEAGUE_CAM: Cam = { x: 56, y: 0, w: 1328 };
+  const leagueBars = AT.call - AT.league;
+  const lead = s.winners.length >= 3 ? 1 : leagueBars / 2;
+  const each = s.winners.length ? (leagueBars - lead) / s.winners.length : 0;
+  const leagueBeats: Beat[] = s.winners.length
+    ? [
+        { at: 0, words: s.league, cam: TOP, flash: true },
+        ...s.winners.map((w, i): Beat => ({ at: lead + i * each, words: w.words, cam: LEAGUE_CAM, spot: b.league.rows[w.index] ?? null, flash: i > 0 })),
+      ]
+    : [
+        { at: 0, words: s.league, cam: TOP, flash: true },
+        { at: AT.top - AT.league, words: s.top, cam: LEAGUE_CAM, spot: s.top.count ? (topRow ?? null) : null },
+      ];
   const picks = b.home.picks ?? { x: 440, y: 630, w: 560, h: 100 };
   const code = b.connect.code ?? { x: 824, y: 192, w: 456, h: 88 };
   const panel = b.connect.panel ?? { x: 792, y: 96, w: 520, h: 670 };
   // How many networks the page itself says it takes coins from: the film repeats the page, never a number of its own.
-  const coins = b.near.networks ? `Any coin · ${b.near.networks} networks` : "Any coin · any network";
+  const coins = b.near.networks ? `NEAR Intents · any coin · ${b.near.networks} networks` : "NEAR Intents · any coin · any network";
+
+  // The break as the round's film shot it. A reel starts where its moment lands on the shot's first beat, and never
+  // so late that it runs out before the cut.
+  const film = s.outcome === "broken" ? (d.film ?? null) : null;
+  const lenOf = (from: number, to: number): number => barFrame(to) - barFrame(from);
+  const startAt = (want: number, frames: number, len: number): number => Math.max(0, Math.min(Math.round(want), frames - len));
+  const HOOK_1 = "AI masks race to break\na vault of real NEAR.";
+  const HOOK_2 = "Every day.\nA contract pays the winner.";
+  const hook: Shot[] = film
+    ? [
+        // 1. The hook is the break itself: the vault cracks and splits under the first words, the winner looks up under the second.
+        {
+          at: AT.hook,
+          len: AT.hook2 - AT.hook,
+          layout: "full",
+          pic: { kind: "reel", src: "break-crack", from: startAt(0, film.crack.frames, lenOf(AT.hook, AT.hook2)), zoom: [1, 1.05] },
+          beats: [{ at: 0, words: { place: "low", head: HOOK_1, size: 108, steady: true, soft: true } }],
+        },
+        {
+          at: AT.hook2,
+          len: AT.forge - AT.hook2,
+          layout: "full",
+          pic: { kind: "reel", src: "break-eye", from: startAt(10, film.eye.frames, lenOf(AT.hook2, AT.forge)), zoom: [1, 1.06] },
+          beats: [{ at: 0, words: { place: "low", head: HOOK_2, size: 108, soft: true }, flash: true }],
+        },
+      ]
+    : [
+        // 1. The hook, over the arena as it stands this minute.
+        {
+          at: AT.hook,
+          len: AT.forge - AT.hook,
+          layout: "full",
+          pic: { kind: "reel", src: "home", zoom: [1, 1.06], origin: "50% 34%" },
+          beats: [
+            { at: 0, words: { place: "low", head: HOOK_1, size: 108, steady: true } },
+            { at: AT.hook2 - AT.hook, words: { place: "low", head: HOOK_2, size: 108 }, flash: true },
+          ],
+        },
+      ];
+  const result: Shot[] = film
+    ? [
+        // On the track's drop the vault splits; a bar later its NEAR flies to the mask that broke it.
+        {
+          at: AT.result,
+          len: 1,
+          layout: "full",
+          pic: { kind: "reel", src: "break-crack", from: startAt(film.crack.breach - 2, film.crack.frames, lenOf(AT.result, AT.result + 1)), zoom: [1.02, 1.08] },
+          beats: [{ at: 0, words: { ...s.result, place: "low", size: 104, soft: true }, flash: true, shake: 1 }],
+        },
+        {
+          at: AT.result + 1,
+          len: AT.after - AT.result - 1,
+          layout: "full",
+          pic: { kind: "reel", src: "break-flow", from: startAt(film.flow.paid + 28, film.flow.frames, lenOf(AT.result + 1, AT.after)), zoom: [1, 1.05] },
+          beats: [{ at: 0, words: { ...s.result, place: "low", size: 104, steady: true, soft: true }, flash: true }],
+        },
+      ]
+    : [
+        {
+          at: AT.result,
+          len: AT.after - AT.result,
+          layout: "full",
+          pic: { kind: "still", src: "race" },
+          beats: [{ at: 0, words: { ...s.result, place: "low", size: 104 }, cam: { x: 0, y: 0, w: PAGE_W }, flash: true, shake: 1 }],
+        },
+      ];
 
   return [
-    // 1. The hook, over the arena as it stands this minute.
-    {
-      at: AT.hook,
-      len: AT.forge - AT.hook,
-      layout: "full",
-      pic: { kind: "reel", src: "home", zoom: [1, 1.06], origin: "50% 34%" },
-      beats: [
-        { at: 0, words: { place: "low", head: "AI masks race to break\na vault of real NEAR.", size: 108, steady: true } },
-        { at: AT.hook2 - AT.hook, words: { place: "low", head: "Every day.\nNobody presses a button.", size: 108 }, flash: true },
-      ],
-    },
+    ...hook,
     // 2. The forge, tapped step by step.
     {
       at: AT.forge,
@@ -162,13 +238,7 @@ export function shots(d: DemoData): Shot[] {
       blur: 12,
       beats: [{ at: 0, words: { ...s.window, place: "center", size: 210 }, cam: onRow(unlock, "full") }],
     },
-    {
-      at: AT.result,
-      len: AT.after - AT.result,
-      layout: "full",
-      pic: { kind: "still", src: "race" },
-      beats: [{ at: 0, words: { ...s.result, place: "low", size: 104 }, cam: { x: 0, y: 0, w: PAGE_W }, flash: true, shake: 1 }],
-    },
+    ...result,
     {
       at: AT.after,
       len: AT.league - AT.after,
@@ -182,10 +252,7 @@ export function shots(d: DemoData): Shot[] {
       len: AT.call - AT.league,
       layout: "bar",
       pic: { kind: "still", src: "league" },
-      beats: [
-        { at: 0, words: s.league, cam: TOP, flash: true },
-        { at: AT.top - AT.league, words: s.top, cam: { x: 56, y: 0, w: 1328 }, spot: s.top.count ? (topRow ?? null) : null },
-      ],
+      beats: leagueBeats,
     },
     // 6. Around it: call the round, get NEAR, plug an agent in.
     {
@@ -373,7 +440,20 @@ export function Full({ w, frame }: { w: Words; frame: number }) {
       : { position: "absolute", left: FIELD, right: FIELD, bottom: 96, display: "flex", flexDirection: "column", gap: 20 };
   return (
     <>
-      {place === "low" ? <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 640, background: "linear-gradient(180deg, rgba(6,5,12,0) 0%, rgba(6,5,12,.93) 38%, rgba(6,5,12,.985) 62%, rgba(6,5,12,.99) 100%)" }} /> : null}
+      {place === "low" ? (
+        <div
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: w.soft ? 520 : 640,
+            background: w.soft
+              ? "linear-gradient(180deg, rgba(6,5,12,0) 0%, rgba(6,5,12,.62) 36%, rgba(6,5,12,.88) 64%, rgba(6,5,12,.94) 100%)"
+              : "linear-gradient(180deg, rgba(6,5,12,0) 0%, rgba(6,5,12,.93) 38%, rgba(6,5,12,.985) 62%, rgba(6,5,12,.99) 100%)",
+          }}
+        />
+      ) : null}
       <div style={box}>
         {w.logo ? (
           <Slam frame={frame} at={at}>
@@ -389,7 +469,7 @@ export function Full({ w, frame }: { w: Words; frame: number }) {
           <div style={{ ...head(size, w.tint), fontFamily: face(w.head), textAlign: align, textShadow: `0 4px 40px ${color.ink}` }}>{headText(w, frame)}</div>
         </Slam>
         {w.sub ? (
-          <Arrive frame={frame} at={w.logo ? 0 : 10}>
+          <Arrive frame={frame} at={w.soft && w.steady === true ? -100 : w.logo ? 0 : 10}>
             <div style={w.logo ? { ...head(96), fontFamily: FONT.num, textTransform: "none", letterSpacing: "0.01em" } : { ...sub, fontSize: 56, textAlign: align, textShadow: `0 2px 18px ${color.ink}` }}>{w.sub}</div>
           </Arrive>
         ) : null}

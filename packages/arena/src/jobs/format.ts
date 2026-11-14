@@ -48,7 +48,11 @@ export function nextDeadline(job: Pick<Job, "phase" | "checkUntil" | "workUntil"
   }
 }
 
-/** A job id the screen may print as is: `review-0004`. Any other id the client chose reads as "a job" in a headline. */
+/**
+ * A job id the screen may print as is: `review-0004`, or a job on a round as the site names it, the round and up to six
+ * letters or digits of the person's own (`race-0004-w7k5e4`). Any other id the client chose reads as "a job" in a
+ * headline.
+ */
 export function plainJobId(id: string): boolean {
-  return /^[a-z]{2,12}-\d{1,6}$/.test(id);
+  return /^[a-z]{2,12}-\d{1,6}(-[a-z0-9]{1,6})?$/.test(id);
 }

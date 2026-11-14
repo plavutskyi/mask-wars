@@ -246,7 +246,7 @@ and kept.
 reader the owner granted under the key that reader registered, a note stores nothing, a revoke gives the storage back
 and leaves the reader no key to any later race.
 
-The sandbox's `neard` asks for 65535 open files. A container that allows fewer (a cloud session gives 20000) runs the
+The sandbox's `neard` asks for 65535 open files. A container that allows fewer (some hosted build machines give 20000) runs the
 sandbox with a one-function `LD_PRELOAD` shim that lets the call succeed and keeps the limit; nothing in the tests
 depends on it.
 

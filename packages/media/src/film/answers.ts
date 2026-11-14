@@ -1,7 +1,7 @@
 /**
  * A round's record → the chain answers the site replays (`ARENA_FIXTURE`), so the arena can be filmed with no network.
  *
- * A cloud session cannot reach NEAR RPC. What it has is the round's record (`races/<id>.json`), read from the chain
+ * A build machine with no network access cannot reach NEAR RPC. What it has is the round's record (`races/<id>.json`), read from the chain
  * when the round ended. This plays that record back as a chain: the bounty contract's views and the round's
  * transactions in the wire formats of NEAR JSON-RPC and the FastNEAR explorer API. The arena's own reader reads it and
  * every answer is kept, the way `packages/arena/scripts/record.ts` keeps the network's.

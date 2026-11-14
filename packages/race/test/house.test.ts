@@ -469,6 +469,22 @@ describe("a run that died, started again", () => {
     expect(chain.steps).toEqual(order);
   });
 
+  it.each(order)("the node does not answer right after %s landed: the same run asks again and goes on", async (step) => {
+    // Round 5 on mainnet, 14 Nov 2026: the reading one second after `open` failed, and the run stopped with the round
+    // open and nobody racing it.
+    const chain = FakeNear.after("open");
+    chain.blinkAfter = step;
+    const day = await runDay({ chain, config: CFG, key: KEY, wasm: WASM, settleMs: 60_000, sleep: async () => {} });
+    expect(day).toMatchObject({ kind: "opened", round: { id: "race-0003" } });
+    expect(chain.steps).toEqual(order);
+  });
+
+  it("a node that stays silent after a step is said as that, with the step's own hash", async () => {
+    const chain = FakeNear.after("open");
+    chain.blinkAfter = "open";
+    await expect(run(chain)).rejects.toThrow(/^open went through \(.+\) and the chain did not answer after it: query: error ""$/);
+  });
+
   it.each(order)("the answer to %s is lost but it landed: the same run reads the chain and goes on", async (step) => {
     const chain = FakeNear.after("open");
     chain.lost.add(step);

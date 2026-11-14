@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import { LeaguePage } from '@/components/arena/LeaguePage';
 import { Unreachable } from '@/components/arena/Unreachable';
 import { readArena } from '@/lib/arena';
-import { forgedRows, readForged } from '@/lib/forged';
+import { facesOf, forgedRows, readForged } from '@/lib/forged';
 import { pageMeta } from '@/lib/meta';
 import { topCallers } from '@/lib/pick';
 import { readBoard, WHO_COOKIE, whoOf } from '@/lib/picks';
@@ -31,5 +31,7 @@ export default async function LeagueRoute() {
   // The callers' table, as the record holds it: read, never settled here (the pages that ask for a call settle it).
   const [board, jar, masks] = await Promise.all([readBoard().catch(() => null), cookies(), forging]);
   const callers = board ? { list: topCallers(board, 10), rounds: board.rounds.length, me: whoOf(jar.get(WHO_COOKIE)?.value) } : null;
-  return <LeaguePage league={view.league} races={view.races.length} network={view.network} callers={callers} forged={forgedRows(masks, view.league)} />;
+  // A person's mask in the table wears the face it was forged with, as it does on the stage and on its own page.
+  const faces = facesOf(masks, view.league.map((m) => m.who));
+  return <LeaguePage league={view.league} races={view.races.length} network={view.network} callers={callers} forged={forgedRows(masks, view.league)} faces={faces} />;
 }

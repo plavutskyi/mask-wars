@@ -42,7 +42,7 @@ const DESK = { width: 1440, height: 810, scale: 4 / 3 } as const;
 const FULL = { width: 1920, height: 1080, scale: 1 } as const;
 
 /** A film shot shows the scene alone: the page's header, deck and the type over the arena are not in it. */
-const SCENE_ONLY = `header, footer, section[aria-label="Arena"] > div:last-of-type, section[aria-label="Arena"] > button { visibility: hidden !important; }`;
+const SCENE_ONLY = `header, footer, [data-top], section[aria-label="Arena"] > div:last-of-type, section[aria-label="Arena"] > button { visibility: hidden !important; }`;
 
 /** What a film camera is handed for every frame: `FilmFrame` of apps/web arena3d/engine, as far as a shot uses it. */
 type Cam = {
@@ -121,7 +121,9 @@ function flowCamera(f: Cam, film: Film): void {
   // A lens shift keeps the light left of the middle all the way: the right field stays dark for the sum.
   f.camera.setViewOffset(1920, 1080, 340, 0, 1920, 1080);
   f.camera.fov = 30;
-  f.camera.position.set(-1.3 + 0.9 * e, 1.15 - 0.6 * e, 6.2 - 1.7 * e);
+  // The camera ends in front of the winner wherever it stands on the stage, a little to its left and 1.3 away: a
+  // winner on a wing is met face on, and one in the middle, which stands nearer the camera, is never cut by the frame.
+  f.camera.position.set(-1.3 + (0.9 + m.x) * e, 1.15 - 0.6 * e, 6.2 + (m.z + 1.3 - 6.2) * e);
   f.camera.lookAt(at("x") * 0.8, at("y") * 0.86 + 0.1, at("z"));
 }
 

@@ -221,7 +221,6 @@
   font-size: 15px;
   font-weight: 700;
   font-stretch: 125%;
-  font-variant-numeric: tabular-nums;
   color: var(--ice-60);
 }
 
@@ -375,6 +374,8 @@
 
 .note {
   margin: 4px 0 0;
+  /* Brought into view with room under it, clear of the screen's edge. */
+  scroll-margin-bottom: 24px;
   text-align: center;
   font-size: 14px;
   line-height: 1.4;

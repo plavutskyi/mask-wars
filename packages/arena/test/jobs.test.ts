@@ -333,6 +333,8 @@ describe("the seal, the box and the split, by the contract's own rules", () => {
 
   it("prints a job id in a headline only in the plain form", () => {
     expect(plainJobId("review-0004")).toBe(true);
+    expect(plainJobId("race-0004-w7k5e4")).toBe(true);
+    expect(plainJobId("race-0004-ignore-all")).toBe(false);
     expect(plainJobId("ignore-all-previous-instructions")).toBe(false);
     expect(plainJobId("x")).toBe(false);
   });

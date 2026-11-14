@@ -6,7 +6,6 @@
   font-size: 14px;
   font-weight: 700;
   font-stretch: 125%;
-  font-variant-numeric: tabular-nums;
   color: var(--ice-60);
 }
 
@@ -44,7 +43,6 @@
   font-weight: 800;
   font-stretch: 125%;
   letter-spacing: -0.01em;
-  font-variant-numeric: tabular-nums;
   text-overflow: ellipsis;
 }
 
@@ -120,7 +118,6 @@
   line-height: 1.1;
   font-weight: 800;
   font-stretch: 125%;
-  font-variant-numeric: tabular-nums;
   color: var(--ice);
   white-space: nowrap;
 }
@@ -190,7 +187,6 @@
   font-size: 13px;
   line-height: 1.4;
   color: var(--ice-60);
-  font-variant-numeric: tabular-nums;
 }
 
 .route span:last-child {
@@ -230,7 +226,6 @@
   font-size: 26px;
   font-weight: 800;
   font-stretch: 125%;
-  font-variant-numeric: tabular-nums;
   color: var(--ice);
 }
 

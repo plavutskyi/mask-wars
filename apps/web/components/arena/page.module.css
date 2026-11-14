@@ -87,6 +87,11 @@
   color: var(--ice-60);
 }
 
+/* A number set in Mona has no tracking of its own: it keeps the word after it at a word's distance. */
+.kicker :global(.mw-num) {
+  margin-right: 0.3em;
+}
+
 .title {
   --size: clamp(40px, 4.6vw, 68px);
   --chars: 6;
@@ -821,6 +826,11 @@
     gap: 8px 12px;
   }
 
+  /* Four masks stand two by two: never three and one left alone on a row. */
+  .chips:has(> :nth-child(4):last-child) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .field {
     width: 100%;
   }
@@ -974,12 +984,16 @@
   }
 
   .whoMoney {
-    display: inline;
+    display: block;
     font-size: 15px;
   }
 
+  /* Under a name, two short lines that are never cut: what the mask took, then its breaks and its best time. */
   .whoSub {
     display: block;
+    overflow: visible;
+    white-space: normal;
+    line-height: 1.35;
   }
 
   .cell {

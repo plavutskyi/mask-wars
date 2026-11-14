@@ -218,7 +218,7 @@ describe('share tags', () => {
   });
 
   it('every other page keeps the arena card', () => {
-    for (const p of ['/', '/league', '/break', '/race', '/mask/nova/extra']) expect(cardOf(p, 'x').url).toBe('/og.jpg');
+    for (const p of ['/', '/league', '/break', '/race', '/mask/nova/extra']) expect(cardOf(p, 'x').url).toBe('/og-card.jpg');
   });
 });
 

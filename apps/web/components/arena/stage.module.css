@@ -327,7 +327,23 @@
   margin-top: calc(var(--D) * 0.04);
   transform: translateX(-50%);
   white-space: nowrap;
-  font-size: var(--t-word);
+  /* On a short phone the door is small: the line gives up size before it reaches the ring. */
+  font-size: min(var(--t-word), calc(var(--D) * 0.066));
+}
+
+/* Between rounds the ring breathes: the stage is still, the vault is not dead. On the art itself, never on its frame:
+   a filter on the frame would isolate the blend and show the art's black. */
+[data-phase='next'] .fVault .half {
+  animation: breathe 4600ms ease-in-out infinite alternate;
+}
+
+@keyframes breathe {
+  from {
+    filter: brightness(0.94);
+  }
+  to {
+    filter: brightness(1.2);
+  }
 }
 
 .fLine {
@@ -1120,6 +1136,7 @@
   .hl,
   .hr {
     transform: none !important;
+    animation: none !important;
   }
 
   .taker img,

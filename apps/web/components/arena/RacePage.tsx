@@ -5,7 +5,7 @@ import { duration, near } from '@maskwars/arena/format';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { CSSProperties } from 'react';
-import { artOf, day, eventLine, longest, shortAccount, timeUtc, toneOf, utc } from '@/lib/show';
+import { day, eventLine, type Faces, faceOf, longest, shortAccount, timeUtc, toneIn, utc } from '@/lib/show';
 import { Mark } from '../Mark';
 import { Clock } from './Clock';
 import { Header } from './Header';
@@ -82,7 +82,7 @@ function breakTx(r: Race, steps: readonly { kind: string; tx?: string; early?: b
 /** Six masks at a glance, the winner among them; a bigger field opens with one tap. */
 const CHIPS = 6;
 
-function Chips({ race: r }: { race: Race }) {
+function Chips({ race: r, faces }: { race: Race; faces: Faces | null }) {
   const won = r.winner?.account;
   const first = r.masks.slice(0, CHIPS);
   if (won && !first.some((m) => m.account === won)) {
@@ -90,7 +90,7 @@ function Chips({ race: r }: { race: Race }) {
     if (w) first.splice(CHIPS - 1, 1, w);
   }
   const rest = r.masks.filter((m) => !first.includes(m));
-  const chip = (m: Who) => <MaskChip key={m.account} who={m} won={won === m.account} race={r} />;
+  const chip = (m: Who) => <MaskChip key={m.account} who={m} won={won === m.account} race={r} faces={faces} />;
   return (
     <div className={s.field}>
       <ul className={s.chips} aria-label="Masks in the race">
@@ -111,8 +111,8 @@ function Chips({ race: r }: { race: Race }) {
   );
 }
 
-function MaskChip({ who, won, race }: { who: Who; won: boolean; race: Race }) {
-  const art = artOf(who);
+function MaskChip({ who, won, race, faces }: { who: Who; won: boolean; race: Race; faces: Faces | null }) {
+  const art = faceOf(who, faces);
   const body = (
     <>
       <span className={s.chipFace}>{art ? <Image src={art} alt="" fill sizes="56px" quality={75} /> : <Mark className={s.faceMark} />}</span>
@@ -122,7 +122,7 @@ function MaskChip({ who, won, race }: { who: Who; won: boolean; race: Race }) {
     </>
   );
   return (
-    <li className={s.chip} data-tone={toneOf(who)} data-won={won ? '' : undefined} data-out={race.phase === 'broken' && !won ? '' : undefined}>
+    <li className={s.chip} data-tone={toneIn(who, faces)} data-won={won ? '' : undefined} data-out={race.phase === 'broken' && !won ? '' : undefined}>
       {who.slug ? (
         <Link href={`/mask/${who.slug}`} className={s.chipLink}>
           {body}
@@ -141,7 +141,10 @@ export function RacePage({
   asOf = null,
   call = null,
   thought = null,
+  faces = null,
 }: {
+  /** The faces of the round's forged masks, by account (lib/forged.ts); a mask with none wears the mark. */
+  faces?: Faces | null;
   race: Race;
   prev: Race | null;
   next: Race | null;
@@ -153,7 +156,7 @@ export function RacePage({
   call?: { round: RoundBrief; mine: Entry; open: boolean } | null;
 }) {
   const winner = r.winner;
-  const art = r.phase === 'broken' ? artOf(winner) : null;
+  const art = r.phase === 'broken' ? faceOf(winner, faces) : null;
   const number = r.phase === 'broken' ? r.takes : r.phase === 'held' ? (r.refund?.amount ?? r.bounty) : r.prize;
   const numberTone = r.phase === 'broken' ? 'money' : 'plain';
   // The race's safe, when it is the arena's own: said plainly under the number, its whole story behind «i».
@@ -226,7 +229,7 @@ export function RacePage({
           </p>
           {target ? <ArenaTarget target={target} className={s.target} align="start" /> : null}
           {thought && r.phase !== 'sealing' ? <RaceMind thought={thought} takes={r.takes} /> : null}
-          {r.masks.length ? <Chips race={r} /> : null}
+          {r.masks.length ? <Chips race={r} faces={faces} /> : null}
           {call ? <RaceCall round={call.round} mine={call.mine} open={call.open} /> : null}
         </div>
         <div className={s.heroArt} aria-hidden>

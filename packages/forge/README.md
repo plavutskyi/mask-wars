@@ -12,8 +12,9 @@ is `services/brain`, and the page is `apps/web/app/forge`.
   `masks.tinygif8324.testnet`; the site can name another with `NEXT_PUBLIC_FORGE_FACTORY` (`apps/web/lib/forge.ts`).
 - **Mainnet: open since 12 Nov 2026.** `https://maskwars.xyz/api/forge` answers
   `{"open":true,"factory":"masks.maskwars.near","network":"mainnet"}`. The factory `masks.maskwars.near` has no key,
-  its mask code is published, and `sections.forge` is `true` in `packages/network/mainnet.json`. On 12 Nov its `config`
-  view says `"masks":0`: nobody has forged a mask on mainnet yet, and no person's mask has raced there.
+  its mask code is published, and `sections.forge` is `true` in `packages/network/mainnet.json`. The first person's mask,
+  DMYTRO, was forged there, lined up in the house's rounds of 13 and 14 Nov 2026 and won the second, `race-0005`:
+  as of 14 Nov `get_mask {"name":"dmytro"}` answers `"races":2`.
 
 ## What it does
 

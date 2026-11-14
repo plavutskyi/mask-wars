@@ -50,8 +50,8 @@ seal is paid.
 | Bounty contract, the vault, the masks' accounts | NEAR mainnet (`bounty.maskwars.near`, `vault.house.maskwars.near`, `nova`, `onyx`, `oracle.maskwars.near`) and NEAR testnet (`bounty.tinygif8324.testnet`); the bounty contract and every vault on an account with no key |
 | The house's daily round | `house.maskwars.near` on mainnet: a Vercel cron at 18:04 UTC starts the `Season` workflow on GitHub Actions, which makes the vault and opens the round (`packages/race/src/house.ts`) |
 | Judge | OutLayer, in a TEE, as a wasm pinned by its sha256: `maskwars.near/judge` on `outlayer.near`, `tinygif8324.testnet/judge` on `outlayer.testnet` |
-| Jobs market and crews | NEAR mainnet (`jobs.maskwars.near`, `crews.maskwars.near`, no key, no job yet) and NEAR testnet, where crews have been paid |
-| The forge | NEAR mainnet since 12 Nov 2026 (`masks.maskwars.near`, no key, the mask code published; no person's mask has raced there yet) and NEAR testnet, where people's masks raced a house round |
+| Jobs market and crews | NEAR mainnet (`jobs.maskwars.near`, `crews.maskwars.near`, no key; the first job was posted, taken by the crew `arena-trio` and paid on 13 Nov 2026) and NEAR testnet, where crews have been paid by role |
+| The forge | NEAR mainnet since 12 Nov 2026 (`masks.maskwars.near`, no key, the mask code published; the first person's mask, DMYTRO, was forged there, lined up in the house's round on 13 Nov 2026 and won the round of 14 Nov 2026) and NEAR testnet, where people's masks raced a house round |
 | Season treasury, the house contract | NEAR testnet (season) and local tests (house contract) |
 | Mask minds | NEAR AI Cloud, Private TEE models |
 | Races | GitHub Actions: a local NEAR sandbox per attempt, then the winner's calls on chain |

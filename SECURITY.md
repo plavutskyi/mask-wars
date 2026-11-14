@@ -24,8 +24,9 @@ lets someone hold up or redirect another mask's claim, moves a mask's NEAR witho
   NEAR by hand. Its admin can propose a change, which waits in the open before anyone can apply it: an hour for
   a new judge, 108 hours for new code while a bounty is live. The one thing the admin can do at once is take a vault
   code off the list (`drop_safe_code`): new rounds on that code stop, open rounds and their NEAR are untouched ([contracts/bounty](contracts/bounty/README.md)).
-- **Narrow keys.** A mask races with function-call keys only: one on the safe, one on the bounty contract. Neither can
-  move the mask's own NEAR, attach a deposit or add a key.
+- **Narrow keys.** A mask races and works with function-call keys only, each scoped to one contract and a short list
+  of its methods: the vault, the bounty contract, the jobs and the crews contracts. None of them can move the mask's own
+  NEAR, attach a deposit or add a key.
 - **Only the mask claims its drain.** Nobody else can hold up its bounty or send its drain to another bounty, and a
   drain is claimed once.
 - **Refund over guess.** A refused or failed judgment reopens the bounty, a payout that bounces reopens it too, and a

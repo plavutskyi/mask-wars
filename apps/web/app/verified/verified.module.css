@@ -405,7 +405,6 @@ details[open] > .summary .chev {
 
 .hex {
   overflow-wrap: anywhere;
-  font-variant-numeric: tabular-nums;
 }
 
 /* Footer ---------------------------------------------------------------------------------------------------------- */

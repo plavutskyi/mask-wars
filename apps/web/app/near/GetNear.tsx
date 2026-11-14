@@ -128,7 +128,8 @@ export function GetNear() {
   const coin = picked?.coin ?? null;
   const maxUsd = catalog?.maxUsd ?? 100;
   const typed = parseDollars(usdText);
-  const usd = typed !== null && typed <= maxUsd ? typed : null;
+  // From a dollar to the limit: less reads as no amount yet, with the range said under it, as on Swap.
+  const usd = typed !== null && typed >= 1 && typed <= maxUsd ? typed : null;
   const amounts = AMOUNTS.filter((n) => n <= maxUsd);
 
   // Who receives: read here at once, asked of NEAR a moment after the typing stops.

@@ -500,7 +500,6 @@
   color: var(--ice);
   font-size: 16px;
   font-weight: 650;
-  font-variant-numeric: tabular-nums;
   cursor: pointer;
   transition: border-color 0.15s ease, background 0.15s ease;
 }
@@ -718,7 +717,6 @@
 .histAmount {
   justify-self: end;
   font-weight: 750;
-  font-variant-numeric: tabular-nums;
 }
 .histAmount[data-tone='money'] {
   color: var(--money);

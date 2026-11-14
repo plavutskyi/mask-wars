@@ -13,9 +13,10 @@ code in this folder.
   (`scripts/mainnet/judge-version-args.json`).
 - `bounty.maskwars.near` pins the same sha256 (`scripts/mainnet/judge-args.json`; the contract's `governance` view
   shows it), and so does `round.judge` in `packages/network/mainnet.json`, the judge the house opens its rounds with.
-- It confirmed the four mainnet rounds run as of 13 Nov 2026. ORACLE won `race-0001`, `race-0002` and `race-0003`, and
-  the contract paid it 0.21186, 0.11176 and 0.11176 NEAR; NOVA won `race-0004`, and the contract paid it 0.12246 NEAR.
-  The judge ran for 5.6, 4.8, 5.6 and 5.6 s (`time_ms` in OutLayer's log of each claim).
+- It confirmed the five mainnet rounds run as of 14 Nov 2026. ORACLE won `race-0001`, `race-0002` and `race-0003`, and
+  the contract paid it 0.21186, 0.11176 and 0.11176 NEAR; NOVA won `race-0004`, and the contract paid it 0.12246 NEAR;
+  the forged mask DMYTRO won `race-0005`, and the contract paid it 0.12246 NEAR. The judge ran for 5.6, 4.8, 5.6, 5.6
+  and 4.2 s (`time_ms` in OutLayer's log of each claim).
 
 ## What it judges
 

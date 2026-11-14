@@ -891,13 +891,15 @@
 }
 
 /* A quiet way to /near, under the band's own line. */
+/* One sentence that wraps as a sentence: on a narrow phone it breaks between words, never into two columns. */
 .getNear {
   align-self: center;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+  display: block;
   min-height: 44px;
-  padding: 0 8px;
+  padding: 12px 8px;
+  line-height: 20px;
+  text-align: center;
+  text-wrap: balance;
   font-size: 14px;
   font-weight: 500;
   color: var(--ice-60);
@@ -905,6 +907,7 @@
 }
 
 .getNear span {
+  white-space: nowrap;
   font-weight: 700;
   color: var(--ice);
 }

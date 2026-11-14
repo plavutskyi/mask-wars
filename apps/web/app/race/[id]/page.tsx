@@ -8,6 +8,7 @@ import { RacePage } from '@/components/arena/RacePage';
 import { Unreachable } from '@/components/arena/Unreachable';
 import { asOf, pickNow, readArena } from '@/lib/arena';
 import { CALL_SIZE } from '@/lib/card';
+import { facesOf, hasForged, readForged } from '@/lib/forged';
 import { pageMeta, tag } from '@/lib/meta';
 import { briefOf, choiceName, HELD, outcomeOf, pickable, pickOn, verdictOf, windowOf } from '@/lib/pick';
 import { entriesOf, PICKS_COOKIE } from '@/lib/picks';
@@ -64,13 +65,15 @@ export default async function RaceRoute({ params }: Props) {
   const jar = await cookies();
   const old = asOf(view);
   const mine = pickable(race) ? pickOn(entriesOf(jar.get(PICKS_COOKIE)?.value), race, view.races) : null;
-  const records = await mindsOf([race]);
+  // A round with a person's mask asks the factory how it looks; it answers within a few seconds or gives null.
+  const [records, forged] = await Promise.all([mindsOf([race]), hasForged(race.masks) ? readForged().catch(() => null) : null]);
   return (
     <RacePage
       race={race}
       prev={view.races[i + 1] ?? null}
       next={view.races[i - 1] ?? null}
       asOf={old}
+      faces={forged ? facesOf(forged, race.masks) : null}
       thought={raceThought(race, records.get(race.id))}
       call={mine ? { round: briefOf(race), mine, open: windowOf(view, pickNow(), old !== null)?.race === race.id } : null}
     />

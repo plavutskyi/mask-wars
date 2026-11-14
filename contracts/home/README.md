@@ -15,8 +15,9 @@ other account. That way the NEAR of the daily round goes in a circle: house, vau
 - That code is home 1.0.0, whose only method is `home`. This folder holds 1.1.0, which adds the read-only
   `contract_source_metadata` (NEP-330) and leaves `home()` and its event unchanged. Its bytes are different and are not
   on the masks yet.
-- As of 12 Nov 2026, nobody has called `home()` on mainnet. The first call will be the first step of the house's next
-  daily round: `packages/race/src/house.ts` calls `home()` only on a mask whose code hash is `home_code`.
+- `home()` first ran on mainnet on 12 Nov 2026, as the first step of the house's daily round
+  ([the call](https://nearblocks.io/txns/14MzcJbMmib7H7fYDNYmYHGfNFpwXvXGS7oJ6pce2YS)), and again on 13 and 14 Nov:
+  `packages/race/src/house.ts` calls `home()` only on a mask whose code hash is `home_code`.
 - The masks keep their keys. The function-call keys they race with on the bounty contract and the vault work as
   before, because code on an account changes what calls *to* it do, not what the account signs.
 

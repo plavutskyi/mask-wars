@@ -94,7 +94,7 @@ On 11 November 2026 two jobs went from the opening to the payout on `jobs.tinygi
 keys, with no NEAR attached, through the jobs worker (`packages/race/scripts/jobs.ts`, the code of the `Jobs`
 workflow). The round's judge confirmed each drain in a TEE on OutLayer, and the jobs contract paid each crew by its split.
 
-The accounts are test accounts the cloud session made from the faucet: the team `mw-jobs-team.testnet` (the safes,
+The accounts are test accounts made from the faucet: the team `mw-jobs-team.testnet` (the safes,
 the rounds, the bonds), the client `mw-jobs-client.testnet`, and the masks `nova.`, `onyx.` and `oracle.mw-jobs-team.testnet`.
 No model ran in these jobs. The plan is the one ORACLE's mind found and revealed in round `race-0006`, public on chain,
 replayed: the cloud container's proxy cuts any call to NEAR AI at 30 seconds, and a mask thinks longer. Before each

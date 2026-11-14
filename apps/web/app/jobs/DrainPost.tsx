@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { Arrow } from '@/components/Arrow';
+import { Nums } from '@/components/arena/Nums';
 import p from '@/components/arena/page.module.css';
 import {
   DRAIN,
@@ -676,7 +677,11 @@ export function DrainForm({ drain, flow }: { drain: DrainSheet; flow: DrainFlow 
       </div>
 
       <button ref={goButton} type="submit" className={`${p.btn} ${p.word} ${s.postGo}`} data-wait={ready ? undefined : ''} aria-disabled={!ready} aria-busy={busy}>
-        {go}
+        {/* One box for the words and the number: the button lays its children out in a row, and loose text beside a
+            span would lose its spaces. */}
+        <span>
+          <Nums text={go} />
+        </span>
       </button>
       <p className={s.postLine} id={`${id}-line`} data-bad={problem || rewardBad ? '' : undefined} aria-live="polite">
         {problem ??

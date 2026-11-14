@@ -1,9 +1,9 @@
 // A track for a film from its plan: ElevenLabs Music with a composition plan, so every section lasts exactly what the
-// cut needs. The key is the owner's, read from ELEVENLABS_API_KEY and never printed.
+// cut needs. The key is read from ELEVENLABS_API_KEY and never printed.
 //
 //   node scripts/music.mjs audio/promo-150.plan.json audio/promo-150.mp3 [--seed 7]
 //
-// On Windows the owner keeps the key in his user environment; a shell started before he set it does not see it:
+// On Windows a key kept in the user environment is not seen by a shell started before it was set:
 //   $env:ELEVENLABS_API_KEY = [Environment]::GetEnvironmentVariable('ELEVENLABS_API_KEY','User'); node scripts/music.mjs …
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";

@@ -54,6 +54,20 @@ export type FilmOptions = {
   log?: (line: string) => void;
 };
 
+/**
+ * A round filmed from the chain's own answers needs no record: only which round it is and who won it, for the pages
+ * the film opens. A record names the arena's own masks alone, so a round a person's mask won is filmed this way.
+ */
+export type RoundOfAnswers = { id: string; network: RaceRecord["network"]; winner: string };
+
+function roundOfAnswers(input: unknown): RoundOfAnswers {
+  const r = input as Partial<RoundOfAnswers> | null;
+  if (!r || typeof r.id !== "string" || !/^(?:race-\d{4}|s\d{1,3}-\d{4}-[0-9a-f]{6})$/.test(r.id)) throw new Error("a round filmed from answers needs its id, like race-0005");
+  if (r.network !== "testnet" && r.network !== "mainnet") throw new Error(`${r.id}: the network is testnet or mainnet`);
+  if (typeof r.winner !== "string" || !/^[A-Za-z][A-Za-z0-9]{2,15}$/.test(r.winner)) throw new Error(`${r.id}: the winner's name, as the site shows it`);
+  return { id: r.id, network: r.network, winner: r.winner };
+}
+
 /** What the record does not hold and the owner's own call files do, when they are about this round. */
 export function extrasOf(record: RaceRecord): RoundExtras {
   const dir = join(REPO, "scripts", record.network);
@@ -122,16 +136,19 @@ export function reel(frames: string, output: string): void {
 
 export async function filmRound(input: unknown, opts: FilmOptions): Promise<FilmManifest> {
   const log = opts.log ?? (() => {});
-  const record = parseRace(input);
-  if (!isSealedRound(record)) throw new Error(`${record.id} is told by its sandbox board: only a sealed round's record can be played back to the site`);
   mkdirSync(opts.work, { recursive: true });
   mkdirSync(opts.out, { recursive: true });
 
+  let record: RoundOfAnswers;
   let recording: Recording;
   if (opts.answers) {
+    record = roundOfAnswers(input);
     recording = JSON.parse(readFileSync(opts.answers, "utf8")) as Recording;
   } else {
-    const made = await answersFromRecord(record, extrasOf(record));
+    const sealed = parseRace(input);
+    if (!isSealedRound(sealed)) throw new Error(`${sealed.id} is told by its sandbox board: only a sealed round's record can be played back to the site`);
+    const made = await answersFromRecord(sealed, extrasOf(sealed));
+    record = { id: sealed.id, network: sealed.network, winner: sealed.winner };
     recording = made.recording;
     log(`${record.id}: the record played back as ${recording.exchanges.length} chain answers, ${made.view.now?.masks.length ?? 0} masks on the stage`);
   }

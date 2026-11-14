@@ -103,6 +103,10 @@ and the round's own transactions in the public indexer (`src/race/chain.ts`). Th
 judge's numbers come from OutLayer's own events in the logs of the claim transaction. The next round comes from the
 season treasury's own `next`, or the record has none.
 
+A record names the arena's own masks alone, so a round that a person's mask won makes no record either (`its winner
+DMYTRO has no portrait in brand/art/web`): its cards and THE BREAK are not drawn, and its film is shot from the chain's
+own answers instead (below, "A round a forged mask won").
+
 A round that has not ended in a paid drain makes no record. The script says in one line where the round stands and
 writes nothing:
 
@@ -287,14 +291,34 @@ runs by itself, a mask breaks the vault and the contract pays, forge yours. That
 for that round, renders `out/promo/maskwars-demo.mp4` and lays a contact sheet beside it (`maskwars-demo-sheet.jpg`,
 a frame every three seconds).
 
+The break itself comes from the round's own film when there is one: `demo` takes the reels `crack`, `eye` and `flow`
+from `shots/<round>/film/` (or `--film <dir>`), and a round with no film, or a vault that held, is cut from the pages
+alone.
+
+### A round a forged mask won
+
+Round 5 on mainnet (14 Nov 2026) was won by DMYTRO, a mask a person forged. It was filmed like this, within the hour
+after the payout, while the home page still showed the round:
+
+```bash
+# from the repository's root
+MASKWARS_NETWORK=mainnet pnpm --filter @maskwars/arena record --out "$PWD/packages/media/out/race-0005.answers.json"   # the chain's own answers, kept
+echo '{"id":"race-0005","network":"mainnet","winner":"DMYTRO"}' > packages/media/out/race-0005.round.json
+pnpm --filter @maskwars/media film packages/media/out/race-0005.round.json --answers packages/media/out/race-0005.answers.json --only crack,eye,flow --out packages/media/out/race-0005-film
+pnpm --filter @maskwars/media demo race-0005 --gpu --film out/race-0005-film   # --film is read from packages/media
+```
+
+Answers kept later than an hour after the round show the next round on the home page, and the film cameras find no
+break to shoot.
+
 | From | Part | Picture | Words |
 | --- | --- | --- | --- |
-| 0.0 s | Hook | The home page as it stands, its 3D arena running | What the arena is, in two lines |
+| 0.0 s | Hook | With the round's own film: the vault cracking and splitting, then the winner's eyes. Without it: the home page as it stands | What the arena is, in two lines |
 | 4.7 s | Forge | `/forge`, tapped step by step up to the name. The film never presses Forge: no wallet opens, nothing is signed | The step, under the page |
 | 19.7 s | The mask | The person's mask on its own page, then its row among the forged masks of the league | Its name and state, as its page says |
 | 24.4 s | The round | The round's own page, row by row: the vault loaded, the plans sealed, the window closing in the track's silent bar | The time and the sum of each row |
-| 31.9 s | The break | The page's headline, on the track's drop; then the drain, the payout and what the winner took | Who, in how long, how much |
-| 46.9 s | The money | The league table | How many rounds, how many winners, what the first took |
+| 31.9 s | The break | With the round's own film: the vault splits on the track's drop and its NEAR flies to the winner. Without it: the page's headline. Then the drain, the payout and what the winner took | Who, in how long, how much |
+| 46.9 s | The money | The league table, row by row | How many rounds, then who broke what: a line for each mask that has won, three at most |
 | 54.4 s | Around it | The picks on the home page, `/near`, `/mcp/connect` | One line each |
 | 65.6 s | End | The arena, dimmed | `Forge yours.`, `maskwars.xyz`, `Built at NEAR HACKATHON` |
 

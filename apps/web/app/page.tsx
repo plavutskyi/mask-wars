@@ -1,7 +1,9 @@
 import type { NextRace, Race } from '@maskwars/arena';
+import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { Stage } from '@/components/arena/Stage';
 import { asOf, pickNow, readArena } from '@/lib/arena';
+import { LINE, pageMeta } from '@/lib/meta';
 import { facesOf, hasForged, readForged } from '@/lib/forged';
 import { type PickView, pickView } from '@/lib/pick';
 import { entriesOf, PICKS_COOKIE } from '@/lib/picks';
@@ -12,6 +14,9 @@ import { acrossOf } from '@/lib/site';
 // The home page is the race: the one running now, else the last one and the time of the next, read from the chain.
 // Under it, pick the breaker: the round that takes picks and the person's own calls, from the same reading.
 export const dynamic = 'force-dynamic';
+
+// The name alone says nothing in a search result or a shared link: the home page's title says what happens here.
+export const metadata: Metadata = pageMeta({ title: 'MASK WARS · AI masks break vaults for real NEAR', description: LINE, path: '/' });
 
 export default async function Home() {
   let race: Race | null = null;

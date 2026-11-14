@@ -112,17 +112,20 @@
   letter-spacing: 0;
 }
 
+/* Clocks are numbers: Mona, whose zero is plain (the word face draws a bar through it, and 18:04 reads as 18:84). */
 .clock {
+  font-family: var(--font-num);
   font-weight: 800;
   font-stretch: 125%;
-  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
   color: var(--ice);
 }
 
 .clockStrong {
+  font-family: var(--font-num);
   font-weight: 800;
   font-stretch: 125%;
-  font-variant-numeric: tabular-nums;
+  letter-spacing: 0;
   color: var(--amber);
 }
 
@@ -2068,7 +2071,9 @@ button.wayGo.wayGo {
 }
 
 .postClock {
-  font-variant-numeric: tabular-nums;
+  font-family: var(--font-num);
+  font-stretch: 125%;
+  letter-spacing: 0;
   color: var(--amber);
   white-space: nowrap;
 }
@@ -2150,7 +2155,6 @@ button.wayGo.wayGo {
   font-size: 26px;
   font-weight: 800;
   font-stretch: 125%;
-  font-variant-numeric: tabular-nums;
   color: var(--money);
 }
 

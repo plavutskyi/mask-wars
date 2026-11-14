@@ -189,11 +189,7 @@ function Model({ id, v, now, quiet = false }: { id: string; v: ModelVerification
         <p className={s.why} data-outcome={outcome}>
           {why.text}
         </p>
-      ) : (
-        <p className={s.nonce}>
-          Nonce <span className={s.hex}>{v ? short(v.nonce, 8, 8) : '…'}</span>
-        </p>
-      )}
+      ) : null}
       {v && (
         <details className={s.more}>
           <summary className={s.summary}>

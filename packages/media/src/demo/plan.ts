@@ -104,7 +104,7 @@ export function forgeActs(name: string): ForgeAct[] {
 /** The words under each step of the forge, from the beat its step comes on screen. */
 export const FORGE_WORDS: readonly { beat: number; kicker: string; head: string }[] = [
   { beat: 0, kicker: "Forge · 1 of 6", head: "Pick a face" },
-  { beat: 6, kicker: "Forge · 2 of 6", head: "Give it a mind" },
+  { beat: 6, kicker: "Forge · 2 of 6 · NEAR AI Cloud", head: "Give it a mind" },
   { beat: 11, kicker: "Forge · 3 of 6", head: "Choose its style" },
   { beat: 15, kicker: "Forge · 4 of 6 · sealed in a TEE", head: "Write its secret plan" },
   { beat: 22, kicker: "Forge · 5 of 6", head: "Fuel it with NEAR" },
@@ -142,9 +142,18 @@ export type LeagueRow = { who: Who; races: number; breaks: number; earned: strin
 export type Rect = { x: number; y: number; w: number; h: number };
 export type Tap = { frame: number; x: number; y: number };
 
+/**
+ * The round's own film of the break (`scripts/film.mjs`: the 3D arena shot by its film cameras), when it was made: how
+ * long each reel is and the frame its moment falls on. With it the demo opens on the vault breaking and plays the break
+ * itself at the result; without it the pages stand in.
+ */
+export type BreakFilm = { crack: { frames: number; breach: number }; eye: { frames: number }; flow: { frames: number; paid: number } };
+
 export type DemoData = {
   /** The round the film tells. */
   id: string;
+  /** The break as the round's film shot it, or nothing: a round with no film, or a vault that held. */
+  film?: BreakFilm | null;
   /** The person's mask the film forges and follows, as its page is named: `dmytro`. */
   mask: string;
   /** The site the pages were filmed on, and when. */
@@ -196,6 +205,8 @@ export type Story = {
   top: Caption;
   /** The first winner's place in the league as the site lists it, or -1 while no vault is broken. */
   topIndex: number;
+  /** Who broke what: every mask that has won, the most NEAR first, each with its row of the league. At most three. */
+  winners: { words: Caption; index: number }[];
 };
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -267,7 +278,7 @@ export function story(d: DemoData): Story {
     const after: RoundLine[] = [];
     if (took) after.push({ row: "break", kicker: "Out of the vault", head: `${near(took)} NEAR`, tint: "money", count: count(took) });
     if (r.payout) after.push({ row: "paid", kicker: "Paid on top by the contract", head: `+${near(r.payout.amount)} NEAR`, tint: "money", count: count(r.payout.amount, "+") });
-    after.push({ row: "hero", kicker: "Nobody pressed a button", head: r.takes ? `${w} takes ${near(r.takes)} NEAR` : `${w} takes the vault`, tint: "money" });
+    after.push({ row: "hero", kicker: "No person signed the payout", head: r.takes ? `${w} takes ${near(r.takes)} NEAR` : `${w} takes the vault`, tint: "money" });
     return {
       roundNo: no,
       outcome: "broken",
@@ -324,12 +335,19 @@ export function story(d: DemoData): Story {
 }
 
 /** The league's two lines: how many rounds, how many winners, and what the first of them took. */
-function money(league: LeagueRow[]): Pick<Story, "league" | "top" | "topIndex"> {
+function money(league: LeagueRow[]): Pick<Story, "league" | "top" | "topIndex" | "winners"> {
   const rounds = new Set(league.flatMap((m) => m.history.map((h) => h.id))).size;
   const winners = league.filter((m) => m.breaks > 0).sort((a, b) => (BigInt(b.earned) > BigInt(a.earned) ? 1 : BigInt(b.earned) < BigInt(a.earned) ? -1 : 0));
   const top = winners[0];
   const said = winners.length === 0 ? "No vault broken yet" : winners.length === 1 ? "One winner so far" : `${winners.length} masks have won`;
+  const line = (m: LeagueRow): Caption => ({
+    kicker: [m.who.name.toUpperCase(), forgedByPerson(m.who) ? "forged by a person" : null, `${plural(m.breaks, "vault")} broken`].filter(Boolean).join(" · "),
+    head: `${near(m.earned)} NEAR`,
+    tint: "money",
+    count: { to: near(m.earned), unit: " NEAR" },
+  });
   return {
+    winners: winners.slice(0, 3).map((m) => ({ words: line(m), index: league.indexOf(m) })),
     topIndex: top ? league.indexOf(top) : -1,
     league: { kicker: "The league", head: `${plural(rounds, "round")}. ${said}.` },
     top: top

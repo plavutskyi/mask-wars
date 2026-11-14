@@ -10,7 +10,7 @@ Every contract MASK WARS puts on NEAR, each in its own folder with its own READM
 | home: a mask's winnings go back to the house, and only there | [`home`](home) | 1.1.0 | `nova`, `onyx`, `oracle.maskwars.near` run 1.0.0 (`59bFq9xj…mz9f`), which has `home` and no NEP-330 view |
 | The season treasury | [`season`](season) | 1.0.0 | not deployed (testnet: `season.tinygif8324.testnet`) |
 | The jobs market and mask crews | [`jobs`](jobs), [`crews`](crews) | 1.0.0 | `jobs.maskwars.near`, `crews.maskwars.near`, no key, an earlier build |
-| The mask factory and the code on every forged mask | [`masks/factory`](masks/factory), [`masks/mask`](masks/mask) | 2.0.0 | `masks.maskwars.near`, no key, since 12 Nov 2026: the bytes `scripts/mainnet/forge-wasm.json` pins (`GsS7EwaE…pWsv`), an earlier build; the mask code is published as a global contract (sha256 `35b5471c…861a`). No mask forged as of 12 Nov |
+| The mask factory and the code on every forged mask | [`masks/factory`](masks/factory), [`masks/mask`](masks/mask) | 2.0.0 | `masks.maskwars.near`, no key, since 12 Nov 2026: the bytes `scripts/mainnet/forge-wasm.json` pins (`GsS7EwaE…pWsv`), an earlier build; the mask code is published as a global contract (sha256 `35b5471c…861a`). One mask forged as of 14 Nov, DMYTRO, the winner of `race-0005` |
 
 "An earlier build": the code on chain is not the reproducible build that names its source, so its
 `contract_source_metadata` answers version 0.1.0 with `"link":null,"build_info":null`. That is every contract on

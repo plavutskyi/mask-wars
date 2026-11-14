@@ -62,9 +62,10 @@ Hire money is the team's NEAR in its own vault in NEAR Intents, noted for the jo
 site's private storage). The team can withdraw it at any time through `/wallet`; the checkout says so. The receiver is
 set in one function, `hireRequest`, and `checkHire` reads that receiver back from the quote.
 
-The jobs contract is on mainnet (`jobs.maskwars.near`, no key, no job as of 12 Nov 2026), but no hire locks its
-money on a job today: hire money lands in the team's vault as above, and `sections.jobs` in
-`packages/network/mainnet.json` is still `false`. When that part is switched on, a NEAR wallet's vault moves
+The jobs contract is on mainnet (`jobs.maskwars.near`, no key; its first job was paid on 13 Nov 2026), but no hire
+locks its money on a job today: hire money lands in the team's vault as above. The checkout's deposit addresses are
+closed on mainnet as of 14 Nov 2026 (`HIRE_LIVE` is off: the page says "Prices are live now. Deposit addresses open
+soon."), so no team has paid through it. When the lock is built in, a NEAR wallet's vault moves
 that NEAR into the job's `open` the way `/wallet` fuels a mask: `spendTransactions` in `@maskwars/pay`, one approval. A
 job's `open` also takes what only the team has (the spec's hash, and for a reviewed or tested job its rubric, reference
 work sealed for the judge and its own key): the jobs board's "Post a job" names each of them.

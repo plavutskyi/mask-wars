@@ -22,8 +22,9 @@ maskwars.xyz is the build with `MASKWARS_NETWORK=mainnet`, hosted on Vercel. The
 | `/forge`, `/api/forge` | The forge of people's masks on `masks.maskwars.near`, open since 12 Nov 2026: `/api/forge` answers `"open":true` |
 | `/api/season/tick` | Vercel Cron calls it at 18:04 UTC and four more times until 21:04 (`vercel.json`). It starts the daily round's `Season` workflow on GitHub unless the day's slot already has a run that is queued, running or green, and it answers only Vercel's own call (`lib/season.ts`) |
 
-Not open on mainnet: deposits into a person's vault on `/wallet` (`/api/pay/live` answers `"deposits":false`), and
-payments on `/hire`.
+Open on mainnet since 13 Nov 2026: deposits into a person's wallet on `/wallet` (`/api/pay/live` answers
+`"deposits":true,"fuel":true`). The deposit addresses of `/hire` have a switch of their own, `HIRE_LIVE`, and it is
+off: the page shows prices and says "Deposit addresses open soon", so no team has paid through `/hire`.
 
 ## Run it
 

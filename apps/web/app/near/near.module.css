@@ -170,7 +170,6 @@
 .bigNum {
   font-size: clamp(64px, 7.2vw, 120px);
   letter-spacing: -0.02em;
-  font-variant-numeric: tabular-nums;
   color: var(--money);
   transition:
     color 240ms,
@@ -314,7 +313,6 @@
   font-size: 15px;
   font-weight: 700;
   font-stretch: 125%;
-  font-variant-numeric: tabular-nums;
   color: var(--ice);
 }
 
@@ -399,7 +397,6 @@
   background: none;
   color: inherit;
   outline: none;
-  font-variant-numeric: tabular-nums;
 }
 
 .coinBtn {
@@ -986,8 +983,13 @@
   transition: box-shadow 160ms;
 }
 
+/* The field shows focus on its own box: one frame, never the page's outline around the input inside it. */
 .search:focus-within {
-  box-shadow: inset 0 0 0 1px var(--ice-38);
+  box-shadow: inset 0 0 0 2px var(--ice);
+}
+
+.searchInput:focus-visible {
+  outline: none;
 }
 
 .searchInput {
@@ -1254,7 +1256,6 @@
   font-family: var(--font-num);
   font-size: 14px;
   letter-spacing: 0.02em;
-  font-variant-numeric: tabular-nums;
 }
 
 .factsLink {
@@ -1305,7 +1306,6 @@
   font-family: var(--font-num);
   font-size: 14px;
   font-weight: 600;
-  font-variant-numeric: tabular-nums;
   color: var(--ice-60);
 }
 

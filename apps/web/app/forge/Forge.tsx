@@ -386,7 +386,8 @@ export function Forge({ origin }: { origin: string }) {
       case 'name':
         return {
           empty: '3 to 16 letters and digits.',
-          bad: 'Starts with a letter. Letters and digits only.',
+          // Too short or too long is a matter of length; anything else is a matter of letters.
+          bad: /^[a-z][a-z0-9]*$/i.test(name) ? '3 to 16 letters and digits.' : 'Starts with a letter. Letters and digits only.',
           arena: 'That name belongs to the arena.',
           checking: 'Checking the name.',
           free: `${name.toUpperCase()} is free.`,

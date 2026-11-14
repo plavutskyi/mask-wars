@@ -176,12 +176,12 @@ describe('what it is, and the next round between rounds', () => {
     funded: true,
   });
 
-  it('one line says what MASK WARS is, on every state of the stage', () => {
+  it('one line says what MASK WARS is, on every state of the stage, and it is the one heading of the page', () => {
     vi.setSystemTime(racing.startsAt! + 60_000);
     show(<Stage race={racing} serverNow={racing.startsAt! + 60_000} asOf={null} />);
-    expect(box.querySelector('[data-top] > p')?.textContent).toBe('AI masks break a vault of real NEAR. Live. The contract pays the winner.');
+    expect(box.querySelector('[data-top] > h1')?.textContent).toBe('AI masks break a vault of real NEAR. Live. The contract pays the winner.');
     show(<Stage race={null} serverNow={Date.now()} asOf={null} error />);
-    expect(box.querySelector('[data-top] > p')?.textContent).toContain('real NEAR');
+    expect(box.querySelector('[data-top] > h1')?.textContent).toContain('real NEAR');
   });
 
   /** The safe's line under it, its words without the «i»; null when the stage has none. */
@@ -234,6 +234,22 @@ describe('what it is, and the next round between rounds', () => {
     expect(box.textContent).toMatch(/Opens\s*[0-9]{2}:[0-9]{2}\s*UTC/);
     expect(box.textContent).not.toContain('Broken in');
     expect(button()).toBe('Last round');
+  });
+
+  it('past its minute the next round keeps the stage and says it is opening, with no clock; a round that late gives it back', () => {
+    const now = broken.deadline + 6 * 3_600_000;
+    vi.setSystemTime(now);
+    show(<Stage race={broken} next={next(now - 2 * 60_000)} serverNow={now} asOf={null} />);
+    expect(box.querySelector('[data-phase]')?.getAttribute('data-phase')).toBe('next');
+    expect(head().textContent).toContain('Next round');
+    expect(head().textContent).toContain('OPENING');
+    expect(box.textContent).toMatch(/Opening\s*now/);
+    expect(box.textContent).not.toMatch(/Opens\s*[0-9]{2}:[0-9]{2}/);
+    expect(box.textContent).not.toContain('Broken in');
+
+    show(<Stage race={broken} next={next(now - 16 * 60_000)} serverNow={now} asOf={null} />);
+    expect(box.querySelector('[data-phase]')?.getAttribute('data-phase')).toBe('broken');
+    expect(head().textContent).toContain('Last race');
   });
 
   it('a round that has just ended keeps the stage, with the clock to the next one above it', () => {

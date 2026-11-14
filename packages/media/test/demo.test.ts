@@ -263,7 +263,33 @@ describe("the cut", () => {
 
   it("repeats the page's own count of networks, or none", () => {
     const kickers = (d: DemoData) => shots(d).flatMap((s) => s.beats.map((b) => b.words?.kicker ?? ""));
-    expect(kickers(cases[0]![1])).toContain("Any coin · 20 networks");
+    expect(kickers(cases[0]![1])).toContain("NEAR Intents · any coin · 20 networks");
     expect(kickers(cases[2]![1]).some((k) => /\d+ networks/.test(k))).toBe(false);
+  });
+
+  it("with the round's own film the break opens the demo and plays again on the drop; without it the pages stand in", () => {
+    const d = cases[0]![1];
+    const film = { crack: { frames: 91, breach: 18 }, eye: { frames: 76 }, flow: { frames: 112, paid: 9 } };
+    const reels = (x: DemoData) => shots(x).filter((s) => s.pic.kind === "reel").map((s) => [s.at, (s.pic as { src: string }).src]);
+    expect(reels(d).filter(([, src]) => String(src).startsWith("break-"))).toEqual([]);
+    const cut = shots({ ...d, film });
+    expect(reels({ ...d, film }).filter(([, src]) => String(src).startsWith("break-"))).toEqual([
+      [AT.hook, "break-crack"],
+      [AT.hook2, "break-eye"],
+      [AT.result, "break-crack"],
+      [AT.result + 1, "break-flow"],
+    ]);
+    // No reel is asked for frames it does not have, and the shots still fill the film end to end.
+    for (const s of cut) if (s.pic.kind === "reel" && s.pic.src.startsWith("break-")) expect((s.pic.from ?? 0) + (barFrame(s.at + s.len) - barFrame(s.at))).toBeLessThanOrEqual(film[s.pic.src.slice(6) as keyof typeof film].frames);
+    expect(cut.reduce((n, s) => n + s.len, 0)).toBe(DEMO.bars);
+  });
+
+  it("says who broke what: every mask that has won, on its own row of the league", () => {
+    const s = story(cases[0]![1]);
+    expect(s.winners.length).toBeGreaterThan(0);
+    expect(s.winners[0]!.words.kicker).toMatch(/vaults? broken$/);
+    const league = shots(cases[0]![1]).find((x) => x.at === AT.league)!;
+    expect(league.beats).toHaveLength(1 + s.winners.length);
+    expect(league.beats.at(-1)!.at).toBeLessThan(AT.call - AT.league);
   });
 });

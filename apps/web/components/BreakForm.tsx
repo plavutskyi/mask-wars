@@ -101,6 +101,13 @@ export function BreakForm() {
       : last
         ? 'Only your code, before deploy. Only you see the break.'
         : null;
+  // On a phone the line under the button can be below the fold: what went wrong is brought into view, never left as
+  // a red border alone.
+  const noteLine = useRef<HTMLParagraphElement>(null);
+  const bad = wrong || failed;
+  useEffect(() => {
+    if (bad) noteLine.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }, [bad, now]);
 
   return (
     <div className={s.body} data-done={done ? '' : undefined}>
@@ -215,7 +222,7 @@ export function BreakForm() {
             ) : null}
 
             {note ? (
-              <p className={s.note} data-bad={wrong || failed ? '' : undefined} role={wrong || failed ? 'alert' : undefined}>
+              <p ref={noteLine} className={s.note} data-bad={wrong || failed ? '' : undefined} role={wrong || failed ? 'alert' : undefined}>
                 {note}
               </p>
             ) : null}

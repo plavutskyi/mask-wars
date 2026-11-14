@@ -1077,8 +1077,15 @@ export async function runDay(o: DayOptions): Promise<Day> {
     // failed and is still the next one stops the run. A node may also answer a moment behind the block the step is
     // final in, so the chain is asked again for a while before either is said.
     const until = Date.now() + (o.settleMs ?? 60_000);
+    // A reading that fails right after a step says nothing about the step: a node asked a moment after the transaction
+    // may not answer at all. The chain is asked again for as long as it is given to settle, and only then is the
+    // failed reading the run's answer.
+    let unread = null as Error | null;
     for (;;) {
-      const next = await read().catch((e: Error) => (failure ? null : Promise.reject(e)));
+      const next = await read().catch((e: Error) => {
+        unread = e;
+        return null;
+      });
       const moved = next !== null && (step.kind === "home" ? cameHome(step, houseBefore, last!, cfg) : !(next.kind === "steps" && same(next.steps[0]!, step)));
       if (moved) {
         log(failure ? `  ${step.kind}: ${failure}; the chain has moved on all the same` : `  ${step.kind} ok ${hash}`);
@@ -1098,6 +1105,7 @@ export async function runDay(o: DayOptions): Promise<Day> {
           p = plan(last!);
           break;
         }
+        if (!failure && next === null && unread) throw new Error(`${step.kind} went through (${hash}) and the chain did not answer after it: ${unread.message}`);
         throw new Error(failure ? `${step.kind} failed: ${failure}` : `${step.kind} went through (${hash}) and the chain still asks for it`);
       }
       await sleep(5_000);

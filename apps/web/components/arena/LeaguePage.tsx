@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { CSSProperties } from 'react';
 import type { Forged as ForgedList } from '@/lib/forged';
-import { artOf, toneOf } from '@/lib/show';
+import { type Faces, faceOf, toneIn } from '@/lib/show';
 import { Mark } from '../Mark';
 import type { Caller } from '@/lib/pick';
 import { Callers } from './Callers';
@@ -25,7 +25,10 @@ export function LeaguePage({
   network,
   callers = null,
   forged = null,
+  faces = null,
 }: {
+  /** The faces of the forged masks in the table, by account; a mask with none wears the mark. */
+  faces?: Faces | null;
   league: readonly MaskStats[];
   races: number;
   network: string;
@@ -57,10 +60,10 @@ export function LeaguePage({
         </div>
         <ol className={s.tbody}>
           {league.map((m, i) => {
-            const art = artOf(m.who);
+            const art = faceOf(m.who, faces);
             const targets = [...new Set(m.history.filter((h) => h.won && h.targetCode).map((h) => `${h.target.split('.')[0]}: ${h.targetCode}`))];
             return (
-              <li key={m.who.account} className={s.tr} data-tone={toneOf(m.who)} data-top={i === 0 && m.breaks ? '' : undefined}>
+              <li key={m.who.account} className={s.tr} data-tone={toneIn(m.who, faces)} data-top={i === 0 && m.breaks ? '' : undefined}>
                 <span className={s.rank}>{i + 1}</span>
                 <Link href={m.who.slug ? `/mask/${m.who.slug}` : `/league`} className={s.who}>
                   <span className={s.whoFace}>{art ? <Image src={art} alt="" fill sizes="64px" quality={75} /> : <Mark className={s.faceMark} />}</span>
@@ -70,7 +73,7 @@ export function LeaguePage({
                     </span>
                     <span className={s.whoSub}>
                       <span className={s.whoMoney} data-tone={m.breaks ? 'money' : 'plain'}>
-                        {near(m.earned)} NEAR ·{' '}
+                        {near(m.earned)} NEAR
                       </span>
                       {m.breaks} {m.breaks === 1 ? 'break' : 'breaks'}
                       {m.fastestMs !== null ? ` · ${duration(m.fastestMs)}` : ''}

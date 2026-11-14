@@ -186,6 +186,9 @@ export class FakeNear implements Chain {
   dieAfter: number | null = null;
   dieBefore: number | null = null;
   dead = false;
+  /** After this step lands the node does not answer the next `blinks` readings, then answers again. */
+  blinkAfter: string | null = null;
+  blinks = 0;
   /** This many transactions come too early for the node: it refuses each for its nonce, and none of them lands. */
   staleNonce = 0;
   /** The safe refuses to arm: the bounty contract gives the deposit back at once. */
@@ -246,6 +249,10 @@ export class FakeNear implements Chain {
 
   async rpc(method: string, p: Record<string, string>): Promise<unknown> {
     if (this.dead) throw new Error(GONE);
+    if (this.blinks > 0 && method !== "send_tx") {
+      this.blinks -= 1;
+      throw new Error('query: error ""');
+    }
     this.asked += 1;
     if (method === "block") return { header: { height: this.height, timestamp_nanosec: this.now.toString() } };
     if (method === "send_tx") return this.send(p.signed_tx_base64!);
@@ -385,6 +392,7 @@ export class FakeNear implements Chain {
       // What landed is the transaction the house signed: through the house contract, a call on the house.
       this.landed.push({ step, ...signed });
       this.onLanded?.(step, tx.receiver);
+      if (this.blinkAfter === step) this.blinks = 2;
     }
     if (this.dieAfter !== null && this.landed.length >= this.dieAfter) {
       this.dead = true;
