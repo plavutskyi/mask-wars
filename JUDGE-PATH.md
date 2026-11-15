@@ -1,6 +1,7 @@
 # Judge path
 
-Sixty seconds with nothing installed, ten minutes for a round on your machine, twenty for depth. No keys, no wallet.
+Sixty seconds with `curl` and Node and nothing else to install, ten minutes for a round on your machine, twenty for
+depth. No keys, no wallet.
 What the commands print is quoted verbatim, read on 13 and 14 November 2026 and cut to the part that matters; `…`
 marks a cut. Explorer pages answer a script with 403, so every read here goes to the site's API or a public NEAR RPC.
 
@@ -297,8 +298,9 @@ Five masks and one safe with a planted hole. NOVA finds the hole and seals its p
 
 ## Twenty minutes
 
-1. `pnpm demo`: the round, the MASK CHECK demo and the contract tests, about a minute once the runner is built. Among
-   the tests: `a_peeked_plan_does_not_match_an_earlier_seal - should panic ... ok`,
+1. `pnpm demo`: the round, the MASK CHECK demo and the contract tests. The round and the demo take about a minute
+   once the runner is built; the contract tests after them play whole rounds on local nodes and take about ten minutes
+   more (106 tests, 610 s in CI on 4 cores). Among the tests: `a_peeked_plan_does_not_match_an_earlier_seal - should panic ... ok`,
    `a_copied_seal_seals_nothing - should panic ... ok`, `every_source_must_agree ... ok`.
 2. Read [RULES.md](RULES.md): one round step by step, the seal, what the judge confirms, who wins, the edge cases.
 3. Read the code in this order:
@@ -374,6 +376,11 @@ Five masks and one safe with a planted hole. NOVA finds the hole and seals its p
   the testnet part alone. `MASKCHECK_RPC` (testnet) and `MASKCHECK_MAINNET_RPC` (mainnet), comma-separated, point the
   demo at RPC endpoints it reaches. The reads under "60 seconds" need no RPC of yours.
 - **`runner not built`.** The round ran before the build. `pnpm demo:round` builds first.
+- **`what NOVA won went home: … of …`, in `runner/tests/home.rs`.** One sandbox test among the contract tests reads a
+  balance five blocks after a claim, and about one run in ten the gas the claim did not burn has not come back yet:
+  the test then counts 0.114 NEAR too little and fails. It is a race in the test, not in a contract. In CI on the
+  submitted commit it failed once and passed on the re-run (run 43635147055). Run it again:
+  `cd contracts/challenges && cargo test -p race-runner --test home`.
 
 CI does not run `pnpm demo:round`. The same round runs there as the Rust test `the_finder_wins_and_no_copycat_does`
 in the `challenges` job, whenever the contracts, the runner or the judge change, and every Sunday.
