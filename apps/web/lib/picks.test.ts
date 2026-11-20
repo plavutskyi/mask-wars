@@ -139,6 +139,53 @@ describe('settling a round', () => {
     ]);
   });
 
+  // Race 10 on mainnet: refunded, and read as «the vault held» until the reader named NOVA, who drained the vault and
+  // was never paid. A round settled with an end the chain no longer gives is tallied again from the picks on file.
+  it('tallies a round again when the chain gives it another end than the one it was settled with', async () => {
+    const store = memoryPicks();
+    const held = race('race-0010', T0, { phase: 'held', state: 'refunded', winner: null, takes: null, loot: null });
+    const broke = { ...held, phase: 'broken' as const, winner: NOVA, loot: '1', takes: '1' };
+    const SAID_HELD = 'dHELDXXXXXXXXXXXXXXXXX';
+    const SAID_NOVA = 'dNOVAXXXXXXXXXXXXXXXXX';
+    await filePick(store, raceKey(held), { who: SAID_HELD, choice: HELD, from: 'aaaaaaaa', at: T0 + MIN });
+    await filePick(store, raceKey(held), { who: SAID_NOVA, choice: NOVA.account, from: 'bbbbbbbb', at: T0 + MIN });
+
+    const before = await settle({ races: [held] }, store, T0 + 300 * MIN);
+    expect(before.rounds.map((r) => r.outcome)).toEqual([HELD]);
+    expect([before.callers[SAID_HELD]?.right, before.callers[SAID_NOVA]?.right]).toEqual([1, 0]);
+
+    const after = await settle({ races: [broke] }, store, T0 + 302 * MIN);
+    expect(after.rounds).toEqual([{ key: raceKey(held), race: 'race-0010', outcome: NOVA.account, picks: 2 }]);
+    expect([after.callers[SAID_HELD]?.right, after.callers[SAID_NOVA]?.right]).toEqual([0, 1]);
+    expect(JSON.parse((await store.read(`${ROOT}tally/${raceKey(held)}.json`))!).outcome).toBe(NOVA.account);
+    // Settled with its true end, it is not tallied again.
+    expect(await settle({ races: [broke] }, store, T0 + 304 * MIN)).toEqual(after);
+  });
+
+  it('a server that kept the old tally reads it anew once another server tallied the round again', async () => {
+    const store = memoryPicks();
+    const held = race('race-0010', T0, { phase: 'held', state: 'refunded', winner: null, takes: null, loot: null });
+    const broke = { ...held, phase: 'broken' as const, winner: NOVA, loot: '1', takes: '1' };
+    const next = race('race-0011', T0 + 24 * 60 * MIN, { winner: ORACLE });
+    const SAID_NOVA = 'dNOVAXXXXXXXXXXXXXXXXX';
+    await filePick(store, raceKey(held), { who: SAID_NOVA, choice: NOVA.account, from: 'bbbbbbbb', at: T0 + MIN });
+    // This server settles the round as it was read then, and keeps that tally.
+    await settle({ races: [held] }, store, T0 + 300 * MIN);
+    // Another server tallies it again with the true end and writes the board.
+    const tally = JSON.parse((await store.read(`${ROOT}tally/${raceKey(held)}.json`))!);
+    await store.write(`${ROOT}tally/${raceKey(held)}.json`, JSON.stringify({ ...tally, outcome: NOVA.account }));
+    const board = JSON.parse((await store.read(`${ROOT}board.json`))!);
+    await store.write(`${ROOT}board.json`, JSON.stringify({ ...board, rounds: board.rounds.map((r: object) => ({ ...r, outcome: NOVA.account })) }));
+
+    // The next round settles here: the table it folds has race 10's true end, not the tally this server kept.
+    const after = await settle({ races: [next, broke] }, store, T0 + 30 * 60 * MIN);
+    expect(after.rounds.map((r) => [r.race, r.outcome])).toEqual([
+      ['race-0010', NOVA.account],
+      ['race-0011', ORACLE.account],
+    ]);
+    expect(after.callers[SAID_NOVA]).toMatchObject({ calls: 1, right: 1 });
+  });
+
   it('a round still running, or with its judge at work, is not settled', async () => {
     const store = memoryPicks();
     const running = race('race-0003', T0, { phase: 'racing', live: true, state: 'open', winner: null });

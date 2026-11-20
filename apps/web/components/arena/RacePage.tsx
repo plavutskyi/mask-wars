@@ -175,6 +175,7 @@ export function RacePage({
     ...(r.minLoot ? [{ label: 'A drain counts from', value: `${near(r.minLoot)} NEAR` }] : []),
     ...(r.loot ? [{ label: 'Taken from the vault', value: `${near(r.loot)} NEAR`, href: r.txs.drain ? txUrl(r.txs.drain) : undefined }] : []),
     ...(r.payout ? [{ label: 'Bounty paid', value: `${near(r.payout.amount)} NEAR`, href: r.payout.tx ? txUrl(r.payout.tx) : undefined }] : []),
+    ...(r.refund ? [{ label: 'Bounty back to the team', value: `${near(r.refund.amount)} NEAR`, href: r.refund.tx ? txUrl(r.refund.tx) : undefined }] : []),
     ...(winner ? [{ label: 'Winner', value: winner.account, href: accountUrl(winner.account) }] : []),
     ...(r.judge ? [{ label: 'Judge (OutLayer, TEE)', value: r.judge }] : []),
     ...(r.runId ? [{ label: 'Sandbox run', value: r.runId }] : []),
@@ -182,9 +183,17 @@ export function RacePage({
     { label: 'Network', value: `NEAR ${r.network}` },
   ];
 
+  // A break the contract did not pay (its claim never came): the mask keeps what it drained, the bounty went home.
+  const unpaid = r.phase === 'broken' && r.state === 'refunded';
   const sub =
     r.phase === 'broken'
-      ? [r.breakMs !== null ? `in ${duration(r.breakMs)}` : null, winner && !winner.mask ? (winner.account === r.team ? "paid to the team's own account" : `to ${shortAccount(winner.account)}`) : null].filter(Boolean).join(' · ')
+      ? [
+          r.breakMs !== null ? `in ${duration(r.breakMs)}` : null,
+          winner && !winner.mask ? (winner.account === r.team ? "paid to the team's own account" : `to ${shortAccount(winner.account)}`) : null,
+          unpaid ? 'bounty back to the team' : null,
+        ]
+          .filter(Boolean)
+          .join(' · ')
       : r.phase === 'held'
         ? 'back to the team'
         : 'on the line';

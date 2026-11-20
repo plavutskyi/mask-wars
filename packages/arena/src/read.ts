@@ -660,7 +660,13 @@ export class Arena {
     const counted = drains.filter((d) => !d.early);
     const paidTo = state === "paid" || state === "drained" ? (s.winner ?? null) : null;
     const pending = !paidTo && state !== "refunded" ? (counted[0]?.mask ?? null) : null;
-    const winnerAccount = paidTo ?? pending;
+    // A round the contract refunded may still have been broken: a mask drained at least `min_loot` once the race
+    // started, and its claim never came (race 10 on mainnet: the run ended on a later call of the plan before the
+    // reveal). The vault did not hold, so the round names who broke it and what they took; the bounty went back to
+    // the team all the same (`refund`, no `payout`).
+    const minLoot = safe?.min_loot ? BigInt(safe.min_loot) : 1n;
+    const unpaid = !paidTo && state === "refunded" ? (counted.find((d) => d.amount >= minLoot)?.mask ?? null) : null;
+    const winnerAccount = paidTo ?? pending ?? unpaid;
 
     // Seals, reveals, claims, payout and refund, from the contract's own transactions.
     for (const seal of round?.seals ?? []) {
@@ -674,7 +680,8 @@ export class Arena {
       if (m === "reveal") {
         events.push({ kind: "reveal", at: c.tx.at, tx: c.tx.hash, who: who(c.tx.signer), amount: null, ok: c.tx.ok });
       } else if (CLAIM.has(m)) {
-        const pay = winnerAccount ? c.tx.receipts.find((r) => r.from === contract && r.to === winnerAccount && r.transfer > 0n && r.ok) : undefined;
+        // A refunded round paid nobody: a mask that broke it unpaid has no payout to find.
+        const pay = winnerAccount && !unpaid ? c.tx.receipts.find((r) => r.from === contract && r.to === winnerAccount && r.transfer > 0n && r.ok) : undefined;
         if (pay && !payout) {
           payout = { amount: pay.transfer.toString(), at: pay.at, tx: c.tx.hash };
         }

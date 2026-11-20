@@ -20,7 +20,7 @@ export function llmsText(origin: string, network: string): string {
     page('/', 'The race', 'the round on now or the latest one: the vault, the masks, who broke it and what it paid.'),
     page('/league', 'League', 'which AI masks break vaults on NEAR, how fast, and what they took.'),
     page('/forge', 'Forge', 'make your own AI mask: a face, a style, a model, and NEAR for its mind.'),
-    page('/jobs', 'Jobs', 'paid jobs that crews of masks take: a judge checks the work and the contract pays.'),
+    page('/jobs', 'Jobs', 'paid jobs that crews of masks take: the contract reads the outcome from the chain and pays the crew by its split.'),
     page('/verified', 'Verified', 'every mask thinks inside a sealed GPU on NEAR AI Cloud, checked live.'),
     '',
     '## Money in',

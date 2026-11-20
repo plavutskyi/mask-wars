@@ -18,6 +18,7 @@
 //!   claims its rounds as before, is paid, and its winnings go home: the circle closes, day after day.
 
 use anyhow::{bail, Context, Result};
+use maskwars_judge::chain::Chain;
 use near_workspaces::network::Sandbox;
 use near_workspaces::operations::Function;
 use near_workspaces::result::ExecutionFinalResult;
@@ -86,6 +87,29 @@ async fn view(worker: &Worker<Sandbox>, id: &AccountId, method: &str, args: Valu
 
 async fn balance(worker: &Worker<Sandbox>, id: &AccountId) -> Result<u128> {
     Ok(worker.view_account(id).await?.balance.as_yoctonear())
+}
+
+/// Waits until transaction `hash`, signed by `signer`, is final with everything it left behind: every receipt, the
+/// refund of the gas it did not burn included (`wait_until: FINAL`, the question the judge asks the chain too). A call
+/// answers before its refund lands, and the blocks `fast_forward` skips do not always carry it: a balance read after
+/// a fixed number of them is sometimes read too early. A claim prepays 300 TGas, so there the refund is no dust.
+async fn settled(worker: &Worker<Sandbox>, hash: &str, signer: &AccountId) -> Result<()> {
+    let rpc = SandboxRpc::new(&worker.rpc_addr())?;
+    let params = json!({ "tx_hash": hash, "sender_account_id": signer, "wait_until": "FINAL" });
+    let hash = hash.to_string();
+    tokio::task::spawn_blocking(move || {
+        // The node answers once the transaction is final, or that it is not yet: asked again for up to a minute.
+        for _ in 0..120 {
+            if let Ok(answer) = rpc.rpc("EXPERIMENTAL_tx_status", params.clone()) {
+                if answer.pointer("/result/final_execution_status").and_then(Value::as_str) == Some("FINAL") {
+                    return Ok(());
+                }
+            }
+            std::thread::sleep(Duration::from_millis(500));
+        }
+        bail!("transaction {hash} did not become final");
+    })
+    .await?
 }
 
 /// What `home()` leaves the mask: 0.4 NEAR and the stake of everything it stores.
@@ -191,7 +215,8 @@ async fn home_and_check(
     } else {
         assert_eq!(sent, vec![(home.house.to_string(), expect)], "one event, to the house, with the amount");
     }
-    worker.fast_forward(5).await?;
+    // What went home has reached the house, and the stranger's unburnt gas is back, before any balance is read.
+    settled(worker, &r.outcome().transaction_hash.to_string(), stranger.id()).await?;
     let (mask_after, house_after, stranger_after) =
         (balance(worker, mask).await?, balance(worker, &home.house).await?, balance(worker, stranger.id()).await?);
     assert_eq!(house_after - house_before, expect, "the house got exactly what went home");
@@ -500,6 +525,8 @@ async fn nova_wins(w: &World, id: &str, round: &Value) -> Result<Value> {
         }
         tokio::time::sleep(Duration::from_millis(200)).await;
     }
+    // The bounty and the gas the claim did not burn are with NOVA before anyone counts what it won.
+    settled(&w.worker, &pending.hash().to_string(), &m.id).await?;
     view(&w.worker, &w.bounty, "get", json!({ "id": id })).await
 }
 
@@ -517,7 +544,6 @@ async fn a_mask_running_home_plays_its_rounds_as_before_and_its_winnings_go_home
         let round = open(&w, id).await?;
         let nova_before = balance(&w.worker, &nova).await?;
         let b = nova_wins(&w, id, &round).await?;
-        w.worker.fast_forward(5).await?;
         assert_eq!((&b["status"]["state"], &b["status"]["winner"]), (&json!("drained"), &json!(nova)), "{b}");
         let won = balance(&w.worker, &nova).await? - nova_before;
         assert!(

@@ -126,6 +126,18 @@ export function times(earned: bigint | string, fuel: bigint | string): number | 
   return Number((BigInt(earned) * 10_000n) / f) / 10_000;
 }
 
+/**
+ * A person's mask's ×: what it took in the arena over what its mind has cost it (`spent`, what the keeper charged its
+ * tank on chain), the same division the arena shows for its own masks. The tank is not a cost: whatever the mind has
+ * not spent is still its owner's and comes back with `unfuel`, so dividing by everything put in would read a full
+ * tank as a loss. `null` until the mind has cost anything.
+ */
+export function timesOnMind(earned: bigint | string, spent: bigint | string): number | null {
+  const s = BigInt(spent);
+  if (s <= 0n) return null;
+  return Number((BigInt(earned) * 10_000n) / s) / 10_000;
+}
+
 /** `×1.45`, `×12.3`, `×0`. */
 export function timesText(x: number | null): string {
   if (x === null) return "×—";

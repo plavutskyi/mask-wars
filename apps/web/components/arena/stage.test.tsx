@@ -117,6 +117,18 @@ describe('the race page over a race in motion', () => {
     expect(box.textContent).toContain('as of 13:00 UTC');
     expect(box.textContent).not.toContain('closes in');
   });
+
+  // Race 10 on mainnet: NOVA drained the vault, its claim never came, and the bounty went back to the team. The page
+  // said «The vault held» over a course that showed the drain.
+  it('names who broke a round the contract refunded, with what they took and the bounty back to the team', () => {
+    const refund = { amount: '86640000000000000000000', at: broken.deadline, tx: 'RefundTx1111111111111111111111111111111111111' };
+    const unpaid: Race = { ...broken, state: 'refunded', payout: null, refund, takes: broken.loot, prize: broken.loot! };
+    vi.setSystemTime(broken.deadline + 60_000);
+    show(<RacePage race={unpaid} prev={null} next={null} />);
+    expect(box.querySelector('h1')!.textContent).toBe(`${broken.winner!.name} broke the vault`);
+    expect(box.textContent).not.toMatch(/held/i);
+    expect(box.textContent).toContain('bounty back to the team');
+  });
 });
 
 describe('the stage between races', () => {

@@ -19,8 +19,10 @@ export interface Who {
  * Where the race stands.
  * - `sealing`: the round is open and the masks seal their plans; a drain counts only after `startsAt`.
  * - `racing`: the target can be broken now.
- * - `broken`: a mask broke it once the race started; the bounty is paid, or its claim is on the way. A drain in the
- *   sealing window breaks nothing: by the rules it does not count, so until the contract pays it makes no winner.
+ * - `broken`: a mask broke it once the race started; the bounty is paid, or its claim is on the way, or, with state
+ *   `refunded`, the claim never came and the bounty went back to the team while the mask kept what it drained (at
+ *   least `minLoot`). A drain in the sealing window breaks nothing: by the rules it does not count, so until the
+ *   contract pays it makes no winner.
  * - `held`: nobody broke it before the deadline; the bounty goes, or went, back to the team.
  */
 export type Phase = "sealing" | "racing" | "broken" | "held";
@@ -96,6 +98,7 @@ export interface Race {
   /** End of the reveal window: until then the sealed masks play and reveal, and the round is LIVE. */
   readonly revealUntil: number | null;
   readonly masks: readonly Who[];
+  /** The mask that broke it: the one the contract paid, the one whose claim is on the way, or one that broke it and was not paid. */
   readonly winner: Who | null;
   /** The break: the drain transaction for a live safe. */
   readonly brokeAt: number | null;

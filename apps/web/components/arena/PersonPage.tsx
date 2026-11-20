@@ -1,6 +1,7 @@
 import { accountUrl } from '@maskwars/arena/config';
 import { duration, near } from '@maskwars/arena/format';
-import { look as lookOf, mind as mindOf, nearText, putIn, STYLES, times, timesText } from '@maskwars/forge';
+import { timesText } from '@maskwars/arena/minds';
+import { look as lookOf, mind as mindOf, nearText, putIn, STYLES, timesOnMind } from '@maskwars/forge';
 import Image from 'next/image';
 import Link from 'next/link';
 import type { CSSProperties } from 'react';
@@ -27,7 +28,9 @@ export function PersonPage({ person }: { person: Person }) {
   const style = STYLES.find((x) => x.id === m.style);
   const earned = stats?.earned ?? '0';
   const base = putIn(m.fuel, m.recycled, earned);
-  const x = times(earned, base);
+  // Its ×, as for the arena's own masks: what it took over what its mind cost. The tank is not a cost: what the mind
+  // has not spent is still its owner's. Shown only once it is a real × above zero.
+  const x = timesOnMind(earned, m.spent);
   const fed = BigInt(m.recycled ?? '0');
   const won = (stats?.breaks ?? 0) > 0;
   const state = stateOf(m);
@@ -38,7 +41,8 @@ export function PersonPage({ person }: { person: Person }) {
     { label: 'Put in', value: `${nearText(base)} NEAR` },
     ...(fed > 0n ? [{ label: 'Fed its mind from its account', value: `${nearText(fed)} NEAR` }] : []),
     { label: 'Left for its mind', value: `${nearText(m.brain)} NEAR, up to ${nearText(m.race_limit)} a race` },
-    { label: 'Its mind spent', value: `${nearText(m.spent, 4)} NEAR in ${m.races} ${m.races === 1 ? 'race' : 'races'}` },
+    { label: 'Its mind spent', value: `${nearText(m.spent, 5)} NEAR in ${m.races} ${m.races === 1 ? 'race' : 'races'}` },
+    ...(x !== null && x > 0 ? [{ label: 'Took ÷ its mind', value: `${nearText(earned, 5)} ÷ ${nearText(m.spent, 5)} NEAR = ${timesText(x)}` }] : []),
     { label: 'Strategy', value: m.strategy ? 'Sealed: only its mind opens it, in a TEE' : 'None' },
     { label: 'Network', value: `NEAR ${network}` },
   ];
@@ -65,9 +69,11 @@ export function PersonPage({ person }: { person: Person }) {
               {near(earned)}
               <span className={`${s.word} ${s.unit}`}>NEAR</span>
             </span>
-            <span className={p.times} data-on={x && x > 0 ? '' : undefined} aria-label={`${timesText(x)} on what was put in`}>
-              {timesText(x)}
-            </span>
+            {x !== null && x > 0 ? (
+              <span className={p.times} data-on="" aria-label={`${timesText(x)} on what its mind cost`}>
+                {timesText(x)}
+              </span>
+            ) : null}
             <Info rows={facts} label={`${name} on chain`} align="start" />
           </div>
           <p className={p.state} data-state={state.key}>

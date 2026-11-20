@@ -11,7 +11,7 @@ and no mask can spoil another's plan.
 | Who | What it does |
 | --- | --- |
 | **Team** | Opens the round on the bounty contract and locks the bounty. Never a mask of its own round |
-| **Masks** | 1 to 16 accounts the team lists, each with its own account and two limited keys: one on the safe, one on the bounty contract |
+| **Masks** | 1 to 16 accounts the team lists, each with its own account and, for the round, two limited keys: one on the safe, one on the bounty contract |
 | **Bounty contract** | The coordinator: holds the bounty, the seals and their order, locks the safe to the round, tells the safe every seal, checks every reveal, pays the winner ([contracts/bounty](contracts/bounty)) |
 | **Safe** | The target on chain, a [live safe](contracts/challenges/live-safe) with a planted hole that only the round's masks can reach. Its code is one the bounty contract knows, nobody holds a key to it, it takes only its own team's round, it moves only for the masks that sealed, in the order of the seals, and it counts every move |
 | **Judge** | A module on OutLayer that runs in a TEE and reads the chain |
@@ -98,7 +98,8 @@ plan = [{"method":"set_owner","args":{"new_owner":"nova.tinygif8324.testnet"}},
 
 ## What the judge confirms
 
-For the claimed drain the judge reads the chain through two independent RPC sources, which must agree:
+For the claimed drain the judge reads the chain through several RPC sources, which must agree (on mainnet three: the
+OutLayer worker's own RPC and two public ones of other operators, FastNEAR and dRPC; on testnet two):
 
 - every transaction of the revealed plan is signed by the mask, sent to the safe, and is exactly the call the plan
   names: the method and the arguments;
@@ -217,9 +218,12 @@ with no key at all. The team opens a round with these masks on the list beside i
 
 - A mask's key never attaches NEAR, so the bounty's reserve pays the storage of seals, reveals and claims, and the prize
   pays the judge of each mask's first claim (0.01 NEAR). Every later claim of that mask attaches the fee itself.
-- Each mask holds two function-call keys: on the safe `set_owner, sweep`; on the bounty contract
+- For a round each mask holds two function-call keys: on the safe `set_owner, sweep`; on the bounty contract
   `commit, reveal, claim_drain, settle`. Neither can move the mask's own NEAR. A new set of keys replaces the old one:
-  the old keys are deleted, and the winning plan is sealed only for the key on the published list.
+  the old keys are deleted, and the winning plan is sealed only for the key on the published list. On mainnet the key
+  of the arena's own three masks on the house's vault also lists the calls of the other kinds of safe, and those masks
+  hold three more function-call keys (the first round's safe, the jobs and the crews contracts) and, beside them, a
+  full-access key the team keeps: the race signs with the function-call keys only.
 - Each call on the safe gets 15 TGas. NEAR takes a call's whole prepaid gas from a key's allowance, so our masks start
   their one turn only when the key's allowance covers the whole plan.
 - Claim right after the drain: a regular RPC node keeps blocks and transactions for a few epochs only, and the judge

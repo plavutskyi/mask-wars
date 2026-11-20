@@ -97,6 +97,38 @@ describe("a sealed round, by its rules", () => {
     expect(r.breakMs).toBeNull();
   });
 
+  // Race 10 on mainnet, 19.11: NOVA drained the vault after the window, its run ended before the reveal, and the
+  // contract refunded the bounty. The page said «The vault held» over a course that showed the drain.
+  it("names the mask that broke a refunded round and what it took, with the bounty back to the team", async () => {
+    const counted = { ...round3, commit_until: ns(DRAIN_AT - MIN), reveal_until: ns(DRAIN_AT + 59 * MIN) };
+    const refunded = bounty3({ status: { state: "refunded" } });
+    const read = async (minLoot: string) =>
+      (await arena(
+        answer([
+          { method: "get", args: race3, value: refunded },
+          { method: "get_round", args: race3, value: counted },
+          { method: "get_safe", args: race3, value: { safe: "safe-0001.tinygif8324.testnet", masks: [NOVA, ONYX, ORACLE], min_loot: minLoot, opened_ns: ns(OPENED_AT) } },
+        ]),
+        recording.recordedAt,
+      ).race("race-0003"))!;
+
+    const drained = (await read("1")).events.find((e) => e.kind === "drain")!;
+    expect(drained.early).toBeUndefined();
+    const taken = drained.amount!;
+
+    const r = await read(taken);
+    expect([r.state, r.phase, r.winner?.account]).toEqual(["refunded", "broken", NOVA]);
+    expect([r.loot, r.takes, r.payout]).toEqual([taken, taken, null]);
+    expect(r.refund).toMatchObject({ amount: "86640000000000000000000" });
+    expect(r.breakMs).toBe(MIN);
+    expect(r.txs.drain).toBe(drained.tx);
+    expect(r.live).toBe(false);
+
+    // Less than the round counts as a break: the vault held, as the contract says.
+    const small = await read((BigInt(taken) + 1n).toString());
+    expect([small.phase, small.winner, small.takes]).toEqual(["held", null, null]);
+  });
+
   it("calls a mask of another team by its whole account, never by the arena's mask names", async () => {
     const rec = answer([
       {

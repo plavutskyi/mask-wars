@@ -21,7 +21,7 @@ import { SALT, outsideTermsBar, revealRuns, type Job, type JobBoard } from "@mas
 import { bondOf, jobKeys, nearOf } from "../../../scripts/testnet/jobs-keys.mjs";
 import { racePublicKey } from "../../../scripts/testnet/season-keys.mjs";
 import { raceKey } from "../src/keys.ts";
-import { FailoverRpc, RpcError } from "../src/near-tx.ts";
+import { FailoverRpc, JsonRpc, NodeError, RpcError } from "../src/near-tx.ts";
 import { packed, replayingFetch, unpacked } from "../src/tape.ts";
 import { actKey, CREW_KEY_METHODS, drainContent, JOB_KEY_METHODS, jobSalt, jobTag, keepWorking, KEY_REFUSED, withoutSpentKeys, MAX_FAILED_PASSES, MAX_PASSES, MIN_REVEAL_MS, oursOn, outsideRules, plan, readFacts, RACE_MIN_MS, RETRY_MS, SETTLE_MS, STEP_MARGIN_MS, type Facts, type Pass } from "../src/work.ts";
 import { NETWORKS, teams } from "@maskwars/network";
@@ -758,5 +758,23 @@ describe("several RPCs", () => {
     await expect(new FailoverRpc([refuses, up]).rpc("query", {})).rejects.toThrow("UNKNOWN_ACCOUNT");
     await expect(new FailoverRpc([down, down]).rpc("block", {})).rejects.toThrow("fetch failed");
     expect(asked).toEqual(["down", "up", "refuses", "down", "down"]);
+  });
+
+  // #300: right after a transaction, FastNEAR answered every read for a minute with an error that had no name, and the
+  // house's round stopped as if the chain had said no.
+  it("asks the next endpoint when a node answers with an error that has no name, and says what the node said", async () => {
+    const answer = (body: unknown): typeof fetch => (async () => new Response(JSON.stringify({ jsonrpc: "2.0", id: "maskwars", ...(body as object) }))) as typeof fetch;
+    const busy = new JsonRpc("https://busy.example", 1_000, answer({ error: { code: -429, message: "Too many requests" } }));
+    const blank = new JsonRpc("https://blank.example", 1_000, answer({ error: {} }));
+    const chainSaysNo = new JsonRpc("https://no.example", 1_000, answer({ error: { name: "HANDLER_ERROR", cause: { name: "UNKNOWN_ACCOUNT" }, code: -32000, message: "Server error", data: "no such account" } }));
+    const up = new JsonRpc("https://up.example", 1_000, answer({ result: { ok: true } }));
+
+    await expect(busy.rpc("query", {})).rejects.toThrow(new NodeError("query: the node did not answer (code -429, Too many requests)"));
+    await expect(blank.rpc("query", {})).rejects.toThrow("query: the node did not answer (an error with no name, code or message)");
+    expect(await new FailoverRpc([busy, up]).rpc("query", {})).toEqual({ ok: true });
+    expect(await new FailoverRpc([blank, up]).rpc("query", {})).toEqual({ ok: true });
+    // The chain's own answer stays the answer: it is not asked again elsewhere, and its words are kept for the callers.
+    await expect(new FailoverRpc([chainSaysNo, up]).rpc("query", {})).rejects.toThrow(new RpcError("query: UNKNOWN_ACCOUNT no such account"));
+    await expect(new FailoverRpc([busy, blank]).rpc("query", {})).rejects.toThrow("query: the node did not answer (an error with no name, code or message)");
   });
 });

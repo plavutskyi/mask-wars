@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { FactoryConfig } from "../src/chain.ts";
-import { allowCopyAction, copyEarnings, fuelAction, fueled, GAS_FUND, putIn, parseTerms, payAuthorAction, readFuel, readWithdraw, stopCopyAction, takeOut, times, timesText, waitingChange, waitText, withdrawAction, withdrawn, type TxOutcome } from "../src/owner.ts";
+import { allowCopyAction, copyEarnings, fuelAction, fueled, GAS_FUND, putIn, parseTerms, payAuthorAction, readFuel, readWithdraw, stopCopyAction, takeOut, times, timesOnMind, timesText, waitingChange, waitText, withdrawAction, withdrawn, type TxOutcome } from "../src/owner.ts";
 import { YOCTO } from "../src/near.ts";
 
 const HOUR = 3_600_000;
@@ -56,6 +56,20 @@ describe("the ×", () => {
     expect(times(0n, 2n * YOCTO)).toBe(0);
     expect(times(1n, 0n)).toBeNull();
     expect([timesText(1.45), timesText(12.34), timesText(0), timesText(null)]).toEqual(["×1.45", "×12.3", "×0", "×—"]);
+  });
+
+  it("of a person's mask is what it took over what its mind cost, not over a tank that is still its owner's", () => {
+    // The first forged mask after its first win on mainnet, as `get_mask` and the league say it: 0.22246 NEAR taken,
+    // 0.002021574193 NEAR spent by its mind, 1 NEAR put in and 0.68 of it still in the tank.
+    const earned = 222_460_000_000_000_000_000_000n;
+    const spent = 2_021_574_193_000_000_000_000n;
+    expect(timesOnMind(earned, spent)).toBe(110.0429);
+    expect(times(earned, YOCTO)).toBe(0.2224);
+    // Strings as the chain gives them; nothing taken yet is ×0; a mind that has cost nothing has no × yet.
+    expect(timesOnMind(earned.toString(), spent.toString())).toBe(110.0429);
+    expect(timesOnMind(0n, spent)).toBe(0);
+    expect(timesOnMind(earned, 0n)).toBeNull();
+    expect(timesOnMind(earned, "0")).toBeNull();
   });
 });
 

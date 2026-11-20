@@ -7,11 +7,12 @@
  * `roundVariant` reads it for a round on the bounty contract; the race takes the copy it names (scripts/race.ts), and a
  * kind named by hand that the chain contradicts stops the race before any model is asked.
  *
- * `withoutFailed` is for the play on chain (scripts/drain-live.ts), on a vault of another kind than `owner` only: a
- * winning plan may carry calls the sandbox refused (a model tries the plain way out first, then the hole). The sandbox
- * goes on after a refused call, the chain does not: there a mask's failed call ends its run, and the judge confirms
- * only a plan played whole. A call the sandbox refused changed nothing there, so the plan without it is the same
- * break. The `owner` kind plays as it always has.
+ * `withoutFailed` is for the play on chain (scripts/drain-live.ts), on a vault of any kind: a winning plan may carry
+ * calls the sandbox refused (a model tries the plain way out first, then the hole, or adds a call of another kind's
+ * desk after the sweep). The sandbox goes on after a refused call, the chain does not: there a mask's failed call ends
+ * its run, and the judge confirms only a plan played whole. A call the sandbox refused changed nothing there, so the
+ * plan without it is the same break. Race 10 on mainnet lost its payout to the `owner` kind playing plans whole:
+ * `set_owner`, `sweep`, then `request_exit`, which the vault on chain does not have.
  */
 import { DEFAULT_VARIANT } from "./challenge.ts";
 import { view, type Chain } from "./near-tx.ts";

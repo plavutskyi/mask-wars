@@ -44,20 +44,38 @@ function Backdrop({ children, blur, veil }: { children: ReactNode; blur: number;
 
 // ——— The first words ———
 
-function Hook({ len }: { len: number }) {
+/** The words a stranger reads first: what MASK WARS is, then what this film is. */
+const SAYS = { kicker: "MASK WARS · live on NEAR mainnet", head: "AI masks break a vault\nof real NEAR. Every day." } as const;
+const TOUR_SAYS = { kicker: "The tour · 10 chapters", head: "Everything it does.\nAnd how to use it." } as const;
+
+function Hook({ len, film }: { len: number; film: TourData["film"] }) {
   const frame = useCurrentFrame();
   const second = beatFrame(HOOK.at, HOOK.second * 4);
   const scale = interpolate(frame, [0, len], [1, 1.06], { easing: Easing.inOut(Easing.quad) });
+  // With the round's own film the first words stand over the vault breaking, the second over the winner's eyes.
+  const eyeFrom = film ? Math.max(0, Math.min(10, film.eye.frames - (len - second))) : 0;
+  const reel: CSSProperties = { position: "absolute", left: 0, top: 0, width: W, height: H, objectFit: "cover", scale: `${scale}` };
   return (
     <AbsoluteFill style={{ overflow: "hidden", background: color.ink }}>
-      <OffthreadVideo src={staticFile("tour/home.mp4")} muted style={{ position: "absolute", left: 0, top: 0, width: W, height: H, objectFit: "cover", transformOrigin: "50% 34%", scale: `${scale}` }} />
-      <AbsoluteFill style={{ background: vignette }} />
-      {/* Under the words the page is gone: its own small type never shows through the film's. */}
-      <AbsoluteFill style={{ background: "linear-gradient(180deg, rgba(6,5,12,0) 49%, rgba(6,5,12,1) 60%)" }} />
-      {frame < second ? (
-        <Full w={{ place: "low", kicker: "The tour · 10 chapters", head: "Everything\nMASK WARS does.", size: 124, steady: true }} frame={frame} />
+      {film ? (
+        <>
+          <Sequence from={0} durationInFrames={second} layout="none">
+            <OffthreadVideo src={staticFile("tour/break-crack.mp4")} muted style={reel} />
+          </Sequence>
+          <Sequence from={second} layout="none">
+            <OffthreadVideo src={staticFile("tour/break-eye.mp4")} startFrom={eyeFrom} muted style={reel} />
+          </Sequence>
+        </>
       ) : (
-        <Full w={{ place: "low", kicker: "The tour · 10 chapters", head: "And how to\nuse each one.", size: 124, steady: "kicker" }} frame={frame - second} />
+        <OffthreadVideo src={staticFile("tour/home.mp4")} muted style={{ ...reel, transformOrigin: "50% 34%" }} />
+      )}
+      <AbsoluteFill style={{ background: vignette }} />
+      {/* Under the words the page is gone: its own small type never shows through the film's. The round's film has none. */}
+      {film ? null : <AbsoluteFill style={{ background: "linear-gradient(180deg, rgba(6,5,12,0) 49%, rgba(6,5,12,1) 60%)" }} />}
+      {frame < second ? (
+        <Full w={{ place: "low", kicker: SAYS.kicker, head: SAYS.head, size: 124, steady: true, ...(film ? { soft: true } : {}) }} frame={frame} />
+      ) : (
+        <Full w={{ place: "low", kicker: TOUR_SAYS.kicker, head: TOUR_SAYS.head, size: 124, ...(film ? { soft: true } : {}) }} frame={frame - second} />
       )}
       {frame >= second ? <Flash frame={frame - second} /> : null}
     </AbsoluteFill>
@@ -189,7 +207,7 @@ export function Tour({ data, music }: TourProps) {
         const len = barFrame(seg.at + seg.len) - barFrame(seg.at);
         return (
           <Sequence key={i} from={barFrame(seg.at)} durationInFrames={len} layout="none">
-            {seg.kind === "hook" ? <Hook len={len} /> : seg.kind === "card" ? <Card seg={seg} /> : seg.kind === "reel" ? <ReelView seg={seg} /> : <End />}
+            {seg.kind === "hook" ? <Hook len={len} film={data.film ?? null} /> : seg.kind === "card" ? <Card seg={seg} /> : seg.kind === "reel" ? <ReelView seg={seg} /> : <End />}
           </Sequence>
         );
       })}

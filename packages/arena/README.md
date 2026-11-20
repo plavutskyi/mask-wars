@@ -66,7 +66,7 @@ round".
 
 | Field | Meaning |
 | --- | --- |
-| `phase` | `sealing`: masks seal their plans, a drain does not count yet. `racing`: the safe can be broken now. `broken`: a mask drained it once the race started (the payout may still be on its way). `held`: nobody got through before the deadline. A drain in the sealing window breaks nothing: until the contract pays, it makes no winner, and its event carries `early: true` |
+| `phase` | `sealing`: masks seal their plans, a drain does not count yet. `racing`: the safe can be broken now. `broken`: a mask drained it once the race started (the payout may still be on its way; with state `refunded` its claim never came, it kept what it drained, at least `minLoot`, and the bounty went back to the team). `held`: nobody got through before the deadline. A drain in the sealing window breaks nothing: until the contract pays, it makes no winner, and its event carries `early: true` |
 | `live` | Something is happening on chain right now: the commit window or the reveal window is open (by the round's rule, a drain or not), a claim is with the judge, or a mask moved in the last 15 minutes. The site shows LIVE only then |
 | `sealUntil`, `revealUntil` | The end of the commit window and of the reveal window of a sealed round |
 | `breakMs` | From the start of the race (the end of the commit window, or the opening) to the drain that counts; `null` for a payout whose drain came before the start |

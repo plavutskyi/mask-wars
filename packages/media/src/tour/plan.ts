@@ -220,7 +220,9 @@ export function reels(site: string, round: string, mask: string): Reel[] {
       acts: [
         { beat: 5, tap: { css: 'main section button[aria-haspopup="dialog"]', has: "^post a job$" }, kind: "sheet" },
         { beat: 14, tap: { css: `${PICKER} button[aria-label="Close"]` }, kind: "close" },
-        { beat: 15, scroll: { css: 'section[aria-labelledby="ways"]' }, top: 16, over: 2 },
+        // An empty board shows the two ways in; once jobs were posted the page lists every job in their place. Either
+        // stands 300 px under the window's top, so "Post a job" and "Bring your agent" stay in the picture above it.
+        { beat: 15, scroll: { css: 'section[aria-labelledby="ways"], section[aria-labelledby="every-job"]' }, top: 300, over: 2 },
       ],
       measures: [],
       reads: [],
@@ -413,6 +415,11 @@ export type TourData = {
   /** The demo film's forge reel, and the frames of the home page's reel under the first words and the last. */
   forge: { frames: number; taps: Tap[] };
   home: { frames: number };
+  /**
+   * The round's own film of the break (`scripts/film.mjs`), when it was made: the tour then opens on the vault breaking
+   * and the winner's eyes, in place of the home page.
+   */
+  film?: { crack: { frames: number }; eye: { frames: number } } | null;
 };
 
 /** The latest round that has ended, in the order the site lists its rounds (newest first). */

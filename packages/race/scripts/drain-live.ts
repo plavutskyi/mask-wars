@@ -38,7 +38,7 @@ import { openFinding, type FindingBox } from "../src/finding-box.ts";
 import { humanKey, humanRoundKeys } from "../src/keeper.ts";
 import { claimKeyOf, roundKeys, secretsOf, type MaskSecret } from "../src/keys.ts";
 import { playLive, resumeLive, sealLive, sweepRuleOf, type RoundView, type SafeRace } from "../src/live.ts";
-import { holdsKey, JsonRpc, view } from "../src/near-tx.ts";
+import { FailoverRpc, holdsKey, JsonRpc, view } from "../src/near-tx.ts";
 import { Plan } from "../src/plan.ts";
 import { DEFAULT_VARIANT } from "../src/challenge.ts";
 import { vaultVariant, withoutFailed } from "../src/variant.ts";
@@ -104,7 +104,9 @@ const playAs = striker && !humanOf(finding.attacker) && keys[finding.attacker] &
 if (striker && playAs !== striker) console.log(`STRIKER ${striker}: ${finding.attacker} plays its own finding (no keys for ${striker}, or a person's mask)`);
 if (playAs !== finding.attacker) console.log(`${finding.attacker} found the plan; the crew's striker ${playAs} plays it`);
 const mask = accounts[playAs] ?? fail(`${playAs} has no NEAR account in MASK_ACCOUNTS`);
-const chain = new JsonRpc(process.env.NEAR_RPC || NET.rpc[0]!);
+// Every endpoint of the network, the first preferred: a node that does not answer in the middle of a plan would end the
+// round's run, so the next one is asked (#300). A transaction sent again elsewhere is the same one and lands once.
+const chain = new FailoverRpc((process.env.NEAR_RPC ? [process.env.NEAR_RPC] : NET.rpc).map((url) => new JsonRpc(url)));
 const race =
   (await view<SafeRace | null>(chain, bountyContract, "get_safe", { id: bountyId })) ??
   fail(`${bountyId} is not a live race on ${bountyContract}`);
@@ -144,13 +146,14 @@ const live = {
 
 const round = await view<RoundView | null>(live.chain, live.bountyContract, "get_round", { id: bountyId });
 const resuming = round?.seals.some((s) => s.mask === mask && s.state === "sealed") ?? false;
-// The vault's kind (src/variant.ts). The owner kind, every vault before 1.7.0 and a chain that does not say play the
-// plan as it was found, as always. On another kind the mask leaves out the calls the sandbox refused: on chain a
-// failed call ends its run, and the judge confirms only a plan played whole.
+// The mask leaves out the calls the sandbox refused, on a vault of any kind (src/variant.ts): on chain a failed call
+// ends its run, and the judge confirms only a plan played whole. Race 10 lost its payout to one such call: NOVA's plan
+// swept the vault and then asked for `request_exit`, which the owner kind refuses in the sandbox and the vault on chain
+// does not have at all (#305).
 const kind = await vaultVariant(chain, race.safe).catch(() => DEFAULT_VARIANT);
 const found = Plan.parse(finding.plan);
-const whole = kind === DEFAULT_VARIANT ? found : withoutFailed(found, finding.replay as Parameters<typeof withoutFailed>[1]);
-if (kind !== DEFAULT_VARIANT) console.log(`the vault is of the ${kind} kind${whole === found ? "" : `: ${found.steps.length - whole.steps.length} call(s) the sandbox refused are left out`}`);
+const whole = withoutFailed(found, finding.replay as Parameters<typeof withoutFailed>[1]);
+console.log(`the vault is of the ${kind} kind${whole === found ? "" : `: ${found.steps.length - whole.steps.length} call(s) the sandbox refused are left out`}`);
 const seal = {
   ...live,
   challenge: await loadChallenge(join(CHALLENGES_DIR, challengeId)),

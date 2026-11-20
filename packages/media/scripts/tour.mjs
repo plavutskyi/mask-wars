@@ -36,7 +36,7 @@ import { CHAPTERS, cut, DURATION, TOUR } from "../src/tour/plan.ts";
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const require = createRequire(import.meta.url);
 const argv = process.argv.slice(2);
-const VALUE_FLAGS = ["--mask", "--site", "--take", "--out", "--music", "--stills"];
+const VALUE_FLAGS = ["--mask", "--site", "--take", "--out", "--music", "--stills", "--film"];
 const flag = (name, d) => (argv.includes(name) ? argv[argv.indexOf(name) + 1] : d);
 const [round = null] = argv.filter((a, i) => !a.startsWith("--") && !VALUE_FLAGS.includes(argv[i - 1] ?? ""));
 const draft = argv.includes("--draft");
@@ -70,6 +70,18 @@ for (const ch of CHAPTERS) {
 }
 if (argv.includes("--no-render")) process.exit(0);
 
+// The round's own film of the break (pnpm film <round>): with it the tour opens on the vault breaking and the winner's
+// eyes. Without it, or when the vault held, it opens on the home page as before.
+const filmDir = argv.includes("--film") ? resolve(root, flag("--film", "")) : join(root, "shots", data.round, "film");
+let film = null;
+if (data.race.phase === "broken" && existsSync(join(filmDir, "film.json")) && existsSync(join(filmDir, "crack.mp4")) && existsSync(join(filmDir, "eye.mp4"))) {
+  const made = JSON.parse(readFileSync(join(filmDir, "film.json"), "utf8"));
+  const frames = (name) => made.shots.find((s) => s.name === name)?.frames ?? 0;
+  if (made.round !== data.round) console.warn(`the film in ${filmDir} is of ${made.round}, not ${data.round}: a rehearsal, never a film to post`);
+  film = { crack: { frames: frames("crack") }, eye: { frames: frames("eye") } };
+  console.log(`the tour opens on the round's film: ${filmDir}`);
+}
+
 const REELS = [...new Set(parts.filter((p) => p.kind === "reel").map((p) => p.reel))];
 const missing = ["home", ...REELS].filter((f) => !existsSync(join(dir, `${f}.mp4`)));
 if (missing.length) {
@@ -86,12 +98,13 @@ try {
   copyFileSync(require.resolve("@fontsource-variable/hubot-sans/files/hubot-sans-latin-standard-normal.woff2"), join(pub, "fonts/hubot-sans.woff2"));
   copyFileSync(require.resolve("@fontsource-variable/mona-sans/files/mona-sans-latin-standard-normal.woff2"), join(pub, "fonts/mona-sans.woff2"));
   for (const f of ["home", ...REELS]) copyFileSync(join(dir, `${f}.mp4`), join(pub, "tour", `${f}.mp4`));
+  if (film) for (const n of ["crack", "eye"]) copyFileSync(join(filmDir, `${n}.mp4`), join(pub, "tour", `break-${n}.mp4`));
   // A chapter's card stands over the first frame of its first reel.
   for (const p of parts) if (p.kind === "card") execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-i", join(dir, `${p.poster}.mp4`), "-frames:v", "1", "-q:v", "3", join(pub, "tour", `${p.poster}.jpg`)]);
   // The track whole, as it is: the film is as long as the track.
   execFileSync("ffmpeg", ["-y", "-loglevel", "error", "-i", music, "-ar", "48000", join(pub, "music.wav")]);
 
-  const inputProps = { data, music: "music.wav" };
+  const inputProps = { data: { ...data, film }, music: "music.wav" };
   const { bundle } = await import("@remotion/bundler");
   const { selectComposition, renderMedia, renderStill } = await import("@remotion/renderer");
   const serveUrl = await bundle({ entryPoint: join(root, "src/clip/Root.tsx"), publicDir: pub });

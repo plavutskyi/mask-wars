@@ -268,12 +268,41 @@ export class JsonRpc implements Chain {
       body: JSON.stringify({ jsonrpc: "2.0", id: "maskwars", method, params }),
       signal: AbortSignal.timeout(this.timeoutMs),
     });
-    const body = (await res.json()) as { result?: unknown; error?: { name?: string; cause?: { name?: string }; data?: unknown } };
+    const body = (await res.json()) as { result?: unknown; error?: RpcErrorBody };
     if (body.error) {
       const e = body.error;
-      throw new RpcError(`${method}: ${e.cause?.name ?? e.name ?? "error"} ${typeof e.data === "string" ? e.data : JSON.stringify(e.data ?? "")}`);
+      const named = e.cause?.name ?? e.name;
+      // An error with no name is not the chain's: the chain always names what it refuses (`HANDLER_ERROR` and its
+      // cause, `REQUEST_VALIDATION_ERROR`, …). A node that limits requests or fails inside answers with a bare code and
+      // message, and another endpoint may well answer (#300).
+      if (!named) throw new NodeError(`${method}: the node did not answer (${nodeReason(e)})`);
+      throw new RpcError(`${method}: ${named} ${typeof e.data === "string" ? e.data : JSON.stringify(e.data ?? "")}`);
     }
     return body.result;
+  }
+}
+
+/** The `error` of a JSON-RPC answer, as NEAR nodes and the providers in front of them give it. */
+interface RpcErrorBody {
+  name?: string;
+  cause?: { name?: string };
+  code?: number | string;
+  message?: string;
+  data?: unknown;
+}
+
+/** What a node said when it gave no name: its code, message and data, whichever it sent. */
+function nodeReason(e: RpcErrorBody): string {
+  const data = e.data === undefined || e.data === null || e.data === "" ? undefined : typeof e.data === "string" ? e.data : JSON.stringify(e.data);
+  const said = [e.code === undefined ? undefined : `code ${e.code}`, e.message || undefined, data].filter((x): x is string => x !== undefined);
+  return said.length > 0 ? said.join(", ") : "an error with no name, code or message";
+}
+
+/** An endpoint answered with an error that is not the chain's (a rate limit, a fault of its own): ask another one. */
+export class NodeError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "NodeError";
   }
 }
 
@@ -286,9 +315,10 @@ export class RpcError extends Error {
 }
 
 /**
- * Several endpoints, the first preferred: a request goes to the next one only when an endpoint does not answer at all
- * (the network, a timeout, a page that is not JSON-RPC). An answer that is an error is the chain's and is not asked
- * again elsewhere. A signed transaction sent again elsewhere is the same transaction: it lands once.
+ * Several endpoints, the first preferred: a request goes to the next one only when an endpoint does not answer for the
+ * chain (the network, a timeout, a page that is not JSON-RPC, an error with no name: `NodeError`). An error the chain
+ * named is the chain's answer and is not asked again elsewhere. A signed transaction sent again elsewhere is the same
+ * transaction: it lands once.
  */
 export class FailoverRpc implements Chain {
   readonly #chains: readonly Chain[];

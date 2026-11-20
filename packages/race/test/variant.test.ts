@@ -252,6 +252,24 @@ describe("a plan without the calls the sandbox refused", () => {
     // Every call refused: there is no plan in what is left, so the plan stays whole and the chain refuses it.
     expect(withoutFailed(plan, report([true, false, false, false]))).toBe(plan);
   });
+
+  // Race 10 on mainnet, 19.11: NOVA's plan on the owner kind swept the vault and then asked for an exit of the limit
+  // desk. The sandbox refused that call and counted the break; the chain had no such method, the run ended before the
+  // reveal, and the bounty went back to the team.
+  it("drops a call of another kind's desk after the sweep on the owner kind, as on every kind", () => {
+    const race10 = Plan.parse({
+      steps: [
+        { kind: "call", method: "set_owner", args: { owner: "nova.maskwars.near" } },
+        { kind: "call", method: "sweep", args: { to: "nova.maskwars.near", amount: "100000000000000000000000" } },
+        { kind: "call", method: "request_exit", args: { amount: "1" } },
+      ],
+    });
+    const replay = { steps: race10.steps.map((s, index) => ({ index, method: s.method, ok: s.method !== "request_exit" })) };
+    expect(withoutFailed(race10, replay).steps.map((s) => s.method)).toEqual(["set_owner", "sweep"]);
+    const script = readFileSync(new URL("../scripts/drain-live.ts", import.meta.url), "utf8");
+    expect(script).toContain("const whole = withoutFailed(found, finding.replay");
+    expect(script).not.toMatch(/kind === DEFAULT_VARIANT \? found/);
+  });
 });
 
 describe("the house's day", () => {

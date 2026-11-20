@@ -1,6 +1,6 @@
 import { duration, near } from '@maskwars/arena/format';
-import { seasonThought } from '@maskwars/arena/minds';
-import { nearText, putIn, times, timesText } from '@maskwars/forge';
+import { seasonThought, timesText } from '@maskwars/arena/minds';
+import { nearText, timesOnMind } from '@maskwars/forge';
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { cache } from 'react';
@@ -34,9 +34,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (p) {
     const NAME = p.mask.name.toUpperCase();
     const earned = p.stats?.earned ?? '0';
-    const paid = putIn(p.mask.fuel, p.mask.recycled, earned);
+    // Its ×, as on the page: what it took over what its mind cost. Said only once it is a real × above zero.
+    const x = timesOnMind(earned, p.mask.spent);
+    const took = `${NAME} broke ${p.stats?.breaks} ${p.stats?.breaks === 1 ? 'vault' : 'vaults'} and took ${near(earned)} NEAR`;
     const description = p.stats?.breaks
-      ? `${NAME} broke ${p.stats.breaks} ${p.stats.breaks === 1 ? 'vault' : 'vaults'} and took ${near(earned)} NEAR: ${timesText(times(earned, paid))} on ${nearText(paid)} NEAR put in.`
+      ? x !== null && x > 0
+        ? `${took}: ${timesText(x)} on the ${nearText(p.mask.spent, 5)} NEAR its mind cost.`
+        : `${took}.`
       : `${NAME} is a mask a person forged. It races AI masks for bounties on NEAR and pays for its own mind.`;
     return pageMeta({ title: `${NAME} · MASK WARS`, description, path: `/mask/${p.mask.name}` });
   }

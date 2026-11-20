@@ -16,7 +16,7 @@ import { dirname, join } from 'node:path';
 import { del, get, list, put } from '@vercel/blob';
 import type { ArenaView, Race } from '@maskwars/arena';
 import { NETWORK } from '@maskwars/arena/config';
-import { type Board, boardOf, EMPTY_BOARD, type Entry, type Filed, fileName, KEEP, keyIs, keyOk, parseFile, raceKey, settledOn, type Tally, tallyOf, whoOk } from './pick';
+import { type Board, boardOf, EMPTY_BOARD, type Entry, type Filed, fileName, KEEP, keyIs, keyOk, outcomeOf, parseFile, raceKey, settledOn, type Tally, tallyOf, whoOk } from './pick';
 
 // ---- Signing ----------------------------------------------------------------------------------------------------------
 
@@ -278,10 +278,17 @@ function readTally(raw: string | null): Tally | null {
   }
 }
 
-/** Every settled round: each tally read once per server, they never change. */
-async function allTallies(store: PickStore): Promise<Tally[]> {
+/**
+ * Every settled round: each tally read once per server. A tally is written once and stands, unless the chain's end of
+ * its round is no longer the end it was tallied with (`current` says no): then another server tallied it again, and it
+ * is read anew.
+ */
+async function allTallies(store: PickStore, current: (t: Tally) => boolean = () => true): Promise<Tally[]> {
   const names = (await store.names(TALLIES)).filter((n) => n.endsWith('.json'));
-  const missing = names.filter((n) => !tallies.has(n));
+  const missing = names.filter((n) => {
+    const t = tallies.get(n);
+    return !t || !current(t);
+  });
   const read = await Promise.all(missing.map(async (n) => [n, readTally(await store.read(`${TALLIES}${n}`))] as const));
   for (const [n, t] of read) if (t) tallies.set(n, t);
   return names.map((n) => tallies.get(n)).filter((t): t is Tally => Boolean(t));
@@ -314,16 +321,32 @@ export async function readBoard(store: PickStore = pickStore(), now = Date.now()
  */
 export async function settle(view: Pick<ArenaView, 'races'>, store: PickStore = pickStore(), now = Date.now()): Promise<Board> {
   let board = await readBoard(store, now);
-  const due = view.races.filter((r) => r.official && r.sealUntil !== null && !settledOn(board, r)).filter((r) => tallyOf(r, []) !== null);
+  // The end of each finished round as the chain gives it now. A round the board settled with another end was read
+  // wrong then and is read right now (race 10 on mainnet was settled as «the vault held» before the reader named NOVA,
+  // who broke it): its picks are still on file, so it is tallied again, over the old tally, with the true end.
+  const ends = new Map(view.races.map((r) => [raceKey(r), outcomeOf(r)] as const));
+  const settledAs = new Map(board.rounds.map((r) => [r.key, r.outcome] as const));
+  const stale = (r: Race) => {
+    const was = settledAs.get(raceKey(r));
+    const end = ends.get(raceKey(r));
+    return was !== undefined && end !== null && end !== undefined && was !== end;
+  };
+  const due = view.races.filter((r) => r.official && r.sealUntil !== null && (!settledOn(board, r) || stale(r))).filter((r) => tallyOf(r, []) !== null);
   if (!due.length) return board;
   const alias = await aliases(store);
   for (const race of due) {
     const tally = tallyOf(race, await filedOn(store, race, view.races), alias)!;
     const path = `${TALLIES}${raceKey(race)}.json`;
-    if (!(await store.write(path, JSON.stringify(tally), true))) continue;
+    if (!(await store.write(path, JSON.stringify(tally), !stale(race)))) continue;
     tallies.set(`${raceKey(race)}.json`, tally);
   }
-  board = boardOf(await allTallies(store), alias);
+  board = boardOf(
+    await allTallies(store, (t) => {
+      const end = ends.get(t.key);
+      return end === null || end === undefined || end === t.outcome;
+    }),
+    alias,
+  );
   await store.write(BOARD, JSON.stringify(board));
   held = { at: now, board };
   return board;

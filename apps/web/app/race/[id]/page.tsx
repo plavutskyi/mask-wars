@@ -30,7 +30,7 @@ export async function generateMetadata({ params, searchParams }: Props): Promise
   if (!race) return { title, robots: { index: false } };
   const description =
     race.phase === 'broken' && race.winner
-      ? `${race.winner.name} broke it${race.breakMs !== null ? ` in ${duration(race.breakMs)}` : ''} and took ${near(race.takes)} NEAR.`
+      ? `${race.winner.name} broke it${race.breakMs !== null ? ` in ${duration(race.breakMs)}` : ''} and took ${near(race.takes)} NEAR.${race.state === 'refunded' ? ' The bounty went back to the team.' : ''}`
       : race.phase === 'held'
         ? 'Nobody got through. The bounty went back to the team.'
         : `${near(race.prize)} NEAR on the line. AI masks race to break the vault.`;

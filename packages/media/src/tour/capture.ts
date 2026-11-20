@@ -172,14 +172,17 @@ export async function filmReel(browser: Browser, reel: Reel, dir: string, log: (
       }, reel.ready ?? null);
 
     // Until the page is what a person sees: its pictures drawn, what the reel uses on it, and the 3D arena running.
+    // The home page runs its 3D arena only while a round is on its stage; between rounds the stage is the flat one
+    // (`data-phase="next"`), and there is no arena to wait for.
+    const arena = Boolean(reel.arena) && !(await page.evaluate(() => document.querySelector('main[data-phase="next"]') !== null));
     const since = Date.now();
     // The arena fades in over the still that stands in for it: the reel starts three seconds after its first frame.
-    const lead = (reel.arena ? 3 : 1.5) * FILM_FPS;
+    const lead = (arena ? 3 : 1.5) * FILM_FPS;
     for (let i = 0, seen = 0, marks = await step(); ; i++, marks = await step()) {
-      const ready = (await drawn()) && (!reel.arena || marks["ready"] !== undefined);
+      const ready = (await drawn()) && (!arena || marks["ready"] !== undefined);
       seen = ready ? seen + 1 : 0;
       if (ready && i >= lead && seen >= lead) break;
-      if (Date.now() - since > (reel.arena ? 180_000 : 90_000)) throw new Error(`${reel.name}: ${reel.url} did not come up${reel.arena ? " with its 3D arena" : ""}${why()}`);
+      if (Date.now() - since > (arena ? 180_000 : 90_000)) throw new Error(`${reel.name}: ${reel.url} did not come up${arena ? " with its 3D arena" : ""}${why()}`);
       if (!ready) await page.waitForTimeout(60);
     }
     if (reel.prime) {
